@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { PartsClient } from "@/components/parts/parts-client";
+import { SuppliersClient } from "@/components/parts/suppliers-client";
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
   requested: "bg-yellow-100 text-yellow-800",
@@ -125,37 +126,7 @@ export default async function PartsPage() {
         </TabsContent>
 
         <TabsContent value="suppliers" className="mt-4">
-          {suppliers.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No suppliers yet.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {suppliers.map((s) => (
-                <Card key={s.id}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{s.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground space-y-1">
-                    {s.email && <p>{s.email}</p>}
-                    {s.phone && <p>{s.phone}</p>}
-                    {s.website && (
-                      <a
-                        href={s.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {s.website}
-                      </a>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <SuppliersClient suppliers={suppliers} />
         </TabsContent>
       </Tabs>
     </div>

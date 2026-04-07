@@ -40,6 +40,31 @@ export async function createSupplier(data: {
   return supplier;
 }
 
+export async function updateSupplier(
+  id: string,
+  data: {
+    name?: string;
+    contactName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    notes?: string | null;
+  }
+) {
+  await requireRole("staff");
+  await db
+    .update(suppliers)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(suppliers.id, id));
+  revalidatePath("/parts");
+}
+
+export async function deleteSupplier(id: string) {
+  await requireRole("staff");
+  await db.delete(suppliers).where(eq(suppliers.id, id));
+  revalidatePath("/parts");
+}
+
 // === Parts ===
 
 export async function getParts() {

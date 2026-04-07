@@ -46,7 +46,31 @@ export default async function CustomerDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        <Card>
+        {customer.units.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle className="text-base">Units ({customer.units.length})</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {customer.units.map((unit) => (
+                  <Link
+                    key={unit.id}
+                    href={`/units/${unit.id}`}
+                    className="flex items-center justify-between rounded-md border p-2 text-sm hover:bg-muted/50"
+                  >
+                    <div>
+                      {unit.registration && (
+                        <span className="font-mono text-xs text-muted-foreground">{unit.registration}</span>
+                      )}
+                      <p className="truncate">{[unit.brand, unit.model].filter(Boolean).join(" ") || "Unknown unit"}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className={customer.units.length > 0 ? "lg:col-span-2" : ""}>
           <CardHeader><CardTitle className="text-base">Repair Jobs ({customer.repairJobs.length})</CardTitle></CardHeader>
           <CardContent>
             {customer.repairJobs.length === 0 ? (

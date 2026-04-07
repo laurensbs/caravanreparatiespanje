@@ -12,10 +12,13 @@ interface Props {
 
 export default async function CustomersPage({ searchParams }: Props) {
   const params = await searchParams;
-  const { customers, total } = await getCustomers({
+  const page = params.page ? parseInt(params.page) : 1;
+  const { customers, total, limit } = await getCustomers({
     q: params.q,
-    page: params.page ? parseInt(params.page) : 1,
+    page,
   });
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-4">
@@ -45,9 +48,9 @@ export default async function CustomersPage({ searchParams }: Props) {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Name</TableHead>
+              <TableHead className="text-center">Repairs</TableHead>
               <TableHead>Phone</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Notes</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead>Updated</TableHead>
             </TableRow>
           </TableHeader>
@@ -66,9 +69,17 @@ export default async function CustomersPage({ searchParams }: Props) {
                       {c.name}
                     </Link>
                   </TableCell>
+                  <TableCell className="text-center">
+                    {c.repairCount > 0 ? (
+                      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-medium text-primary">
+                        {c.repairCount}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm">{c.phone ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{c.email ?? "—"}</TableCell>
-                  <TableCell className="max-w-xs truncate text-sm text-muted-foreground">{c.notes ?? "—"}</TableCell>
+                  <TableCell className="text-sm hidden md:table-cell">{c.email ?? "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true })}
                   </TableCell>
@@ -78,6 +89,30 @@ export default async function CustomersPage({ searchParams }: Props) {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            {page > 1 && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), page: String(page - 1) }).toString()}`}>
+                  Previous
+                </Link>
+              </Button>
+            )}
+            {page < totalPages && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), page: String(page + 1) }).toString()}`}>
+                  Next
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

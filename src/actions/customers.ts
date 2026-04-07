@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { customers, repairJobs } from "@/lib/db/schema";
+import { customers, repairJobs, units } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 
 function capitalizeWords(name: string): string {
@@ -18,7 +18,7 @@ function capitalizeWords(name: string): string {
 }
 import { customerSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
-import { eq, desc, ilike, or, count } from "drizzle-orm";
+import { eq, desc, ilike, or, and, count, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function getCustomers(filters: { q?: string; page?: number; limit?: number } = {}) {
@@ -43,7 +43,23 @@ export async function getCustomers(filters: { q?: string; page?: number; limit?:
   const where = conditions.length > 0 ? conditions[0] : undefined;
 
   const [result, countResult] = await Promise.all([
-    db.select().from(customers).where(where).orderBy(desc(customers.updatedAt)).limit(limit).offset(offset),
+    db
+      .select({
+        id: customers.id,
+        name: customers.name,
+        phone: customers.phone,
+        email: customers.email,
+        notes: customers.notes,
+        provisional: customers.provisional,
+        updatedAt: customers.updatedAt,
+        createdAt: customers.createdAt,
+        repairCount: sql<number>`(SELECT COUNT(*) FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id})`.as("repair_count"),
+      })
+      .from(customers)
+      .where(where)
+      .orderBy(desc(customers.updatedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ count: count() }).from(customers).where(where),
   ]);
 
@@ -55,13 +71,19 @@ export async function getCustomerById(id: string) {
   const [customer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
   if (!customer) return null;
 
-  const jobs = await db
-    .select({ id: repairJobs.id, publicCode: repairJobs.publicCode, title: repairJobs.title, status: repairJobs.status })
-    .from(repairJobs)
-    .where(eq(repairJobs.customerId, id))
-    .orderBy(desc(repairJobs.updatedAt));
+  const [jobs, unitsList] = await Promise.all([
+    db
+      .select({ id: repairJobs.id, publicCode: repairJobs.publicCode, title: repairJobs.title, status: repairJobs.status })
+      .from(repairJobs)
+      .where(eq(repairJobs.customerId, id))
+      .orderBy(desc(repairJobs.updatedAt)),
+    db
+      .select({ id: units.id, registration: units.registration, brand: units.brand, model: units.model })
+      .from(units)
+      .where(eq(units.customerId, id)),
+  ]);
 
-  return { ...customer, repairJobs: jobs };
+  return { ...customer, repairJobs: jobs, units: unitsList };
 }
 
 export async function createCustomer(data: unknown) {

@@ -19,12 +19,14 @@ import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } fr
 import { ArrowLeft, Save, Clock, User, MapPin, FileText } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from "date-fns";
+import { CommunicationLogPanel } from "@/components/communication-log";
 
 interface RepairDetailProps {
   job: any; // Full job with relations from getRepairJobById
+  communicationLogs?: any[];
 }
 
-export function RepairDetail({ job }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(job.status);
@@ -178,6 +180,16 @@ export function RepairDetail({ job }: RepairDetailProps) {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Communication Log */}
+          <Card>
+            <CardContent className="pt-6">
+              <CommunicationLogPanel
+                repairJobId={job.id}
+                logs={communicationLogs}
+              />
             </CardContent>
           </Card>
         </div>

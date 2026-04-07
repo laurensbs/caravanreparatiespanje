@@ -1,4 +1,5 @@
 import { getRepairJobById } from "@/actions/repairs";
+import { getCommunicationLogs } from "@/actions/communications";
 import { notFound } from "next/navigation";
 import { RepairDetail } from "@/components/repairs/repair-detail";
 
@@ -8,8 +9,11 @@ interface Props {
 
 export default async function RepairDetailPage({ params }: Props) {
   const { id } = await params;
-  const job = await getRepairJobById(id);
+  const [job, communicationLogs] = await Promise.all([
+    getRepairJobById(id),
+    getCommunicationLogs(id),
+  ]);
   if (!job) notFound();
 
-  return <RepairDetail job={job} />;
+  return <RepairDetail job={job} communicationLogs={communicationLogs} />;
 }

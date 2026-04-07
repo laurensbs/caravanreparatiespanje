@@ -5,6 +5,7 @@ import { repairJobs, repairJobEvents, customers, units, locations, users } from 
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
+import { autoGenerateReminder } from "./reminders";
 import { generatePublicCode } from "@/lib/utils";
 import { eq, desc, ilike, or, and, sql, count, inArray, isNull, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -253,6 +254,15 @@ export async function updateRepairJob(id: string, data: unknown) {
     await createAuditLog("update", "repair_job", id, changes);
   }
 
+  // Auto-generate reminders based on status/response changes
+  if (changes.status || changes.customerResponseStatus) {
+    await autoGenerateReminder(
+      id,
+      parsed.status ?? existing.status,
+      parsed.customerResponseStatus ?? existing.customerResponseStatus
+    );
+  }
+
   revalidatePath("/repairs");
   revalidatePath(`/repairs/${id}`);
   revalidatePath("/");
@@ -361,4 +371,51 @@ export async function getDashboardStats() {
     jobsByStatus,
     jobsByLocation,
   };
+}
+
+export async function getFollowUpItems() {
+  await requireAuth();
+
+  // Jobs waiting for customer response for > 3 days with no recent contact
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+  const overdueFollowUps = await db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      status: repairJobs.status,
+      customerResponseStatus: repairJobs.customerResponseStatus,
+      lastContactAt: repairJobs.lastContactAt,
+      updatedAt: repairJobs.updatedAt,
+      customerName: customers.name,
+      locationName: locations.name,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .leftJoin(locations, eq(repairJobs.locationId, locations.id))
+    .where(
+      and(
+        isNull(repairJobs.archivedAt),
+        or(
+          // Waiting for customer with no contact or old contact
+          and(
+            eq(repairJobs.customerResponseStatus, "waiting_response"),
+            or(
+              isNull(repairJobs.lastContactAt),
+              sql`${repairJobs.lastContactAt} < ${threeDaysAgo}`
+            )
+          ),
+          // No response status — needs follow-up
+          eq(repairJobs.customerResponseStatus, "no_response"),
+          // Follow-up required flag set
+          eq(repairJobs.followUpRequiredFlag, true)
+        )
+      )
+    )
+    .orderBy(repairJobs.lastContactAt)
+    .limit(20);
+
+  return overdueFollowUps;
 }

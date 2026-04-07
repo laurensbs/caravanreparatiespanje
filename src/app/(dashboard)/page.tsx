@@ -1,18 +1,24 @@
-import { getDashboardStats } from "@/actions/repairs";
+import { getDashboardStats, getFollowUpItems } from "@/actions/repairs";
+import { getActiveReminderCount } from "@/actions/reminders";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Wrench, Clock, Package, Users, CheckCircle, AlertTriangle,
-  Plus, FileSpreadsheet, ArrowRight,
+  Plus, FileSpreadsheet, ArrowRight, Bell, PhoneOff,
 } from "lucide-react";
 import Link from "next/link";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS } from "@/types";
-import type { RepairStatus, Priority } from "@/types";
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
+import type { RepairStatus, Priority, CustomerResponseStatus } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 
 export default async function DashboardPage() {
-  const { stats, recentJobs, jobsByStatus, jobsByLocation } = await getDashboardStats();
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount] =
+    await Promise.all([
+      getDashboardStats(),
+      getFollowUpItems(),
+      getActiveReminderCount(),
+    ]);
 
   const kpiCards = [
     { label: "Total Jobs", value: stats?.total ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-blue-600" },
@@ -21,6 +27,8 @@ export default async function DashboardPage() {
     { label: "Waiting for Customer", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-5 w-5" />, color: "text-amber-600" },
     { label: "Completed", value: stats?.completed ?? 0, icon: <CheckCircle className="h-5 w-5" />, color: "text-emerald-600" },
     { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5" />, color: "text-red-600" },
+    { label: "Reminders", value: reminderCount, icon: <Bell className="h-5 w-5" />, color: "text-indigo-600" },
+    { label: "Need Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5" />, color: "text-rose-600" },
   ];
 
   return (
@@ -47,7 +55,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
         {kpiCards.map((kpi) => (
           <Card key={kpi.label}>
             <CardContent className="p-4">
@@ -174,6 +182,49 @@ export default async function DashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Follow-up Required */}
+          {followUps.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base text-rose-600">
+                  <PhoneOff className="h-4 w-4" />
+                  Needs Follow-up
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {followUps.slice(0, 8).map((job) => (
+                    <Link
+                      key={job.id}
+                      href={`/repairs/${job.id}`}
+                      className="flex items-center justify-between rounded-md border p-2 text-xs transition-colors hover:bg-muted/50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="font-mono text-muted-foreground">
+                          {job.publicCode}
+                        </span>
+                        <p className="truncate font-medium">
+                          {job.customerName || job.title || "Unknown"}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 text-[10px]"
+                      >
+                        {CUSTOMER_RESPONSE_LABELS[job.customerResponseStatus as CustomerResponseStatus]}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {followUps.length > 8 && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      +{followUps.length - 8} more
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -15,6 +15,8 @@ import type {
   repairJobRawRows,
   candidateDuplicates,
   auditLogs,
+  actionReminders,
+  communicationLogs,
 } from "@/lib/db/schema";
 
 export type UserRole = "admin" | "manager" | "staff" | "viewer";
@@ -108,6 +110,21 @@ export type ImportRow = typeof importRows.$inferSelect;
 export type RepairJobRawRow = typeof repairJobRawRows.$inferSelect;
 export type CandidateDuplicate = typeof candidateDuplicates.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type ActionReminder = typeof actionReminders.$inferSelect;
+export type CommunicationLog = typeof communicationLogs.$inferSelect;
+
+export type ReminderType =
+  | "create_invoice"
+  | "follow_up_customer"
+  | "order_parts"
+  | "check_delivery"
+  | "schedule_repair"
+  | "send_quote"
+  | "contact_customer"
+  | "custom";
+
+export type ContactMethod = "phone" | "whatsapp" | "email" | "in_person" | "sms" | "other";
+export type ContactDirection = "outbound" | "inbound";
 
 // Extended types with relations
 export type RepairJobWithRelations = RepairJob & {

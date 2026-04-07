@@ -18,6 +18,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   MessageSquare,
+  Package,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { label: "Repairs", href: "/repairs", icon: <Wrench className="h-5 w-5" /> },
   { label: "Customers", href: "/customers", icon: <Users className="h-5 w-5" /> },
   { label: "Units", href: "/units", icon: <Truck className="h-5 w-5" /> },
+  { label: "Parts", href: "/parts", icon: <Package className="h-5 w-5" /> },
   { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-5 w-5" /> },
   { label: "Import", href: "/import", icon: <FileSpreadsheet className="h-5 w-5" />, minRole: "admin" },
   { label: "Audit Log", href: "/audit", icon: <Shield className="h-5 w-5" />, minRole: "admin" },

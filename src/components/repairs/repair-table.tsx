@@ -6,8 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from "@/types";
-import type { RepairStatus, Priority } from "@/types";
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, INVOICE_STATUS_LABELS } from "@/types";
+import type { RepairStatus, Priority, InvoiceStatus } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { BulkActions } from "./bulk-actions";
@@ -89,13 +89,14 @@ export function RepairTable({ jobs }: RepairTableProps) {
               <TableHead>Location</TableHead>
               <TableHead>Unit</TableHead>
               <TableHead>Assigned</TableHead>
+              <TableHead className="w-28">Invoice</TableHead>
               <TableHead className="w-28">Updated</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={11} className="py-12 text-center text-muted-foreground">
                   No repair jobs found. Adjust your filters or create a new repair.
                 </TableCell>
               </TableRow>
@@ -142,6 +143,17 @@ export function RepairTable({ jobs }: RepairTableProps) {
                   <TableCell className="text-sm">{job.locationName ?? "—"}</TableCell>
                   <TableCell className="text-sm font-mono text-xs">{job.unitRegistration ?? "—"}</TableCell>
                   <TableCell className="text-sm">{job.assignedUserName ?? "—"}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      job.invoiceStatus === "paid" ? "bg-emerald-100 text-emerald-700" :
+                      job.invoiceStatus === "sent" ? "bg-blue-100 text-blue-700" :
+                      job.invoiceStatus === "draft" ? "bg-amber-100 text-amber-700" :
+                      job.invoiceStatus === "warranty" ? "bg-purple-100 text-purple-700" :
+                      "bg-gray-100 text-gray-500"
+                    }`}>
+                      {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(job.updatedAt), { addSuffix: true })}
                   </TableCell>

@@ -53,6 +53,7 @@ export async function getParts() {
       supplierId: parts.supplierId,
       defaultCost: parts.defaultCost,
       description: parts.description,
+      orderUrl: parts.orderUrl,
     })
     .from(parts)
     .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
@@ -65,6 +66,7 @@ export async function createPart(data: {
   supplierId?: string;
   defaultCost?: string;
   description?: string;
+  orderUrl?: string;
 }) {
   await requireRole("staff");
   const [part] = await db
@@ -75,11 +77,37 @@ export async function createPart(data: {
       supplierId: data.supplierId ?? null,
       defaultCost: data.defaultCost ?? null,
       description: data.description ?? null,
+      orderUrl: data.orderUrl ?? null,
     })
     .returning();
 
   revalidatePath("/parts");
   return part;
+}
+
+export async function updatePart(
+  id: string,
+  data: {
+    name?: string;
+    partNumber?: string | null;
+    supplierId?: string | null;
+    defaultCost?: string | null;
+    description?: string | null;
+    orderUrl?: string | null;
+  }
+) {
+  await requireRole("staff");
+  await db
+    .update(parts)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(parts.id, id));
+  revalidatePath("/parts");
+}
+
+export async function deletePart(id: string) {
+  await requireRole("staff");
+  await db.delete(parts).where(eq(parts.id, id));
+  revalidatePath("/parts");
 }
 
 // === Part Requests ===

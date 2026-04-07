@@ -12,18 +12,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Spinner } from "@/components/ui/spinner";
 import { CustomerSearch } from "@/components/customers/customer-search";
 import { LocationSelect } from "@/components/repairs/location-select";
+import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
+import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
+
+interface CatalogPart {
+  id: string;
+  name: string;
+  partNumber: string | null;
+  defaultCost: string | null;
+  orderUrl: string | null;
+}
 
 interface RepairFormProps {
   locations: { id: string; name: string }[];
   customers: { id: string; name: string }[];
+  partsCatalog?: CatalogPart[];
 }
 
-export function RepairForm({ locations, customers }: RepairFormProps) {
+export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,6 +56,17 @@ export function RepairForm({ locations, customers }: RepairFormProps) {
 
     try {
       const job = await createRepairJob(data);
+      // Create part requests for selected catalog parts
+      await Promise.all(
+        selectedParts.map((p) =>
+          createPartRequest({
+            repairJobId: job.id,
+            partId: p.partId,
+            partName: p.name,
+            quantity: p.quantity,
+          })
+        )
+      );
       router.push(`/repairs/${job.id}`);
     } catch (err: any) {
       setError(err?.message ?? "Failed to create repair job");
@@ -119,12 +142,18 @@ export function RepairForm({ locations, customers }: RepairFormProps) {
             />
           </div>
           <div>
-            <Label htmlFor="partsNeededRaw">Parts Needed</Label>
+            <Label>Parts from Catalog</Label>
+            <div className="mt-1">
+              <PartsPicker catalog={partsCatalog} value={selectedParts} onChange={setSelectedParts} />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="partsNeededRaw">Additional Parts (free text)</Label>
             <Textarea
               id="partsNeededRaw"
               name="partsNeededRaw"
-              placeholder="List any parts required..."
-              rows={3}
+              placeholder="Any parts not in the catalog..."
+              rows={2}
               className="mt-1"
             />
           </div>

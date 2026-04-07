@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
+import { PartsClient } from "@/components/parts/parts-client";
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
-  needed: "bg-yellow-100 text-yellow-800",
+  requested: "bg-yellow-100 text-yellow-800",
   ordered: "bg-blue-100 text-blue-800",
+  shipped: "bg-indigo-100 text-indigo-800",
   received: "bg-green-100 text-green-800",
   cancelled: "bg-gray-100 text-gray-800",
 };
@@ -42,16 +44,20 @@ export default async function PartsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="requests">
+      <Tabs defaultValue="catalog">
         <TabsList>
+          <TabsTrigger value="catalog">Catalog ({parts.length})</TabsTrigger>
           <TabsTrigger value="requests">
             Part Requests ({requests.length})
           </TabsTrigger>
-          <TabsTrigger value="catalog">Catalog ({parts.length})</TabsTrigger>
           <TabsTrigger value="suppliers">
             Suppliers ({suppliers.length})
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="catalog" className="mt-4">
+          <PartsClient parts={parts} suppliers={suppliers} />
+        </TabsContent>
 
         <TabsContent value="requests" className="mt-4">
           {requests.length === 0 ? (
@@ -109,46 +115,6 @@ export default async function PartsPage() {
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
                         {req.notes ?? "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="catalog" className="mt-4">
-          {parts.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No parts in catalog yet. Parts are added when creating part
-                requests.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Part Number</TableHead>
-                    <TableHead>Supplier</TableHead>
-                    <TableHead>Est. Cost</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parts.map((part) => (
-                    <TableRow key={part.id}>
-                      <TableCell className="font-medium">{part.name}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {part.partNumber ?? "—"}
-                      </TableCell>
-                      <TableCell>{part.supplierName ?? "—"}</TableCell>
-                      <TableCell>
-                        {part.defaultCost
-                          ? `€${part.defaultCost}`
-                          : "—"}
                       </TableCell>
                     </TableRow>
                   ))}

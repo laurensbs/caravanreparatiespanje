@@ -462,6 +462,7 @@ export const parts = pgTable(
     partNumber: varchar("part_number", { length: 255 }),
     description: text("description"),
     defaultCost: numeric("default_cost", { precision: 10, scale: 2 }),
+    orderUrl: varchar("order_url", { length: 1000 }),
     supplierId: uuid("supplier_id").references(() => suppliers.id, {
       onDelete: "set null",
     }),

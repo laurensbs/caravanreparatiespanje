@@ -1,0 +1,1 @@
+ALTER TABLE "parts" ADD COLUMN "order_url" varchar(1000);

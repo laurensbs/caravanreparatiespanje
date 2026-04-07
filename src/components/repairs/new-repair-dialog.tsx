@@ -19,20 +19,32 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerSearch } from "@/components/customers/customer-search";
 import { LocationSelect } from "@/components/repairs/location-select";
+import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
+import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { Plus } from "lucide-react";
+
+interface CatalogPart {
+  id: string;
+  name: string;
+  partNumber: string | null;
+  defaultCost: string | null;
+  orderUrl: string | null;
+}
 
 interface NewRepairDialogProps {
   locations: { id: string; name: string }[];
   customers: { id: string; name: string }[];
+  partsCatalog?: CatalogPart[];
 }
 
-export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) {
+export function NewRepairDialog({ locations, customers, partsCatalog = [] }: NewRepairDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,8 +65,20 @@ export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) 
 
     try {
       const job = await createRepairJob(data);
+      // Create part requests for selected catalog parts
+      await Promise.all(
+        selectedParts.map((p) =>
+          createPartRequest({
+            repairJobId: job.id,
+            partId: p.partId,
+            partName: p.name,
+            quantity: p.quantity,
+          })
+        )
+      );
       setOpen(false);
       setCustomerId(null);
+      setSelectedParts([]);
       router.push(`/repairs/${job.id}`);
       router.refresh();
     } catch (err: any) {
@@ -137,11 +161,17 @@ export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) 
                 />
               </div>
               <div>
-                <Label htmlFor="dlg-parts">Parts Needed</Label>
+                <Label>Parts from Catalog</Label>
+                <div className="mt-1">
+                  <PartsPicker catalog={partsCatalog} value={selectedParts} onChange={setSelectedParts} />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="dlg-parts">Additional Parts (free text)</Label>
                 <Textarea
                   id="dlg-parts"
                   name="partsNeededRaw"
-                  placeholder="List any parts required..."
+                  placeholder="Any parts not in the catalog..."
                   rows={2}
                   className="mt-1"
                 />

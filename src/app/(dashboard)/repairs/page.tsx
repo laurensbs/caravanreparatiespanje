@@ -1,6 +1,7 @@
 import { getRepairJobs, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
+import { getParts } from "@/actions/parts";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
@@ -25,10 +26,11 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total, page, limit }, locationsList, customersList] = await Promise.all([
+  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
     getAllCustomers(),
+    getParts(),
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -42,7 +44,7 @@ export default async function RepairsPage({ searchParams }: Props) {
             {total} repair{total !== 1 ? "s" : ""} found
           </p>
         </div>
-        <NewRepairDialog locations={locationsList} customers={customersList} />
+        <NewRepairDialog locations={locationsList} customers={customersList} partsCatalog={partsCatalog} />
       </div>
 
       <RepairFiltersBar

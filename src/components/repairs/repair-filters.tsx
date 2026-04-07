@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, X } from "lucide-react";
-import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
+import { STATUS_LABELS, PRIORITY_LABELS, INVOICE_STATUS_LABELS } from "@/types";
 import type { RepairFilters } from "@/actions/repairs";
 import { useState } from "react";
 
@@ -107,6 +107,21 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
             <SelectItem value="all">All locations</SelectItem>
             {locations.map((loc) => (
               <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={currentFilters.invoiceStatus ?? "all"}
+          onValueChange={(val) => updateFilter("invoiceStatus", val)}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Invoice" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All invoices</SelectItem>
+            {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
           </SelectContent>
         </Select>

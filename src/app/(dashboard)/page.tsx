@@ -2,6 +2,7 @@ import { getDashboardStats, getFollowUpItems } from "@/actions/repairs";
 import { getActiveReminderCount } from "@/actions/reminders";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
+import { getParts } from "@/actions/parts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,13 +18,14 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount, locationsList, customersList] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount, locationsList, customersList, partsCatalog] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
       getActiveReminderCount(),
       getLocations(),
       getAllCustomers(),
+      getParts(),
     ]);
 
   const kpiCards = [
@@ -45,7 +47,7 @@ export default async function DashboardPage() {
           <p className="text-muted-foreground">Overview of all repair operations</p>
         </div>
         <div className="flex gap-2">
-          <NewRepairDialog locations={locationsList} customers={customersList} />
+          <NewRepairDialog locations={locationsList} customers={customersList} partsCatalog={partsCatalog} />
           <Button variant="outline" asChild>
             <Link href="/import">
               <FileSpreadsheet className="mr-2 h-4 w-4" />

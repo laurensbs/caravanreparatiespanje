@@ -5,10 +5,10 @@ import { units, customers, repairJobs } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
-import { eq, desc, ilike, or, count } from "drizzle-orm";
+import { eq, desc, ilike, or, and, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function getUnits(filters: { q?: string; page?: number; limit?: number } = {}) {
+export async function getUnits(filters: { q?: string; type?: string; page?: number; limit?: number } = {}) {
   await requireAuth();
 
   const page = filters.page ?? 1;
@@ -27,8 +27,11 @@ export async function getUnits(filters: { q?: string; page?: number; limit?: num
       )!
     );
   }
+  if (filters.type && filters.type !== "all") {
+    conditions.push(eq(units.unitType, filters.type as any));
+  }
 
-  const where = conditions.length > 0 ? conditions[0] : undefined;
+  const where = conditions.length > 1 ? and(...conditions) : conditions.length === 1 ? conditions[0] : undefined;
 
   const [result, countResult] = await Promise.all([
     db

@@ -3,6 +3,19 @@
 import { db } from "@/lib/db";
 import { customers, repairJobs } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
+
+function capitalizeWords(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (!word) return word;
+      const keep = ["van", "de", "den", "der", "het", "ten", "ter"];
+      if (keep.includes(word.toLowerCase())) return word.toLowerCase();
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
 import { customerSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { eq, desc, ilike, or, count } from "drizzle-orm";
@@ -57,7 +70,7 @@ export async function createCustomer(data: unknown) {
 
   const [customer] = await db
     .insert(customers)
-    .values({ ...parsed, email: parsed.email || null })
+    .values({ ...parsed, name: capitalizeWords(parsed.name), email: parsed.email || null })
     .returning();
 
   await createAuditLog("create", "customer", customer.id, { name: customer.name });
@@ -71,7 +84,7 @@ export async function updateCustomer(id: string, data: unknown) {
 
   const [updated] = await db
     .update(customers)
-    .set({ ...parsed, email: parsed.email || null, updatedAt: new Date() })
+    .set({ ...parsed, name: capitalizeWords(parsed.name), email: parsed.email || null, updatedAt: new Date() })
     .where(eq(customers.id, id))
     .returning();
 

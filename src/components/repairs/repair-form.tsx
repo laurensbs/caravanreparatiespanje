@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { CustomerSearch } from "@/components/customers/customer-search";
+import { LocationSelect } from "@/components/repairs/location-select";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 
 interface RepairFormProps {
@@ -87,15 +88,9 @@ export function RepairForm({ locations, customers }: RepairFormProps) {
           </div>
           <div>
             <Label htmlFor="locationId">Location</Label>
-            <Select name="locationId" defaultValue="none">
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No location</SelectItem>
-                {locations.map((loc) => (
-                  <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="mt-1">
+              <LocationSelect name="locationId" locations={locations} />
+            </div>
           </div>
           <div>
             <Label htmlFor="customerId">Customer</Label>

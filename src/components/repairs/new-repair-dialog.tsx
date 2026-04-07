@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerSearch } from "@/components/customers/customer-search";
+import { LocationSelect } from "@/components/repairs/location-select";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { Plus } from "lucide-react";
 
@@ -108,15 +109,9 @@ export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) 
               </div>
               <div>
                 <Label htmlFor="dlg-location">Location</Label>
-                <Select name="locationId" defaultValue="none">
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No location</SelectItem>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-1">
+                  <LocationSelect name="locationId" locations={locations} />
+                </div>
               </div>
               <div>
                 <Label htmlFor="dlg-customer">Customer</Label>

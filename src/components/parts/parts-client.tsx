@@ -257,12 +257,12 @@ function PartForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="supplier">Supplier</Label>
-        <Select value={supplierId} onValueChange={setSupplierId}>
+        <Select value={supplierId || "none"} onValueChange={(v) => setSupplierId(v === "none" ? "" : v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select supplier" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None</SelectItem>
+            <SelectItem value="none">None</SelectItem>
             {suppliers.map((s) => (
               <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
             ))}

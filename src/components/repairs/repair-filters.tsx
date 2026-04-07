@@ -52,13 +52,13 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-0 sm:max-w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by kenteken, name, ref..."
-              className="w-64 pl-9"
+              className="w-full pl-9"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />

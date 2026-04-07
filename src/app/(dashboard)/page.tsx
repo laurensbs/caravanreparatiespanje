@@ -1,23 +1,29 @@
 import { getDashboardStats, getFollowUpItems } from "@/actions/repairs";
 import { getActiveReminderCount } from "@/actions/reminders";
+import { getLocations } from "@/actions/locations";
+import { getAllCustomers } from "@/actions/customers";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
   Wrench, Clock, Package, Users, CheckCircle, AlertTriangle,
-  Plus, FileSpreadsheet, ArrowRight, Bell, PhoneOff,
+  FileSpreadsheet, ArrowRight, Bell, PhoneOff,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus } from "@/types";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount, locationsList, customersList] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
       getActiveReminderCount(),
+      getLocations(),
+      getAllCustomers(),
     ]);
 
   const kpiCards = [
@@ -33,18 +39,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Overview of all repair operations</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild>
-            <Link href="/repairs/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Repair
-            </Link>
-          </Button>
+          <NewRepairDialog locations={locationsList} customers={customersList} />
           <Button variant="outline" asChild>
             <Link href="/import">
               <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -55,13 +56,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
-        {kpiCards.map((kpi) => (
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {kpiCards.map((kpi, i) => (
           <Link key={kpi.label} href={kpi.href}>
-            <Card className="transition-colors hover:bg-muted/50 cursor-pointer">
+            <Card className="transition-all duration-200 hover:bg-muted/50 hover:shadow-md active:scale-[0.98] cursor-pointer animate-slide-up" style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={kpi.color}>{kpi.icon}</div>
+                  <div className={cn("rounded-lg p-2 bg-muted/80", kpi.color)}>{kpi.icon}</div>
                   <div>
                     <p className="text-2xl font-bold">{kpi.value}</p>
                     <p className="text-xs text-muted-foreground">{kpi.label}</p>
@@ -75,7 +76,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Activity */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Recent Activity</CardTitle>

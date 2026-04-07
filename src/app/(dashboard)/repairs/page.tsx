@@ -1,10 +1,9 @@
 import { getRepairJobs, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
+import { getAllCustomers } from "@/actions/customers";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import Link from "next/link";
+import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -24,9 +23,10 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total, page, limit }, locationsList] = await Promise.all([
+  const [{ jobs, total, page, limit }, locationsList, customersList] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
+    getAllCustomers(),
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -40,12 +40,7 @@ export default async function RepairsPage({ searchParams }: Props) {
             {total} repair{total !== 1 ? "s" : ""} found
           </p>
         </div>
-        <Button asChild>
-          <Link href="/repairs/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Repair
-          </Link>
-        </Button>
+        <NewRepairDialog locations={locationsList} customers={customersList} />
       </div>
 
       <RepairFiltersBar

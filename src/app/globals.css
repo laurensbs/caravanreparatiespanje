@@ -31,6 +31,29 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth transitions on all interactive elements */
+  a, button, input, select, textarea, [role="button"] {
+    @apply transition-colors duration-150;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better touch targets on mobile */
+  @media (max-width: 768px) {
+    button, a, [role="button"] {
+      min-height: 44px;
+    }
+    input, select, textarea {
+      font-size: 16px; /* Prevents iOS zoom on focus */
+    }
   }
 
   .dark {
@@ -54,4 +77,24 @@
     --color-input: oklch(0.28 0.01 286);
     --color-ring: oklch(0.55 0.18 262.75);
   }
+}
+
+/* Fade-in animation for page content */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.25s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -71,11 +71,11 @@ export function RepairTable({ jobs }: RepairTableProps) {
         />
       )}
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-10">
+              <TableHead className="w-10 sticky left-0 bg-muted/50">
                 <Checkbox
                   checked={jobs.length > 0 && selected.size === jobs.length}
                   onCheckedChange={toggleAll}
@@ -103,7 +103,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
               jobs.map((job) => (
                 <TableRow
                   key={job.id}
-                  className="cursor-pointer"
+                  className="cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted/70"
                   data-state={selected.has(job.id) ? "selected" : undefined}
                   onClick={() => router.push(`/repairs/${job.id}`)}
                 >

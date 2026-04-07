@@ -27,7 +27,7 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 pl-16 pr-4 lg:pl-6 lg:pr-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <button
           onClick={() =>
             document.dispatchEvent(

@@ -176,7 +176,7 @@ async function seed() {
     const batch = custEntries.slice(i, i + BATCH_SIZE);
     const results = await db
       .insert(customers)
-      .values(batch.map(([, c]) => ({ name: c.name, provisional: true, confidenceScore: "0.7" })))
+      .values(batch.map(([, c]) => ({ name: c.name, provisional: true, confidenceScore: 0.7 })))
       .onConflictDoNothing()
       .returning();
     for (let j = 0; j < results.length; j++) {

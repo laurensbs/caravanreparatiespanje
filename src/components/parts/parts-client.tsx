@@ -137,7 +137,8 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
                 <TableHead>Name</TableHead>
                 <TableHead>Part Number</TableHead>
                 <TableHead className="hidden md:table-cell">Supplier</TableHead>
-                <TableHead>Cost</TableHead>
+                <TableHead>Part Cost</TableHead>
+                <TableHead>Our Price</TableHead>
                 <TableHead className="hidden lg:table-cell">Description</TableHead>
                 <TableHead>Order Link</TableHead>
                 <TableHead className="w-20"></TableHead>
@@ -150,6 +151,11 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
                   <TableCell className="font-mono text-xs">{part.partNumber ?? "—"}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm">{part.supplierName ?? "—"}</TableCell>
                   <TableCell className="text-sm">{part.defaultCost ? `€${part.defaultCost}` : "—"}</TableCell>
+                  <TableCell className="text-sm font-medium">
+                    {part.defaultCost
+                      ? `€${(parseFloat(part.defaultCost) * 1.25).toFixed(2)}`
+                      : "—"}
+                  </TableCell>
                   <TableCell className="hidden lg:table-cell text-sm text-muted-foreground max-w-xs truncate">
                     {part.description ?? "—"}
                   </TableCell>
@@ -251,8 +257,13 @@ function PartForm({
           <Input id="partNumber" value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="e.g. WS-060" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cost">Default Cost (€)</Label>
+          <Label htmlFor="cost">Part Cost (€)</Label>
           <Input id="cost" value={defaultCost} onChange={(e) => setDefaultCost(e.target.value)} placeholder="0.00" />
+          {defaultCost && !isNaN(parseFloat(defaultCost)) && (
+            <p className="text-xs text-muted-foreground">
+              Our price: <span className="font-medium text-foreground">€{(parseFloat(defaultCost) * 1.25).toFixed(2)}</span> (25% markup)
+            </p>
+          )}
         </div>
       </div>
       <div className="space-y-2">

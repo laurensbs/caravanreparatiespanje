@@ -144,17 +144,13 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Registration</TableHead>
-              <TableHead>Brand</TableHead>
-              <TableHead>Model</TableHead>
-              <TableHead className="hidden sm:table-cell">Year</TableHead>
-              <TableHead className="hidden md:table-cell">Chassis ID</TableHead>
               <TableHead>Customer</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {units.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={2} className="py-12 text-center text-muted-foreground">
                   No units found
                 </TableCell>
               </TableRow>
@@ -168,10 +164,6 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
                   <TableCell className="font-mono text-sm font-medium">
                     {u.registration ?? "—"}
                   </TableCell>
-                  <TableCell className="text-sm">{u.brand ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{u.model ?? "—"}</TableCell>
-                  <TableCell className="text-sm hidden sm:table-cell">{u.year ?? "—"}</TableCell>
-                  <TableCell className="text-sm font-mono hidden md:table-cell">{u.chassisId ?? "—"}</TableCell>
                   <TableCell className="text-sm">{u.customerName ?? "—"}</TableCell>
                 </TableRow>
               ))

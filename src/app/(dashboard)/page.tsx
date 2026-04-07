@@ -17,6 +17,8 @@ import type { RepairStatus, Priority, CustomerResponseStatus } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
+const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
+
 export default async function DashboardPage() {
   const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount, locationsList, customersList, partsCatalog] =
     await Promise.all([
@@ -27,6 +29,10 @@ export default async function DashboardPage() {
       getAllCustomers(),
       getParts(),
     ]);
+
+  const filteredLocations = locationsList.filter(l =>
+    MAIN_LOCATIONS.includes(l.name.toLowerCase())
+  );
 
   const kpiCards = [
     { label: "Total Jobs", value: stats?.total ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-blue-600", href: "/repairs" },
@@ -47,7 +53,7 @@ export default async function DashboardPage() {
           <p className="text-muted-foreground">Overview of all repair operations</p>
         </div>
         <div className="flex gap-2">
-          <NewRepairDialog locations={locationsList} customers={customersList} partsCatalog={partsCatalog} />
+          <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
         </div>
       </div>
 

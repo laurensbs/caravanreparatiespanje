@@ -1,10 +1,13 @@
-import { getCustomers } from "@/actions/customers";
+import { getCustomers, type CustomerFilters } from "@/actions/customers";
+import { getLocations } from "@/actions/locations";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { CustomerSearchInput } from "@/components/customers/customer-search-input";
+import { CustomerFiltersBar } from "@/components/customers/customer-filters";
+
+const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -13,10 +16,21 @@ interface Props {
 export default async function CustomersPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = params.page ? parseInt(params.page) : 1;
-  const { customers, total, limit } = await getCustomers({
+  const filters: CustomerFilters = {
     q: params.q,
+    repairStatus: params.repairStatus,
+    locationId: params.locationId,
     page,
-  });
+  };
+
+  const [{ customers, total, limit }, locationsList] = await Promise.all([
+    getCustomers(filters),
+    getLocations(),
+  ]);
+
+  const filteredLocations = locationsList.filter(l =>
+    MAIN_LOCATIONS.includes(l.name.toLowerCase())
+  );
 
   const totalPages = Math.ceil(total / limit);
 
@@ -35,7 +49,10 @@ export default async function CustomersPage({ searchParams }: Props) {
         </Button>
       </div>
 
-      <CustomerSearchInput defaultValue={params.q} />
+      <CustomerFiltersBar
+        locations={filteredLocations}
+        currentFilters={filters}
+      />
 
       <div className="rounded-lg border bg-card">
         <Table>
@@ -92,14 +109,14 @@ export default async function CustomersPage({ searchParams }: Props) {
           <div className="flex gap-2">
             {page > 1 && (
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), page: String(page - 1) }).toString()}`}>
+                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), page: String(page - 1) }).toString()}`}>
                   Previous
                 </Link>
               </Button>
             )}
             {page < totalPages && (
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), page: String(page + 1) }).toString()}`}>
+                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), page: String(page + 1) }).toString()}`}>
                   Next
                 </Link>
               </Button>

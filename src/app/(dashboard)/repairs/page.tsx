@@ -8,6 +8,8 @@ import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
+
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
 }
@@ -33,6 +35,10 @@ export default async function RepairsPage({ searchParams }: Props) {
     getParts(),
   ]);
 
+  const filteredLocations = locationsList.filter(l =>
+    MAIN_LOCATIONS.includes(l.name.toLowerCase())
+  );
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -44,11 +50,11 @@ export default async function RepairsPage({ searchParams }: Props) {
             {total} repair{total !== 1 ? "s" : ""} found
           </p>
         </div>
-        <NewRepairDialog locations={locationsList} customers={customersList} partsCatalog={partsCatalog} />
+        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
       </div>
 
       <RepairFiltersBar
-        locations={locationsList}
+        locations={filteredLocations}
         currentFilters={filters}
       />
 

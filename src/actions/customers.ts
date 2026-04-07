@@ -21,7 +21,15 @@ import { createAuditLog } from "./audit";
 import { eq, desc, ilike, or, and, count, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function getCustomers(filters: { q?: string; page?: number; limit?: number } = {}) {
+export type CustomerFilters = {
+  q?: string;
+  repairStatus?: string;
+  locationId?: string;
+  page?: number;
+  limit?: number;
+};
+
+export async function getCustomers(filters: CustomerFilters = {}) {
   await requireAuth();
 
   const page = filters.page ?? 1;
@@ -40,7 +48,35 @@ export async function getCustomers(filters: { q?: string; page?: number; limit?:
     );
   }
 
-  const where = conditions.length > 0 ? conditions[0] : undefined;
+  if (filters.repairStatus === "open") {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id} AND repair_jobs.status NOT IN ('completed', 'invoiced', 'archived') AND repair_jobs.archived_at IS NULL)`
+    );
+  } else if (filters.repairStatus === "waiting") {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id} AND repair_jobs.status IN ('waiting_customer', 'waiting_parts', 'waiting_approval') AND repair_jobs.archived_at IS NULL)`
+    );
+  } else if (filters.repairStatus === "in_progress") {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id} AND repair_jobs.status IN ('in_progress', 'in_inspection', 'scheduled') AND repair_jobs.archived_at IS NULL)`
+    );
+  } else if (filters.repairStatus === "completed") {
+    conditions.push(
+      sql`NOT EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id} AND repair_jobs.status NOT IN ('completed', 'invoiced', 'archived'))`
+    );
+  } else if (filters.repairStatus === "no_repairs") {
+    conditions.push(
+      sql`NOT EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id})`
+    );
+  }
+
+  if (filters.locationId) {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id} AND repair_jobs.location_id = ${filters.locationId} AND repair_jobs.archived_at IS NULL)`
+    );
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const [result, countResult] = await Promise.all([
     db

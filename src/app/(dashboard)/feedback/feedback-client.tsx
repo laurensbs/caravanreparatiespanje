@@ -105,7 +105,7 @@ export function FeedbackClient({
   }
 
   function handleDelete(id: string) {
-    if (!confirm("Weet je zeker dat je dit wilt verwijderen?")) return;
+    if (!confirm("Are you sure you want to delete this?")) return;
     startTransition(async () => {
       await deleteFeedback(id);
     });
@@ -120,34 +120,34 @@ export function FeedbackClient({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Feedback</h1>
           <p className="text-muted-foreground">
-            Suggesties, verbeteringen en feature requests
+            Suggestions, improvements and feature requests
           </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <MessageSquarePlus className="h-4 w-4" />
-          Nieuw
+          New
         </Button>
       </div>
 
       {showForm && (
         <Card className="animate-slide-up border-primary/20">
           <CardHeader>
-            <CardTitle className="text-lg">Nieuwe feedback</CardTitle>
+            <CardTitle className="text-lg">New Feedback</CardTitle>
             <CardDescription>
-              Wat wil je graag veranderd of toegevoegd zien?
+              What would you like changed or added?
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
-                placeholder="Titel (bijv. 'Zoekfunctie op kenteken')"
+                placeholder="Title (e.g. 'Search by registration')"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 autoFocus
               />
               <Textarea
-                placeholder="Beschrijving (optioneel) — leg uit wat je bedoelt..."
+                placeholder="Description (optional) — explain what you mean..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -155,14 +155,14 @@ export function FeedbackClient({
               <div className="flex gap-2">
                 <Button type="submit" disabled={isPending || !title.trim()}>
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Toevoegen
+                  Submit
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowForm(false)}
                 >
-                  Annuleren
+                  Cancel
                 </Button>
               </div>
             </form>
@@ -178,7 +178,7 @@ export function FeedbackClient({
         {openItems.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              Geen openstaande feedback. Klik op &quot;Nieuw&quot; om iets toe te voegen.
+              No open feedback. Click &quot;New&quot; to add something.
             </CardContent>
           </Card>
         ) : (
@@ -200,7 +200,7 @@ export function FeedbackClient({
       {closedItems.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Afgerond ({closedItems.length})
+            Completed ({closedItems.length})
           </h2>
           {closedItems.map((item) => (
             <FeedbackCard
@@ -255,10 +255,10 @@ function FeedbackCard({
               </p>
             )}
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{item.user?.name ?? "Onbekend"}</span>
+              <span>{item.user?.name ?? "Unknown"}</span>
               <span>·</span>
               <span>
-                {new Date(item.createdAt).toLocaleDateString("nl-NL", {
+                {new Date(item.createdAt).toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",

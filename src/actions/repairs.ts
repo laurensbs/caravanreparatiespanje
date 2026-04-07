@@ -227,12 +227,12 @@ export async function updateRepairJob(id: string, data: unknown) {
 
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   const trackFields = ["status", "priority", "locationId", "assignedUserId", "invoiceStatus", "customerResponseStatus"] as const;
+  const eventValues: { repairJobId: string; userId: string; eventType: string; fieldChanged: string; oldValue: string; newValue: string }[] = [];
 
   for (const field of trackFields) {
     if (parsed[field] !== undefined && parsed[field] !== existing[field]) {
       changes[field] = { from: existing[field], to: parsed[field] };
-
-      await db.insert(repairJobEvents).values({
+      eventValues.push({
         repairJobId: id,
         userId: session.user.id,
         eventType: "field_changed",
@@ -241,6 +241,10 @@ export async function updateRepairJob(id: string, data: unknown) {
         newValue: String(parsed[field] ?? ""),
       });
     }
+  }
+
+  if (eventValues.length > 0) {
+    await db.insert(repairJobEvents).values(eventValues);
   }
 
   const [updated] = await db
@@ -292,13 +296,15 @@ export async function bulkUpdateRepairJobs(data: unknown) {
     .set(updateValues)
     .where(inArray(repairJobs.id, parsed.ids));
 
-  for (const id of parsed.ids) {
-    await db.insert(repairJobEvents).values({
-      repairJobId: id,
-      userId: session.user.id,
-      eventType: "bulk_update",
-      comment: `Bulk update: ${Object.keys(updateValues).filter((k) => k !== "updatedAt").join(", ")}`,
-    });
+  if (parsed.ids.length > 0) {
+    await db.insert(repairJobEvents).values(
+      parsed.ids.map((id) => ({
+        repairJobId: id,
+        userId: session.user.id,
+        eventType: "bulk_update",
+        comment: `Bulk update: ${Object.keys(updateValues).filter((k) => k !== "updatedAt").join(", ")}`,
+      }))
+    );
   }
 
   await createAuditLog("bulk_update", "repair_job", null, {
@@ -314,64 +320,66 @@ export async function bulkUpdateRepairJobs(data: unknown) {
 export async function getDashboardStats() {
   await requireAuth();
 
-  const stats = await db
-    .select({
-      total: count(),
-      open: count(
-        sql`CASE WHEN ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
-      ),
-      waitingParts: count(
-        sql`CASE WHEN ${repairJobs.status} = 'waiting_parts' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
-      ),
-      waitingCustomer: count(
-        sql`CASE WHEN ${repairJobs.status} = 'waiting_customer' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
-      ),
-      completed: count(
-        sql`CASE WHEN ${repairJobs.status} = 'completed' THEN 1 END`
-      ),
-      urgent: count(
-        sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') THEN 1 END`
-      ),
-    })
-    .from(repairJobs);
+  const [stats, recentJobs, jobsByStatus, jobsByLocation] = await Promise.all([
+    db
+      .select({
+        total: count(),
+        open: count(
+          sql`CASE WHEN ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+        ),
+        waitingParts: count(
+          sql`CASE WHEN ${repairJobs.status} = 'waiting_parts' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+        ),
+        waitingCustomer: count(
+          sql`CASE WHEN ${repairJobs.status} = 'waiting_customer' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+        ),
+        completed: count(
+          sql`CASE WHEN ${repairJobs.status} = 'completed' THEN 1 END`
+        ),
+        urgent: count(
+          sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') THEN 1 END`
+        ),
+      })
+      .from(repairJobs),
 
-  const recentJobs = await db
-    .select({
-      id: repairJobs.id,
-      publicCode: repairJobs.publicCode,
-      title: repairJobs.title,
-      status: repairJobs.status,
-      priority: repairJobs.priority,
-      updatedAt: repairJobs.updatedAt,
-      customerName: customers.name,
-      locationName: locations.name,
-    })
-    .from(repairJobs)
-    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
-    .leftJoin(locations, eq(repairJobs.locationId, locations.id))
-    .where(isNull(repairJobs.archivedAt))
-    .orderBy(desc(repairJobs.updatedAt))
-    .limit(10);
+    db
+      .select({
+        id: repairJobs.id,
+        publicCode: repairJobs.publicCode,
+        title: repairJobs.title,
+        status: repairJobs.status,
+        priority: repairJobs.priority,
+        updatedAt: repairJobs.updatedAt,
+        customerName: customers.name,
+        locationName: locations.name,
+      })
+      .from(repairJobs)
+      .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+      .leftJoin(locations, eq(repairJobs.locationId, locations.id))
+      .where(isNull(repairJobs.archivedAt))
+      .orderBy(desc(repairJobs.updatedAt))
+      .limit(10),
 
-  const jobsByStatus = await db
-    .select({
-      status: repairJobs.status,
-      count: count(),
-    })
-    .from(repairJobs)
-    .where(isNull(repairJobs.archivedAt))
-    .groupBy(repairJobs.status);
+    db
+      .select({
+        status: repairJobs.status,
+        count: count(),
+      })
+      .from(repairJobs)
+      .where(isNull(repairJobs.archivedAt))
+      .groupBy(repairJobs.status),
 
-  const jobsByLocation = await db
-    .select({
-      locationId: locations.id,
-      locationName: locations.name,
-      count: count(),
-    })
-    .from(repairJobs)
-    .leftJoin(locations, eq(repairJobs.locationId, locations.id))
-    .where(isNull(repairJobs.archivedAt))
-    .groupBy(locations.id, locations.name);
+    db
+      .select({
+        locationId: locations.id,
+        locationName: locations.name,
+        count: count(),
+      })
+      .from(repairJobs)
+      .leftJoin(locations, eq(repairJobs.locationId, locations.id))
+      .where(isNull(repairJobs.archivedAt))
+      .groupBy(locations.id, locations.name),
+  ]);
 
   return {
     stats: stats[0],

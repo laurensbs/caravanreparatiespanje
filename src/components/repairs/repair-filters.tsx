@@ -57,7 +57,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
           <div className="relative flex-1 min-w-0 sm:max-w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by kenteken, name, ref..."
+              placeholder="Search by registration, name, ref..."
               className="w-full pl-9"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}

@@ -59,20 +59,20 @@ export default async function AuditLogPage({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Audit Log</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
+        <p className="text-sm text-muted-foreground">
           Complete history of all actions in the system.
         </p>
       </div>
 
       {/* Filters */}
-      <form className="flex flex-wrap gap-2">
+      <form className="flex flex-wrap gap-2 rounded-xl border bg-card p-3">
         <select
           name="action"
           defaultValue={params.action ?? ""}
-          className="rounded-md border px-3 py-2 text-sm"
+          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
         >
           <option value="">All Actions</option>
           <option value="create">Create</option>
@@ -85,7 +85,7 @@ export default async function AuditLogPage({
         <select
           name="entity"
           defaultValue={params.entity ?? ""}
-          className="rounded-md border px-3 py-2 text-sm"
+          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
         >
           <option value="">All Entities</option>
           <option value="repair_job">Repair Jobs</option>
@@ -96,22 +96,23 @@ export default async function AuditLogPage({
         </select>
         <button
           type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+          className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground"
         >
           Filter
         </button>
       </form>
 
       {/* Log table */}
-      <div className="rounded-md border">
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="px-4 py-3 text-left font-medium">Timestamp</th>
-              <th className="px-4 py-3 text-left font-medium">User</th>
-              <th className="px-4 py-3 text-left font-medium">Action</th>
-              <th className="px-4 py-3 text-left font-medium">Entity</th>
-              <th className="px-4 py-3 text-left font-medium">Details</th>
+            <tr className="border-b bg-muted/40">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Timestamp</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">User</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Action</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Entity</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Details</th>
             </tr>
           </thead>
           <tbody>
@@ -155,19 +156,20 @@ export default async function AuditLogPage({
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages} ({totalCount} entries)
           </p>
           <div className="flex gap-2">
             {page > 1 && (
               <a
                 href={`/audit?page=${page - 1}&action=${params.action ?? ""}&entity=${params.entity ?? ""}`}
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+                className="rounded-lg border px-3 py-1.5 text-xs hover:bg-muted"
               >
                 Previous
               </a>
@@ -175,7 +177,7 @@ export default async function AuditLogPage({
             {page < totalPages && (
               <a
                 href={`/audit?page=${page + 1}&action=${params.action ?? ""}&entity=${params.entity ?? ""}`}
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+                className="rounded-lg border px-3 py-1.5 text-xs hover:bg-muted"
               >
                 Next
               </a>

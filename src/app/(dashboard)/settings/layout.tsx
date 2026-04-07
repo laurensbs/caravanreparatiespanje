@@ -7,10 +7,10 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">
           Manage locations, users, and tags.
         </p>
       </div>

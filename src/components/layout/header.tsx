@@ -30,7 +30,7 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 pl-16 pr-4 lg:pl-6 lg:pr-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/80 pl-16 pr-4 lg:pl-6 lg:pr-6 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
         {/* Search - left aligned */}
         <button
           onClick={() =>
@@ -38,28 +38,28 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
               new KeyboardEvent("keydown", { key: "k", metaKey: true })
             )
           }
-          className="flex flex-1 max-w-md items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted cursor-pointer"
+          className="flex flex-1 max-w-sm items-center gap-2 rounded-lg bg-muted/60 px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-muted cursor-pointer border border-transparent hover:border-border"
         >
-          <Search className="h-4 w-4" />
-          <span className="flex-1 text-left">Search everything...</span>
-          <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono sm:inline">
+          <Search className="h-3.5 w-3.5" />
+          <span className="flex-1 text-left text-xs">Search...</span>
+          <kbd className="hidden rounded-md bg-background/80 border px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground sm:inline">
             ⌘K
           </kbd>
         </button>
 
-        {/* Spacer to push everything right */}
+        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Right side actions */}
-        <div className="flex items-center gap-1">
+        {/* Right actions */}
+        <div className="flex items-center gap-0.5">
           <ReminderPanel />
           <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 ml-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <User className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="gap-2 ml-1 rounded-lg">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                  {userName?.charAt(0)?.toUpperCase() ?? "U"}
                 </div>
                 <span className="hidden md:inline text-sm font-medium">{userName}</span>
               </Button>

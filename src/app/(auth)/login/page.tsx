@@ -39,23 +39,23 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Wrench className="h-6 w-6 text-primary" />
+    <Card className="w-full max-w-sm border-0 shadow-lg">
+      <CardHeader className="text-center pb-2">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+          <Wrench className="h-7 w-7" />
         </div>
-        <CardTitle className="text-2xl">Caravan Repairs</CardTitle>
-        <CardDescription>Sign in to manage repairs</CardDescription>
+        <CardTitle className="text-xl">Caravan Repairs</CardTitle>
+        <CardDescription className="text-xs">Sign in to manage repairs</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
               {error}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="email">Username</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs">Username</Label>
             <Input
               id="email"
               type="text"
@@ -65,10 +65,11 @@ export default function LoginPage() {
               required
               autoComplete="username"
               disabled={loading}
+              className="h-9 rounded-lg"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs">Password</Label>
             <Input
               id="password"
               type="password"
@@ -77,9 +78,10 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
               disabled={loading}
+              className="h-9 rounded-lg"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full h-9 rounded-lg" disabled={loading}>
             {loading ? <Spinner className="mr-2" /> : null}
             Sign in
           </Button>

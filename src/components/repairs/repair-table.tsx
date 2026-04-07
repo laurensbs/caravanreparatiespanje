@@ -131,34 +131,35 @@ export function RepairTable({ jobs }: RepairTableProps) {
         />
       )}
 
-      <div className="rounded-lg border bg-card overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
         <Table>
-          <TableHeader className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0] shadow-border">
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-10 sticky left-0 bg-muted/50">
+          <TableHeader className="sticky top-0 z-10 bg-card">
+            <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+              <TableHead className="w-10 sticky left-0 bg-muted/40">
                 <Checkbox
                   checked={jobs.length > 0 && selected.size === jobs.length}
                   onCheckedChange={toggleAll}
                 />
               </TableHead>
-              <TableHead className="w-28">Ref</TableHead>
-              <TableHead>Title / Description</TableHead>
-              <TableHead className="w-24 cursor-pointer select-none" onClick={() => handleSort("status")}>
+              <TableHead className="w-24 text-[11px] font-semibold uppercase tracking-wider">Ref</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Title</TableHead>
+              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("status")}>
                 <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
               </TableHead>
-              <TableHead className="w-24 cursor-pointer select-none" onClick={() => handleSort("priority")}>
+              <TableHead className="w-20 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("priority")}>
                 <span className="inline-flex items-center">Priority<SortIcon column="priority" /></span>
               </TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => handleSort("customerName")}>
+              <TableHead className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("customerName")}>
                 <span className="inline-flex items-center">Customer<SortIcon column="customerName" /></span>
               </TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Unit</TableHead>
-              <TableHead>Assigned</TableHead>
-              <TableHead className="w-28 cursor-pointer select-none" onClick={() => handleSort("invoiceStatus")}>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Location</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Unit</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Assigned</TableHead>
+              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("invoiceStatus")}>
                 <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
               </TableHead>
-              <TableHead className="w-28 cursor-pointer select-none" onClick={() => handleSort("updatedAt")}>
+              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("updatedAt")}>
                 <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
               </TableHead>
             </TableRow>
@@ -168,9 +169,9 @@ export function RepairTable({ jobs }: RepairTableProps) {
               <TableRow>
                 <TableCell colSpan={11} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <ArrowUpDown className="h-8 w-8 opacity-30" />
-                    <p className="font-medium">No repair jobs found</p>
-                    <p className="text-xs">Try adjusting your filters or create a new repair</p>
+                    <ArrowUpDown className="h-8 w-8 opacity-20" />
+                    <p className="font-medium text-sm">No repair jobs found</p>
+                    <p className="text-xs">Try adjusting your filters</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -178,7 +179,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
               jobs.map((job) => (
                 <TableRow
                   key={job.id}
-                  className="cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted/70"
+                  className="cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60 group"
                   data-state={selected.has(job.id) ? "selected" : undefined}
                   onClick={() => {
                     const backTo = `/repairs?${searchParams.toString()}`;
@@ -191,16 +192,16 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       onCheckedChange={() => toggleOne(job.id)}
                     />
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="font-mono text-[11px] text-muted-foreground">
                     {job.publicCode ?? "—"}
                   </TableCell>
                   <TableCell>
                     <div className="max-w-xs">
-                      <p className="truncate font-medium text-sm">
+                      <p className="truncate font-medium text-[13px] group-hover:text-primary transition-colors">
                         {job.title || "Unnamed repair"}
                       </p>
                       {job.descriptionRaw && (
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-[11px] text-muted-foreground mt-0.5">
                           {job.descriptionRaw.slice(0, 80)}
                         </p>
                       )}
@@ -234,25 +235,25 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       {PRIORITY_LABELS[job.priority as Priority]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm">{job.customerName ?? "—"}</TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-[13px]">{job.customerName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="text-[13px]">
                     {job.locationName ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <span className={`inline-block h-2 w-2 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-400"}`} />
-                        {job.locationName}
+                        <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-400"}`} />
+                        <span className="hidden xl:inline">{job.locationName}</span>
                       </span>
-                    ) : "—"}
+                    ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
-                  <TableCell className="text-sm font-mono text-xs">{job.unitRegistration ?? "—"}</TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="font-mono text-[11px] text-muted-foreground">{job.unitRegistration ?? "—"}</TableCell>
+                  <TableCell className="text-[13px]">
                     {job.assignedUserName ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${getInitialsColor(job.assignedUserName)}`}>
+                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm ${getInitialsColor(job.assignedUserName)}`}>
                           {getInitials(job.assignedUserName)}
                         </span>
-                        <span className="hidden lg:inline">{job.assignedUserName}</span>
+                        <span className="hidden xl:inline text-sm">{job.assignedUserName}</span>
                       </span>
-                    ) : "—"}
+                    ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
@@ -273,6 +274,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

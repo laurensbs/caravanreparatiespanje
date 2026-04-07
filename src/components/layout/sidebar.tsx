@@ -11,12 +11,10 @@ import {
   Truck,
   Settings,
   Shield,
-  Building2,
   Menu,
   X,
   ChevronsLeft,
   ChevronsRight,
-  MessageSquare,
   Package,
 } from "lucide-react";
 import type { UserRole } from "@/types";
@@ -31,14 +29,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-5 w-5" /> },
-  { label: "Repairs", href: "/repairs", icon: <Wrench className="h-5 w-5" /> },
-  { label: "Customers", href: "/customers", icon: <Users className="h-5 w-5" /> },
-  { label: "Units", href: "/units", icon: <Truck className="h-5 w-5" /> },
-  { label: "Parts", href: "/parts", icon: <Package className="h-5 w-5" /> },
-  { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-5 w-5" /> },
-  { label: "Audit Log", href: "/audit", icon: <Shield className="h-5 w-5" />, minRole: "admin" },
-  { label: "Settings", href: "/settings", icon: <Settings className="h-5 w-5" />, minRole: "admin" },
+  { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" /> },
+  { label: "Repairs", href: "/repairs", icon: <Wrench className="h-[18px] w-[18px]" /> },
+  { label: "Customers", href: "/customers", icon: <Users className="h-[18px] w-[18px]" /> },
+  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" /> },
+  { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },
+  { label: "Audit Log", href: "/audit", icon: <Shield className="h-[18px] w-[18px]" />, minRole: "admin" },
+  { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
 ];
 
 interface SidebarProps {
@@ -78,18 +75,17 @@ export function Sidebar({ userRole }: SidebarProps) {
         href={item.href}
         title={item.label}
         className={cn(
-          "group relative flex items-center rounded-lg text-sm font-medium transition-all duration-150",
-          collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
+          "group relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
+          collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
           isActive
-            ? "bg-primary/10 text-primary shadow-sm"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.98]"
+            ? "bg-white/10 text-white shadow-sm shadow-black/10"
+            : "text-white/60 hover:bg-white/[0.06] hover:text-white/90 active:scale-[0.98]"
         )}
       >
-        <span className="shrink-0">{item.icon}</span>
+        <span className={cn("shrink-0 transition-colors", isActive ? "text-white" : "text-white/50 group-hover:text-white/80")}>{item.icon}</span>
         {!collapsed && <span>{item.label}</span>}
-        {/* Tooltip on collapsed */}
         {collapsed && (
-          <span className="absolute left-full ml-2 hidden rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground shadow-md border group-hover:block z-50 whitespace-nowrap">
+          <span className="absolute left-full ml-3 hidden rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-lg group-hover:block z-50 whitespace-nowrap">
             {item.label}
           </span>
         )}
@@ -97,89 +93,44 @@ export function Sidebar({ userRole }: SidebarProps) {
     );
   }
 
-  return (
+  const sidebarContent = (isMobile: boolean) => (
     <>
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border bg-background shadow-sm lg:hidden"
-        aria-label="Open menu"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden animate-fade-in"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Mobile sidebar - always expanded */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r bg-card transition-transform duration-300 ease-in-out lg:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-16 items-center gap-3 border-b px-6">
-          <Wrench className="h-7 w-7 text-primary shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold tracking-tight">Caravan Repairs</h1>
+      <div className={cn(
+        "flex items-center border-b border-white/10 transition-all duration-300",
+        isMobile ? "h-16 gap-3 px-5" : collapsed ? "h-16 justify-center px-2" : "h-16 gap-3 px-5"
+      )}>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 shrink-0">
+          <Wrench className="h-4 w-4 text-white" />
+        </div>
+        {(isMobile || !collapsed) && (
+          <div className="min-w-0 overflow-hidden">
+            <h1 className="text-sm font-semibold tracking-tight text-white whitespace-nowrap">Caravan Repairs</h1>
           </div>
+        )}
+        {isMobile && (
           <button
             onClick={() => setMobileOpen(false)}
-            className="ml-auto rounded-md p-1.5 hover:bg-muted"
+            className="ml-auto rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {filteredItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </nav>
-        <div className="border-t px-3 py-4">
-          <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground">
-            <Building2 className="h-4 w-4" />
-            <span>v1.0.0</span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Desktop sidebar - collapsible */}
-      <aside
-        className={cn(
-          "hidden lg:flex fixed left-0 top-0 z-40 h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out",
-          collapsed ? "w-16" : "w-64"
         )}
-      >
-        <div className={cn(
-          "flex h-16 items-center border-b transition-all duration-300",
-          collapsed ? "justify-center px-2" : "gap-3 px-6"
-        )}>
-          <Wrench className="h-7 w-7 text-primary shrink-0" />
-          {!collapsed && (
-            <div className="min-w-0 overflow-hidden">
-              <h1 className="text-lg font-bold tracking-tight whitespace-nowrap">Caravan Repairs</h1>
-            </div>
-          )}
-        </div>
+      </div>
 
-        <nav className={cn(
-          "flex-1 space-y-1 overflow-y-auto py-4 transition-all duration-300",
-          collapsed ? "px-2" : "px-3"
-        )}>
-          {filteredItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </nav>
+      <nav className={cn(
+        "flex-1 space-y-0.5 overflow-y-auto py-3 transition-all duration-300",
+        isMobile ? "px-3" : collapsed ? "px-1.5" : "px-3"
+      )}>
+        {filteredItems.map((item) => (
+          <NavLink key={item.href} item={item} />
+        ))}
+      </nav>
 
-        <div className="border-t px-2 py-3">
+      {!isMobile && (
+        <div className="border-t border-white/10 px-2 py-3">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex w-full items-center justify-center rounded-lg p-2 text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
@@ -189,6 +140,47 @@ export function Sidebar({ userRole }: SidebarProps) {
             )}
           </button>
         </div>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border bg-card shadow-sm lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[oklch(0.16_0.025_260)] transition-transform duration-300 ease-in-out lg:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {sidebarContent(true)}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "hidden lg:flex fixed left-0 top-0 z-40 h-screen flex-col bg-[oklch(0.16_0.025_260)] transition-all duration-300 ease-in-out",
+          collapsed ? "w-[60px]" : "w-60"
+        )}
+      >
+        {sidebarContent(false)}
       </aside>
     </>
   );

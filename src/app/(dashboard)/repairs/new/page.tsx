@@ -17,10 +17,10 @@ export default async function NewRepairPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">New Repair Job</h1>
-        <p className="text-muted-foreground">Create a new repair job entry</p>
+        <p className="text-sm text-muted-foreground">Create a new repair job entry</p>
       </div>
       <RepairForm locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
     </div>

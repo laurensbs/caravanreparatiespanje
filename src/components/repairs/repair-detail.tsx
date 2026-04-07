@@ -66,15 +66,15 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-5 w-5" /></Link>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
+            <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{job.publicCode ?? "Repair Job"}</h1>
+              <h1 className="text-xl font-bold">{job.publicCode ?? "Repair Job"}</h1>
               <Badge className={STATUS_COLORS[status as RepairStatus]}>
                 {STATUS_LABELS[status as RepairStatus]}
               </Badge>
@@ -107,19 +107,19 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
             )}
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Changes
+        <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-lg">
+          {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
+          Save
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Main content */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-5 lg:col-span-2">
           {/* Issue description */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-base">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Issue Description
@@ -162,8 +162,8 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           {/* Parts needed */}
           {job.partsNeededRaw && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Parts Needed</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Parts Needed</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
@@ -173,8 +173,8 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
 
           {/* Notes */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Notes</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Notes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -200,8 +200,8 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
 
           {/* Timeline */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Timeline</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Timeline</CardTitle>
             </CardHeader>
             <CardContent>
               {job.events.length === 0 ? (
@@ -247,10 +247,10 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Status & Priority</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Status & Priority</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -301,8 +301,8 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Details</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
@@ -351,8 +351,8 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           {/* Normalized Flags */}
           {(job.waterDamageRiskFlag || job.safetyFlag || job.tyresFlag || job.lightsFlag || job.brakesFlag || job.windowsFlag || job.sealsFlag || job.partsRequiredFlag || job.followUpRequiredFlag || job.warrantyInternalCostFlag || job.prepaidFlag) && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Flags</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Flags</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-1.5">
                 {job.waterDamageRiskFlag && <Badge variant="destructive">Water Damage Risk</Badge>}

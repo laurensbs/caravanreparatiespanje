@@ -38,10 +38,10 @@ export default function NewUnitPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">New Unit</h1>
       <form onSubmit={handleSubmit}>
-        {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         <Card>
           <CardContent className="grid gap-4 p-6 sm:grid-cols-2">
             <div>

@@ -75,9 +75,9 @@ export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
 
       <Card>

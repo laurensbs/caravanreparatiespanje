@@ -18,20 +18,20 @@ export default async function CustomerDetailPage({ params }: Props) {
   if (!customer) notFound();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/customers"><ArrowLeft className="h-5 w-5" /></Link>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
+          <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">{customer.name}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
+          <p className="text-sm text-muted-foreground">
             {[customer.phone, customer.email].filter(Boolean).join(" · ") || "No contact info"}
           </p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Contact Info</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -55,7 +55,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                   <Link
                     key={unit.id}
                     href={`/units/${unit.id}`}
-                    className="flex items-center justify-between rounded-md border p-2 text-sm hover:bg-muted/50"
+                    className="flex items-center justify-between rounded-xl border p-2 text-sm hover:bg-muted/50 transition-colors"
                   >
                     <div>
                       {unit.registration && (
@@ -81,7 +81,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between rounded-md border p-2 text-sm hover:bg-muted/50"
+                    className="flex items-center justify-between rounded-xl border p-2 text-sm hover:bg-muted/50 transition-colors"
                   >
                     <div>
                       <span className="font-mono text-xs text-muted-foreground">{job.publicCode}</span>

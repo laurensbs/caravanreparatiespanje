@@ -37,10 +37,10 @@ export default async function PartsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight">
           Parts &amp; Suppliers
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Manage parts catalog, suppliers, and part requests for repair jobs.
         </p>
       </div>
@@ -68,16 +68,17 @@ export default async function PartsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Job</TableHead>
-                    <TableHead>Part</TableHead>
-                    <TableHead>Supplier</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Job</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Part</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Supplier</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Qty</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -121,6 +122,7 @@ export default async function PartsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
         </TabsContent>

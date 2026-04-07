@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
+  /* Modern blue-gray palette with depth */
+  --color-background: oklch(0.985 0.002 260);
+  --color-foreground: oklch(0.13 0.02 260);
   --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
+  --color-card-foreground: oklch(0.13 0.02 260);
   --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.437 0.157 262.75);
-  --color-primary-foreground: oklch(0.985 0.002 247.84);
-  --color-secondary: oklch(0.967 0.001 286.38);
-  --color-secondary-foreground: oklch(0.21 0.006 285.88);
-  --color-muted: oklch(0.967 0.001 286.38);
-  --color-muted-foreground: oklch(0.553 0.013 285.94);
-  --color-accent: oklch(0.967 0.001 286.38);
-  --color-accent-foreground: oklch(0.21 0.006 285.88);
-  --color-destructive: oklch(0.577 0.245 27.33);
-  --color-destructive-foreground: oklch(0.985 0.002 247.84);
-  --color-border: oklch(0.922 0.004 286.32);
-  --color-input: oklch(0.922 0.004 286.32);
-  --color-ring: oklch(0.437 0.157 262.75);
-  --radius: 0.625rem;
+  --color-popover-foreground: oklch(0.13 0.02 260);
+  --color-primary: oklch(0.52 0.18 260);
+  --color-primary-foreground: oklch(0.99 0.002 260);
+  --color-secondary: oklch(0.96 0.006 260);
+  --color-secondary-foreground: oklch(0.25 0.02 260);
+  --color-muted: oklch(0.96 0.006 260);
+  --color-muted-foreground: oklch(0.50 0.02 260);
+  --color-accent: oklch(0.95 0.01 260);
+  --color-accent-foreground: oklch(0.25 0.02 260);
+  --color-destructive: oklch(0.58 0.22 25);
+  --color-destructive-foreground: oklch(0.99 0 0);
+  --color-border: oklch(0.91 0.006 260);
+  --color-input: oklch(0.91 0.006 260);
+  --color-ring: oklch(0.52 0.18 260);
+  --color-sidebar: oklch(0.16 0.025 260);
+  --color-sidebar-foreground: oklch(0.85 0.01 260);
+  --color-sidebar-accent: oklch(0.24 0.03 260);
+  --radius: 0.75rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -30,62 +34,95 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Smooth transitions on all interactive elements */
   a, button, input, select, textarea, [role="button"] {
-    @apply transition-colors duration-150;
+    @apply transition-all duration-150;
   }
 
-  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Better touch targets on mobile */
   @media (max-width: 768px) {
     button, a, [role="button"] {
       min-height: 44px;
     }
     input, select, textarea {
-      font-size: 16px; /* Prevents iOS zoom on focus */
+      font-size: 16px;
     }
   }
 
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.75 0.01 260);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.60 0.02 260);
+  }
+
   .dark {
-    --color-background: oklch(0.145 0 0);
-    --color-foreground: oklch(0.985 0 0);
-    --color-card: oklch(0.17 0.005 286);
-    --color-card-foreground: oklch(0.985 0 0);
-    --color-popover: oklch(0.17 0.005 286);
-    --color-popover-foreground: oklch(0.985 0 0);
-    --color-primary: oklch(0.55 0.18 262.75);
-    --color-primary-foreground: oklch(0.985 0.002 247.84);
-    --color-secondary: oklch(0.22 0.01 286);
-    --color-secondary-foreground: oklch(0.9 0.005 286);
-    --color-muted: oklch(0.22 0.01 286);
-    --color-muted-foreground: oklch(0.65 0.015 286);
-    --color-accent: oklch(0.22 0.01 286);
-    --color-accent-foreground: oklch(0.9 0.005 286);
-    --color-destructive: oklch(0.55 0.22 27);
-    --color-destructive-foreground: oklch(0.985 0.002 247.84);
-    --color-border: oklch(0.28 0.01 286);
-    --color-input: oklch(0.28 0.01 286);
-    --color-ring: oklch(0.55 0.18 262.75);
+    --color-background: oklch(0.12 0.015 260);
+    --color-foreground: oklch(0.95 0.005 260);
+    --color-card: oklch(0.16 0.02 260);
+    --color-card-foreground: oklch(0.95 0.005 260);
+    --color-popover: oklch(0.16 0.02 260);
+    --color-popover-foreground: oklch(0.95 0.005 260);
+    --color-primary: oklch(0.62 0.19 260);
+    --color-primary-foreground: oklch(0.99 0 0);
+    --color-secondary: oklch(0.20 0.015 260);
+    --color-secondary-foreground: oklch(0.88 0.008 260);
+    --color-muted: oklch(0.20 0.015 260);
+    --color-muted-foreground: oklch(0.60 0.015 260);
+    --color-accent: oklch(0.22 0.02 260);
+    --color-accent-foreground: oklch(0.88 0.008 260);
+    --color-destructive: oklch(0.55 0.22 25);
+    --color-destructive-foreground: oklch(0.99 0 0);
+    --color-border: oklch(0.25 0.015 260);
+    --color-input: oklch(0.25 0.015 260);
+    --color-ring: oklch(0.62 0.19 260);
+    --color-sidebar: oklch(0.10 0.02 260);
+    --color-sidebar-foreground: oklch(0.80 0.01 260);
+    --color-sidebar-accent: oklch(0.18 0.025 260);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.35 0.015 260);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.45 0.02 260);
   }
 }
 
-/* Fade-in animation for page content */
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.3s ease-out;
   }
   .animate-slide-up {
-    animation: slideUp 0.25s ease-out;
+    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .animate-scale-in {
+    animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass {
+    background: oklch(1 0 0 / 0.7);
+    backdrop-filter: blur(12px) saturate(1.5);
+    -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  }
+  .dark .glass {
+    background: oklch(0.16 0.02 260 / 0.7);
   }
 }
 
@@ -95,6 +132,11 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }

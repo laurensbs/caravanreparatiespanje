@@ -47,8 +47,8 @@ export default async function RepairsPage({ searchParams }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Repair Jobs</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight">Repairs</h1>
+          <p className="text-sm text-muted-foreground">
             {total} repair{total !== 1 ? "s" : ""} found
           </p>
         </div>
@@ -63,20 +63,20 @@ export default async function RepairsPage({ searchParams }: Props) {
       <RepairTable jobs={jobs} />
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {page > 1 && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
                 <Link href={`/repairs?${new URLSearchParams({ ...params, page: String(page - 1) }).toString()}`}>
                   Previous
                 </Link>
               </Button>
             )}
             {page < totalPages && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
                 <Link href={`/repairs?${new URLSearchParams({ ...params, page: String(page + 1) }).toString()}`}>
                   Next
                 </Link>

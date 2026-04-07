@@ -176,15 +176,15 @@ export function UsersClient({ users }: { users: User[] }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-xl border bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Name</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Role</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                <TableHead className="w-24 text-[11px] font-semibold uppercase tracking-wider">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

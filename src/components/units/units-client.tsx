@@ -80,7 +80,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Units</h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {total} unit{total !== 1 ? "s" : ""} registered
           </p>
         </div>
@@ -93,18 +93,18 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:flex-wrap">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-0">
           <div className="relative flex-1 min-w-0 sm:max-w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search registration, brand, model..."
-              className="w-full pl-9"
+              className="w-full pl-8 h-8 text-xs rounded-lg"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="secondary" size="sm">
+          <Button type="submit" variant="secondary" size="sm" className="h-8 rounded-lg text-xs">
             Search
           </Button>
         </form>
@@ -113,7 +113,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
           value={currentType ?? "all"}
           onValueChange={(v) => updateParams({ type: v === "all" ? undefined : v })}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[140px] h-8 text-xs rounded-lg">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
@@ -139,18 +139,19 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Registration</TableHead>
-              <TableHead>Customer</TableHead>
+            <TableRow>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Registration</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {units.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={2} className="py-12 text-center text-sm text-muted-foreground">
                   No units found
                 </TableCell>
               </TableRow>
@@ -158,29 +159,30 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
               units.map((u) => (
                 <TableRow
                   key={u.id}
-                  className="cursor-pointer transition-colors hover:bg-muted/50"
+                  className="group cursor-pointer transition-colors hover:bg-muted/50"
                   onClick={() => setSelectedUnit(u)}
                 >
-                  <TableCell className="font-mono text-sm font-medium">
+                  <TableCell className="font-mono text-[13px] font-medium group-hover:text-primary transition-colors">
                     {u.registration ?? "—"}
                   </TableCell>
-                  <TableCell className="text-sm">{u.customerName ?? "—"}</TableCell>
+                  <TableCell className="text-[13px]">{u.customerName ?? "—"}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages}
           </p>
           <div className="flex gap-2">
             {page > 1 && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs" asChild>
                 <Link href={`/units?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(page - 1) }).toString()}`}>
                   Previous
                 </Link>

@@ -100,7 +100,7 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
       {BOARD_COLUMNS.map((status) => (
         <div
           key={status}
-          className={`flex min-w-[260px] max-w-[300px] flex-shrink-0 flex-col rounded-lg border bg-muted/30 transition-colors ${
+          className={`flex min-w-[260px] max-w-[300px] flex-shrink-0 flex-col rounded-xl border bg-muted/30 transition-colors ${
             dropTarget === status ? "border-primary bg-primary/5" : ""
           }`}
           onDragOver={(e) => handleDragOver(e, status)}
@@ -125,7 +125,7 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
                 draggable
                 onDragStart={(e) => handleDragStart(e, job.id)}
                 onDragEnd={handleDragEnd}
-                className={`cursor-grab rounded-md border bg-background p-3 shadow-sm transition-opacity hover:shadow-md active:cursor-grabbing ${
+                className={`cursor-grab rounded-xl border bg-background p-3 shadow-sm transition-opacity hover:shadow-md active:cursor-grabbing ${
                   draggingId === job.id ? "opacity-50" : ""
                 }`}
                 onClick={() => router.push(`/repairs/${job.id}`)}

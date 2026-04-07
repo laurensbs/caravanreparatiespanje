@@ -9,10 +9,10 @@ export default async function RepairBoardPage() {
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Repair Board</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Repair Board</h1>
+        <p className="text-sm text-muted-foreground">
           Drag and drop jobs between status columns.
         </p>
       </div>

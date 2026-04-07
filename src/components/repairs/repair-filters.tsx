@@ -51,26 +51,26 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
   );
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+    <div className="rounded-xl border bg-card p-3">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-0 sm:max-w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative flex-1 min-w-0 sm:max-w-56">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by registration, name, ref..."
-              className="w-full pl-9"
+              placeholder="Search..."
+              className="w-full pl-8 h-8 text-xs rounded-lg"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="secondary" size="sm">Search</Button>
+          <Button type="submit" variant="secondary" size="sm" className="h-8 text-xs rounded-lg">Search</Button>
         </form>
 
         <Select
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -85,7 +85,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
           value={currentFilters.priority ?? "all"}
           onValueChange={(val) => updateFilter("priority", val)}
         >
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-28 h-8 text-xs rounded-lg">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -100,7 +100,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
           value={currentFilters.locationId ?? "all"}
           onValueChange={(val) => updateFilter("locationId", val)}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
             <SelectValue placeholder="Location" />
           </SelectTrigger>
           <SelectContent>
@@ -115,7 +115,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
           value={currentFilters.invoiceStatus ?? "all"}
           onValueChange={(val) => updateFilter("invoiceStatus", val)}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
             <SelectValue placeholder="Invoice" />
           </SelectTrigger>
           <SelectContent>
@@ -130,7 +130,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
           value={currentFilters.customerResponseStatus ?? "all"}
           onValueChange={(val) => updateFilter("customerResponseStatus", val)}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-40 h-8 text-xs rounded-lg">
             <SelectValue placeholder="Response" />
           </SelectTrigger>
           <SelectContent>
@@ -142,9 +142,9 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
         </Select>
 
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <X className="mr-1 h-4 w-4" />
-            Clear filters
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs rounded-lg text-muted-foreground hover:text-foreground">
+            <X className="mr-1 h-3 w-3" />
+            Clear
           </Button>
         )}
       </div>

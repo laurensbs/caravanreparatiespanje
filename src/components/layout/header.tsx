@@ -1,7 +1,8 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { Search, LogOut, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,10 +25,13 @@ interface HeaderProps {
 }
 
 export function Header({ userName, userEmail, userRole }: HeaderProps) {
+  const router = useRouter();
+
   return (
     <>
       <CommandPalette />
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 pl-16 pr-4 lg:pl-6 lg:pr-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        {/* Search - left aligned */}
         <button
           onClick={() =>
             document.dispatchEvent(
@@ -43,20 +47,21 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
           </kbd>
         </button>
 
+        {/* Spacer to push everything right */}
+        <div className="flex-1" />
+
+        {/* Right side actions */}
         <div className="flex items-center gap-1">
           <ReminderPanel />
           <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-2 ml-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <User className="h-4 w-4" />
                 </div>
-                <div className="hidden text-left md:block">
-                  <p className="text-sm font-medium">{userName}</p>
-                  <p className="text-xs text-muted-foreground">{userRole}</p>
-                </div>
+                <span className="hidden md:inline text-sm font-medium">{userName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -67,6 +72,11 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
                   {userRole}
                 </Badge>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => router.push("/settings/account")}>
+                <Settings className="mr-2 h-4 w-4" />
+                Account Settings
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"

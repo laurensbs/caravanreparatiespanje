@@ -41,7 +41,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Caravan Repairs</h1>
           <p className="text-muted-foreground">Overview of all repair operations</p>
         </div>
         <div className="flex gap-2">
@@ -176,20 +176,51 @@ export default async function DashboardPage() {
               {jobsByLocation.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No data</p>
               ) : (
-                <div className="space-y-2">
-                  {jobsByLocation.map((item) => (
-                    <Link
-                      key={item.locationName ?? "unassigned"}
-                      href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
-                      className="flex items-center justify-between rounded-md p-1.5 text-sm transition-colors hover:bg-muted/50"
-                    >
-                      <span className="text-muted-foreground">
-                        {item.locationName ?? "Unassigned"}
-                      </span>
-                      <span className="font-medium">{item.count}</span>
-                    </Link>
-                  ))}
-                </div>
+                (() => {
+                  const mainLocations = ["Cruïllas", "Peratallada", "Sant Climent"];
+                  const main = jobsByLocation.filter((item) =>
+                    mainLocations.some((m) => item.locationName?.includes(m))
+                  );
+                  const misc = jobsByLocation.filter((item) =>
+                    !mainLocations.some((m) => item.locationName?.includes(m))
+                  );
+                  const miscTotal = misc.reduce((sum, item) => sum + Number(item.count), 0);
+
+                  return (
+                    <div className="space-y-2">
+                      {main.map((item) => (
+                        <Link
+                          key={item.locationName ?? "unassigned"}
+                          href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
+                          className="flex items-center justify-between rounded-md p-1.5 text-sm transition-colors hover:bg-muted/50"
+                        >
+                          <span className="text-muted-foreground">
+                            {item.locationName ?? "Unassigned"}
+                          </span>
+                          <span className="font-medium">{item.count}</span>
+                        </Link>
+                      ))}
+                      {miscTotal > 0 && (
+                        <>
+                          <div className="border-t my-2" />
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1.5">Misc</p>
+                          {misc.map((item) => (
+                            <Link
+                              key={item.locationName ?? "unassigned"}
+                              href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
+                              className="flex items-center justify-between rounded-md p-1.5 text-sm transition-colors hover:bg-muted/50"
+                            >
+                              <span className="text-muted-foreground text-xs">
+                                {item.locationName ?? "Unassigned"}
+                              </span>
+                              <span className="font-medium text-xs text-muted-foreground">{item.count}</span>
+                            </Link>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()
               )}
             </CardContent>
           </Card>

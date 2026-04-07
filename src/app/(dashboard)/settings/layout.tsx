@@ -15,10 +15,16 @@ export default function SettingsLayout({
         </p>
       </div>
 
-      <nav className="flex gap-1 border-b">
+      <nav className="flex gap-1 border-b overflow-x-auto">
+        <Link
+          href="/settings/account"
+          className="border-b-2 border-transparent px-4 py-2 text-sm font-medium whitespace-nowrap hover:border-muted-foreground/50 hover:text-foreground"
+        >
+          Account
+        </Link>
         <Link
           href="/settings/locations"
-          className="border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-muted-foreground/50 hover:text-foreground data-[active]:border-primary data-[active]:text-foreground"
+          className="border-b-2 border-transparent px-4 py-2 text-sm font-medium whitespace-nowrap hover:border-muted-foreground/50 hover:text-foreground data-[active]:border-primary data-[active]:text-foreground"
         >
           Locations
         </Link>

@@ -754,6 +754,13 @@ export const contactDirectionEnum = pgEnum("contact_direction", [
   "inbound",
 ]);
 
+export const feedbackStatusEnum = pgEnum("feedback_status", [
+  "open",
+  "in_progress",
+  "done",
+  "dismissed",
+]);
+
 export const communicationLogs = pgTable(
   "communication_logs",
   {
@@ -780,6 +787,35 @@ export const communicationLogs = pgTable(
     index("communication_logs_job_idx").on(table.repairJobId),
     index("communication_logs_user_idx").on(table.userId),
     index("communication_logs_contacted_idx").on(table.contactedAt),
+  ]
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FEEDBACK
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    title: varchar("title", { length: 500 }).notNull(),
+    description: text("description"),
+    status: feedbackStatusEnum("status").notNull().default("open"),
+    adminNotes: text("admin_notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("feedback_user_idx").on(table.userId),
+    index("feedback_status_idx").on(table.status),
+    index("feedback_created_idx").on(table.createdAt),
   ]
 );
 
@@ -1004,3 +1040,10 @@ export const communicationLogsRelations = relations(
     }),
   })
 );
+
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  user: one(users, {
+    fields: [feedback.userId],
+    references: [users.id],
+  }),
+}));

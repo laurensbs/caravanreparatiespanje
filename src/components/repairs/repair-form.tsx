@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { CustomerSearch } from "@/components/customers/customer-search";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 
 interface RepairFormProps {
@@ -21,6 +22,7 @@ export function RepairForm({ locations, customers }: RepairFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,9 +38,8 @@ export function RepairForm({ locations, customers }: RepairFormProps) {
       }
     }
 
-    // Convert "none" sentinel values to null
     if (data.locationId === "none") data.locationId = null;
-    if (data.customerId === "none") data.customerId = null;
+    data.customerId = customerId;
 
     try {
       const job = await createRepairJob(data);
@@ -98,15 +99,13 @@ export function RepairForm({ locations, customers }: RepairFormProps) {
           </div>
           <div>
             <Label htmlFor="customerId">Customer</Label>
-            <Select name="customerId" defaultValue="none">
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No customer</SelectItem>
-                {customers.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="mt-1">
+              <CustomerSearch
+                customers={customers}
+                value={customerId ?? undefined}
+                onSelect={setCustomerId}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

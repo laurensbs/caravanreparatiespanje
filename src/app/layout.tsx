@@ -3,12 +3,12 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Repair Admin — Caravan & Trailer Management",
+  title: "Caravan Repairs",
   description: "Professional repair management system for caravan and trailer workshops",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Repair Admin",
+    title: "Caravan Repairs",
   },
 };
 

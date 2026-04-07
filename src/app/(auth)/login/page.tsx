@@ -44,7 +44,7 @@ export default function LoginPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <Wrench className="h-6 w-6 text-primary" />
         </div>
-        <CardTitle className="text-2xl">Repair Admin</CardTitle>
+        <CardTitle className="text-2xl">Caravan Repairs</CardTitle>
         <CardDescription>Sign in to manage repairs</CardDescription>
       </CardHeader>
       <CardContent>

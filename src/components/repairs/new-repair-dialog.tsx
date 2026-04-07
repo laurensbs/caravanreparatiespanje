@@ -17,6 +17,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CustomerSearch } from "@/components/customers/customer-search";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { Plus } from "lucide-react";
 
@@ -30,6 +31,7 @@ export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,11 +48,12 @@ export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) 
     }
 
     if (data.locationId === "none") data.locationId = null;
-    if (data.customerId === "none") data.customerId = null;
+    data.customerId = customerId;
 
     try {
       const job = await createRepairJob(data);
       setOpen(false);
+      setCustomerId(null);
       router.push(`/repairs/${job.id}`);
       router.refresh();
     } catch (err: any) {
@@ -117,15 +120,13 @@ export function NewRepairDialog({ locations, customers }: NewRepairDialogProps) 
               </div>
               <div>
                 <Label htmlFor="dlg-customer">Customer</Label>
-                <Select name="customerId" defaultValue="none">
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No customer</SelectItem>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-1">
+                  <CustomerSearch
+                    customers={customers}
+                    value={customerId ?? undefined}
+                    onSelect={setCustomerId}
+                  />
+                </div>
               </div>
             </div>
 

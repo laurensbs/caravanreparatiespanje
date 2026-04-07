@@ -115,15 +115,15 @@ export function FeedbackClient({
   const closedItems = items.filter((i) => i.status === "done" || i.status === "dismissed");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Feedback</h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Suggestions, improvements and feature requests
           </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+        <Button onClick={() => setShowForm(!showForm)} className="gap-2 rounded-lg" size="sm">
           <MessageSquarePlus className="h-4 w-4" />
           New
         </Button>

@@ -10,7 +10,7 @@ import {
   Users,
   Truck,
   Settings,
-  Shield,
+  MessageSquare,
   Menu,
   X,
   ChevronsLeft,
@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
   { label: "Customers", href: "/customers", icon: <Users className="h-[18px] w-[18px]" /> },
   { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" /> },
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },
-  { label: "Audit Log", href: "/audit", icon: <Shield className="h-[18px] w-[18px]" />, minRole: "admin" },
+  { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" /> },
   { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
 ];
 

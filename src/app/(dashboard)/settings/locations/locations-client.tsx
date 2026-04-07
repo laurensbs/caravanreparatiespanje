@@ -36,6 +36,12 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPending, setIsPending] = useState(false);
+  const [tab, setTab] = useState<"main" | "misc">("main");
+
+  const MAIN_NAMES = ["cruïllas", "peratallada", "sant climent"];
+  const mainLocations = locations.filter((l) => MAIN_NAMES.includes(l.name.toLowerCase()));
+  const miscLocations = locations.filter((l) => !MAIN_NAMES.includes(l.name.toLowerCase()));
+  const visibleLocations = tab === "main" ? mainLocations : miscLocations;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,18 +130,41 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
         </Dialog>
       </div>
 
-      {locations.length === 0 ? (
+      <div className="flex gap-2 border-b">
+        <button
+          className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "main"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+          onClick={() => setTab("main")}
+        >
+          Locations ({mainLocations.length})
+        </button>
+        <button
+          className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "misc"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+          onClick={() => setTab("misc")}
+        >
+          Misc ({miscLocations.length})
+        </button>
+      </div>
+
+      {visibleLocations.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <MapPin className="mb-2 h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">
-              No locations yet. Add your first workshop location.
+              {tab === "main" ? "No main locations yet." : "No misc locations."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {locations.map((loc) => (
+          {visibleLocations.map((loc) => (
             <Card
               key={loc.id}
               className="cursor-pointer transition-shadow hover:shadow-md"

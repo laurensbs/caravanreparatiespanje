@@ -337,8 +337,17 @@ export async function getDashboardStats() {
     db
       .select({
         total: count(),
+        active: count(
+          sql`CASE WHEN ${repairJobs.archivedAt} IS NULL THEN 1 END`
+        ),
         open: count(
           sql`CASE WHEN ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+        ),
+        todo: count(
+          sql`CASE WHEN ${repairJobs.status} IN ('new', 'todo') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+        ),
+        inProgress: count(
+          sql`CASE WHEN ${repairJobs.status} IN ('in_progress', 'in_inspection', 'scheduled') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
         ),
         waitingParts: count(
           sql`CASE WHEN ${repairJobs.status} = 'waiting_parts' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
@@ -347,10 +356,10 @@ export async function getDashboardStats() {
           sql`CASE WHEN ${repairJobs.status} = 'waiting_customer' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
         ),
         completed: count(
-          sql`CASE WHEN ${repairJobs.status} = 'completed' THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} = 'completed' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
         ),
         urgent: count(
-          sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') THEN 1 END`
+          sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
         ),
       })
       .from(repairJobs),

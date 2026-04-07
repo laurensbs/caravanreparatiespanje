@@ -1,5 +1,5 @@
 import { getDashboardStats, getFollowUpItems } from "@/actions/repairs";
-import { getActiveReminderCount } from "@/actions/reminders";
+
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
 import { getParts } from "@/actions/parts";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
   Wrench, Clock, Package, Users, CheckCircle, AlertTriangle,
-  ArrowRight, Bell, PhoneOff,
+  ArrowRight, PhoneOff,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
@@ -20,11 +20,10 @@ import { cn } from "@/lib/utils";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, reminderCount, locationsList, customersList, partsCatalog] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, locationsList, customersList, partsCatalog] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
-      getActiveReminderCount(),
       getLocations(),
       getAllCustomers(),
       getParts(),
@@ -35,13 +34,13 @@ export default async function DashboardPage() {
   );
 
   const kpiCards = [
-    { label: "Total Jobs", value: stats?.total ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-blue-600", href: "/repairs" },
-    { label: "Open Jobs", value: stats?.open ?? 0, icon: <Clock className="h-5 w-5" />, color: "text-orange-600", href: "/repairs?status=in_progress" },
+    { label: "Active Jobs", value: stats?.active ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-blue-600", href: "/repairs" },
+    { label: "To Do", value: stats?.todo ?? 0, icon: <Clock className="h-5 w-5" />, color: "text-orange-600", href: "/repairs?status=todo" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-sky-600", href: "/repairs?status=in_progress" },
     { label: "Waiting for Parts", value: stats?.waitingParts ?? 0, icon: <Package className="h-5 w-5" />, color: "text-purple-600", href: "/repairs?status=waiting_parts" },
     { label: "Waiting for Customer", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-5 w-5" />, color: "text-amber-600", href: "/repairs?status=waiting_customer" },
     { label: "Completed", value: stats?.completed ?? 0, icon: <CheckCircle className="h-5 w-5" />, color: "text-emerald-600", href: "/repairs?status=completed" },
     { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5" />, color: "text-red-600", href: "/repairs?priority=urgent" },
-    { label: "Reminders", value: reminderCount, icon: <Bell className="h-5 w-5" />, color: "text-indigo-600", href: "/repairs" },
     { label: "Need Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5" />, color: "text-rose-600", href: "/repairs?customerResponseStatus=no_response" },
   ];
 

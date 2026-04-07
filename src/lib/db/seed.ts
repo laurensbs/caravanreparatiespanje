@@ -169,54 +169,72 @@ async function seed() {
   console.log(`  Resolved ${customerCandidates.size} unique customers`);
   const customerIdMap = new Map<string, string>();
 
-  for (const [normName, candidate] of customerCandidates) {
-    const [existing] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.name, candidate.name))
-      .limit(1);
-
-    if (existing) {
-      customerIdMap.set(normName, existing.id);
-    } else {
-      const [newCust] = await db
-        .insert(customers)
-        .values({ name: candidate.name, provisional: true, confidenceScore: 0.7 })
-        .returning();
-      customerIdMap.set(normName, newCust.id);
+  // Batch insert customers in chunks of 50
+  const custEntries = Array.from(customerCandidates.entries());
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < custEntries.length; i += BATCH_SIZE) {
+    const batch = custEntries.slice(i, i + BATCH_SIZE);
+    const results = await db
+      .insert(customers)
+      .values(batch.map(([, c]) => ({ name: c.name, provisional: true, confidenceScore: "0.7" })))
+      .onConflictDoNothing()
+      .returning();
+    for (let j = 0; j < results.length; j++) {
+      // Map by normalized name
+      const normName = normalizeCustomerName(results[j].name);
+      customerIdMap.set(normName, results[j].id);
+    }
+    if ((i / BATCH_SIZE) % 5 === 0) {
+      process.stdout.write(`\r  Customers: ${Math.min(i + BATCH_SIZE, custEntries.length)}/${custEntries.length}`);
     }
   }
+  console.log(`\r  Inserted ${customerIdMap.size} customers                   `);
 
   // Resolve units
   const unitCandidates = resolveUnits(allRows);
   console.log(`  Resolved ${unitCandidates.size} unique units`);
   const unitIdMap = new Map<string, string>();
 
-  for (const [key, candidate] of unitCandidates) {
-    const isTrailer =
-      candidate.registrationRaw.toLowerCase().includes("trailer") ||
-      candidate.registrationRaw.toLowerCase().includes("css");
-
-    const [newUnit] = await db
+  // Batch insert units in chunks of 50
+  const unitEntries = Array.from(unitCandidates.entries());
+  for (let i = 0; i < unitEntries.length; i += BATCH_SIZE) {
+    const batch = unitEntries.slice(i, i + BATCH_SIZE);
+    const results = await db
       .insert(units)
-      .values({
-        unitType: isTrailer ? "trailer" : "unknown",
-        registration: candidate.registration,
-        brand: candidate.brand,
-        model: candidate.model,
-        internalNumber: candidate.internalNumber,
-        registrationRaw: candidate.registrationRaw,
-        provisional: true,
-      })
+      .values(
+        batch.map(([, candidate]) => {
+          const isTrailer =
+            candidate.registrationRaw.toLowerCase().includes("trailer") ||
+            candidate.registrationRaw.toLowerCase().includes("css");
+          return {
+            unitType: isTrailer ? ("trailer" as const) : ("unknown" as const),
+            registration: candidate.registration?.slice(0, 100) || null,
+            brand: candidate.brand?.slice(0, 255) || null,
+            model: candidate.model?.slice(0, 255) || null,
+            internalNumber: candidate.internalNumber?.slice(0, 100) || null,
+            registrationRaw: candidate.registrationRaw,
+            provisional: true,
+          };
+        })
+      )
       .returning();
-    unitIdMap.set(key, newUnit.id);
+    for (let j = 0; j < results.length; j++) {
+      unitIdMap.set(batch[j][0], results[j].id);
+    }
   }
+  console.log(`  Inserted ${unitIdMap.size} units`);
 
-  // Process rows
+  // Process rows in batches
   let imported = 0;
   let skipped = 0;
   let errors = 0;
   let lowConfidence = 0;
+
+  // Collect all row data first, then batch insert
+  const skippedImportRows: any[] = [];
+  const jobValues: any[] = [];
+  const jobImportRowValues: any[] = [];
+  const errorImportRows: any[] = [];
 
   for (const sheet of parsed.sheets) {
     const sheetSlug = slugify(sheet.sheetName);
@@ -224,7 +242,7 @@ async function seed() {
     for (const row of sheet.rows) {
       try {
         if (row.rowClass !== "record") {
-          await db.insert(importRows).values({
+          skippedImportRows.push({
             importId,
             sourceWorkbook: filename,
             sourceSheet: row.sourceSheet,
@@ -257,7 +275,6 @@ async function seed() {
 
         if (statusResult.confidence === "low") lowConfidence++;
 
-        // Resolve IDs
         let customerId: string | null = null;
         if (row.mappedCustomer) {
           const norm = normalizeCustomerName(row.mappedCustomer);
@@ -273,12 +290,10 @@ async function seed() {
           unitId = unitIdMap.get(`${regNorm}|||${intId}`.toLowerCase()) ?? null;
         }
 
-        // Location: prefer row's mapped location, fallback to sheet
         const locSlug = row.mappedLocation
           ? slugify(row.mappedLocation)
           : sheetSlug;
 
-        // Ensure location exists
         if (!locationMap.has(locSlug) && row.mappedLocation) {
           const [newLoc] = await db
             .insert(locations)
@@ -299,9 +314,8 @@ async function seed() {
           [row.mappedCustomer, row.mappedRegistration].filter(Boolean).join(" - ") ||
           `Import: ${sheet.sheetName} row ${row.sourceRowNumber + 1}`;
 
-        const [job] = await db
-          .insert(repairJobs)
-          .values({
+        jobValues.push({
+          jobData: {
             sourceCategory: sheet.category,
             sourceSheet: sheet.sheetName,
             locationId,
@@ -321,12 +335,8 @@ async function seed() {
             customerResponseStatus: custResp.status,
             invoiceStatus: invoiceSt,
             ...flags,
-          })
-          .returning();
-
-        const [importRow] = await db
-          .insert(importRows)
-          .values({
+          },
+          importRowData: {
             importId,
             sourceWorkbook: filename,
             sourceSheet: row.sourceSheet,
@@ -349,21 +359,13 @@ async function seed() {
             inferredStatusReason: statusResult.reason,
             inferredStatusConfidence: statusResult.confidence,
             inferredFlags: flags,
-            repairJobId: job.id,
             customerId,
             unitId,
-          })
-          .returning();
-
-        await db.insert(repairJobRawRows).values({
-          repairJobId: job.id,
-          importRowId: importRow.id,
-          linkType: "primary",
+          },
         });
-
         imported++;
       } catch (err) {
-        await db.insert(importRows).values({
+        errorImportRows.push({
           importId,
           sourceWorkbook: filename,
           sourceSheet: row.sourceSheet,
@@ -387,8 +389,66 @@ async function seed() {
         errors++;
       }
     }
+  }
 
-    console.log(`  [${sheet.sheetName}] processed`);
+  console.log(`  Prepared ${jobValues.length} jobs, ${skippedImportRows.length} skipped, ${errorImportRows.length} errors`);
+
+  // Batch insert skipped import rows
+  if (skippedImportRows.length > 0) {
+    for (let i = 0; i < skippedImportRows.length; i += BATCH_SIZE) {
+      await db.insert(importRows).values(skippedImportRows.slice(i, i + BATCH_SIZE));
+    }
+    console.log(`  Inserted ${skippedImportRows.length} skipped rows`);
+  }
+
+  // Batch insert error import rows
+  if (errorImportRows.length > 0) {
+    for (let i = 0; i < errorImportRows.length; i += BATCH_SIZE) {
+      await db.insert(importRows).values(errorImportRows.slice(i, i + BATCH_SIZE));
+    }
+    console.log(`  Inserted ${errorImportRows.length} error rows`);
+  }
+
+  // Batch insert repair jobs + import rows + raw row links
+  const rawRowLinks: { repairJobId: string; importRowId: string; linkType: string }[] = [];
+  for (let i = 0; i < jobValues.length; i += BATCH_SIZE) {
+    const batch = jobValues.slice(i, i + BATCH_SIZE);
+
+    // Insert jobs
+    const jobResults = await db
+      .insert(repairJobs)
+      .values(batch.map((b: any) => b.jobData))
+      .returning({ id: repairJobs.id });
+
+    // Attach job IDs to import rows and insert them
+    const irValues = batch.map((b: any, j: number) => ({
+      ...b.importRowData,
+      repairJobId: jobResults[j].id,
+    }));
+    const irResults = await db
+      .insert(importRows)
+      .values(irValues)
+      .returning({ id: importRows.id });
+
+    // Collect raw row links
+    for (let j = 0; j < jobResults.length; j++) {
+      rawRowLinks.push({
+        repairJobId: jobResults[j].id,
+        importRowId: irResults[j].id,
+        linkType: "primary",
+      });
+    }
+
+    process.stdout.write(`\r  Jobs: ${Math.min(i + BATCH_SIZE, jobValues.length)}/${jobValues.length}`);
+  }
+  console.log(`\r  Inserted ${jobValues.length} repair jobs + import rows       `);
+
+  // Batch insert raw row links
+  if (rawRowLinks.length > 0) {
+    for (let i = 0; i < rawRowLinks.length; i += BATCH_SIZE) {
+      await db.insert(repairJobRawRows).values(rawRowLinks.slice(i, i + BATCH_SIZE));
+    }
+    console.log(`  Linked ${rawRowLinks.length} raw rows`);
   }
 
   // Store duplicate candidates

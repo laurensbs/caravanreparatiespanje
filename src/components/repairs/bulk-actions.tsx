@@ -10,6 +10,7 @@ import { bulkUpdateRepairJobs } from "@/actions/repairs";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { X, Check } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface BulkActionsProps {
   selectedIds: string[];
@@ -34,10 +35,11 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
       else if (action === "archive") updateData.archivedAt = value === "true" ? new Date().toISOString() : null;
 
       await bulkUpdateRepairJobs(updateData);
+      toast.success(`Updated ${selectedIds.length} job${selectedIds.length > 1 ? "s" : ""}`);
       onClear();
       router.refresh();
     } catch {
-      alert("Failed to apply bulk update");
+      toast.error("Failed to apply bulk update");
     } finally {
       setLoading(false);
     }

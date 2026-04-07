@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { DashboardContent } from "@/components/layout/dashboard-content";
+import { Toaster } from "sonner";
 import type { UserRole } from "@/types";
 
 export default async function DashboardLayout({
@@ -30,6 +31,7 @@ export default async function DashboardLayout({
           <main className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6 animate-fade-in">
             {children}
           </main>
+          <Toaster richColors position="bottom-right" />
         </DashboardContent>
       </div>
     </SidebarProvider>

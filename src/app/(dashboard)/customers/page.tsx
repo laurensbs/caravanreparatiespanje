@@ -2,7 +2,7 @@ import { getCustomers, type CustomerFilters } from "@/actions/customers";
 import { getLocations } from "@/actions/locations";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CustomerFiltersBar } from "@/components/customers/customer-filters";
@@ -68,8 +68,12 @@ export default async function CustomersPage({ searchParams }: Props) {
           <TableBody>
             {customers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  No customers found
+                <TableCell colSpan={5} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Users className="h-8 w-8 opacity-30" />
+                    <p className="font-medium">No customers found</p>
+                    <p className="text-xs">Try adjusting your search or filters</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (

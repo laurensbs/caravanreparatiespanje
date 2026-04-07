@@ -21,6 +21,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
+import { toast } from "sonner";
 
 interface RepairDetailProps {
   job: any; // Full job with relations from getRepairJobById
@@ -56,8 +57,9 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
         internalComments,
       });
       router.refresh();
+      toast.success("Changes saved");
     } catch {
-      alert("Failed to save. Please try again.");
+      toast.error("Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }

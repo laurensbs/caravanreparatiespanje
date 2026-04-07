@@ -6,12 +6,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, INVOICE_STATUS_LABELS } from "@/types";
 import type { RepairStatus, Priority, InvoiceStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
 import { useState } from "react";
 import { BulkActions } from "./bulk-actions";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { updateRepairJob } from "@/actions/repairs";
+import { toast } from "sonner";
 
 interface Job {
   id: string;
@@ -85,6 +90,36 @@ export function RepairTable({ jobs }: RepairTableProps) {
     setSelected(next);
   };
 
+  const LOCATION_COLORS: Record<string, string> = {
+    "cruïllas": "bg-blue-500",
+    "peratallada": "bg-amber-500",
+    "sant climent": "bg-emerald-500",
+  };
+
+  function getInitials(name: string): string {
+    return name.split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  }
+
+  function getInitialsColor(name: string): string {
+    const colors = [
+      "bg-blue-600", "bg-emerald-600", "bg-amber-600", "bg-rose-600",
+      "bg-purple-600", "bg-cyan-600", "bg-orange-600", "bg-indigo-600",
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  async function quickStatusChange(jobId: string, newStatus: string) {
+    try {
+      await updateRepairJob(jobId, { status: newStatus as any });
+      toast.success(`Status → ${STATUS_LABELS[newStatus as RepairStatus]}`);
+      router.refresh();
+    } catch {
+      toast.error("Failed to update status");
+    }
+  }
+
   const clearSelection = () => setSelected(new Set());
 
   return (
@@ -131,8 +166,12 @@ export function RepairTable({ jobs }: RepairTableProps) {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="py-12 text-center text-muted-foreground">
-                  No repair jobs found. Adjust your filters or create a new repair.
+                <TableCell colSpan={11} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <ArrowUpDown className="h-8 w-8 opacity-30" />
+                    <p className="font-medium">No repair jobs found</p>
+                    <p className="text-xs">Try adjusting your filters or create a new repair</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -167,10 +206,28 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={`text-[11px] ${STATUS_COLORS[job.status as RepairStatus]}`}>
-                      {STATUS_LABELS[job.status as RepairStatus]}
-                    </Badge>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="focus:outline-none">
+                          <Badge variant="secondary" className={`text-[11px] cursor-pointer hover:ring-2 hover:ring-ring/30 transition-shadow ${STATUS_COLORS[job.status as RepairStatus]}`}>
+                            {STATUS_LABELS[job.status as RepairStatus]}
+                          </Badge>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                        {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                          <DropdownMenuItem
+                            key={val}
+                            className={val === job.status ? "font-semibold" : ""}
+                            onClick={() => { if (val !== job.status) quickStatusChange(job.id, val); }}
+                          >
+                            <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_COLORS[val as RepairStatus].split(" ")[0]}`} />
+                            {label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className={`text-[11px] ${PRIORITY_COLORS[job.priority as Priority]}`}>
@@ -178,9 +235,25 @@ export function RepairTable({ jobs }: RepairTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">{job.customerName ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{job.locationName ?? "—"}</TableCell>
+                  <TableCell className="text-sm">
+                    {job.locationName ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={`inline-block h-2 w-2 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-400"}`} />
+                        {job.locationName}
+                      </span>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell className="text-sm font-mono text-xs">{job.unitRegistration ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{job.assignedUserName ?? "—"}</TableCell>
+                  <TableCell className="text-sm">
+                    {job.assignedUserName ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${getInitialsColor(job.assignedUserName)}`}>
+                          {getInitials(job.assignedUserName)}
+                        </span>
+                        <span className="hidden lg:inline">{job.assignedUserName}</span>
+                      </span>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
                       job.invoiceStatus === "paid" ? "bg-emerald-100 text-emerald-700" :

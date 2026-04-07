@@ -23,6 +23,7 @@ import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker"
 import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface CatalogPart {
   id: string;
@@ -79,6 +80,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [] }: New
       setOpen(false);
       setCustomerId(null);
       setSelectedParts([]);
+      toast.success("Repair job created");
       router.push(`/repairs/${job.id}`);
       router.refresh();
     } catch (err: any) {

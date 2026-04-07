@@ -9,7 +9,6 @@ import {
   Wrench,
   Users,
   Truck,
-  FileSpreadsheet,
   Settings,
   Shield,
   Building2,
@@ -38,7 +37,6 @@ const navItems: NavItem[] = [
   { label: "Units", href: "/units", icon: <Truck className="h-5 w-5" /> },
   { label: "Parts", href: "/parts", icon: <Package className="h-5 w-5" /> },
   { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-5 w-5" /> },
-  { label: "Import", href: "/import", icon: <FileSpreadsheet className="h-5 w-5" />, minRole: "admin" },
   { label: "Audit Log", href: "/audit", icon: <Shield className="h-5 w-5" />, minRole: "admin" },
   { label: "Settings", href: "/settings", icon: <Settings className="h-5 w-5" />, minRole: "admin" },
 ];

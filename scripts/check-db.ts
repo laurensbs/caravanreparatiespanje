@@ -10,8 +10,6 @@ async function main() {
     sql`SELECT count(*) FROM customers`,
     sql`SELECT count(*) FROM units`,
     sql`SELECT count(*) FROM repair_jobs`,
-    sql`SELECT count(*) FROM import_rows`,
-    sql`SELECT count(*) FROM imports`,
   ]);
   console.log("users:", counts[0][0].count);
   console.log("locations:", counts[1][0].count);
@@ -19,8 +17,6 @@ async function main() {
   console.log("customers:", counts[3][0].count);
   console.log("units:", counts[4][0].count);
   console.log("repair_jobs:", counts[5][0].count);
-  console.log("import_rows:", counts[6][0].count);
-  console.log("imports:", counts[7][0].count);
 }
 
 main();

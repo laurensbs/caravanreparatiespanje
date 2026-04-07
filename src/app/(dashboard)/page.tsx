@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
   Wrench, Clock, Package, Users, CheckCircle, AlertTriangle,
-  FileSpreadsheet, ArrowRight, Bell, PhoneOff,
+  ArrowRight, Bell, PhoneOff,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
@@ -48,12 +48,6 @@ export default async function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <NewRepairDialog locations={locationsList} customers={customersList} partsCatalog={partsCatalog} />
-          <Button variant="outline" asChild>
-            <Link href="/import">
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Import Data
-            </Link>
-          </Button>
         </div>
       </div>
 

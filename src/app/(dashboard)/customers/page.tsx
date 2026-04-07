@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { SmartDate } from "@/components/ui/smart-date";
 import { CustomerFiltersBar } from "@/components/customers/customer-filters";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
@@ -54,9 +54,9 @@ export default async function CustomersPage({ searchParams }: Props) {
         currentFilters={filters}
       />
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card max-h-[calc(100vh-16rem)] overflow-y-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0] shadow-border">
             <TableRow className="bg-muted/50">
               <TableHead>Name</TableHead>
               <TableHead className="text-center">Repairs</TableHead>
@@ -91,8 +91,8 @@ export default async function CustomersPage({ searchParams }: Props) {
                   </TableCell>
                   <TableCell className="text-sm">{c.phone ?? "—"}</TableCell>
                   <TableCell className="text-sm hidden md:table-cell">{c.email ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true })}
+                  <TableCell>
+                    <SmartDate date={c.updatedAt} className="text-xs text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ))

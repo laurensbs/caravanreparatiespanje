@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/table";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, INVOICE_STATUS_LABELS } from "@/types";
 import type { RepairStatus, Priority, InvoiceStatus } from "@/types";
-import { formatDistanceToNow } from "date-fns";
+import { SmartDate } from "@/components/ui/smart-date";
 import { useState } from "react";
 import { BulkActions } from "./bulk-actions";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface Job {
   id: string;
@@ -43,7 +44,31 @@ interface RepairTableProps {
 
 export function RepairTable({ jobs }: RepairTableProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const currentSort = searchParams.get("sort") ?? "updatedAt";
+  const currentDir = searchParams.get("dir") ?? "desc";
+
+  function handleSort(column: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (currentSort === column) {
+      params.set("dir", currentDir === "desc" ? "asc" : "desc");
+    } else {
+      params.set("sort", column);
+      params.set("dir", "desc");
+    }
+    params.delete("page");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  function SortIcon({ column }: { column: string }) {
+    if (currentSort !== column) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />;
+    return currentDir === "asc"
+      ? <ArrowUp className="ml-1 h-3 w-3" />
+      : <ArrowDown className="ml-1 h-3 w-3" />;
+  }
 
   const toggleAll = () => {
     if (selected.size === jobs.length) {
@@ -71,9 +96,9 @@ export function RepairTable({ jobs }: RepairTableProps) {
         />
       )}
 
-      <div className="rounded-lg border bg-card overflow-x-auto">
+      <div className="rounded-lg border bg-card overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0] shadow-border">
             <TableRow className="bg-muted/50">
               <TableHead className="w-10 sticky left-0 bg-muted/50">
                 <Checkbox
@@ -83,14 +108,24 @@ export function RepairTable({ jobs }: RepairTableProps) {
               </TableHead>
               <TableHead className="w-28">Ref</TableHead>
               <TableHead>Title / Description</TableHead>
-              <TableHead className="w-24">Status</TableHead>
-              <TableHead className="w-24">Priority</TableHead>
-              <TableHead>Customer</TableHead>
+              <TableHead className="w-24 cursor-pointer select-none" onClick={() => handleSort("status")}>
+                <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
+              </TableHead>
+              <TableHead className="w-24 cursor-pointer select-none" onClick={() => handleSort("priority")}>
+                <span className="inline-flex items-center">Priority<SortIcon column="priority" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => handleSort("customerName")}>
+                <span className="inline-flex items-center">Customer<SortIcon column="customerName" /></span>
+              </TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Unit</TableHead>
               <TableHead>Assigned</TableHead>
-              <TableHead className="w-28">Invoice</TableHead>
-              <TableHead className="w-28">Updated</TableHead>
+              <TableHead className="w-28 cursor-pointer select-none" onClick={() => handleSort("invoiceStatus")}>
+                <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
+              </TableHead>
+              <TableHead className="w-28 cursor-pointer select-none" onClick={() => handleSort("updatedAt")}>
+                <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,7 +141,10 @@ export function RepairTable({ jobs }: RepairTableProps) {
                   key={job.id}
                   className="cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted/70"
                   data-state={selected.has(job.id) ? "selected" : undefined}
-                  onClick={() => router.push(`/repairs/${job.id}`)}
+                  onClick={() => {
+                    const backTo = `/repairs?${searchParams.toString()}`;
+                    router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
+                  }}
                 >
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
@@ -154,8 +192,8 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
                     </span>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(job.updatedAt), { addSuffix: true })}
+                  <TableCell>
+                    <SmartDate date={job.updatedAt} className="text-xs text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ))

@@ -16,17 +16,19 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon } from "lucide-react";
 import Link from "next/link";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
+import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 
 interface RepairDetailProps {
   job: any; // Full job with relations from getRepairJobById
   communicationLogs?: any[];
+  backTo?: string;
 }
 
-export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(job.status);
@@ -35,11 +37,17 @@ export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps)
   const [customerResponseStatus, setCustomerResponseStatus] = useState(job.customerResponseStatus);
   const [notes, setNotes] = useState(job.notesRaw ?? "");
   const [internalComments, setInternalComments] = useState(job.internalComments ?? "");
+  const [title, setTitle] = useState(job.title ?? "");
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [description, setDescription] = useState(job.descriptionRaw ?? "");
+  const [editingDescription, setEditingDescription] = useState(false);
 
   async function handleSave() {
     setSaving(true);
     try {
       await updateRepairJob(job.id, {
+        title: title || undefined,
+        descriptionRaw: description || undefined,
         status,
         priority,
         invoiceStatus,
@@ -60,7 +68,7 @@ export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps)
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/repairs"><ArrowLeft className="h-5 w-5" /></Link>
+            <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
           <div>
             <div className="flex items-center gap-2">
@@ -72,9 +80,29 @@ export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps)
                 {PRIORITY_LABELS[priority as Priority]}
               </Badge>
             </div>
-            <p className="text-muted-foreground">
-              {job.title || "No title"}
-            </p>
+            {editingTitle ? (
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-sm h-8"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Escape") setEditingTitle(false); }}
+                />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTitle(false)}>
+                  <XIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditingTitle(true)}
+                className="group flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                <span>{title || "No title"}</span>
+                <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            )}
           </div>
         </div>
         <Button onClick={handleSave} disabled={saving}>
@@ -89,15 +117,37 @@ export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps)
           {/* Issue description */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="h-4 w-4" />
-                Issue Description (Original)
+              <CardTitle className="flex items-center justify-between text-base">
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Issue Description
+                </span>
+                {!editingDescription && (
+                  <Button variant="ghost" size="sm" onClick={() => setEditingDescription(true)} className="h-7 text-xs">
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Edit
+                  </Button>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="whitespace-pre-wrap rounded-md bg-muted/50 p-4 text-sm">
-                {job.descriptionRaw || "No description"}
-              </div>
+              {editingDescription ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={6}
+                    autoFocus
+                  />
+                  <Button variant="ghost" size="sm" onClick={() => setEditingDescription(false)} className="text-xs">
+                    Done
+                  </Button>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap rounded-md bg-muted/50 p-4 text-sm">
+                  {description || "No description"}
+                </div>
+              )}
               {job.descriptionNormalized && (
                 <>
                   <p className="mt-3 text-xs font-medium text-muted-foreground">Normalized Summary</p>
@@ -174,7 +224,7 @@ export function RepairDetail({ job, communicationLogs = [] }: RepairDetailProps)
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}
+                        <SmartDate date={event.createdAt} />
                       </span>
                     </div>
                   ))}

@@ -25,6 +25,8 @@ export default async function RepairsPage({ searchParams }: Props) {
     invoiceStatus: params.invoiceStatus,
     customerResponseStatus: params.customerResponseStatus,
     archived: params.archived,
+    sort: params.sort,
+    dir: params.dir,
     page: params.page ? parseInt(params.page) : 1,
   };
 

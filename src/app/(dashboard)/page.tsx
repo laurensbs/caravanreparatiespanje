@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus } from "@/types";
-import { formatDistanceToNow } from "date-fns";
+import { SmartDate } from "@/components/ui/smart-date";
 import { cn } from "@/lib/utils";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
@@ -132,8 +132,8 @@ export default async function DashboardPage() {
                         {job.customerName}
                       </p>
                     </div>
-                    <div className="ml-4 text-right text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(job.updatedAt), { addSuffix: true })}
+                    <div className="ml-4 text-right">
+                      <SmartDate date={job.updatedAt} className="text-xs text-muted-foreground" />
                     </div>
                   </Link>
                 ))}

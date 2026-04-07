@@ -7,7 +7,7 @@ import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
 import { generatePublicCode } from "@/lib/utils";
-import { eq, desc, ilike, or, and, sql, count, inArray, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type RepairFilters = {
@@ -19,6 +19,8 @@ export type RepairFilters = {
   customerResponseStatus?: string;
   invoiceStatus?: string;
   archived?: string;
+  sort?: string;
+  dir?: string;
   page?: number;
   limit?: number;
 };
@@ -77,6 +79,17 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
+  const sortColumn: Record<string, any> = {
+    updatedAt: repairJobs.updatedAt,
+    createdAt: repairJobs.createdAt,
+    status: repairJobs.status,
+    priority: repairJobs.priority,
+    customerName: customers.name,
+    invoiceStatus: repairJobs.invoiceStatus,
+  };
+  const orderCol = sortColumn[filters.sort ?? ""] ?? repairJobs.updatedAt;
+  const orderDir = filters.dir === "asc" ? asc : desc;
+
   const [jobsResult, countResult] = await Promise.all([
     db
       .select({
@@ -109,7 +122,7 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
       .leftJoin(units, eq(repairJobs.unitId, units.id))
       .leftJoin(users, eq(repairJobs.assignedUserId, users.id))
       .where(where)
-      .orderBy(desc(repairJobs.updatedAt))
+      .orderBy(orderDir(orderCol))
       .limit(limit)
       .offset(offset),
     db.select({ count: count() }).from(repairJobs)

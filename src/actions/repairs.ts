@@ -69,6 +69,8 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
         ilike(repairJobs.descriptionRaw, searchTerm),
         ilike(repairJobs.notesRaw, searchTerm),
         ilike(repairJobs.partsNeededRaw, searchTerm),
+        ilike(customers.name, searchTerm),
+        ilike(units.registration, searchTerm),
       )!
     );
   }
@@ -110,7 +112,12 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
       .orderBy(desc(repairJobs.updatedAt))
       .limit(limit)
       .offset(offset),
-    db.select({ count: count() }).from(repairJobs).where(where),
+    db.select({ count: count() }).from(repairJobs)
+      .leftJoin(locations, eq(repairJobs.locationId, locations.id))
+      .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+      .leftJoin(units, eq(repairJobs.unitId, units.id))
+      .leftJoin(users, eq(repairJobs.assignedUserId, users.id))
+      .where(where),
   ]);
 
   return {
@@ -357,13 +364,14 @@ export async function getDashboardStats() {
 
   const jobsByLocation = await db
     .select({
+      locationId: locations.id,
       locationName: locations.name,
       count: count(),
     })
     .from(repairJobs)
     .leftJoin(locations, eq(repairJobs.locationId, locations.id))
     .where(isNull(repairJobs.archivedAt))
-    .groupBy(locations.name);
+    .groupBy(locations.id, locations.name);
 
   return {
     stats: stats[0],

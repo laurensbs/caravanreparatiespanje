@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
       .from(repairJobs)
       .leftJoin(customers, eq(repairJobs.customerId, customers.id))
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
+      .leftJoin(units, eq(repairJobs.unitId, units.id))
       .where(
         and(
           isNull(repairJobs.archivedAt),
@@ -41,7 +42,8 @@ export async function GET(req: NextRequest) {
             ilike(repairJobs.title, pattern),
             ilike(repairJobs.descriptionRaw, pattern),
             ilike(repairJobs.bayReference, pattern),
-            ilike(customers.name, pattern)
+            ilike(customers.name, pattern),
+            ilike(units.registration, pattern)
           )
         )
       )

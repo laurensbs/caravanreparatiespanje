@@ -21,14 +21,14 @@ export default async function DashboardPage() {
     ]);
 
   const kpiCards = [
-    { label: "Total Jobs", value: stats?.total ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-blue-600" },
-    { label: "Open Jobs", value: stats?.open ?? 0, icon: <Clock className="h-5 w-5" />, color: "text-orange-600" },
-    { label: "Waiting for Parts", value: stats?.waitingParts ?? 0, icon: <Package className="h-5 w-5" />, color: "text-purple-600" },
-    { label: "Waiting for Customer", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-5 w-5" />, color: "text-amber-600" },
-    { label: "Completed", value: stats?.completed ?? 0, icon: <CheckCircle className="h-5 w-5" />, color: "text-emerald-600" },
-    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5" />, color: "text-red-600" },
-    { label: "Reminders", value: reminderCount, icon: <Bell className="h-5 w-5" />, color: "text-indigo-600" },
-    { label: "Need Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5" />, color: "text-rose-600" },
+    { label: "Total Jobs", value: stats?.total ?? 0, icon: <Wrench className="h-5 w-5" />, color: "text-blue-600", href: "/repairs" },
+    { label: "Open Jobs", value: stats?.open ?? 0, icon: <Clock className="h-5 w-5" />, color: "text-orange-600", href: "/repairs?status=in_progress" },
+    { label: "Waiting for Parts", value: stats?.waitingParts ?? 0, icon: <Package className="h-5 w-5" />, color: "text-purple-600", href: "/repairs?status=waiting_parts" },
+    { label: "Waiting for Customer", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-5 w-5" />, color: "text-amber-600", href: "/repairs?status=waiting_customer" },
+    { label: "Completed", value: stats?.completed ?? 0, icon: <CheckCircle className="h-5 w-5" />, color: "text-emerald-600", href: "/repairs?status=completed" },
+    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5" />, color: "text-red-600", href: "/repairs?priority=urgent" },
+    { label: "Reminders", value: reminderCount, icon: <Bell className="h-5 w-5" />, color: "text-indigo-600", href: "/repairs" },
+    { label: "Need Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5" />, color: "text-rose-600", href: "/repairs?customerResponseStatus=no_response" },
   ];
 
   return (
@@ -57,17 +57,19 @@ export default async function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
         {kpiCards.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={kpi.color}>{kpi.icon}</div>
-                <div>
-                  <p className="text-2xl font-bold">{kpi.value}</p>
-                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
+          <Link key={kpi.label} href={kpi.href}>
+            <Card className="transition-colors hover:bg-muted/50 cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={kpi.color}>{kpi.icon}</div>
+                  <div>
+                    <p className="text-2xl font-bold">{kpi.value}</p>
+                    <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -149,12 +151,16 @@ export default async function DashboardPage() {
               ) : (
                 <div className="space-y-2">
                   {jobsByStatus.map((item) => (
-                    <div key={item.status} className="flex items-center justify-between text-sm">
+                    <Link
+                      key={item.status}
+                      href={`/repairs?status=${item.status}`}
+                      className="flex items-center justify-between rounded-md p-1.5 text-sm transition-colors hover:bg-muted/50"
+                    >
                       <Badge variant="secondary" className={STATUS_COLORS[item.status as RepairStatus]}>
                         {STATUS_LABELS[item.status as RepairStatus]}
                       </Badge>
                       <span className="font-medium">{item.count}</span>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -171,12 +177,16 @@ export default async function DashboardPage() {
               ) : (
                 <div className="space-y-2">
                   {jobsByLocation.map((item) => (
-                    <div key={item.locationName ?? "unassigned"} className="flex items-center justify-between text-sm">
+                    <Link
+                      key={item.locationName ?? "unassigned"}
+                      href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
+                      className="flex items-center justify-between rounded-md p-1.5 text-sm transition-colors hover:bg-muted/50"
+                    >
                       <span className="text-muted-foreground">
                         {item.locationName ?? "Unassigned"}
                       </span>
                       <span className="font-medium">{item.count}</span>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

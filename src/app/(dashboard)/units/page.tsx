@@ -20,8 +20,8 @@ export default async function UnitsPage({ searchParams }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Units / Vehicles</h1>
-          <p className="text-muted-foreground">{total} unit{total !== 1 ? "s" : ""}</p>
+          <h1 className="text-2xl font-bold tracking-tight">Kentekenregister</h1>
+          <p className="text-muted-foreground">{total} voertuig{total !== 1 ? "en" : ""} geregistreerd</p>
         </div>
         <Button asChild>
           <Link href="/units/new">
@@ -34,7 +34,7 @@ export default async function UnitsPage({ searchParams }: Props) {
       <form className="flex gap-2">
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" placeholder="Search units..." defaultValue={params.q} className="pl-9" />
+          <Input name="q" placeholder="Zoek op kenteken, merk, model..." defaultValue={params.q} className="pl-9" />
         </div>
         <Button type="submit" variant="secondary">Search</Button>
       </form>

@@ -68,11 +68,18 @@ export default async function AuditLogPage({
       </div>
 
       {/* Filters */}
-      <form className="flex flex-wrap gap-2 rounded-xl border bg-card p-3">
+      <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-3">
         <select
           name="action"
           defaultValue={params.action ?? ""}
           className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          onChange={(e) => {
+            const val = e.target.value;
+            const p = new URLSearchParams();
+            if (val) p.set("action", val);
+            if (params.entity) p.set("entity", params.entity);
+            window.location.href = `/audit?${p.toString()}`;
+          }}
         >
           <option value="">All Actions</option>
           <option value="create">Create</option>
@@ -86,6 +93,13 @@ export default async function AuditLogPage({
           name="entity"
           defaultValue={params.entity ?? ""}
           className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          onChange={(e) => {
+            const val = e.target.value;
+            const p = new URLSearchParams();
+            if (params.action) p.set("action", params.action);
+            if (val) p.set("entity", val);
+            window.location.href = `/audit?${p.toString()}`;
+          }}
         >
           <option value="">All Entities</option>
           <option value="repair_job">Repair Jobs</option>
@@ -94,13 +108,7 @@ export default async function AuditLogPage({
           <option value="user">Users</option>
           <option value="import">Imports</option>
         </select>
-        <button
-          type="submit"
-          className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground"
-        >
-          Filter
-        </button>
-      </form>
+      </div>
 
       {/* Log table */}
       <div className="rounded-xl border bg-card overflow-hidden">

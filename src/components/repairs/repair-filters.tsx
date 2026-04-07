@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, X } from "lucide-react";
 import { STATUS_LABELS, PRIORITY_LABELS, INVOICE_STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
 import type { RepairFilters } from "@/actions/repairs";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface Location {
   id: string;
@@ -24,6 +24,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentFilters.q ?? "");
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function updateFilter(key: string, value: string | undefined) {
     const params = new URLSearchParams(searchParams.toString());
@@ -36,9 +37,11 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    updateFilter("q", searchInput || undefined);
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const q = e.target.value;
+    setSearchInput(q);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => updateFilter("q", q || undefined), 300);
   }
 
   function clearFilters() {
@@ -53,18 +56,15 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
   return (
     <div className="rounded-xl border bg-card p-3">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
-        <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-0 sm:max-w-56">
+        <div className="relative flex-1 min-w-0 sm:max-w-56">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search..."
               className="w-full pl-8 h-8 text-xs rounded-lg"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
-          <Button type="submit" variant="secondary" size="sm" className="h-8 text-xs rounded-lg">Search</Button>
-        </form>
 
         <Select
           value={currentFilters.status ?? "all"}

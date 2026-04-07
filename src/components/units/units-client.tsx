@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQ ?? "");
   const [selectedUnit, setSelectedUnit] = useState<UnitRow | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const totalPages = Math.ceil(total / limit);
 
@@ -64,9 +65,11 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
     router.push(`/units?${params.toString()}`);
   }
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    updateParams({ q: searchInput || undefined });
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const q = e.target.value;
+    setSearchInput(q);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => updateParams({ q: q || undefined }), 300);
   }
 
   // Derive unique brands for quick filter
@@ -94,20 +97,15 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
 
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:flex-wrap">
-        <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-0 sm:max-w-64">
+        <div className="relative flex-1 min-w-0 sm:max-w-64">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search registration, brand, model..."
               className="w-full pl-8 h-8 text-xs rounded-lg"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
-          <Button type="submit" variant="secondary" size="sm" className="h-8 rounded-lg text-xs">
-            Search
-          </Button>
-        </form>
 
         <Select
           value={currentType ?? "all"}

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/lib/db";
 import { repairJobs, customers, units, locations } from "@/lib/db/schema";
 import { or, ilike, isNull, eq, and } from "drizzle-orm";

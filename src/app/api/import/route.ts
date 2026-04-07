@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { runImportPipeline } from "@/actions/import";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id || !["admin", "manager"].includes(session.user.role)) {

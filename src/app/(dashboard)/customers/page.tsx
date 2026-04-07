@@ -1,10 +1,10 @@
 import { getCustomers } from "@/actions/customers";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { CustomerSearchInput } from "@/components/customers/customer-search-input";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -35,13 +35,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         </Button>
       </div>
 
-      <form className="flex gap-2">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" placeholder="Search customers..." defaultValue={params.q} className="pl-9" />
-        </div>
-        <Button type="submit" variant="secondary">Search</Button>
-      </form>
+      <CustomerSearchInput defaultValue={params.q} />
 
       <div className="rounded-lg border bg-card">
         <Table>

@@ -1,7 +1,8 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Lightbulb,
   AlertTriangle,
@@ -9,6 +10,8 @@ import {
   CheckCircle2,
   Info,
   Zap,
+  X,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -30,31 +33,31 @@ const LEVEL_CONFIG: Record<
 > = {
   action: {
     icon: <Zap className="h-3.5 w-3.5" />,
-    bg: "bg-blue-50/80 dark:bg-blue-950/40",
-    border: "border-blue-200 dark:border-blue-800",
+    bg: "bg-blue-100 dark:bg-blue-950/40",
+    border: "border-blue-300 dark:border-blue-800",
     text: "text-blue-900 dark:text-blue-200",
-    iconColor: "text-blue-500",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   warning: {
     icon: <AlertTriangle className="h-3.5 w-3.5" />,
-    bg: "bg-amber-50/80 dark:bg-amber-950/40",
-    border: "border-amber-200 dark:border-amber-800",
+    bg: "bg-amber-100 dark:bg-amber-950/40",
+    border: "border-amber-300 dark:border-amber-800",
     text: "text-amber-900 dark:text-amber-200",
-    iconColor: "text-amber-500",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
   info: {
     icon: <Info className="h-3.5 w-3.5" />,
-    bg: "bg-slate-50/80 dark:bg-slate-900/40",
-    border: "border-slate-200 dark:border-slate-700",
-    text: "text-slate-700 dark:text-slate-300",
-    iconColor: "text-slate-400",
+    bg: "bg-slate-100 dark:bg-slate-900/40",
+    border: "border-slate-300 dark:border-slate-700",
+    text: "text-slate-800 dark:text-slate-300",
+    iconColor: "text-slate-500 dark:text-slate-400",
   },
   success: {
     icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-    bg: "bg-emerald-50/80 dark:bg-emerald-950/40",
-    border: "border-emerald-200 dark:border-emerald-800",
+    bg: "bg-emerald-100 dark:bg-emerald-950/40",
+    border: "border-emerald-300 dark:border-emerald-800",
     text: "text-emerald-900 dark:text-emerald-200",
-    iconColor: "text-emerald-500",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
   },
 };
 
@@ -110,12 +113,41 @@ interface SmartSuggestionsProps {
   maxVisible?: number;
 }
 
+const SUGGESTIONS_HIDDEN_KEY = "smart-suggestions-hidden";
+
 export function SmartSuggestions({
   suggestions,
   className,
   maxVisible = 5,
 }: SmartSuggestionsProps) {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(SUGGESTIONS_HIDDEN_KEY) === "true") setHidden(true);
+    } catch {}
+  }, []);
+
   if (suggestions.length === 0) return null;
+
+  if (hidden) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setHidden(false);
+          try { localStorage.removeItem(SUGGESTIONS_HIDDEN_KEY); } catch {}
+        }}
+        className={cn(
+          "flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors",
+          className,
+        )}
+      >
+        <Eye className="h-3 w-3" />
+        Show suggestions ({suggestions.length})
+      </button>
+    );
+  }
 
   // Sort: actions first, then warnings, then info, then success
   const order: SuggestionLevel[] = ["action", "warning", "info", "success"];
@@ -132,9 +164,20 @@ export function SmartSuggestions({
             <Lightbulb className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           </div>
           <p className="text-xs font-semibold">Smart Suggestions</p>
-          <span className="text-[10px] text-muted-foreground ml-auto">
+          <span className="text-[10px] text-muted-foreground ml-auto mr-1">
             {suggestions.length} suggestion{suggestions.length !== 1 ? "s" : ""}
           </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
+            onClick={() => {
+              setHidden(true);
+              try { localStorage.setItem(SUGGESTIONS_HIDDEN_KEY, "true"); } catch {}
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
         </div>
         <div className="space-y-1.5">
           {visible.map((s) => (

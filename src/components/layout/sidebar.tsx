@@ -70,7 +70,7 @@ export function Sidebar({ userRole }: SidebarProps) {
         <span className={cn("shrink-0 transition-colors", isActive ? "text-white" : "text-white/50 group-hover:text-white/80")}>{item.icon}</span>
         {!collapsed && <span>{item.label}</span>}
         {collapsed && (
-          <span className="absolute left-full ml-3 hidden rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-lg group-hover:block z-50 whitespace-nowrap">
+          <span className="pointer-events-none absolute left-full ml-3 rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-lg z-50 whitespace-nowrap opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 delay-75">
             {item.label}
           </span>
         )}

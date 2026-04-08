@@ -8,9 +8,9 @@ interface HoldedHintProps {
 }
 
 const VARIANT_STYLES = {
-  info: "bg-emerald-50/80 border-emerald-300 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300",
-  sync: "bg-sky-50/80 border-sky-300 text-sky-900 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300",
-  readonly: "bg-amber-50/80 border-amber-300 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300",
+  info: "bg-emerald-100 border-emerald-400 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300",
+  sync: "bg-sky-100 border-sky-400 text-sky-900 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300",
+  readonly: "bg-amber-100 border-amber-400 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300",
 };
 
 const ICON_STYLES = {

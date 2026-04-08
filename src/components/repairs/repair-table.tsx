@@ -151,7 +151,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
                 <span className="inline-flex items-center">Priority<SortIcon column="priority" /></span>
               </TableHead>
               <TableHead className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("customerName")}>
-                <span className="inline-flex items-center">Customer<SortIcon column="customerName" /></span>
+                <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
               </TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Location</TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Unit</TableHead>

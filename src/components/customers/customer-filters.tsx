@@ -71,7 +71,7 @@ export function CustomerFiltersBar({ locations, currentFilters }: CustomerFilter
       <div className="relative flex-1 min-w-0 sm:max-w-64">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search customers..."
+          placeholder="Search contacts..."
           className="pl-9 pr-8"
           value={searchInput}
           onChange={handleSearchChange}
@@ -95,7 +95,7 @@ export function CustomerFiltersBar({ locations, currentFilters }: CustomerFilter
           <SelectValue placeholder="Repair status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All customers</SelectItem>
+          <SelectItem value="all">All contacts</SelectItem>
           {Object.entries(REPAIR_STATUS_OPTIONS).map(([value, label]) => (
             <SelectItem key={value} value={value}>{label}</SelectItem>
           ))}

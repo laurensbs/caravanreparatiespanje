@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     { label: "To Do", value: stats?.todo ?? 0, icon: <Clock className="h-4 w-4" />, bg: "bg-orange-500/10 text-orange-600 dark:text-orange-400", href: "/repairs?status=todo" },
     { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-4 w-4" />, bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400", href: "/repairs?status=in_progress" },
     { label: "Waiting Parts", value: stats?.waitingParts ?? 0, icon: <Package className="h-4 w-4" />, bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400", href: "/repairs?status=waiting_parts" },
-    { label: "Waiting Customer", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-4 w-4" />, bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
+    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-4 w-4" />, bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
     { label: "Completed", value: stats?.completed ?? 0, icon: <CheckCircle className="h-4 w-4" />, bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", href: "/repairs?status=completed" },
     { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-4 w-4" />, bg: "bg-red-500/10 text-red-600 dark:text-red-400", href: "/repairs?priority=urgent" },
     { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-4 w-4" />, bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400", href: "/repairs?customerResponseStatus=no_response" },

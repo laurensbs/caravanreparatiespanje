@@ -147,7 +147,7 @@ export const STATUS_LABELS: Record<RepairStatus, string> = {
   in_inspection: "In Inspection",
   quote_needed: "Quote Needed",
   waiting_approval: "Waiting for Approval",
-  waiting_customer: "Waiting for Customer",
+  waiting_customer: "Waiting for Contact",
   waiting_parts: "Waiting for Parts",
   scheduled: "Scheduled",
   in_progress: "In Progress",

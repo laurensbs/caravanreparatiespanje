@@ -56,6 +56,7 @@ export const repairJobSchema = z.object({
 
 export const customerSchema = z.object({
   name: z.string().min(1, "Name required").max(500),
+  contactType: z.enum(["person", "business"]).optional(),
   phone: z.string().max(100).optional(),
   email: z.string().email().max(255).optional().or(z.literal("")),
   notes: z.string().optional(),

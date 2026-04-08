@@ -79,7 +79,7 @@ export function CustomerSearch({ customers, value, onSelect }: CustomerSearchPro
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Type to search customers..."
+          placeholder="Type to search contacts..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -107,7 +107,7 @@ export function CustomerSearch({ customers, value, onSelect }: CustomerSearchPro
 
       {open && query.length >= 1 && filtered.length === 0 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
-          No customers found
+          No contacts found
         </div>
       )}
     </div>

@@ -81,6 +81,11 @@ export const businessProcessTypeEnum = pgEnum("business_process_type", [
   "unknown",
 ]);
 
+export const contactTypeEnum = pgEnum("contact_type", [
+  "person",
+  "business",
+]);
+
 export const unitTypeEnum = pgEnum("unit_type", [
   "caravan",
   "trailer",
@@ -188,6 +193,7 @@ export const customers = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 500 }).notNull(),
+    contactType: contactTypeEnum("contact_type").notNull().default("person"),
     phone: varchar("phone", { length: 100 }),
     email: varchar("email", { length: 255 }),
     notes: text("notes"),

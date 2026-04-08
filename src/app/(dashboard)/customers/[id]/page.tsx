@@ -1,10 +1,10 @@
 import { getCustomerById } from "@/actions/customers";
-import { getCustomerHoldedInvoices } from "@/actions/holded";
+import { getCustomerHoldedInvoices, getCustomerHoldedContact } from "@/actions/holded";
 import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, StickyNote, Wrench, Truck, Receipt, ExternalLink } from "lucide-react";
+import { ArrowLeft, Phone, Mail, StickyNote, Wrench, Truck, Receipt, ExternalLink, Building2, User, MapPin, Hash } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
@@ -15,9 +15,10 @@ interface Props {
 
 export default async function CustomerDetailPage({ params }: Props) {
   const { id } = await params;
-  const [customer, holdedInvoices] = await Promise.all([
+  const [customer, holdedInvoices, holdedContact] = await Promise.all([
     getCustomerById(id),
     getCustomerHoldedInvoices(id),
+    getCustomerHoldedContact(id),
   ]);
   if (!customer) notFound();
 
@@ -28,7 +29,12 @@ export default async function CustomerDetailPage({ params }: Props) {
           <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
-          <h1 className="text-lg font-bold tracking-tight">{customer.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold tracking-tight">{customer.name}</h1>
+            <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
+              {customer.contactType === "business" ? "Business" : "Person"}
+            </Badge>
+          </div>
           <p className="text-sm text-muted-foreground">
             {[customer.phone, customer.email].filter(Boolean).join(" · ") || "No contact info"}
           </p>
@@ -39,6 +45,19 @@ export default async function CustomerDetailPage({ params }: Props) {
         {/* Contact info */}
         <Card>
           <CardContent className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                {customer.contactType === "business" ? (
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                ) : (
+                  <User className="h-3.5 w-3.5 text-primary" />
+                )}
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">Type</p>
+                <p className="text-sm font-medium">{customer.contactType === "business" ? "Business" : "Person"}</p>
+              </div>
+            </div>
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 <Phone className="h-3.5 w-3.5 text-primary" />
@@ -98,7 +117,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                     href={`/units/${unit.id}`}
                     className="flex items-center gap-2 rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-[13px] truncate">
                         {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unknown unit"}
                       </p>
@@ -106,6 +125,11 @@ export default async function CustomerDetailPage({ params }: Props) {
                         <p className="font-mono text-[11px] text-muted-foreground">{unit.registration}</p>
                       )}
                     </div>
+                    {unit.registration && (
+                      <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 font-mono shrink-0">
+                        {unit.registration}
+                      </Badge>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -144,6 +168,58 @@ export default async function CustomerDetailPage({ params }: Props) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Holded Contact Info */}
+      {holdedContact && (
+        <Card>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-3">
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Holded Contact</p>
+            </div>
+            <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+              {holdedContact.vatnumber && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">VAT / NIF</p>
+                  <p className="font-medium">{holdedContact.vatnumber}</p>
+                </div>
+              )}
+              {holdedContact.tradeName && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Trade Name</p>
+                  <p className="font-medium">{holdedContact.tradeName}</p>
+                </div>
+              )}
+              {holdedContact.code && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Code</p>
+                  <p className="font-medium">{holdedContact.code}</p>
+                </div>
+              )}
+              {holdedContact.mobile && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Mobile</p>
+                  <p className="font-medium">{holdedContact.mobile}</p>
+                </div>
+              )}
+              {holdedContact.billAddress?.address && (
+                <div className="sm:col-span-2">
+                  <p className="text-[11px] text-muted-foreground">Address</p>
+                  <p className="font-medium">
+                    {[
+                      holdedContact.billAddress.address,
+                      holdedContact.billAddress.postalCode,
+                      holdedContact.billAddress.city,
+                      holdedContact.billAddress.province,
+                      holdedContact.billAddress.country,
+                    ].filter(Boolean).join(", ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Holded Invoices - full width */}
       {holdedInvoices.length > 0 && (

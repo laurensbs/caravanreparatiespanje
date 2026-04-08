@@ -300,7 +300,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Customer</Label>
+                  <Label className="text-[11px] text-muted-foreground">Contact</Label>
                   <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
                     <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -328,7 +328,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-3.5 w-3.5" />
-                    Customer
+                    Contact
                   </span>
                   {job.customer ? (
                     <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
@@ -504,7 +504,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                     Create Invoice
                   </Button>
                   {!job.customer && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5">Link a customer first</p>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">Link a contact first</p>
                   )}
                   {job.customer && !job.actualCost && !job.estimatedCost && (
                     <p className="text-[11px] text-muted-foreground mt-1.5">Add a cost estimate first</p>

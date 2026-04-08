@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
@@ -23,6 +24,7 @@ export function NewCustomerDialog() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [contactType, setContactType] = useState<"person" | "business">("person");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,16 +35,17 @@ export function NewCustomerDialog() {
     try {
       const customer = await createCustomer({
         name: fd.get("name"),
+        contactType,
         phone: fd.get("phone") || undefined,
         email: fd.get("email") || undefined,
         notes: fd.get("notes") || undefined,
       });
       setOpen(false);
-      toast.success("Customer created");
+      toast.success("Contact created");
       router.push(`/customers/${customer.id}`);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Failed to create customer");
+      setError(err?.message ?? "Failed to create contact");
       setSaving(false);
     }
   }
@@ -51,20 +54,32 @@ export function NewCustomerDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <Button onClick={() => setOpen(true)} size="sm" className="rounded-lg">
         <Plus className="mr-2 h-4 w-4" />
-        Add Customer
+        Add Contact
       </Button>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>New Customer</DialogTitle>
-          <DialogDescription>Add a new customer to the system</DialogDescription>
+          <DialogTitle>New Contact</DialogTitle>
+          <DialogDescription>Add a new contact to the system</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive">{error}</div>
           )}
-          <div>
-            <Label htmlFor="dlg-name" className="text-xs">Name *</Label>
-            <Input id="dlg-name" name="name" required className="mt-1 h-9 rounded-lg" autoFocus />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="dlg-name" className="text-xs">Name *</Label>
+              <Input id="dlg-name" name="name" required className="mt-1 h-9 rounded-lg" autoFocus />
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <Select value={contactType} onValueChange={(v) => setContactType(v as "person" | "business")}>
+                <SelectTrigger className="mt-1 h-9 rounded-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="person">Person</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

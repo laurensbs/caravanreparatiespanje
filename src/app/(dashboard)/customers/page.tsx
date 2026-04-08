@@ -2,6 +2,7 @@ import { getCustomers, type CustomerFilters } from "@/actions/customers";
 import { getLocations } from "@/actions/locations";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -39,8 +40,8 @@ export default async function CustomersPage({ searchParams }: Props) {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold tracking-tight">Customers</h1>
-          <p className="text-sm text-muted-foreground">{total} customer{total !== 1 ? "s" : ""}</p>
+          <h1 className="text-lg font-bold tracking-tight">Contacts</h1>
+          <p className="text-sm text-muted-foreground">{total} contact{total !== 1 ? "s" : ""}</p>
         </div>
         <NewCustomerDialog />
       </div>
@@ -56,6 +57,7 @@ export default async function CustomersPage({ searchParams }: Props) {
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Name</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Type</TableHead>
               <TableHead className="text-center text-[11px] font-semibold uppercase tracking-wider">Repairs</TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Phone</TableHead>
               <TableHead className="hidden md:table-cell text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
@@ -65,10 +67,10 @@ export default async function CustomersPage({ searchParams }: Props) {
           <TableBody>
             {customers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-16 text-center">
+                <TableCell colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Users className="h-8 w-8 opacity-20" />
-                    <p className="font-medium text-sm">No customers found</p>
+                    <p className="font-medium text-sm">No contacts found</p>
                     <p className="text-xs">Try adjusting your search or filters</p>
                   </div>
                 </TableCell>
@@ -80,6 +82,11 @@ export default async function CustomersPage({ searchParams }: Props) {
                     <Link href={`/customers/${c.id}`} className="font-medium text-[13px] group-hover:text-primary transition-colors">
                       {c.name}
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
+                      {c.contactType === "business" ? "Business" : "Person"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-center">
                     {c.repairCount > 0 ? (

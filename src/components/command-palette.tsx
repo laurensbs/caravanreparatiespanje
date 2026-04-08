@@ -39,7 +39,7 @@ const quickActions: QuickAction[] = [
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-4 w-4" />, shortcut: "D" },
   { label: "All Repairs", href: "/repairs", icon: <Wrench className="h-4 w-4" />, shortcut: "R" },
   { label: "New Repair", href: "/repairs/new", icon: <Wrench className="h-4 w-4" />, shortcut: "N" },
-  { label: "Customers", href: "/customers", icon: <Users className="h-4 w-4" />, shortcut: "C" },
+  { label: "Contacts", href: "/customers", icon: <Users className="h-4 w-4" />, shortcut: "C" },
   { label: "Units", href: "/units", icon: <Truck className="h-4 w-4" />, shortcut: "U" },
   { label: "Kanban Board", href: "/repairs/board", icon: <LayoutDashboard className="h-4 w-4" />, shortcut: "B" },
   { label: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> },
@@ -166,7 +166,7 @@ export function CommandPalette() {
           <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             ref={inputRef}
-            placeholder="Search repairs, customers, units or type a command..."
+            placeholder="Search repairs, contacts, units or type a command..."
             className="border-0 shadow-none focus-visible:ring-0 h-12"
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}

@@ -13,7 +13,9 @@ import {
   sendInvoice,
   listInvoicesByContact,
   updateContact as updateHoldedContact,
+  getContact,
   type HoldedInvoice,
+  type HoldedContact,
 } from "@/lib/holded/invoices";
 import { isHoldedConfigured } from "@/lib/holded/client";
 
@@ -220,4 +222,27 @@ export async function getCustomerHoldedInvoices(
 
 export async function getHoldedStatus() {
   return { configured: isHoldedConfigured() };
+}
+
+// ─── Get Holded contact details ───
+
+export async function getCustomerHoldedContact(
+  customerId: string,
+): Promise<HoldedContact | null> {
+  await requireAuth();
+  if (!isHoldedConfigured()) return null;
+
+  const [customer] = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.id, customerId))
+    .limit(1);
+
+  if (!customer?.holdedContactId) return null;
+
+  try {
+    return await getContact(customer.holdedContactId);
+  } catch {
+    return null;
+  }
 }

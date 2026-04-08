@@ -103,7 +103,7 @@ export default async function AuditLogPage({
         >
           <option value="">All Entities</option>
           <option value="repair_job">Repair Jobs</option>
-          <option value="customer">Customers</option>
+          <option value="customer">Contacts</option>
           <option value="unit">Units</option>
           <option value="user">Users</option>
           <option value="import">Imports</option>

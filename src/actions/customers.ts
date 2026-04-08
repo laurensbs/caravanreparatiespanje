@@ -84,6 +84,7 @@ export async function getCustomers(filters: CustomerFilters = {}) {
       .select({
         id: customers.id,
         name: customers.name,
+        contactType: customers.contactType,
         phone: customers.phone,
         email: customers.email,
         notes: customers.notes,

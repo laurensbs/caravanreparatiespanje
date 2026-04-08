@@ -9,6 +9,24 @@ export interface HoldedContact {
   phone?: string;
   mobile?: string;
   type?: string;
+  code?: string;
+  vatnumber?: string;
+  tradeName?: string;
+  billAddress?: {
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    country?: string;
+    countryCode?: string;
+  };
+  defaults?: {
+    salesChannel?: string;
+    paymentMethod?: string;
+  };
+  socialNetworks?: Record<string, string>;
+  tags?: string[];
+  customFields?: Array<{ field: string; value: string }>;
 }
 
 export interface HoldedInvoice {

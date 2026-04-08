@@ -110,7 +110,7 @@ export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFo
             </div>
           </div>
           <div>
-            <Label htmlFor="customerId">Customer</Label>
+            <Label htmlFor="customerId">Contact</Label>
             <div className="mt-1">
               <CustomerSearch
                 customers={customers}

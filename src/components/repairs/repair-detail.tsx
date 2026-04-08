@@ -48,14 +48,14 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
     setSaving(true);
     try {
       await updateRepairJob(job.id, {
-        title: title || undefined,
-        descriptionRaw: description || undefined,
+        title: title || null,
+        descriptionRaw: description || null,
         status,
         priority,
         invoiceStatus,
         customerResponseStatus,
         notesRaw: notes || null,
-        internalComments,
+        internalComments: internalComments || null,
       });
       router.refresh();
       toast.success("Changes saved");

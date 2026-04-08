@@ -232,6 +232,17 @@ export async function sendInvoice(
   });
 }
 
+export async function payInvoice(invoiceId: string): Promise<void> {
+  // Holded pay endpoint: POST /documents/invoice/{id}/pay
+  // Registers a full payment with today's date
+  await holdedFetch(`/documents/invoice/${invoiceId}/pay`, {
+    method: "POST",
+    body: JSON.stringify({
+      date: Math.floor(Date.now() / 1000),
+    }),
+  });
+}
+
 // ─── Quote (Estimate) Operations ───
 
 interface CreateQuoteParams {

@@ -16,7 +16,7 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -67,19 +67,20 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
+    <div className="space-y-4 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg shrink-0 mt-0.5" asChild>
             <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{job.publicCode ?? "Repair Job"}</h1>
-              <Badge className={STATUS_COLORS[status as RepairStatus]}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg font-bold tracking-tight">{job.publicCode ?? "Repair Job"}</h1>
+              <Badge className={`${STATUS_COLORS[status as RepairStatus]} rounded-full text-[11px] px-2 py-0`}>
                 {STATUS_LABELS[status as RepairStatus]}
               </Badge>
-              <Badge className={PRIORITY_COLORS[priority as Priority]}>
+              <Badge className={`${PRIORITY_COLORS[priority as Priority]} rounded-full text-[11px] px-2 py-0`}>
                 {PRIORITY_LABELS[priority as Priority]}
               </Badge>
             </div>
@@ -88,74 +89,75 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="text-sm h-8"
+                  className="text-sm h-7 rounded-lg"
                   autoFocus
-                  onKeyDown={(e) => { if (e.key === "Escape") setEditingTitle(false); }}
+                  onKeyDown={(e) => { if (e.key === "Escape") setEditingTitle(false); if (e.key === "Enter") setEditingTitle(false); }}
                 />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTitle(false)}>
-                  <XIcon className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTitle(false)}>
+                  <XIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => setEditingTitle(true)}
-                className="group flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-left"
+                className="group flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors text-left mt-0.5"
               >
-                <span>{title || "No title"}</span>
-                <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="truncate">{title || "No title — click to add"}</span>
+                <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
               </button>
             )}
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-lg">
+        <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-lg shrink-0">
           {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
           Save
         </Button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Main content */}
-        <div className="space-y-5 lg:col-span-2">
+        <div className="space-y-4 lg:col-span-2">
           {/* Issue description */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="p-4 pb-0">
               <CardTitle className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Issue Description
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5" />
+                  Description
                 </span>
                 {!editingDescription && (
-                  <Button variant="ghost" size="sm" onClick={() => setEditingDescription(true)} className="h-7 text-xs">
-                    <Pencil className="mr-1 h-3 w-3" />
+                  <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                    <Pencil className="h-3 w-3" />
                     Edit
-                  </Button>
+                  </button>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-2">
               {editingDescription ? (
                 <div className="space-y-2">
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    rows={6}
+                    rows={5}
                     autoFocus
+                    className="rounded-lg text-sm"
                   />
-                  <Button variant="ghost" size="sm" onClick={() => setEditingDescription(false)} className="text-xs">
+                  <Button variant="ghost" size="sm" onClick={() => setEditingDescription(false)} className="h-7 text-xs">
                     Done
                   </Button>
                 </div>
               ) : (
-                <div className="whitespace-pre-wrap rounded-md bg-muted/50 p-4 text-sm">
-                  {description || "No description"}
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {description || <span className="text-muted-foreground italic">No description</span>}
                 </div>
               )}
               {job.descriptionNormalized && (
-                <>
-                  <p className="mt-3 text-xs font-medium text-muted-foreground">Normalized Summary</p>
-                  <p className="text-sm">{job.descriptionNormalized}</p>
-                </>
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
+                  <p className="text-sm text-muted-foreground">{job.descriptionNormalized}</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -163,10 +165,13 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           {/* Parts needed */}
           {job.partsNeededRaw && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Parts Needed</CardTitle>
+              <CardHeader className="p-4 pb-0">
+                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Wrench className="h-3.5 w-3.5" />
+                  Parts Needed
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-2">
                 <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
               </CardContent>
             </Card>
@@ -174,87 +179,83 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
 
           {/* Notes */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <StickyNote className="h-4 w-4" />
+            <CardHeader className="p-4 pb-0">
+              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                <StickyNote className="h-3.5 w-3.5" />
                 Notes
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 pt-3 space-y-3">
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                placeholder="Add notes visible to all team members..."
+                className="rounded-lg text-sm resize-none"
+              />
               <div>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Add notes visible to all team members..."
-                  className="rounded-lg"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Internal only</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">Internal only</p>
                 <Textarea
                   value={internalComments}
                   onChange={(e) => setInternalComments(e.target.value)}
                   rows={2}
                   placeholder="Private staff notes..."
-                  className="mt-1 rounded-lg"
+                  className="rounded-lg text-sm resize-none"
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Timeline */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4" />
-                Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {job.events.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No events recorded</p>
-              ) : (
+          {job.events.length > 0 && (
+            <Card>
+              <CardHeader className="p-4 pb-0">
+                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  Timeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-3">
                 <div className="space-y-0">
                   {job.events.map((event: any, idx: number) => (
-                    <div key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+                    <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
                       {idx < job.events.length - 1 && (
-                        <div className="absolute left-[7px] top-4 bottom-0 w-px bg-border" />
+                        <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-border" />
                       )}
-                      <div className="relative mt-1.5 h-[15px] w-[15px] shrink-0 rounded-full border-2 border-primary/30 bg-background" />
+                      <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-primary/30 bg-background" />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-[13px]">
+                        <div className="flex items-baseline gap-1.5 text-xs">
                           <span className="font-medium">{event.userName ?? "System"}</span>
-                          <span className="text-muted-foreground capitalize">{event.eventType.replace(/_/g, " ")}</span>
-                          <span className="ml-auto text-[11px] text-muted-foreground whitespace-nowrap">
+                          <span className="text-muted-foreground">{event.eventType.replace(/_/g, " ")}</span>
+                          <span className="ml-auto text-[11px] text-muted-foreground/70 whitespace-nowrap">
                             <SmartDate date={event.createdAt} />
                           </span>
                         </div>
                         {event.fieldChanged && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            <strong>{event.fieldChanged}</strong>: {event.oldValue} → {event.newValue}
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {event.fieldChanged}: {event.oldValue} → {event.newValue}
                           </p>
                         )}
                         {event.comment && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{event.comment}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{event.comment}</p>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Communication Log */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <MessageSquare className="h-4 w-4" />
+            <CardHeader className="p-4 pb-0">
+              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MessageSquare className="h-3.5 w-3.5" />
                 Communication Log
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-3">
               <CommunicationLogPanel
                 repairJobId={job.id}
                 logs={communicationLogs}
@@ -264,118 +265,158 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-5">
+        <div className="space-y-4">
+          {/* Status controls */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Status & Priority</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Status</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <CardContent className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Priority</Label>
+                  <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1 h-8 text-xs rounded-lg" />
+                </div>
               </div>
-              <div>
-                <Label>Priority</Label>
-                <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1" />
-              </div>
-              <div>
-                <Label>Invoice Status</Label>
-                <Select value={invoiceStatus} onValueChange={setInvoiceStatus}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Customer Response</Label>
-                <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Invoice</Label>
+                  <Select value={invoiceStatus} onValueChange={setInvoiceStatus}>
+                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Customer</Label>
+                  <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
+                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* Info */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{job.location?.name ?? "No location"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{job.customer?.name ?? "No customer"}</span>
-              </div>
-              {job.unit && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Unit</p>
-                  <p>{[job.unit.brand, job.unit.model, job.unit.registration].filter(Boolean).join(" · ") || "—"}</p>
+            <CardContent className="p-4">
+              <div className="space-y-2.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Location
+                  </span>
+                  <span className="font-medium text-right">{job.location?.name ?? "—"}</span>
                 </div>
-              )}
-              <div>
-                <p className="text-xs text-muted-foreground">Assigned</p>
-                <p>{job.assignedUser?.name ?? "Unassigned"}</p>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <User className="h-3.5 w-3.5" />
+                    Customer
+                  </span>
+                  {job.customer ? (
+                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
+                      {job.customer.name}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </div>
+                {job.unit && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Hash className="h-3.5 w-3.5" />
+                      Unit
+                    </span>
+                    <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right truncate max-w-[160px]">
+                      {[job.unit.brand, job.unit.model, job.unit.registration].filter(Boolean).join(" · ") || "—"}
+                    </Link>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <User className="h-3.5 w-3.5" />
+                    Assigned
+                  </span>
+                  <span className="font-medium text-right">{job.assignedUser?.name ?? "Unassigned"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Created
+                  </span>
+                  <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
+                </div>
+                {(job.estimatedCost || job.actualCost) && (
+                  <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
+                    {job.estimatedCost && (
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <DollarSign className="h-3.5 w-3.5" />
+                          Estimated
+                        </span>
+                        <span className="font-medium">€{job.estimatedCost}</span>
+                      </div>
+                    )}
+                    {job.actualCost && (
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <DollarSign className="h-3.5 w-3.5" />
+                          Actual
+                        </span>
+                        <span className="font-medium">€{job.actualCost}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {job.sourceSheet && (
+                  <div className="border-t pt-2.5 mt-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Source</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-[160px]">{job.sourceSheet}</span>
+                    </div>
+                  </div>
+                )}
               </div>
-              {job.sourceSheet && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Source Sheet</p>
-                  <p>{job.sourceSheet}</p>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>Created {format(new Date(job.createdAt), "dd MMM yyyy")}</span>
-              </div>
-              {job.estimatedCost && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Estimated Cost</p>
-                  <p>€{job.estimatedCost}</p>
-                </div>
-              )}
-              {job.actualCost && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Actual Cost</p>
-                  <p>€{job.actualCost}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Normalized Flags */}
+          {/* Flags */}
           {(job.waterDamageRiskFlag || job.safetyFlag || job.tyresFlag || job.lightsFlag || job.brakesFlag || job.windowsFlag || job.sealsFlag || job.partsRequiredFlag || job.followUpRequiredFlag || job.warrantyInternalCostFlag || job.prepaidFlag) && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Flags</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-1.5">
-                {job.waterDamageRiskFlag && <Badge variant="destructive">Water Damage Risk</Badge>}
-                {job.safetyFlag && <Badge variant="destructive">Safety Concern</Badge>}
-                {job.tyresFlag && <Badge variant="secondary">Tyres</Badge>}
-                {job.lightsFlag && <Badge variant="secondary">Lighting</Badge>}
-                {job.brakesFlag && <Badge variant="secondary">Brakes</Badge>}
-                {job.windowsFlag && <Badge variant="secondary">Windows</Badge>}
-                {job.sealsFlag && <Badge variant="secondary">Seals</Badge>}
-                {job.partsRequiredFlag && <Badge variant="outline">Parts Required</Badge>}
-                {job.followUpRequiredFlag && <Badge variant="outline">Follow-up</Badge>}
-                {job.warrantyInternalCostFlag && <Badge variant="outline">Warranty/Internal</Badge>}
-                {job.prepaidFlag && <Badge variant="outline">Prepaid</Badge>}
+              <CardContent className="p-4">
+                <p className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-2">
+                  <Flag className="h-3 w-3" />
+                  Flags
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {job.waterDamageRiskFlag && <Badge variant="destructive" className="rounded-full text-[10px] px-2 py-0">Water Damage</Badge>}
+                  {job.safetyFlag && <Badge variant="destructive" className="rounded-full text-[10px] px-2 py-0">Safety</Badge>}
+                  {job.tyresFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Tyres</Badge>}
+                  {job.lightsFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Lighting</Badge>}
+                  {job.brakesFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Brakes</Badge>}
+                  {job.windowsFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Windows</Badge>}
+                  {job.sealsFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Seals</Badge>}
+                  {job.partsRequiredFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Parts</Badge>}
+                  {job.followUpRequiredFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Follow-up</Badge>}
+                  {job.warrantyInternalCostFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Warranty</Badge>}
+                  {job.prepaidFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Prepaid</Badge>}
+                </div>
               </CardContent>
             </Card>
           )}

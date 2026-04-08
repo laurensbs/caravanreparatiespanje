@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -11,8 +10,6 @@ import {
   Truck,
   Settings,
   MessageSquare,
-  Menu,
-  X,
   ChevronsLeft,
   ChevronsRight,
   Package,
@@ -44,21 +41,7 @@ interface SidebarProps {
 
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { collapsed, setCollapsed } = useSidebar();
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [mobileOpen]);
 
   const filteredItems = navItems.filter(
     (item) => !item.minRole || hasMinRole(userRole, item.minRole)
@@ -93,95 +76,49 @@ export function Sidebar({ userRole }: SidebarProps) {
     );
   }
 
-  const sidebarContent = (isMobile: boolean) => (
-    <>
+  return (
+    <aside
+      className={cn(
+        "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[oklch(0.16_0.025_260)] transition-all duration-300 ease-in-out",
+        collapsed ? "w-[60px]" : "w-60"
+      )}
+    >
       <div className={cn(
         "flex items-center border-b border-white/10 transition-all duration-300",
-        isMobile ? "h-16 gap-3 px-5" : collapsed ? "h-16 justify-center px-2" : "h-16 gap-3 px-5"
+        collapsed ? "h-12 justify-center px-2" : "h-12 gap-3 px-5"
       )}>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 shrink-0">
           <Wrench className="h-4 w-4 text-white" />
         </div>
-        {(isMobile || !collapsed) && (
+        {!collapsed && (
           <div className="min-w-0 overflow-hidden">
             <h1 className="text-sm font-semibold tracking-tight text-white whitespace-nowrap">Caravan Repairs</h1>
           </div>
-        )}
-        {isMobile && (
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="ml-auto rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
         )}
       </div>
 
       <nav className={cn(
         "flex-1 space-y-0.5 overflow-y-auto py-3 transition-all duration-300",
-        isMobile ? "px-3" : collapsed ? "px-1.5" : "px-3"
+        collapsed ? "px-1.5" : "px-3"
       )}>
         {filteredItems.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
       </nav>
 
-      {!isMobile && (
-        <div className="border-t border-white/10 px-2 py-3">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex w-full items-center justify-center rounded-lg p-2 text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? (
-              <ChevronsRight className="h-4 w-4" />
-            ) : (
-              <ChevronsLeft className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-      )}
-    </>
-  );
-
-  return (
-    <>
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border bg-card shadow-sm lg:hidden"
-        aria-label="Open menu"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Mobile sidebar */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[oklch(0.16_0.025_260)] transition-transform duration-300 ease-in-out lg:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {sidebarContent(true)}
-      </aside>
-
-      {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          "hidden lg:flex fixed left-0 top-0 z-40 h-screen flex-col bg-[oklch(0.16_0.025_260)] transition-all duration-300 ease-in-out",
-          collapsed ? "w-[60px]" : "w-60"
-        )}
-      >
-        {sidebarContent(false)}
-      </aside>
-    </>
+      <div className="border-t border-white/10 px-2 py-3">
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="flex w-full items-center justify-center rounded-lg p-2 text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <ChevronsRight className="h-4 w-4" />
+          ) : (
+            <ChevronsLeft className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+    </aside>
   );
 }

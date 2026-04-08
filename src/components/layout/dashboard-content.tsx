@@ -11,7 +11,7 @@ export function DashboardContent({ children }: { children: ReactNode }) {
     <div
       className={cn(
         "flex flex-1 flex-col transition-all duration-300",
-        collapsed ? "lg:pl-16" : "lg:pl-64"
+        collapsed ? "pl-[60px]" : "pl-60"
       )}
     >
       {children}

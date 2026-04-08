@@ -11,7 +11,9 @@ import {
   createInvoice,
   createQuote,
   getInvoicePdf,
+  getQuotePdf,
   sendInvoice,
+  sendQuote,
   listInvoicesByContact,
   updateContact as updateHoldedContact,
   getContact,
@@ -177,6 +179,61 @@ export async function sendHoldedInvoice(repairJobId: string) {
     userId: session.user.id,
     eventType: "holded_invoice_sent",
     comment: `Invoice sent to ${customer.email}`,
+  });
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { sent: true };
+}
+
+// ─── Quote PDF download ───
+
+export async function downloadHoldedQuotePdf(repairJobId: string) {
+  await requireAuth();
+
+  const [job] = await db
+    .select()
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job?.holdedQuoteId) throw new Error("No Holded quote linked");
+
+  const buffer = await getQuotePdf(job.holdedQuoteId);
+  return {
+    data: Buffer.from(buffer).toString("base64"),
+    filename: `quote-${job.holdedQuoteNum ?? job.publicCode}.pdf`,
+  };
+}
+
+// ─── Send quote by email ───
+
+export async function sendHoldedQuote(repairJobId: string) {
+  const session = await requireRole("admin");
+
+  const [job] = await db
+    .select()
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job?.holdedQuoteId) throw new Error("No Holded quote linked");
+  if (!job.customerId) throw new Error("No customer linked");
+
+  const [customer] = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.id, job.customerId))
+    .limit(1);
+
+  if (!customer?.email) throw new Error("Customer has no email address");
+
+  await sendQuote(job.holdedQuoteId, [customer.email]);
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "holded_quote_sent",
+    comment: `Quote sent to ${customer.email}`,
   });
 
   revalidatePath(`/repairs/${repairJobId}`);

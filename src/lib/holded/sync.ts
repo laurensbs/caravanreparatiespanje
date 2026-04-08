@@ -141,9 +141,24 @@ export async function pullContacts(): Promise<SyncResult & { holdedTotal: number
           result.skipped++;
           continue;
         }
-        // This is a new Holded contact not in our DB — don't create locally
-        // The user wants to import only existing Holded contacts that match our repairs
-        result.skipped++;
+        // Create new customer from Holded contact
+        await db.insert(customers).values({
+          name: hc.name,
+          email: hc.email || null,
+          phone: hc.phone || null,
+          mobile: hc.mobile || null,
+          vatnumber: hc.vatnumber || null,
+          contactType: hc.isperson === false ? "business" : "person",
+          address: hc.billAddress?.address || null,
+          city: hc.billAddress?.city || null,
+          postalCode: hc.billAddress?.postalCode || null,
+          province: hc.billAddress?.province || null,
+          country: hc.billAddress?.country || null,
+          holdedContactId: hc.id,
+          holdedSyncedAt: new Date(),
+          provisional: false,
+        });
+        result.created++;
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

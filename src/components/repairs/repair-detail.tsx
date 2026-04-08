@@ -23,7 +23,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
-import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice, createHoldedQuote } from "@/actions/holded";
+import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice, createHoldedQuote, downloadHoldedQuotePdf, sendHoldedQuote } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
@@ -733,6 +733,46 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       >
                         Open in Holded
                       </a>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        onClick={async () => {
+                          try {
+                            const { data, filename } = await downloadHoldedQuotePdf(job.id);
+                            const link = document.createElement("a");
+                            link.href = `data:application/pdf;base64,${data}`;
+                            link.download = filename;
+                            link.click();
+                            toast.success("PDF downloaded");
+                          } catch {
+                            toast.error("Failed to download PDF");
+                          }
+                        }}
+                      >
+                        <FileDown className="h-3 w-3 mr-1" />
+                        PDF
+                      </Button>
+                      {job.customer?.email && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-xs"
+                          onClick={async () => {
+                            try {
+                              await sendHoldedQuote(job.id);
+                              toast.success("Quote sent to " + job.customer.email);
+                            } catch (e: any) {
+                              toast.error(e.message ?? "Failed to send");
+                            }
+                          }}
+                        >
+                          <Send className="h-3 w-3 mr-1" />
+                          Email
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (

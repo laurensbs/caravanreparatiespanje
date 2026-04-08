@@ -52,8 +52,8 @@ export interface HoldedContact {
 
 export interface HoldedInvoice {
   id: string;
-  invoiceNum: string;
-  contactId: string;
+  docNumber: string;
+  contact: string;
   contactName: string;
   date: number;
   dueDate?: number;
@@ -191,8 +191,8 @@ interface CreateInvoiceParams {
 
 export async function createInvoice(
   params: CreateInvoiceParams,
-): Promise<{ id: string; invoiceNum: string }> {
-  return holdedFetch<{ id: string; invoiceNum: string }>(
+): Promise<{ id: string; docNumber: string }> {
+  return holdedFetch<{ id: string; docNumber: string }>(
     "/documents/invoice",
     {
       method: "POST",

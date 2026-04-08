@@ -58,7 +58,7 @@ export async function getAllInvoices(): Promise<InvoiceWithRepair[]> {
       ...inv,
       repairJobId: repair?.id,
       repairPublicCode: repair?.publicCode ?? undefined,
-      customerName: customerByHolded.get(inv.contactId) ?? inv.contactName,
+      customerName: customerByHolded.get(inv.contact) ?? inv.contactName,
     };
   }).sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
 }

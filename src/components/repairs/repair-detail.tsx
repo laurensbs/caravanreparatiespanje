@@ -149,16 +149,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg shrink-0 mt-0.5" asChild>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0 mt-0.5" asChild>
             <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold tracking-tight">{job.publicCode ?? "Repair Job"}</h1>
+              <h1 className="text-xl font-extrabold tracking-tight">{job.publicCode ?? "Repair Job"}</h1>
               <Badge className={`${STATUS_COLORS[status as RepairStatus]} rounded-full text-[11px] px-2 py-0`}>
                 {STATUS_LABELS[status as RepairStatus]}
               </Badge>
@@ -191,21 +191,21 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             )}
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-lg shrink-0">
+        <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-xl shrink-0 h-9 px-4">
           {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
           Save
         </Button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Main content */}
-        <div className="space-y-4 lg:col-span-2">
+        <div className="space-y-5 lg:col-span-2">
           {/* Issue description */}
-          <Card>
-            <CardHeader className="pb-0">
+          <Card className="rounded-xl">
+            <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <FileText className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
                   Description
                 </span>
                 {!editingDescription && (
@@ -246,10 +246,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* Parts needed */}
           {job.partsNeededRaw && (
-            <Card>
-              <CardHeader className="pb-0">
-                <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                  <Wrench className="h-3.5 w-3.5" />
+            <Card className="rounded-xl">
+              <CardHeader className="pb-1">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Wrench className="h-4 w-4 text-muted-foreground" />
                   Parts Needed
                 </CardTitle>
               </CardHeader>
@@ -260,11 +260,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
 
           {/* Cost Estimate Builder */}
-          <Card>
-            <CardHeader className="pb-0">
+          <Card className="rounded-xl">
+            <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Package className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <Package className="h-4 w-4 text-muted-foreground" />
                   Cost Estimate
                 </span>
                 <div className="flex gap-1">
@@ -370,10 +370,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </HoldedHint>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                <StickyNote className="h-3.5 w-3.5" />
+          <Card className="rounded-xl">
+            <CardHeader className="pb-1">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <StickyNote className="h-4 w-4 text-muted-foreground" />
                 Notes
               </CardTitle>
             </CardHeader>
@@ -400,10 +400,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* Timeline */}
           {job.events.length > 0 && (
-            <Card>
-              <CardHeader className="pb-0">
-                <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" />
+            <Card className="rounded-xl">
+              <CardHeader className="pb-1">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                   Timeline
                 </CardTitle>
               </CardHeader>
@@ -440,10 +440,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
 
           {/* Communication Log */}
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                <MessageSquare className="h-3.5 w-3.5" />
+          <Card className="rounded-xl">
+            <CardHeader className="pb-1">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 Communication Log
               </CardTitle>
             </CardHeader>
@@ -457,10 +457,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Status controls */}
-          <Card>
-            <CardContent className="space-y-3">
+          <Card className="rounded-xl">
+            <CardContent className="space-y-3 pt-5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[11px] text-muted-foreground">Status</Label>
@@ -506,8 +506,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </Card>
 
           {/* Info */}
-          <Card>
-            <CardContent>
+          <Card className="rounded-xl">
+            <CardContent className="pt-5">
               <div className="space-y-2.5 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
@@ -608,10 +608,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* Flags */}
           {(job.waterDamageRiskFlag || job.safetyFlag || job.tyresFlag || job.lightsFlag || job.brakesFlag || job.windowsFlag || job.sealsFlag || job.partsRequiredFlag || job.followUpRequiredFlag || job.warrantyInternalCostFlag || job.prepaidFlag) && (
-            <Card>
-              <CardContent>
-                <p className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-2">
-                  <Flag className="h-3 w-3" />
+            <Card className="rounded-xl">
+              <CardContent className="pt-5">
+                <p className="flex items-center gap-2 text-xs font-semibold mb-3">
+                  <Flag className="h-3.5 w-3.5 text-muted-foreground" />
                   Flags
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -632,10 +632,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
 
           {/* Holded Invoice */}
-          <Card>
-            <CardContent>
-              <p className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-2">
-                <Receipt className="h-3 w-3" />
+          <Card className="rounded-xl">
+            <CardContent className="pt-5">
+              <p className="flex items-center gap-2 text-xs font-semibold mb-3">
+                <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
                 Holded Invoice
               </p>
               {job.holdedInvoiceId ? (

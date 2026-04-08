@@ -83,7 +83,7 @@ export default async function InvoicesPage() {
                         rel="noopener noreferrer"
                         className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
                       >
-                        {inv.invoiceNum}
+                        {inv.docNumber}
                         <ExternalLink className="h-2.5 w-2.5" />
                       </a>
                     </TableCell>

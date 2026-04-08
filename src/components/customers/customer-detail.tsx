@@ -71,20 +71,20 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" asChild>
             <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight">{customer.name}</h1>
+              <h1 className="text-xl font-extrabold tracking-tight">{customer.name}</h1>
               <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
                 {customer.contactType === "business" ? "Business" : "Person"}
               </Badge>
               {customer.holdedContactId && (
-                <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400">
+                <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400">
                   <RefreshCw className="h-2.5 w-2.5 mr-1" />
                   Syncs to Holded
                 </Badge>
@@ -97,14 +97,14 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
         </div>
         <div className="flex gap-2">
           {!editing ? (
-            <Button variant="outline" size="sm" className="rounded-lg" onClick={() => setEditing(true)}>
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setEditing(true)}>
               <Pencil className="mr-2 h-3.5 w-3.5" />
               Edit
             </Button>
           ) : (
             <>
               <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
-              <Button size="sm" className="rounded-lg" onClick={handleSave} disabled={saving}>
+              <Button size="sm" className="rounded-xl" onClick={handleSave} disabled={saving}>
                 {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
                 Save
               </Button>
@@ -125,10 +125,14 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
         </HoldedHint>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Contact info */}
-        <Card>
+        <Card className="rounded-xl">
           <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold">Contact Info</p>
+            </div>
             {editing ? (
               <div className="space-y-3">
                 <div>
@@ -240,11 +244,11 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
         </Card>
 
         {/* Address */}
-        <Card>
+        <Card className="rounded-xl">
           <CardContent>
             <div className="flex items-center gap-2 mb-3">
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Address</p>
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold">Address</p>
             </div>
             {editing ? (
               <div className="space-y-2">
@@ -294,12 +298,12 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
         </Card>
 
         {/* Units + Repairs stacked */}
-        <div className="space-y-4">
-          <Card>
+        <div className="space-y-5">
+          <Card className="rounded-xl">
             <CardContent>
               <div className="flex items-center gap-2 mb-3">
-                <Truck className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Units ({customer.units.length})</p>
+                <Truck className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-semibold">Units ({customer.units.length})</p>
               </div>
               {customer.units.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">No units linked</p>
@@ -326,11 +330,11 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-xl">
             <CardContent>
               <div className="flex items-center gap-2 mb-3">
-                <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Repairs ({customer.repairJobs.length})</p>
+                <Wrench className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-semibold">Repairs ({customer.repairJobs.length})</p>
               </div>
               {customer.repairJobs.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">No repair jobs linked</p>
@@ -360,11 +364,11 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
 
       {/* Invoices */}
       {holdedInvoices.length > 0 && (
-        <Card>
+        <Card className="rounded-xl">
           <CardContent>
             <div className="flex items-center gap-2 mb-3">
-              <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Invoices ({holdedInvoices.length})</p>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold">Invoices ({holdedInvoices.length})</p>
             </div>
             <HoldedHint variant="readonly" className="mb-3">
               Invoices are from Holded. Click to open in Holded.
@@ -379,7 +383,7 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
                   className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
                 >
                   <div className="min-w-0 mr-2">
-                    <p className="font-medium text-[13px]">{inv.invoiceNum}</p>
+                    <p className="font-medium text-[13px]">{inv.docNumber}</p>
                     <p className="text-[11px] text-muted-foreground truncate">
                       {inv.desc || "No description"}
                       {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}

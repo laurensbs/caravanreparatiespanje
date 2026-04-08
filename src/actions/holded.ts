@@ -76,11 +76,13 @@ export async function createHoldedInvoice(repairJobId: string) {
     notes: job.notesRaw ?? undefined,
   });
 
+  const invoiceNum = result.docNumber ?? result.id;
+
   await db
     .update(repairJobs)
     .set({
       holdedInvoiceId: result.id,
-      holdedInvoiceNum: result.invoiceNum,
+      holdedInvoiceNum: invoiceNum,
       invoiceStatus: "sent",
       updatedAt: new Date(),
     })
@@ -91,18 +93,18 @@ export async function createHoldedInvoice(repairJobId: string) {
     userId: session.user.id,
     eventType: "holded_invoice_created",
     fieldChanged: "holdedInvoiceId",
-    newValue: result.invoiceNum,
-    comment: `Invoice ${result.invoiceNum} created in Holded`,
+    newValue: invoiceNum,
+    comment: `Invoice ${invoiceNum} created in Holded`,
   });
 
   await createAuditLog("holded_invoice_created", "repair_job", repairJobId, {
     holdedInvoiceId: result.id,
-    invoiceNum: result.invoiceNum,
+    invoiceNum,
   });
 
   revalidatePath(`/repairs/${repairJobId}`);
   revalidatePath("/repairs");
-  return { invoiceId: result.id, invoiceNum: result.invoiceNum };
+  return { invoiceId: result.id, invoiceNum };
 }
 
 // ─── PDF download ───

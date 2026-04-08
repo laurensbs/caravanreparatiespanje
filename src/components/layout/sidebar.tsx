@@ -149,7 +149,7 @@ export function Sidebar({ userRole }: SidebarProps) {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border bg-card shadow-sm lg:hidden"
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border bg-card shadow-sm lg:hidden"
         aria-label="Open menu"
       >
         <Menu className="h-5 w-5" />

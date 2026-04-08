@@ -34,7 +34,7 @@ export default async function CustomerDetailPage({ params }: Props) {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Contact info */}
         <Card>
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="space-y-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 <Phone className="h-3.5 w-3.5 text-primary" />
@@ -66,7 +66,7 @@ export default async function CustomerDetailPage({ params }: Props) {
 
         {/* Units */}
         <Card>
-          <CardContent className="p-4">
+          <CardContent>
             <div className="flex items-center gap-2 mb-3">
               <Truck className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Units ({customer.units.length})</p>
@@ -98,7 +98,7 @@ export default async function CustomerDetailPage({ params }: Props) {
 
         {/* Repairs */}
         <Card>
-          <CardContent className="p-4">
+          <CardContent>
             <div className="flex items-center gap-2 mb-3">
               <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Repairs ({customer.repairJobs.length})</p>

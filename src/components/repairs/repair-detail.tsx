@@ -120,21 +120,21 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
         <div className="space-y-4 lg:col-span-2">
           {/* Issue description */}
           <Card>
-            <CardHeader className="p-4 pb-0">
-              <CardTitle className="flex items-center justify-between text-sm">
+            <CardHeader className="pb-0">
+              <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <FileText className="h-3.5 w-3.5" />
                   Description
                 </span>
                 {!editingDescription && (
-                  <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                  <button type="button" onClick={() => setEditingDescription(true)} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                     <Pencil className="h-3 w-3" />
                     Edit
                   </button>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-2">
+            <CardContent className="pt-2">
               {editingDescription ? (
                 <div className="space-y-2">
                   <Textarea
@@ -165,13 +165,13 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           {/* Parts needed */}
           {job.partsNeededRaw && (
             <Card>
-              <CardHeader className="p-4 pb-0">
-                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CardHeader className="pb-0">
+                <CardTitle className="flex items-center gap-2 text-muted-foreground">
                   <Wrench className="h-3.5 w-3.5" />
                   Parts Needed
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-2">
+              <CardContent className="pt-2">
                 <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
               </CardContent>
             </Card>
@@ -179,13 +179,13 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
 
           {/* Notes */}
           <Card>
-            <CardHeader className="p-4 pb-0">
-              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CardHeader className="pb-0">
+              <CardTitle className="flex items-center gap-2 text-muted-foreground">
                 <StickyNote className="h-3.5 w-3.5" />
                 Notes
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-3 space-y-3">
+            <CardContent className="pt-3 space-y-3">
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -209,13 +209,13 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           {/* Timeline */}
           {job.events.length > 0 && (
             <Card>
-              <CardHeader className="p-4 pb-0">
-                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CardHeader className="pb-0">
+                <CardTitle className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   Timeline
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-3">
+              <CardContent className="pt-3">
                 <div className="space-y-0">
                   {job.events.map((event: any, idx: number) => (
                     <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
@@ -249,13 +249,13 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
 
           {/* Communication Log */}
           <Card>
-            <CardHeader className="p-4 pb-0">
-              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CardHeader className="pb-0">
+              <CardTitle className="flex items-center gap-2 text-muted-foreground">
                 <MessageSquare className="h-3.5 w-3.5" />
                 Communication Log
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-3">
+            <CardContent className="pt-3">
               <CommunicationLogPanel
                 repairJobId={job.id}
                 logs={communicationLogs}
@@ -268,7 +268,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
         <div className="space-y-4">
           {/* Status controls */}
           <Card>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[11px] text-muted-foreground">Status</Label>
@@ -315,7 +315,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
 
           {/* Info */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent>
               <div className="space-y-2.5 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
@@ -399,7 +399,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
           {/* Flags */}
           {(job.waterDamageRiskFlag || job.safetyFlag || job.tyresFlag || job.lightsFlag || job.brakesFlag || job.windowsFlag || job.sealsFlag || job.partsRequiredFlag || job.followUpRequiredFlag || job.warrantyInternalCostFlag || job.prepaidFlag) && (
             <Card>
-              <CardContent className="p-4">
+              <CardContent>
                 <p className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-2">
                   <Flag className="h-3 w-3" />
                   Flags

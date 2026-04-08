@@ -13,7 +13,7 @@ export default function RepairsLoading() {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
             <Wrench className="h-4 w-4 text-primary animate-pulse" />
           </div>
           <div className="space-y-1.5">
@@ -23,8 +23,8 @@ export default function RepairsLoading() {
         </div>
         <Shimmer className="h-9 w-28 rounded-lg" />
       </div>
-      <Shimmer className="h-12 w-full rounded-xl" />
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <Shimmer className="h-12 w-full rounded-lg" />
+      <div className="rounded-lg border bg-card overflow-hidden">
         <Shimmer className="h-10 w-full rounded-none" />
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 border-t px-4 py-3">

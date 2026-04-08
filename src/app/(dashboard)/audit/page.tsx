@@ -68,7 +68,7 @@ export default async function AuditLogPage({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-3">
+      <div className="flex flex-wrap gap-2 rounded-lg border bg-card p-3">
         <select
           name="action"
           defaultValue={params.action ?? ""}
@@ -111,7 +111,7 @@ export default async function AuditLogPage({
       </div>
 
       {/* Log table */}
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>

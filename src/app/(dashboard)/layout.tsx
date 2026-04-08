@@ -28,10 +28,10 @@ export default async function DashboardLayout({
             userEmail={session.user.email}
             userRole={session.user.role as UserRole}
           />
-          <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 animate-fade-in">
+          <main className="flex-1 overflow-y-auto bg-background p-3 md:p-5 animate-fade-in">
             {children}
           </main>
-          <Toaster richColors position="bottom-right" toastOptions={{ className: "rounded-xl" }} />
+          <Toaster richColors position="bottom-right" toastOptions={{ className: "rounded-lg" }} />
         </DashboardContent>
       </div>
     </SidebarProvider>

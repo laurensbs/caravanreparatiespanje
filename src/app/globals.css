@@ -2,29 +2,29 @@
 
 @theme {
   /* Modern blue-gray palette with depth */
-  --color-background: oklch(0.985 0.002 260);
+  --color-background: oklch(0.975 0.003 260);
   --color-foreground: oklch(0.13 0.02 260);
-  --color-card: oklch(1 0 0);
+  --color-card: oklch(0.995 0.001 260);
   --color-card-foreground: oklch(0.13 0.02 260);
-  --color-popover: oklch(1 0 0);
+  --color-popover: oklch(0.995 0.001 260);
   --color-popover-foreground: oklch(0.13 0.02 260);
-  --color-primary: oklch(0.52 0.18 260);
+  --color-primary: oklch(0.50 0.19 260);
   --color-primary-foreground: oklch(0.99 0.002 260);
-  --color-secondary: oklch(0.96 0.006 260);
-  --color-secondary-foreground: oklch(0.25 0.02 260);
-  --color-muted: oklch(0.96 0.006 260);
-  --color-muted-foreground: oklch(0.50 0.02 260);
-  --color-accent: oklch(0.95 0.01 260);
-  --color-accent-foreground: oklch(0.25 0.02 260);
-  --color-destructive: oklch(0.58 0.22 25);
+  --color-secondary: oklch(0.955 0.008 260);
+  --color-secondary-foreground: oklch(0.22 0.02 260);
+  --color-muted: oklch(0.955 0.008 260);
+  --color-muted-foreground: oklch(0.45 0.02 260);
+  --color-accent: oklch(0.945 0.012 260);
+  --color-accent-foreground: oklch(0.22 0.02 260);
+  --color-destructive: oklch(0.55 0.22 25);
   --color-destructive-foreground: oklch(0.99 0 0);
-  --color-border: oklch(0.91 0.006 260);
-  --color-input: oklch(0.91 0.006 260);
-  --color-ring: oklch(0.52 0.18 260);
+  --color-border: oklch(0.88 0.008 260);
+  --color-input: oklch(0.88 0.008 260);
+  --color-ring: oklch(0.50 0.19 260);
   --color-sidebar: oklch(0.16 0.025 260);
   --color-sidebar-foreground: oklch(0.85 0.01 260);
   --color-sidebar-accent: oklch(0.24 0.03 260);
-  --radius: 0.75rem;
+  --radius: 0.625rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -35,6 +35,9 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -90,8 +93,8 @@
     --color-accent-foreground: oklch(0.88 0.008 260);
     --color-destructive: oklch(0.55 0.22 25);
     --color-destructive-foreground: oklch(0.99 0 0);
-    --color-border: oklch(0.25 0.015 260);
-    --color-input: oklch(0.25 0.015 260);
+    --color-border: oklch(0.22 0.015 260);
+    --color-input: oklch(0.22 0.015 260);
     --color-ring: oklch(0.62 0.19 260);
     --color-sidebar: oklch(0.10 0.02 260);
     --color-sidebar-foreground: oklch(0.80 0.01 260);

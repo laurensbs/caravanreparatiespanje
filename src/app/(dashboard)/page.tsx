@@ -59,14 +59,14 @@ export default async function DashboardPage() {
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {kpiCards.map((kpi, i) => (
           <Link key={kpi.label} href={kpi.href}>
-            <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer border-transparent bg-card animate-slide-up" style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}>
-              <CardContent className="p-4">
+            <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-card animate-slide-up" style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}>
+              <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+                    <p className="text-xl font-bold tracking-tight">{kpi.value}</p>
                     <p className="text-[11px] font-medium text-muted-foreground mt-0.5">{kpi.label}</p>
                   </div>
-                  <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", kpi.bg)}>
+                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", kpi.bg)}>
                     {kpi.icon}
                   </div>
                 </div>
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
         <Card className="lg:col-span-2 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
-              <CardTitle className="text-base">Recent Activity</CardTitle>
+              <CardTitle>Recent Activity</CardTitle>
               <CardDescription className="text-xs">Latest updated repair jobs</CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild className="text-xs h-7 rounded-lg">
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between rounded-xl p-3 transition-all hover:bg-muted/60 group"
+                    className="flex items-center justify-between rounded-lg p-3 transition-all hover:bg-muted/60 group"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
           {/* Status breakdown */}
           <Card className="animate-slide-up" style={{ animationDelay: "250ms", animationFillMode: "backwards" }}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">By Status</CardTitle>
+              <CardTitle>By Status</CardTitle>
             </CardHeader>
             <CardContent>
               {jobsByStatus.length === 0 ? (
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
           {/* Location breakdown */}
           <Card className="animate-slide-up" style={{ animationDelay: "300ms", animationFillMode: "backwards" }}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">By Location</CardTitle>
+              <CardTitle>By Location</CardTitle>
             </CardHeader>
             <CardContent>
               {jobsByLocation.length === 0 ? (

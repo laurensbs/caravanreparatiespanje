@@ -42,7 +42,7 @@ export default async function UnitDetailPage({ params }: Props) {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Details */}
         <Card>
-          <CardContent className="p-4">
+          <CardContent>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-muted-foreground"><Hash className="h-3.5 w-3.5" /> Registration</span>
@@ -77,7 +77,7 @@ export default async function UnitDetailPage({ params }: Props) {
         {/* Notes */}
         {unit.notes && (
           <Card>
-            <CardContent className="p-4">
+            <CardContent>
               <div className="flex items-center gap-2 mb-2">
                 <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
                 <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Notes</p>
@@ -89,7 +89,7 @@ export default async function UnitDetailPage({ params }: Props) {
 
         {/* Repairs */}
         <Card className={!unit.notes ? "lg:col-span-2" : ""}>
-          <CardContent className="p-4">
+          <CardContent>
             <div className="flex items-center gap-2 mb-3">
               <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Repairs ({unit.repairJobs.length})</p>

@@ -96,8 +96,7 @@ export function CommunicationLogPanel({ repairJobId, logs }: Props) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">Communication Log</h3>
+      <div className="flex items-center justify-end mb-3">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">

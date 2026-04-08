@@ -50,7 +50,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         currentFilters={filters}
       />
 
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-hidden">
         <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">

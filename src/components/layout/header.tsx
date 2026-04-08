@@ -30,7 +30,7 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/80 pl-16 pr-4 lg:pl-6 lg:pr-6 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
+      <header className="sticky top-0 z-30 flex h-12 items-center gap-3 border-b bg-card/80 pl-14 pr-3 lg:pl-5 lg:pr-5 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
         {/* Search - left aligned */}
         <button
           onClick={() =>

@@ -92,7 +92,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 min-w-0 sm:max-w-64">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -133,7 +133,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-hidden">
         <div className="overflow-x-auto">
         <Table>
           <TableHeader>

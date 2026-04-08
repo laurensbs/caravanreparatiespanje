@@ -54,7 +54,7 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
   );
 
   return (
-    <div className="rounded-xl border bg-card p-3">
+    <div className="rounded-lg border bg-card p-3">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1 min-w-0 sm:max-w-56">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

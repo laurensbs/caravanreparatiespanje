@@ -176,7 +176,7 @@ export function UsersClient({ users }: { users: User[] }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="rounded-lg border bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

@@ -131,7 +131,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
         />
       )}
 
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">

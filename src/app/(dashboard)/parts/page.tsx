@@ -68,7 +68,7 @@ export default async function PartsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="rounded-lg border bg-card overflow-hidden">
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>

@@ -1,4 +1,5 @@
-import { getDashboardStats, getFollowUpItems } from "@/actions/repairs";
+import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/actions/repairs";
+import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
 
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
@@ -20,13 +21,14 @@ import { cn } from "@/lib/utils";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, locationsList, customersList, partsCatalog] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
       getLocations(),
       getAllCustomers(),
       getParts(),
+      getDashboardSuggestions(),
     ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -75,6 +77,8 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <DashboardSuggestions data={dashboardSuggestions} />
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Recent Activity */}

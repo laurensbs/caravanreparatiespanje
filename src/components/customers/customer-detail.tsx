@@ -20,6 +20,7 @@ import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
 import { toast } from "sonner";
 import { HoldedHint } from "@/components/holded-hint";
+import { SmartSuggestions, getCustomerSuggestions } from "@/components/smart-suggestions";
 
 interface CustomerDetailProps {
   customer: any;
@@ -124,6 +125,8 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
           This contact is not linked to Holded. Add a phone or email and it will be created in Holded on save.
         </HoldedHint>
       )}
+
+      {!editing && <SmartSuggestions suggestions={getCustomerSuggestions(customer, holdedInvoices)} />}
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Contact info */}

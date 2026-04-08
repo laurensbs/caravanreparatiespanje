@@ -477,3 +477,79 @@ export async function getFollowUpItems() {
 
   return overdueFollowUps;
 }
+
+export async function getDashboardSuggestions() {
+  await requireAuth();
+
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+  const [completedNoInvoice, noEstimate, stale, unassignedUrgent, noCustomer] = await Promise.all([
+    // Completed but not invoiced
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.archivedAt),
+          eq(repairJobs.status, "completed"),
+          eq(repairJobs.invoiceStatus, "not_invoiced"),
+          isNull(repairJobs.holdedInvoiceId)
+        )
+      ),
+    // Active repairs in later stages with no cost estimate
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.archivedAt),
+          sql`${repairJobs.status} IN ('in_progress', 'scheduled', 'blocked')`,
+          isNull(repairJobs.estimatedCost),
+          isNull(repairJobs.actualCost)
+        )
+      ),
+    // Stale repairs — not updated in 14+ days
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.archivedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          sql`${repairJobs.updatedAt} < ${twoWeeksAgo}`
+        )
+      ),
+    // Urgent/high priority unassigned
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.archivedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          sql`${repairJobs.priority} IN ('urgent', 'high')`,
+          isNull(repairJobs.assignedUserId)
+        )
+      ),
+    // Active repairs with no customer
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.archivedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          isNull(repairJobs.customerId)
+        )
+      ),
+  ]);
+
+  return {
+    completedNoInvoice: completedNoInvoice[0]?.count ?? 0,
+    noEstimate: noEstimate[0]?.count ?? 0,
+    stale: stale[0]?.count ?? 0,
+    unassignedUrgent: unassignedUrgent[0]?.count ?? 0,
+    noCustomer: noCustomer[0]?.count ?? 0,
+  };
+}

@@ -26,6 +26,7 @@ import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
+import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
 
 interface PartItem {
   id: string;
@@ -196,6 +197,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           Save
         </Button>
       </div>
+
+      <SmartSuggestions suggestions={getRepairSuggestions(job)} />
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Main content */}

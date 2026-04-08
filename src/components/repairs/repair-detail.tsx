@@ -27,6 +27,7 @@ import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice, creat
 import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
+import { WorkflowGuide } from "@/components/workflow-guide";
 
 interface PartItem {
   id: string;
@@ -219,6 +220,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           Save
         </Button>
       </div>
+
+      <WorkflowGuide page="repair-detail" context={{ job, settings }} />
 
       <SmartSuggestions suggestions={getRepairSuggestions(job)} />
 

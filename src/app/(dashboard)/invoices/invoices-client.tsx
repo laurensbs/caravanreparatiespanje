@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
 import { markInvoicePaid } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
+import { WorkflowGuide } from "@/components/workflow-guide";
 
 interface Invoice {
   id: string;
@@ -150,6 +151,8 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
           {hasActiveFilters && ` (${invoices.length} total)`}
         </p>
       </div>
+
+      <WorkflowGuide page="invoices" />
 
       {/* Summary cards */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">

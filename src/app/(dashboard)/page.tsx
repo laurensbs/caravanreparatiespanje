@@ -1,5 +1,6 @@
 import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/actions/repairs";
 import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
+import { WorkflowGuide } from "@/components/workflow-guide";
 
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
@@ -77,6 +78,8 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <WorkflowGuide page="dashboard" />
 
       <DashboardSuggestions data={dashboardSuggestions} />
 

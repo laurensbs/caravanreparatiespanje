@@ -10,6 +10,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CustomerFiltersBar } from "@/components/customers/customer-filters";
 import { NewCustomerDialog } from "@/components/customers/new-customer-dialog";
 import { HoldedHint } from "@/components/holded-hint";
+import { WorkflowGuide } from "@/components/workflow-guide";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
@@ -69,6 +70,8 @@ export default async function CustomersPage({ searchParams }: Props) {
         </div>
         <NewCustomerDialog />
       </div>
+
+      <WorkflowGuide page="customers" />
 
       {/* Contact type tabs */}
       <div className="flex gap-1 border-b">

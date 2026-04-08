@@ -5,6 +5,7 @@ import { getParts } from "@/actions/parts";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
+import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -54,6 +55,8 @@ export default async function RepairsPage({ searchParams }: Props) {
         </div>
         <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
       </div>
+
+      <WorkflowGuide page="repairs" />
 
       <RepairFiltersBar
         locations={filteredLocations}

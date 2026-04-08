@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -90,6 +91,8 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
         </div>
         <NewUnitDialog />
       </div>
+
+      <WorkflowGuide page="units" />
 
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:flex-wrap">

@@ -4,6 +4,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { DashboardContent } from "@/components/layout/dashboard-content";
+import { AssistantProvider } from "@/components/assistant-context";
+import { AssistantShell } from "@/components/assistant-shell";
 import { Toaster } from "sonner";
 import type { UserRole } from "@/types";
 
@@ -20,20 +22,23 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
-        <Sidebar userRole={session.user.role as UserRole} />
-        <DashboardContent>
-          <Header
-            userName={session.user.name}
-            userEmail={session.user.email}
-            userRole={session.user.role as UserRole}
-          />
-          <main className="flex-1 overflow-y-auto bg-background p-3 md:p-5 animate-fade-in">
-            {children}
-          </main>
-          <Toaster richColors position="bottom-right" toastOptions={{ className: "rounded-lg" }} />
-        </DashboardContent>
-      </div>
+      <AssistantProvider>
+        <div className="flex min-h-screen">
+          <Sidebar userRole={session.user.role as UserRole} />
+          <DashboardContent>
+            <Header
+              userName={session.user.name}
+              userEmail={session.user.email}
+              userRole={session.user.role as UserRole}
+            />
+            <main className="flex-1 overflow-y-auto bg-background p-3 md:p-5 animate-fade-in">
+              {children}
+            </main>
+            <Toaster richColors position="bottom-right" toastOptions={{ className: "rounded-lg" }} />
+            <AssistantShell />
+          </DashboardContent>
+        </div>
+      </AssistantProvider>
     </SidebarProvider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateRepairJob } from "@/actions/repairs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
 import { WorkflowGuide } from "@/components/workflow-guide";
+import { useAssistantContext } from "@/components/assistant-context";
 
 interface PartItem {
   id: string;
@@ -63,6 +64,7 @@ interface RepairDetailProps {
 
 export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 } }: RepairDetailProps) {
   const router = useRouter();
+  const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState(job.status);
@@ -86,6 +88,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const discountAmount = costLinesSubtotal * (discountPercent / 100);
   const costLinesTotal = costLinesSubtotal - discountAmount;
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
+
+  // Push repair context to the global assistant
+  useEffect(() => {
+    setRepairContext({ job, settings });
+    return () => setRepairContext(null);
+  }, [job, settings, setRepairContext]);
 
   function addPartLine(part: PartItem) {
     const baseCost = part.defaultCost ? parseFloat(part.defaultCost) : 0;

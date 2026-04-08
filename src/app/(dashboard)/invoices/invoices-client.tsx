@@ -78,10 +78,8 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
     return result;
   }, [invoices, statusFilter, search, dateFrom, dateTo]);
 
-  const totalRevenue = filtered.reduce((sum, inv) => sum + (inv.total ?? 0), 0);
   const paidCount = filtered.filter(i => i.status === 1).length;
   const unpaidCount = filtered.filter(i => i.status === 0).length;
-  const unpaidTotal = filtered.filter(i => i.status !== 1).reduce((sum, inv) => sum + (inv.total ?? 0), 0);
 
   const hasActiveFilters = statusFilter !== "all" || search.trim() || dateFrom || dateTo;
 
@@ -159,28 +157,29 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
         <Card className="rounded-xl">
           <CardContent className="pt-4 pb-3">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
-            <p className="text-xl font-bold tabular-nums">€{totalRevenue.toFixed(2)}</p>
-            <p className="text-[11px] text-muted-foreground">{filtered.length} invoices</p>
+            <p className="text-xl font-bold tabular-nums">{filtered.length}</p>
+            <p className="text-[11px] text-muted-foreground">invoices</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl">
           <CardContent className="pt-4 pb-3">
             <p className="text-[11px] text-emerald-600 uppercase tracking-wider">Paid</p>
             <p className="text-xl font-bold text-emerald-600 tabular-nums">{paidCount}</p>
-            <p className="text-[11px] text-muted-foreground">€{(totalRevenue - unpaidTotal).toFixed(2)}</p>
+            <p className="text-[11px] text-muted-foreground">invoices</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl">
           <CardContent className="pt-4 pb-3">
             <p className="text-[11px] text-red-600 uppercase tracking-wider">Unpaid</p>
             <p className="text-xl font-bold text-red-600 tabular-nums">{unpaidCount}</p>
-            <p className="text-[11px] text-muted-foreground">€{unpaidTotal.toFixed(2)}</p>
+            <p className="text-[11px] text-muted-foreground">invoices</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl">
           <CardContent className="pt-4 pb-3">
             <p className="text-[11px] text-amber-600 uppercase tracking-wider">Partial</p>
             <p className="text-xl font-bold text-amber-600 tabular-nums">{filtered.filter(i => i.status === 2).length}</p>
+            <p className="text-[11px] text-muted-foreground">invoices</p>
           </CardContent>
         </Card>
       </div>
@@ -241,7 +240,6 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Description</TableHead>
-                <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider">Amount</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Actions</TableHead>
@@ -250,7 +248,7 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-16 text-center">
+                  <TableCell colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Receipt className="h-8 w-8 opacity-20" />
                       <p className="font-medium text-sm">
@@ -284,9 +282,6 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
                     </TableCell>
                     <TableCell className="text-[13px] text-muted-foreground max-w-[200px] truncate">
                       {inv.desc || "—"}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-[13px] tabular-nums">
-                      €{inv.total?.toFixed(2) ?? "0.00"}
                     </TableCell>
                     <TableCell>
                       {inv.status === 1 ? (

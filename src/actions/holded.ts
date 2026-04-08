@@ -166,33 +166,8 @@ export async function syncCustomerToHolded(customerId: string) {
   await requireAuth();
   if (!isHoldedConfigured()) return;
 
-  const [customer] = await db
-    .select()
-    .from(customers)
-    .where(eq(customers.id, customerId))
-    .limit(1);
-
-  if (!customer) return;
-
-  if (customer.holdedContactId) {
-    // Update existing contact
-    await updateHoldedContact(customer.holdedContactId, {
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-    });
-  } else {
-    // Create new contact and store ID
-    const contactId = await findOrCreateContact({
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-    });
-    await db
-      .update(customers)
-      .set({ holdedContactId: contactId, updatedAt: new Date() })
-      .where(eq(customers.id, customerId));
-  }
+  const { pushContactToHolded } = await import("@/lib/holded/sync");
+  await pushContactToHolded(customerId);
 }
 
 // ─── Get invoices for customer ───

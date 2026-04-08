@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { HoldedHint } from "@/components/holded-hint";
 
 export function NewCustomerDialog() {
   const router = useRouter();
@@ -95,6 +96,9 @@ export function NewCustomerDialog() {
             <Label htmlFor="dlg-notes" className="text-xs">Notes</Label>
             <Textarea id="dlg-notes" name="notes" rows={2} className="mt-1 rounded-lg" />
           </div>
+          <HoldedHint variant="info">
+            Contact is saved locally. If you add phone or email, it will also be created in <strong>Holded</strong> on next sync.
+          </HoldedHint>
           <div className="flex justify-end gap-2 pt-2 border-t">
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" size="sm" disabled={saving} className="rounded-lg">

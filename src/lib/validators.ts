@@ -59,6 +59,13 @@ export const customerSchema = z.object({
   contactType: z.enum(["person", "business"]).optional(),
   phone: z.string().max(100).optional(),
   email: z.string().email().max(255).optional().or(z.literal("")),
+  mobile: z.string().max(100).optional(),
+  address: z.string().max(500).optional(),
+  city: z.string().max(255).optional(),
+  postalCode: z.string().max(50).optional(),
+  province: z.string().max(255).optional(),
+  country: z.string().max(100).optional(),
+  vatnumber: z.string().max(100).optional(),
   notes: z.string().optional(),
 });
 

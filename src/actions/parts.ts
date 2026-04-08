@@ -37,6 +37,12 @@ export async function createSupplier(data: {
 
   await createAuditLog("create", "supplier", supplier.id, { name: data.name });
   revalidatePath("/parts");
+
+  // Sync to Holded in background
+  import("@/lib/holded/sync").then(({ pushSupplierToHolded }) =>
+    pushSupplierToHolded(supplier.id).catch(() => {})
+  );
+
   return supplier;
 }
 
@@ -57,6 +63,11 @@ export async function updateSupplier(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(suppliers.id, id));
   revalidatePath("/parts");
+
+  // Sync to Holded in background
+  import("@/lib/holded/sync").then(({ pushSupplierToHolded }) =>
+    pushSupplierToHolded(id).catch(() => {})
+  );
 }
 
 export async function deleteSupplier(id: string) {

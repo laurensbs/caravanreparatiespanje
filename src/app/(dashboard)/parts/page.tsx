@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { PartsClient } from "@/components/parts/parts-client";
 import { SuppliersClient } from "@/components/parts/suppliers-client";
+import { HoldedHint } from "@/components/holded-hint";
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
   requested: "bg-yellow-100 text-yellow-800",
@@ -57,6 +58,9 @@ export default async function PartsPage() {
         </TabsList>
 
         <TabsContent value="catalog" className="mt-4">
+          <HoldedHint variant="sync" className="mb-4">
+            Parts catalog is synced from <strong>Holded products</strong>. Prices set here are used for cost estimates. Adding parts to a repair doesn't change anything in Holded.
+          </HoldedHint>
           <PartsClient parts={parts} suppliers={suppliers} />
         </TabsContent>
 
@@ -128,6 +132,9 @@ export default async function PartsPage() {
         </TabsContent>
 
         <TabsContent value="suppliers" className="mt-4">
+          <HoldedHint variant="readonly" className="mb-4">
+            Suppliers are synced from <strong>Holded contacts</strong> (type: supplier). To add or edit suppliers, update them in Holded and run a sync.
+          </HoldedHint>
           <SuppliersClient suppliers={suppliers} />
         </TabsContent>
       </Tabs>

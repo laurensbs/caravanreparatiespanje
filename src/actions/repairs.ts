@@ -411,6 +411,26 @@ export async function getDashboardStats() {
   };
 }
 
+export async function deleteRepairJob(id: string) {
+  const session = await requireRole("admin");
+
+  const [existing] = await db
+    .select({ id: repairJobs.id, publicCode: repairJobs.publicCode })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, id))
+    .limit(1);
+
+  if (!existing) throw new Error("Job not found");
+
+  await db.delete(repairJobs).where(eq(repairJobs.id, id));
+
+  await createAuditLog("delete", "repair_job", id, { publicCode: existing.publicCode });
+
+  revalidatePath("/repairs");
+  revalidatePath("/");
+  return { deleted: true };
+}
+
 export async function getFollowUpItems() {
   await requireAuth();
 

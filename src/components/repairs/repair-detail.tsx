@@ -16,7 +16,7 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send, Plus, Trash2, Package, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -24,16 +24,36 @@ import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
+import { deleteRepairJob } from "@/actions/repairs";
+import { HoldedHint } from "@/components/holded-hint";
+
+interface PartItem {
+  id: string;
+  name: string;
+  partNumber: string | null;
+  defaultCost: string | null;
+  supplierName: string | null;
+}
+
+interface CostLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  partId?: string;
+}
 
 interface RepairDetailProps {
-  job: any; // Full job with relations from getRepairJobById
+  job: any;
   communicationLogs?: any[];
+  partsList?: PartItem[];
   backTo?: string;
 }
 
-export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo }: RepairDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState(job.status);
   const [priority, setPriority] = useState(job.priority);
   const [invoiceStatus, setInvoiceStatus] = useState(job.invoiceStatus);
@@ -44,6 +64,65 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
   const [editingTitle, setEditingTitle] = useState(false);
   const [description, setDescription] = useState(job.descriptionRaw ?? "");
   const [editingDescription, setEditingDescription] = useState(false);
+  const [estimatedCost, setEstimatedCost] = useState(job.estimatedCost ?? "");
+  const [actualCost, setActualCost] = useState(job.actualCost ?? "");
+  const [costLines, setCostLines] = useState<CostLineItem[]>([]);
+  const [showPartPicker, setShowPartPicker] = useState(false);
+  const [partSearch, setPartSearch] = useState("");
+
+  const costLinesTotal = costLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+
+  function addPartLine(part: PartItem) {
+    const price = part.defaultCost ? parseFloat(part.defaultCost) : 0;
+    setCostLines((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), description: part.name, quantity: 1, unitPrice: price, partId: part.id },
+    ]);
+    setShowPartPicker(false);
+    setPartSearch("");
+  }
+
+  function addCustomLine() {
+    setCostLines((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), description: "", quantity: 1, unitPrice: 0 },
+    ]);
+  }
+
+  function removeCostLine(id: string) {
+    setCostLines((prev) => prev.filter((l) => l.id !== id));
+  }
+
+  function updateCostLine(id: string, field: keyof CostLineItem, value: string | number) {
+    setCostLines((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, [field]: value } : l))
+    );
+  }
+
+  function applyLinesToEstimate() {
+    setEstimatedCost(costLinesTotal.toFixed(2));
+  }
+
+  const filteredParts = partSearch.length > 0
+    ? partsList.filter(
+        (p) =>
+          p.name.toLowerCase().includes(partSearch.toLowerCase()) ||
+          p.partNumber?.toLowerCase().includes(partSearch.toLowerCase())
+      ).slice(0, 8)
+    : partsList.slice(0, 8);
+
+  async function handleDelete() {
+    if (!confirm("Are you sure you want to delete this repair job? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await deleteRepairJob(job.id);
+      toast.success("Repair job deleted");
+      router.push("/repairs");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to delete");
+      setDeleting(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -57,6 +136,8 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
         customerResponseStatus,
         notesRaw: notes || null,
         internalComments: internalComments || null,
+        estimatedCost: estimatedCost || null,
+        actualCost: actualCost || null,
       });
       router.refresh();
       toast.success("Changes saved");
@@ -178,7 +259,117 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
             </Card>
           )}
 
-          {/* Notes */}
+          {/* Cost Estimate Builder */}
+          <Card>
+            <CardHeader className="pb-0">
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Package className="h-3.5 w-3.5" />
+                  Cost Estimate
+                </span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addCustomLine}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    Custom line
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowPartPicker(!showPartPicker)}>
+                    <Package className="h-3 w-3 mr-1" />
+                    Add part
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {showPartPicker && (
+                <div className="mb-3 border rounded-lg p-2 bg-muted/30">
+                  <Input
+                    placeholder="Search parts..."
+                    value={partSearch}
+                    onChange={(e) => setPartSearch(e.target.value)}
+                    className="h-7 text-xs rounded-lg mb-2"
+                    autoFocus
+                  />
+                  <div className="max-h-40 overflow-y-auto space-y-0.5">
+                    {filteredParts.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground py-2 text-center">No parts found</p>
+                    ) : (
+                      filteredParts.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => addPartLine(p)}
+                          className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center"
+                        >
+                          <span className="truncate">
+                            {p.name}
+                            {p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}
+                          </span>
+                          {p.defaultCost && (
+                            <span className="text-muted-foreground shrink-0 ml-2">€{parseFloat(p.defaultCost).toFixed(2)}</span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {costLines.length > 0 ? (
+                <div className="space-y-1.5">
+                  {costLines.map((line) => (
+                    <div key={line.id} className="flex items-center gap-2">
+                      <Input
+                        value={line.description}
+                        onChange={(e) => updateCostLine(line.id, "description", e.target.value)}
+                        placeholder="Description"
+                        className="h-7 text-xs rounded-lg flex-1"
+                      />
+                      <Input
+                        type="number"
+                        min="1"
+                        value={line.quantity}
+                        onChange={(e) => updateCostLine(line.id, "quantity", parseInt(e.target.value) || 1)}
+                        className="h-7 text-xs rounded-lg w-14 text-center"
+                      />
+                      <div className="relative w-24">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={line.unitPrice}
+                          onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)}
+                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                        />
+                      </div>
+                      <span className="text-xs font-medium w-16 text-right tabular-nums">
+                        €{(line.quantity * line.unitPrice).toFixed(2)}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeCostLine(line.id)}>
+                        <XIcon className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-xs font-medium text-muted-foreground">Total</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold tabular-nums">€{costLinesTotal.toFixed(2)}</span>
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={applyLinesToEstimate}>
+                        Apply as estimate
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground py-2">
+                  Add parts or custom lines to build a cost estimate, or enter the total directly in the sidebar.
+                </p>
+              )}
+              <HoldedHint variant="info" className="mt-3">
+                This estimate is stored locally. Use <strong>"Create Invoice"</strong> in the sidebar to turn it into a Holded invoice.
+              </HoldedHint>
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader className="pb-0">
               <CardTitle className="flex items-center gap-2 text-muted-foreground">
@@ -363,26 +554,44 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                   </span>
                   <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
                 </div>
-                {(job.estimatedCost || job.actualCost) && (
+                {(job.estimatedCost || job.actualCost || true) && (
                   <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
-                    {job.estimatedCost && (
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-muted-foreground">
-                          <DollarSign className="h-3.5 w-3.5" />
-                          Estimated
-                        </span>
-                        <span className="font-medium">€{job.estimatedCost}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 text-muted-foreground shrink-0">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Estimated
+                      </span>
+                      <div className="relative w-28">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={estimatedCost}
+                          onChange={(e) => setEstimatedCost(e.target.value)}
+                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                        />
                       </div>
-                    )}
-                    {job.actualCost && (
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-muted-foreground">
-                          <DollarSign className="h-3.5 w-3.5" />
-                          Actual
-                        </span>
-                        <span className="font-medium">€{job.actualCost}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 text-muted-foreground shrink-0">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Actual
+                      </span>
+                      <div className="relative w-28">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={actualCost}
+                          onChange={(e) => setActualCost(e.target.value)}
+                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                        />
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
                 {job.sourceSheet && (
@@ -442,6 +651,9 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                       Open in Holded
                     </a>
                   </div>
+                  <HoldedHint variant="sync">
+                    This invoice exists in Holded. PDF download and email are sent via Holded.
+                  </HoldedHint>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -489,7 +701,7 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                     variant="default"
                     size="sm"
                     className="w-full text-xs"
-                    disabled={!job.customer || (!job.actualCost && !job.estimatedCost)}
+                    disabled={!job.customer || (!actualCost && !estimatedCost)}
                     onClick={async () => {
                       try {
                         const result = await createHoldedInvoice(job.id);
@@ -506,13 +718,34 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
                   {!job.customer && (
                     <p className="text-[11px] text-muted-foreground mt-1.5">Link a contact first</p>
                   )}
-                  {job.customer && !job.actualCost && !job.estimatedCost && (
+                  {job.customer && !actualCost && !estimatedCost && (
                     <p className="text-[11px] text-muted-foreground mt-1.5">Add a cost estimate first</p>
                   )}
+                  <HoldedHint variant="info" className="mt-2">
+                    Creates an invoice in Holded linked to{" "}
+                    {job.customer?.holdedContactId
+                      ? "the customer's Holded contact"
+                      : "a new Holded contact"}
+                    . Amount uses actual or estimated cost.
+                  </HoldedHint>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Delete job */}
+          <div className="pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? <Spinner className="mr-2" /> : <Trash2 className="h-3 w-3 mr-1" />}
+              Delete Repair Job
+            </Button>
+          </div>
         </div>
       </div>
     </div>

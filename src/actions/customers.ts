@@ -24,6 +24,7 @@ import { revalidatePath } from "next/cache";
 
 export type CustomerFilters = {
   q?: string;
+  contactType?: string;
   repairStatus?: string;
   locationId?: string;
   page?: number;
@@ -47,6 +48,10 @@ export async function getCustomers(filters: CustomerFilters = {}) {
         ilike(customers.email, term),
       )!
     );
+  }
+
+  if (filters.contactType && (filters.contactType === "person" || filters.contactType === "business")) {
+    conditions.push(eq(customers.contactType, filters.contactType));
   }
 
   if (filters.repairStatus === "open") {
@@ -89,6 +94,7 @@ export async function getCustomers(filters: CustomerFilters = {}) {
         email: customers.email,
         notes: customers.notes,
         provisional: customers.provisional,
+        holdedContactId: customers.holdedContactId,
         updatedAt: customers.updatedAt,
         createdAt: customers.createdAt,
         repairCount: sql<number>`(SELECT COUNT(*) FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id})`.as("repair_count"),
@@ -148,7 +154,19 @@ export async function updateCustomer(id: string, data: unknown) {
 
   const [updated] = await db
     .update(customers)
-    .set({ ...parsed, name: capitalizeWords(parsed.name), email: parsed.email || null, updatedAt: new Date() })
+    .set({
+      ...parsed,
+      name: capitalizeWords(parsed.name),
+      email: parsed.email || null,
+      mobile: parsed.mobile || null,
+      address: parsed.address || null,
+      city: parsed.city || null,
+      postalCode: parsed.postalCode || null,
+      province: parsed.province || null,
+      country: parsed.country || null,
+      vatnumber: parsed.vatnumber || null,
+      updatedAt: new Date(),
+    })
     .where(eq(customers.id, id))
     .returning();
 

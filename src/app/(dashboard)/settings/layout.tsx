@@ -40,6 +40,12 @@ export default function SettingsLayout({
         >
           Tags
         </Link>
+        <Link
+          href="/settings/holded"
+          className="border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-muted-foreground/50 hover:text-foreground"
+        >
+          Holded
+        </Link>
       </nav>
 
       {children}

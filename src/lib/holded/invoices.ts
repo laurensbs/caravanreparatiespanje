@@ -1,4 +1,4 @@
-import { holdedFetch, holdedFetchRaw } from "./client";
+import { holdedFetch, holdedFetchRaw, holdedFetchAll } from "./client";
 
 // ─── Types ───
 
@@ -8,7 +8,8 @@ export interface HoldedContact {
   email?: string;
   phone?: string;
   mobile?: string;
-  type?: string;
+  type?: string; // "client", "supplier", "debtor", "creditor", "lead", ""
+  isperson?: boolean;
   code?: string;
   vatnumber?: string;
   tradeName?: string;
@@ -20,6 +21,14 @@ export interface HoldedContact {
     country?: string;
     countryCode?: string;
   };
+  shippingAddresses?: Array<{
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    country?: string;
+    countryCode?: string;
+  }>;
   defaults?: {
     salesChannel?: string;
     paymentMethod?: string;
@@ -27,6 +36,18 @@ export interface HoldedContact {
   socialNetworks?: Record<string, string>;
   tags?: string[];
   customFields?: Array<{ field: string; value: string }>;
+  contactPersons?: Array<{
+    name?: string;
+    job?: string;
+    phone?: string;
+    email?: string;
+  }>;
+  note?: string;
+  groupId?: string;
+  iban?: string;
+  swift?: string;
+  clientRecord?: number;
+  supplierRecord?: number;
 }
 
 export interface HoldedInvoice {
@@ -57,36 +78,72 @@ export async function getContact(contactId: string): Promise<HoldedContact> {
 }
 
 export async function listContacts(): Promise<HoldedContact[]> {
-  return holdedFetch<HoldedContact[]>("/contacts");
+  return holdedFetchAll<HoldedContact>("/contacts");
 }
 
 export async function createContact(data: {
   name: string;
   email?: string | null;
   phone?: string | null;
+  isperson?: boolean;
+  type?: string;
+  vatnumber?: string | null;
+  tradeName?: string | null;
+  billAddress?: {
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    country?: string;
+    countryCode?: string;
+  };
 }): Promise<{ id: string }> {
+  const body: Record<string, unknown> = {
+    name: data.name,
+    type: data.type ?? "client",
+  };
+  if (data.email) body.email = data.email;
+  if (data.phone) body.phone = data.phone;
+  if (data.isperson !== undefined) body.isperson = data.isperson;
+  if (data.vatnumber) body.vatnumber = data.vatnumber;
+  if (data.tradeName) body.tradeName = data.tradeName;
+  if (data.billAddress) body.billAddress = data.billAddress;
   return holdedFetch<{ id: string }>("/contacts", {
     method: "POST",
-    body: JSON.stringify({
-      name: data.name,
-      email: data.email ?? undefined,
-      phone: data.phone ?? undefined,
-      type: "client",
-    }),
+    body: JSON.stringify(body),
   });
 }
 
 export async function updateContact(
   contactId: string,
-  data: { name: string; email?: string | null; phone?: string | null },
+  data: {
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+    isperson?: boolean;
+    vatnumber?: string | null;
+    tradeName?: string | null;
+    billAddress?: {
+      address?: string;
+      city?: string;
+      postalCode?: string;
+      province?: string;
+      country?: string;
+      countryCode?: string;
+    };
+  },
 ): Promise<void> {
+  const body: Record<string, unknown> = {};
+  if (data.name !== undefined) body.name = data.name;
+  if (data.email !== undefined) body.email = data.email ?? undefined;
+  if (data.phone !== undefined) body.phone = data.phone ?? undefined;
+  if (data.isperson !== undefined) body.isperson = data.isperson;
+  if (data.vatnumber !== undefined) body.vatnumber = data.vatnumber ?? undefined;
+  if (data.tradeName !== undefined) body.tradeName = data.tradeName ?? undefined;
+  if (data.billAddress) body.billAddress = data.billAddress;
   await holdedFetch(`/contacts/${contactId}`, {
     method: "PUT",
-    body: JSON.stringify({
-      name: data.name,
-      email: data.email ?? undefined,
-      phone: data.phone ?? undefined,
-    }),
+    body: JSON.stringify(body),
   });
 }
 
@@ -109,6 +166,10 @@ export async function listInvoicesByContact(
   return holdedFetch<HoldedInvoice[]>(
     `/documents/invoice?contactid=${contactId}`,
   );
+}
+
+export async function listAllInvoices(): Promise<HoldedInvoice[]> {
+  return holdedFetchAll<HoldedInvoice>("/documents/invoice");
 }
 
 export async function getInvoice(invoiceId: string): Promise<HoldedInvoice> {
@@ -169,4 +230,34 @@ export async function sendInvoice(
     method: "POST",
     body: JSON.stringify({ emails }),
   });
+}
+
+// ─── Product Operations ───
+
+export interface HoldedProduct {
+  id: string;
+  name: string;
+  desc?: string;
+  sku?: string;
+  barcode?: string;
+  price?: number;
+  tax?: number;
+  cost?: number;
+  purchasePrice?: number;
+  stock?: number;
+  kind?: string; // "simple", "variants", "lots", "pack"
+  tags?: string[];
+  weight?: number;
+}
+
+export async function listProducts(): Promise<HoldedProduct[]> {
+  return holdedFetchAll<HoldedProduct>("/products");
+}
+
+export async function getProduct(productId: string): Promise<HoldedProduct> {
+  return holdedFetch<HoldedProduct>(`/products/${productId}`);
+}
+
+export async function deleteContact(contactId: string): Promise<void> {
+  await holdedFetch(`/contacts/${contactId}`, { method: "DELETE" });
 }

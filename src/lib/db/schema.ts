@@ -197,7 +197,15 @@ export const customers = pgTable(
     phone: varchar("phone", { length: 100 }),
     email: varchar("email", { length: 255 }),
     notes: text("notes"),
+    address: varchar("address", { length: 500 }),
+    city: varchar("city", { length: 255 }),
+    postalCode: varchar("postal_code", { length: 50 }),
+    province: varchar("province", { length: 255 }),
+    country: varchar("country", { length: 100 }),
+    vatnumber: varchar("vatnumber", { length: 100 }),
+    mobile: varchar("mobile", { length: 100 }),
     holdedContactId: varchar("holded_contact_id", { length: 255 }),
+    holdedSyncedAt: timestamp("holded_synced_at", { withTimezone: true }),
     provisional: boolean("provisional").notNull().default(false),
     confidenceScore: real("confidence_score"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -451,6 +459,7 @@ export const suppliers = pgTable("suppliers", {
   phone: varchar("phone", { length: 100 }),
   email: varchar("email", { length: 255 }),
   website: varchar("website", { length: 500 }),
+  holdedContactId: varchar("holded_contact_id", { length: 255 }),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -473,6 +482,7 @@ export const parts = pgTable(
     description: text("description"),
     defaultCost: numeric("default_cost", { precision: 10, scale: 2 }),
     orderUrl: varchar("order_url", { length: 1000 }),
+    holdedProductId: varchar("holded_product_id", { length: 255 }),
     supplierId: uuid("supplier_id").references(() => suppliers.id, {
       onDelete: "set null",
     }),

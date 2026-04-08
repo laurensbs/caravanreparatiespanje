@@ -16,6 +16,7 @@ import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker"
 import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { PrioritySelect } from "@/components/repairs/priority-select";
+import { HoldedHint } from "@/components/holded-hint";
 
 interface CatalogPart {
   id: string;
@@ -160,15 +161,20 @@ export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFo
 
       <Card>
         <CardHeader><CardTitle className="text-base">Cost & Time</CardTitle></CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="estimatedCost">Estimated Cost (€)</Label>
-            <Input id="estimatedCost" name="estimatedCost" type="number" step="0.01" className="mt-1" />
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="estimatedCost">Estimated Cost (€)</Label>
+              <Input id="estimatedCost" name="estimatedCost" type="number" step="0.01" className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="estimatedHours">Estimated Hours</Label>
+              <Input id="estimatedHours" name="estimatedHours" type="number" step="0.25" className="mt-1" />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="estimatedHours">Estimated Hours</Label>
-            <Input id="estimatedHours" name="estimatedHours" type="number" step="0.25" className="mt-1" />
-          </div>
+          <HoldedHint variant="info">
+            Repair data stays local until you create a Holded invoice from the repair detail page. The estimated cost is then used as the invoice amount.
+          </HoldedHint>
         </CardContent>
       </Card>
 

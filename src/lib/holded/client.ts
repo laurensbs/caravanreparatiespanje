@@ -54,3 +54,24 @@ export async function holdedFetchRaw(
 export function isHoldedConfigured(): boolean {
   return !!process.env.HOLDED_API_KEY;
 }
+
+/**
+ * Fetch all pages of a paginated Holded endpoint.
+ * Holded returns ~500 items per page for contacts, less for other endpoints.
+ */
+export async function holdedFetchAll<T>(
+  path: string,
+  pageSize = 500,
+): Promise<T[]> {
+  const all: T[] = [];
+  let page = 1;
+  while (true) {
+    const separator = path.includes("?") ? "&" : "?";
+    const batch = await holdedFetch<T[]>(`${path}${separator}page=${page}`);
+    if (!batch || batch.length === 0) break;
+    all.push(...batch);
+    page++;
+    if (batch.length < pageSize) break;
+  }
+  return all;
+}

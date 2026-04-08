@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { UnitDialog } from "./unit-dialog";
+import { NewUnitDialog } from "./new-unit-dialog";
 
 interface UnitRow {
   id: string;
@@ -87,12 +88,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
             {total} unit{total !== 1 ? "s" : ""} registered
           </p>
         </div>
-        <Button asChild>
-          <Link href="/units/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Unit
-          </Link>
-        </Button>
+        <NewUnitDialog />
       </div>
 
       {/* Filters */}

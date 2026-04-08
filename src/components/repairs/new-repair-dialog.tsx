@@ -24,6 +24,7 @@ import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { PrioritySelect } from "@/components/repairs/priority-select";
 
 interface CatalogPart {
   id: string;
@@ -124,14 +125,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [] }: New
               </div>
               <div>
                 <Label htmlFor="dlg-priority">Priority</Label>
-                <Select name="priority" defaultValue="normal">
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PRIORITY_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PrioritySelect name="priority" defaultValue="normal" className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="dlg-location">Location</Label>

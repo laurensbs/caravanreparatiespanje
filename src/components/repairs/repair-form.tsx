@@ -15,6 +15,7 @@ import { LocationSelect } from "@/components/repairs/location-select";
 import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
 import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
+import { PrioritySelect } from "@/components/repairs/priority-select";
 
 interface CatalogPart {
   id: string;
@@ -100,14 +101,7 @@ export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFo
           </div>
           <div>
             <Label htmlFor="priority">Priority</Label>
-            <Select name="priority" defaultValue="normal">
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(PRIORITY_LABELS).map(([val, label]) => (
-                  <SelectItem key={val} value={val}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PrioritySelect name="priority" defaultValue="normal" className="mt-1" />
           </div>
           <div>
             <Label htmlFor="locationId">Location</Label>

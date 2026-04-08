@@ -6,6 +6,7 @@ import { Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CustomerFiltersBar } from "@/components/customers/customer-filters";
+import { NewCustomerDialog } from "@/components/customers/new-customer-dialog";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
@@ -41,12 +42,7 @@ export default async function CustomersPage({ searchParams }: Props) {
           <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
           <p className="text-sm text-muted-foreground">{total} customer{total !== 1 ? "s" : ""}</p>
         </div>
-        <Button asChild>
-          <Link href="/customers/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Link>
-        </Button>
+        <NewCustomerDialog />
       </div>
 
       <CustomerFiltersBar

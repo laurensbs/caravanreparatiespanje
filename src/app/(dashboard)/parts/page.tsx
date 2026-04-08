@@ -1,4 +1,5 @@
 import { getParts, getSuppliers, getPartRequests } from "@/actions/parts";
+import { getAppSettings } from "@/actions/settings";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -29,11 +30,14 @@ const REQUEST_STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function PartsPage() {
-  const [parts, suppliers, requests] = await Promise.all([
+  const [parts, suppliers, requests, settings] = await Promise.all([
     getParts(),
     getSuppliers(),
     getPartRequests(),
+    getAppSettings(),
   ]);
+
+  const defaultMarkup = parseFloat(settings.default_markup_percent ?? "25");
 
   return (
     <div className="space-y-6">
@@ -61,7 +65,7 @@ export default async function PartsPage() {
           <HoldedHint variant="sync" className="mb-4">
             Parts catalog is synced from <strong>Holded products</strong>. Prices set here are used for cost estimates. Adding parts to a repair doesn't change anything in Holded.
           </HoldedHint>
-          <PartsClient parts={parts} suppliers={suppliers} />
+          <PartsClient parts={parts} suppliers={suppliers} defaultMarkup={defaultMarkup} />
         </TabsContent>
 
         <TabsContent value="requests" className="mt-4">

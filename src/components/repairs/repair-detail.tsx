@@ -23,7 +23,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
-import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
+import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice, createHoldedQuote } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
@@ -33,6 +33,7 @@ interface PartItem {
   name: string;
   partNumber: string | null;
   defaultCost: string | null;
+  markupPercent: string | null;
   supplierName: string | null;
 }
 
@@ -42,6 +43,13 @@ interface CostLineItem {
   quantity: number;
   unitPrice: number;
   partId?: string;
+  type: "part" | "labour" | "custom";
+}
+
+interface PricingSettings {
+  hourlyRate: number;
+  defaultMarkup: number;
+  defaultTax: number;
 }
 
 interface RepairDetailProps {
@@ -49,9 +57,10 @@ interface RepairDetailProps {
   communicationLogs?: any[];
   partsList?: PartItem[];
   backTo?: string;
+  settings?: PricingSettings;
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 } }: RepairDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -70,23 +79,36 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [costLines, setCostLines] = useState<CostLineItem[]>([]);
   const [showPartPicker, setShowPartPicker] = useState(false);
   const [partSearch, setPartSearch] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
 
-  const costLinesTotal = costLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+  const costLinesSubtotal = costLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+  const discountAmount = costLinesSubtotal * (discountPercent / 100);
+  const costLinesTotal = costLinesSubtotal - discountAmount;
+  const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
 
   function addPartLine(part: PartItem) {
-    const price = part.defaultCost ? parseFloat(part.defaultCost) : 0;
+    const baseCost = part.defaultCost ? parseFloat(part.defaultCost) : 0;
+    const markup = part.markupPercent ? parseFloat(part.markupPercent) : settings.defaultMarkup;
+    const sellingPrice = baseCost * (1 + markup / 100);
     setCostLines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: part.name, quantity: 1, unitPrice: price, partId: part.id },
+      { id: crypto.randomUUID(), description: part.name, quantity: 1, unitPrice: Math.round(sellingPrice * 100) / 100, partId: part.id, type: "part" },
     ]);
     setShowPartPicker(false);
     setPartSearch("");
   }
 
+  function addLabourLine() {
+    setCostLines((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), description: "Labour", quantity: 1, unitPrice: settings.hourlyRate, type: "labour" },
+    ]);
+  }
+
   function addCustomLine() {
     setCostLines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: "", quantity: 1, unitPrice: 0 },
+      { id: crypto.randomUUID(), description: "", quantity: 1, unitPrice: 0, type: "custom" },
     ]);
   }
 
@@ -101,7 +123,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   }
 
   function applyLinesToEstimate() {
-    setEstimatedCost(costLinesTotal.toFixed(2));
+    setEstimatedCost(costLinesTotalInclTax.toFixed(2));
   }
 
   const filteredParts = partSearch.length > 0
@@ -271,13 +293,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   Cost Estimate
                 </span>
                 <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addLabourLine}>
+                    <Clock className="h-3 w-3 mr-1" />
+                    Labour
+                  </Button>
                   <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addCustomLine}>
                     <Plus className="h-3 w-3 mr-1" />
-                    Custom line
+                    Custom
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowPartPicker(!showPartPicker)}>
                     <Package className="h-3 w-3 mr-1" />
-                    Add part
+                    Part
                   </Button>
                 </div>
               </CardTitle>
@@ -296,22 +322,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {filteredParts.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground py-2 text-center">No parts found</p>
                     ) : (
-                      filteredParts.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => addPartLine(p)}
-                          className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center"
-                        >
-                          <span className="truncate">
-                            {p.name}
-                            {p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}
-                          </span>
-                          {p.defaultCost && (
-                            <span className="text-muted-foreground shrink-0 ml-2">€{parseFloat(p.defaultCost).toFixed(2)}</span>
-                          )}
-                        </button>
-                      ))
+                      filteredParts.map((p) => {
+                        const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
+                        const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
+                        const sellPrice = baseCost * (1 + markup / 100);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => addPartLine(p)}
+                            className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center"
+                          >
+                            <span className="truncate">
+                              {p.name}
+                              {p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}
+                            </span>
+                            <span className="text-muted-foreground shrink-0 ml-2">
+                              €{sellPrice.toFixed(2)}
+                              {baseCost > 0 && <span className="text-[10px] ml-1 opacity-60">+{markup}%</span>}
+                            </span>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -321,18 +353,25 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <div className="space-y-1.5">
                   {costLines.map((line) => (
                     <div key={line.id} className="flex items-center gap-2">
+                      <span className={`text-[9px] font-medium uppercase tracking-wider w-10 shrink-0 ${
+                        line.type === "labour" ? "text-blue-500" : line.type === "part" ? "text-green-600" : "text-muted-foreground"
+                      }`}>
+                        {line.type === "labour" ? "HRS" : line.type === "part" ? "PART" : "ITEM"}
+                      </span>
                       <Input
                         value={line.description}
                         onChange={(e) => updateCostLine(line.id, "description", e.target.value)}
-                        placeholder="Description"
+                        placeholder={line.type === "labour" ? "Labour description" : "Description"}
                         className="h-7 text-xs rounded-lg flex-1"
                       />
                       <Input
                         type="number"
-                        min="1"
+                        min="0.25"
+                        step={line.type === "labour" ? "0.25" : "1"}
                         value={line.quantity}
-                        onChange={(e) => updateCostLine(line.id, "quantity", parseInt(e.target.value) || 1)}
+                        onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)}
                         className="h-7 text-xs rounded-lg w-14 text-center"
+                        title={line.type === "labour" ? "Hours" : "Quantity"}
                       />
                       <div className="relative w-24">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
@@ -353,23 +392,57 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       </Button>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-xs font-medium text-muted-foreground">Total</span>
+
+                  {/* Discount row */}
+                  <div className="flex items-center justify-between pt-2 border-t gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold tabular-nums">€{costLinesTotal.toFixed(2)}</span>
-                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={applyLinesToEstimate}>
-                        Apply as estimate
-                      </Button>
+                      <span className="text-xs text-muted-foreground">Discount</span>
+                      <div className="relative w-16">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={discountPercent}
+                          onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                          className="h-6 text-xs pr-5 text-right rounded-lg"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">%</span>
+                      </div>
+                    </div>
+                    {discountPercent > 0 && (
+                      <span className="text-xs text-destructive tabular-nums">-€{discountAmount.toFixed(2)}</span>
+                    )}
+                  </div>
+
+                  {/* Totals */}
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
+                      <span className="text-xs font-medium tabular-nums">€{costLinesTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
+                      <span className="text-xs tabular-nums">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t">
+                      <span className="text-xs font-semibold">Total incl. VAT</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={applyLinesToEstimate}>
+                          Apply
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
                 <p className="text-[11px] text-muted-foreground py-2">
-                  Add parts or custom lines to build a cost estimate, or enter the total directly in the sidebar.
+                  Add parts, labour hours, or custom lines to build a cost estimate.
                 </p>
               )}
               <HoldedHint variant="info" className="mt-3">
-                This estimate is stored locally. Use <strong>"Create Invoice"</strong> in the sidebar to turn it into a Holded invoice.
+                Prices are excl. VAT. Use <strong>"Create Quote"</strong> or <strong>"Create Invoice"</strong> in the sidebar to send to Holded.
               </HoldedHint>
             </CardContent>
           </Card>
@@ -634,14 +707,62 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </Card>
           )}
 
-          {/* Holded Invoice */}
+          {/* Holded Documents */}
           <Card className="rounded-xl">
             <CardContent className="pt-5">
               <p className="flex items-center gap-2 text-xs font-semibold mb-3">
                 <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                Holded Invoice
+                Holded Documents
               </p>
-              {job.holdedInvoiceId ? (
+
+              {/* Quote section */}
+              <div className="space-y-2 mb-3">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Quote</p>
+                {job.holdedQuoteId ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{job.holdedQuoteNum}</p>
+                      <a
+                        href={`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-primary hover:underline"
+                      >
+                        Open in Holded
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    disabled={!job.customer || costLines.length === 0}
+                    onClick={async () => {
+                      try {
+                        const result = await createHoldedQuote(job.id, costLines.map(l => ({
+                          name: l.description || "Line item",
+                          units: l.quantity,
+                          subtotal: l.unitPrice * l.quantity,
+                          tax: settings.defaultTax,
+                          discount: 0,
+                        })), discountPercent);
+                        toast.success(`Quote ${result.quoteNum} created`);
+                        router.refresh();
+                      } catch (e: any) {
+                        toast.error(e.message ?? "Failed to create quote");
+                      }
+                    }}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Create Quote
+                  </Button>
+                )}
+              </div>
+
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Invoice</p>
+                {job.holdedInvoiceId ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{job.holdedInvoiceNum}</p>
@@ -655,7 +776,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </a>
                   </div>
                   <HoldedHint variant="sync">
-                    This invoice exists in Holded. PDF download and email are sent via Holded.
+                    Invoice exists in Holded. PDF &amp; email sent via Holded.
                   </HoldedHint>
                   <div className="flex gap-2">
                     <Button
@@ -704,10 +825,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     variant="default"
                     size="sm"
                     className="w-full text-xs"
-                    disabled={!job.customer || (!actualCost && !estimatedCost)}
+                    disabled={!job.customer || (costLines.length === 0 && !actualCost && !estimatedCost)}
                     onClick={async () => {
                       try {
-                        const result = await createHoldedInvoice(job.id);
+                        const items = costLines.length > 0
+                          ? costLines.map(l => ({
+                              name: l.description || "Line item",
+                              units: l.quantity,
+                              subtotal: l.unitPrice * l.quantity,
+                              tax: settings.defaultTax,
+                              discount: 0,
+                            }))
+                          : undefined;
+                        const result = await createHoldedInvoice(job.id, items, discountPercent);
                         toast.success(`Invoice ${result.invoiceNum} created`);
                         router.refresh();
                       } catch (e: any) {
@@ -721,18 +851,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   {!job.customer && (
                     <p className="text-[11px] text-muted-foreground mt-1.5">Link a contact first</p>
                   )}
-                  {job.customer && !actualCost && !estimatedCost && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5">Add a cost estimate first</p>
+                  {job.customer && costLines.length === 0 && !actualCost && !estimatedCost && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">Add lines or a cost estimate first</p>
                   )}
                   <HoldedHint variant="info" className="mt-2">
-                    Creates an invoice in Holded linked to{" "}
-                    {job.customer?.holdedContactId
-                      ? "the customer's Holded contact"
-                      : "a new Holded contact"}
-                    . Amount uses actual or estimated cost.
+                    {costLines.length > 0
+                      ? `Creates invoice with ${costLines.length} line items${discountPercent > 0 ? ` and ${discountPercent}% discount` : ""}`
+                      : "Creates invoice using actual or estimated cost"
+                    }
                   </HoldedHint>
                 </div>
               )}
+              </div>
             </CardContent>
           </Card>
 

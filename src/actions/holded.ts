@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import {
   findOrCreateContact,
   createInvoice,
+  createQuote,
   getInvoicePdf,
   sendInvoice,
   listInvoicesByContact,
@@ -21,7 +22,15 @@ import { isHoldedConfigured } from "@/lib/holded/client";
 
 // ─── Invoice creation from repair ───
 
-export async function createHoldedInvoice(repairJobId: string) {
+interface LineItemInput {
+  name: string;
+  units: number;
+  subtotal: number;
+  tax: number;
+  discount: number;
+}
+
+export async function createHoldedInvoice(repairJobId: string, lineItems?: LineItemInput[], discountPercent?: number) {
   const session = await requireRole("admin");
 
   const [job] = await db
@@ -59,15 +68,27 @@ export async function createHoldedInvoice(repairJobId: string) {
       .where(eq(customers.id, customer.id));
   }
 
-  const cost = job.actualCost ?? job.estimatedCost;
-  const items = [
-    {
-      name: `Repair: ${job.title ?? job.publicCode ?? "Repair service"}`,
-      desc: job.descriptionRaw?.slice(0, 200) ?? undefined,
-      units: 1,
-      subtotal: cost ? parseFloat(cost) : 0,
-    },
-  ];
+  let items: Array<{ name: string; desc?: string; units: number; subtotal: number; tax?: number; discount?: number }>;
+
+  if (lineItems && lineItems.length > 0) {
+    items = lineItems.map(l => ({
+      name: l.name,
+      units: l.units,
+      subtotal: l.subtotal,
+      tax: l.tax,
+      discount: discountPercent ?? l.discount,
+    }));
+  } else {
+    const cost = job.actualCost ?? job.estimatedCost;
+    items = [
+      {
+        name: `Repair: ${job.title ?? job.publicCode ?? "Repair service"}`,
+        desc: job.descriptionRaw?.slice(0, 200) ?? undefined,
+        units: 1,
+        subtotal: cost ? parseFloat(cost) : 0,
+      },
+    ];
+  }
 
   const result = await createInvoice({
     contactId,
@@ -160,6 +181,91 @@ export async function sendHoldedInvoice(repairJobId: string) {
 
   revalidatePath(`/repairs/${repairJobId}`);
   return { sent: true };
+}
+
+// ─── Quote creation from repair ───
+
+export async function createHoldedQuote(repairJobId: string, lineItems: LineItemInput[], discountPercent?: number) {
+  const session = await requireRole("admin");
+
+  const [job] = await db
+    .select()
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job) throw new Error("Repair job not found");
+  if (job.holdedQuoteId) throw new Error("Quote already exists in Holded");
+
+  let customer = null;
+  if (job.customerId) {
+    const [c] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, job.customerId))
+      .limit(1);
+    customer = c ?? null;
+  }
+
+  if (!customer) throw new Error("No customer linked to this repair");
+
+  const contactId = await findOrCreateContact({
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
+    holdedContactId: customer.holdedContactId,
+  });
+
+  if (!customer.holdedContactId) {
+    await db
+      .update(customers)
+      .set({ holdedContactId: contactId, updatedAt: new Date() })
+      .where(eq(customers.id, customer.id));
+  }
+
+  const items = lineItems.map(l => ({
+    name: l.name,
+    units: l.units,
+    subtotal: l.subtotal,
+    tax: l.tax,
+    discount: discountPercent ?? l.discount,
+  }));
+
+  const result = await createQuote({
+    contactId,
+    description: `${job.publicCode ?? "Quote"} — ${job.title ?? "Caravan repair service"}`,
+    items,
+    notes: job.notesRaw ?? undefined,
+  });
+
+  const quoteNum = result.docNumber ?? result.id;
+
+  await db
+    .update(repairJobs)
+    .set({
+      holdedQuoteId: result.id,
+      holdedQuoteNum: quoteNum,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "holded_quote_created",
+    fieldChanged: "holdedQuoteId",
+    newValue: quoteNum,
+    comment: `Quote ${quoteNum} created in Holded`,
+  });
+
+  await createAuditLog("holded_quote_created", "repair_job", repairJobId, {
+    holdedQuoteId: result.id,
+    quoteNum,
+  });
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  revalidatePath("/repairs");
+  return { quoteId: result.id, quoteNum };
 }
 
 // ─── Sync customer to Holded ───

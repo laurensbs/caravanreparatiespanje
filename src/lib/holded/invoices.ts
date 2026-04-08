@@ -232,6 +232,66 @@ export async function sendInvoice(
   });
 }
 
+// ─── Quote (Estimate) Operations ───
+
+interface CreateQuoteParams {
+  contactId: string;
+  description: string;
+  items: Array<{
+    name: string;
+    desc?: string;
+    units: number;
+    subtotal: number;
+    tax?: number;
+    discount?: number;
+  }>;
+  notes?: string;
+}
+
+export async function createQuote(
+  params: CreateQuoteParams,
+): Promise<{ id: string; docNumber: string }> {
+  return holdedFetch<{ id: string; docNumber: string }>(
+    "/documents/estimate",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        contactId: params.contactId,
+        desc: params.description,
+        date: Math.floor(Date.now() / 1000),
+        notes: params.notes,
+        items: params.items.map((item) => ({
+          name: item.name,
+          desc: item.desc,
+          units: item.units,
+          subtotal: item.subtotal,
+          tax: item.tax ?? 21,
+          discount: item.discount ?? 0,
+        })),
+      }),
+    },
+  );
+}
+
+export async function getQuotePdf(quoteId: string): Promise<ArrayBuffer> {
+  const res = await holdedFetchRaw(
+    `/documents/estimate/${quoteId}/pdf`,
+    { headers: { accept: "application/pdf" } },
+  );
+  if (!res.ok) throw new Error(`PDF download failed: ${res.status}`);
+  return res.arrayBuffer();
+}
+
+export async function sendQuote(
+  quoteId: string,
+  emails: string[],
+): Promise<void> {
+  await holdedFetch(`/documents/estimate/${quoteId}/send`, {
+    method: "POST",
+    body: JSON.stringify({ emails }),
+  });
+}
+
 // ─── Product Operations ───
 
 export interface HoldedProduct {

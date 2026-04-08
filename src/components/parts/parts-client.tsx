@@ -21,16 +21,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, ExternalLink, Search } from "lucide-react";
 import { createPart, updatePart, deletePart } from "@/actions/parts";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Part {
   id: string;
@@ -39,6 +33,7 @@ interface Part {
   supplierName: string | null;
   supplierId: string | null;
   defaultCost: string | null;
+  markupPercent: string | null;
   description: string | null;
   orderUrl: string | null;
 }
@@ -51,9 +46,10 @@ interface Supplier {
 interface PartsClientProps {
   parts: Part[];
   suppliers: Supplier[];
+  defaultMarkup?: number;
 }
 
-export function PartsClient({ parts, suppliers }: PartsClientProps) {
+export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -114,6 +110,7 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
             <PartForm
               part={editingPart}
               suppliers={suppliers}
+              defaultMarkup={defaultMarkup}
               onDone={() => {
                 setDialogOpen(false);
                 router.refresh();
@@ -138,6 +135,7 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
                 <TableHead>Part Number</TableHead>
                 <TableHead className="hidden md:table-cell">Supplier</TableHead>
                 <TableHead>Part Cost</TableHead>
+                <TableHead>Markup</TableHead>
                 <TableHead>Our Price</TableHead>
                 <TableHead className="hidden lg:table-cell">Description</TableHead>
                 <TableHead>Order Link</TableHead>
@@ -145,16 +143,21 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((part) => (
+              {filtered.map((part) => {
+                const markup = part.markupPercent ? parseFloat(part.markupPercent) : defaultMarkup;
+                const cost = part.defaultCost ? parseFloat(part.defaultCost) : null;
+                const ourPrice = cost !== null ? cost * (1 + markup / 100) : null;
+                return (
                 <TableRow key={part.id}>
                   <TableCell className="font-medium">{part.name}</TableCell>
                   <TableCell className="font-mono text-xs">{part.partNumber ?? "—"}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm">{part.supplierName ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{part.defaultCost ? `€${part.defaultCost}` : "—"}</TableCell>
+                  <TableCell className="text-sm">{cost !== null ? `€${cost.toFixed(2)}` : "—"}</TableCell>
+                  <TableCell className="text-sm">
+                    <span className="text-muted-foreground">{markup}%</span>
+                  </TableCell>
                   <TableCell className="text-sm font-medium">
-                    {part.defaultCost
-                      ? `€${(parseFloat(part.defaultCost) * 1.25).toFixed(2)}`
-                      : "—"}
+                    {ourPrice !== null ? `€${ourPrice.toFixed(2)}` : "—"}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-sm text-muted-foreground max-w-xs truncate">
                     {part.description ?? "—"}
@@ -192,7 +195,8 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -204,10 +208,12 @@ export function PartsClient({ parts, suppliers }: PartsClientProps) {
 function PartForm({
   part,
   suppliers,
+  defaultMarkup,
   onDone,
 }: {
   part: Part | null;
   suppliers: Supplier[];
+  defaultMarkup: number;
   onDone: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -215,8 +221,18 @@ function PartForm({
   const [partNumber, setPartNumber] = useState(part?.partNumber ?? "");
   const [supplierId, setSupplierId] = useState(part?.supplierId ?? "");
   const [defaultCost, setDefaultCost] = useState(part?.defaultCost ?? "");
+  const [markupPercent, setMarkupPercent] = useState(part?.markupPercent ?? "");
   const [description, setDescription] = useState(part?.description ?? "");
   const [orderUrl, setOrderUrl] = useState(part?.orderUrl ?? "");
+
+  const effectiveMarkup = markupPercent ? parseFloat(markupPercent) : defaultMarkup;
+  const cost = defaultCost ? parseFloat(defaultCost) : NaN;
+  const ourPrice = !isNaN(cost) ? cost * (1 + effectiveMarkup / 100) : NaN;
+
+  const supplierOptions = suppliers.map((s) => ({
+    value: s.id,
+    label: s.name,
+  }));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -228,6 +244,7 @@ function PartForm({
           partNumber: partNumber.trim() || null,
           supplierId: supplierId || null,
           defaultCost: defaultCost.trim() || null,
+          markupPercent: markupPercent.trim() || null,
           description: description.trim() || null,
           orderUrl: orderUrl.trim() || null,
         });
@@ -237,6 +254,7 @@ function PartForm({
           partNumber: partNumber.trim() || undefined,
           supplierId: supplierId || undefined,
           defaultCost: defaultCost.trim() || undefined,
+          markupPercent: markupPercent.trim() || undefined,
           description: description.trim() || undefined,
           orderUrl: orderUrl.trim() || undefined,
         });
@@ -258,27 +276,42 @@ function PartForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="cost">Part Cost (€)</Label>
-          <Input id="cost" value={defaultCost} onChange={(e) => setDefaultCost(e.target.value)} placeholder="0.00" />
-          {defaultCost && !isNaN(parseFloat(defaultCost)) && (
-            <p className="text-xs text-muted-foreground">
-              Our price: <span className="font-medium text-foreground">€{(parseFloat(defaultCost) * 1.25).toFixed(2)}</span> (25% markup)
-            </p>
-          )}
+          <Input id="cost" value={defaultCost} onChange={(e) => setDefaultCost(e.target.value)} placeholder="0.00" type="number" step="0.01" min="0" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="markup">Markup %</Label>
+          <Input
+            id="markup"
+            value={markupPercent}
+            onChange={(e) => setMarkupPercent(e.target.value)}
+            placeholder={`${defaultMarkup}% (default)`}
+            type="number"
+            step="1"
+            min="0"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-muted-foreground">Our Price</Label>
+          <div className="h-9 flex items-center px-3 rounded-lg border bg-muted/30 text-sm font-medium">
+            {!isNaN(ourPrice) ? (
+              <>€{ourPrice.toFixed(2)} <span className="text-muted-foreground ml-1 text-xs">({effectiveMarkup}% markup)</span></>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </div>
         </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="supplier">Supplier</Label>
-        <Select value={supplierId || "none"} onValueChange={(v) => setSupplierId(v === "none" ? "" : v)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select supplier" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            {suppliers.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={supplierOptions}
+          value={supplierId}
+          onValueChange={setSupplierId}
+          placeholder="Type to search suppliers..."
+          emptyLabel="No supplier"
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="orderUrl">Order URL</Label>

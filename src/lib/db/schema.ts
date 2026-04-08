@@ -334,6 +334,8 @@ export const repairJobs = pgTable(
 
     holdedInvoiceId: varchar("holded_invoice_id", { length: 255 }),
     holdedInvoiceNum: varchar("holded_invoice_num", { length: 100 }),
+    holdedQuoteId: varchar("holded_quote_id", { length: 255 }),
+    holdedQuoteNum: varchar("holded_quote_num", { length: 100 }),
 
     bayReference: varchar("bay_reference", { length: 100 }),
     spreadsheetInternalId: varchar("spreadsheet_internal_id", { length: 100 }),
@@ -482,6 +484,7 @@ export const parts = pgTable(
     description: text("description"),
     defaultCost: numeric("default_cost", { precision: 10, scale: 2 }),
     orderUrl: varchar("order_url", { length: 1000 }),
+    markupPercent: numeric("markup_percent", { precision: 5, scale: 2 }),
     holdedProductId: varchar("holded_product_id", { length: 255 }),
     supplierId: uuid("supplier_id").references(() => suppliers.id, {
       onDelete: "set null",
@@ -1068,3 +1071,16 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APP SETTINGS (single-row key-value store)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const appSettings = pgTable("app_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

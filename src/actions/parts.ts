@@ -88,6 +88,7 @@ export async function getParts() {
       supplierName: suppliers.name,
       supplierId: parts.supplierId,
       defaultCost: parts.defaultCost,
+      markupPercent: parts.markupPercent,
       description: parts.description,
       orderUrl: parts.orderUrl,
     })
@@ -101,6 +102,7 @@ export async function createPart(data: {
   partNumber?: string;
   supplierId?: string;
   defaultCost?: string;
+  markupPercent?: string;
   description?: string;
   orderUrl?: string;
 }) {
@@ -112,6 +114,7 @@ export async function createPart(data: {
       partNumber: data.partNumber ?? null,
       supplierId: data.supplierId ?? null,
       defaultCost: data.defaultCost ?? null,
+      markupPercent: data.markupPercent ?? null,
       description: data.description ?? null,
       orderUrl: data.orderUrl ?? null,
     })
@@ -128,6 +131,7 @@ export async function updatePart(
     partNumber?: string | null;
     supplierId?: string | null;
     defaultCost?: string | null;
+    markupPercent?: string | null;
     description?: string | null;
     orderUrl?: string | null;
   }

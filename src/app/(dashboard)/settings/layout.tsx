@@ -46,6 +46,12 @@ export default function SettingsLayout({
         >
           Holded
         </Link>
+        <Link
+          href="/settings/pricing"
+          className="border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-muted-foreground/50 hover:text-foreground"
+        >
+          Pricing
+        </Link>
       </nav>
 
       {children}

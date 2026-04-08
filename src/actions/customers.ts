@@ -18,6 +18,7 @@ function capitalizeWords(name: string): string {
 }
 import { customerSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
+import { syncCustomerToHolded } from "./holded";
 import { eq, desc, ilike, or, and, count, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -133,6 +134,10 @@ export async function createCustomer(data: unknown) {
 
   await createAuditLog("create", "customer", customer.id, { name: customer.name });
   revalidatePath("/customers");
+
+  // Sync to Holded in background (don't block)
+  syncCustomerToHolded(customer.id).catch(() => {});
+
   return customer;
 }
 
@@ -149,6 +154,10 @@ export async function updateCustomer(id: string, data: unknown) {
   await createAuditLog("update", "customer", id);
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);
+
+  // Sync to Holded in background (don't block)
+  syncCustomerToHolded(id).catch(() => {});
+
   return updated;
 }
 

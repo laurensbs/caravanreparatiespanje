@@ -16,13 +16,14 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
+import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
 
 interface RepairDetailProps {
   job: any; // Full job with relations from getRepairJobById
@@ -420,6 +421,98 @@ export function RepairDetail({ job, communicationLogs = [], backTo }: RepairDeta
               </CardContent>
             </Card>
           )}
+
+          {/* Holded Invoice */}
+          <Card>
+            <CardContent>
+              <p className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-2">
+                <Receipt className="h-3 w-3" />
+                Holded Invoice
+              </p>
+              {job.holdedInvoiceId ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">{job.holdedInvoiceNum}</p>
+                    <a
+                      href={`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-primary hover:underline"
+                    >
+                      Open in Holded
+                    </a>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={async () => {
+                        try {
+                          const { data, filename } = await downloadHoldedInvoicePdf(job.id);
+                          const link = document.createElement("a");
+                          link.href = `data:application/pdf;base64,${data}`;
+                          link.download = filename;
+                          link.click();
+                          toast.success("PDF downloaded");
+                        } catch {
+                          toast.error("Failed to download PDF");
+                        }
+                      }}
+                    >
+                      <FileDown className="h-3 w-3 mr-1" />
+                      PDF
+                    </Button>
+                    {job.customer?.email && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        onClick={async () => {
+                          try {
+                            await sendHoldedInvoice(job.id);
+                            toast.success("Invoice sent to " + job.customer.email);
+                          } catch (e: any) {
+                            toast.error(e.message ?? "Failed to send");
+                          }
+                        }}
+                      >
+                        <Send className="h-3 w-3 mr-1" />
+                        Email
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full text-xs"
+                    disabled={!job.customer || (!job.actualCost && !job.estimatedCost)}
+                    onClick={async () => {
+                      try {
+                        const result = await createHoldedInvoice(job.id);
+                        toast.success(`Invoice ${result.invoiceNum} created`);
+                        router.refresh();
+                      } catch (e: any) {
+                        toast.error(e.message ?? "Failed to create invoice");
+                      }
+                    }}
+                  >
+                    <Receipt className="h-3 w-3 mr-1" />
+                    Create Invoice
+                  </Button>
+                  {!job.customer && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">Link a customer first</p>
+                  )}
+                  {job.customer && !job.actualCost && !job.estimatedCost && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">Add a cost estimate first</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

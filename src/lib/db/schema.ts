@@ -191,6 +191,7 @@ export const customers = pgTable(
     phone: varchar("phone", { length: 100 }),
     email: varchar("email", { length: 255 }),
     notes: text("notes"),
+    holdedContactId: varchar("holded_contact_id", { length: 255 }),
     provisional: boolean("provisional").notNull().default(false),
     confidenceScore: real("confidence_score"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -316,6 +317,9 @@ export const repairJobs = pgTable(
     followUpRequiredFlag: boolean("follow_up_required_flag")
       .notNull()
       .default(false),
+
+    holdedInvoiceId: varchar("holded_invoice_id", { length: 255 }),
+    holdedInvoiceNum: varchar("holded_invoice_num", { length: 100 }),
 
     bayReference: varchar("bay_reference", { length: 100 }),
     spreadsheetInternalId: varchar("spreadsheet_internal_id", { length: 100 }),

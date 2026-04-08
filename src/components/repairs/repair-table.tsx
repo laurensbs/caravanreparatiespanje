@@ -176,10 +176,11 @@ export function RepairTable({ jobs }: RepairTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              jobs.map((job) => (
+              jobs.map((job, idx) => (
                 <TableRow
                   key={job.id}
-                  className="cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60 group"
+                  className="cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60 group table-row-animate"
+                  style={{ animationDelay: `${idx * 20}ms` }}
                   data-state={selected.has(job.id) ? "selected" : undefined}
                   onClick={() => {
                     const backTo = `/repairs?${searchParams.toString()}`;

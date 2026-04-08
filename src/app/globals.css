@@ -124,6 +124,11 @@
   .dark .glass {
     background: oklch(0.16 0.02 260 / 0.7);
   }
+
+  /* Staggered table row entrance */
+  .table-row-animate {
+    animation: tableRowIn 0.25s ease-out both;
+  }
 }
 
 @keyframes fadeIn {
@@ -139,4 +144,13 @@
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes tableRowIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
 }

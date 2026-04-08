@@ -1,9 +1,9 @@
 import { getUnitById } from "@/actions/units";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Hash, Truck, Calendar, User, Wrench, StickyNote } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
@@ -18,54 +18,97 @@ export default async function UnitDetailPage({ params }: Props) {
   if (!unit) notFound();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
           <Link href="/units"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {[unit.brand, unit.model, unit.registration].filter(Boolean).join(" · ") || "Unit"}
+          <h1 className="text-lg font-bold tracking-tight">
+            {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unit"}
           </h1>
-          {unit.customer && (
-            <p className="text-sm text-muted-foreground">
-              Owner: <Link href={`/customers/${unit.customer.id}`} className="hover:underline">{unit.customer.name}</Link>
-            </p>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {unit.registration && <span className="font-mono">{unit.registration}</span>}
+            {unit.customer && (
+              <>
+                <span>·</span>
+                <Link href={`/customers/${unit.customer.id}`} className="text-primary hover:underline">{unit.customer.name}</Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Details */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Details</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div><span className="text-muted-foreground">Registration:</span> {unit.registration ?? "—"}</div>
-            <div><span className="text-muted-foreground">Brand:</span> {unit.brand ?? "—"}</div>
-            <div><span className="text-muted-foreground">Model:</span> {unit.model ?? "—"}</div>
-            <div><span className="text-muted-foreground">Year:</span> {unit.year ?? "—"}</div>
-            <div><span className="text-muted-foreground">Chassis ID:</span> {unit.chassisId ?? "—"}</div>
-            {unit.notes && <div><span className="text-muted-foreground">Notes:</span><p className="mt-1 whitespace-pre-wrap">{unit.notes}</p></div>}
+          <CardContent className="p-4">
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Hash className="h-3.5 w-3.5" /> Registration</span>
+                <span className="font-mono font-medium">{unit.registration ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Truck className="h-3.5 w-3.5" /> Brand</span>
+                <span className="font-medium">{unit.brand ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Truck className="h-3.5 w-3.5" /> Model</span>
+                <span className="font-medium">{unit.model ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Calendar className="h-3.5 w-3.5" /> Year</span>
+                <span className="font-medium">{unit.year ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Hash className="h-3.5 w-3.5" /> Chassis</span>
+                <span className="font-mono text-xs">{unit.chassisId ?? "—"}</span>
+              </div>
+              {unit.customer && (
+                <div className="flex items-center justify-between border-t pt-3">
+                  <span className="flex items-center gap-2 text-muted-foreground"><User className="h-3.5 w-3.5" /> Owner</span>
+                  <Link href={`/customers/${unit.customer.id}`} className="font-medium text-primary hover:underline">{unit.customer.name}</Link>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Repair History ({unit.repairJobs.length})</CardTitle></CardHeader>
-          <CardContent>
+        {/* Notes */}
+        {unit.notes && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Notes</p>
+              </div>
+              <p className="text-sm whitespace-pre-wrap">{unit.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Repairs */}
+        <Card className={!unit.notes ? "lg:col-span-2" : ""}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Repairs ({unit.repairJobs.length})</p>
+            </div>
             {unit.repairJobs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No repairs for this unit</p>
+              <p className="text-sm text-muted-foreground italic">No repairs for this unit</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {unit.repairJobs.map((job) => (
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between rounded-xl border p-2 text-sm hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
                   >
-                    <div>
-                      <span className="font-mono text-xs text-muted-foreground">{job.publicCode}</span>
-                      <p className="truncate">{job.title || "Unnamed"}</p>
+                    <div className="min-w-0 mr-2">
+                      <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>
+                      <p className="font-mono text-[11px] text-muted-foreground">{job.publicCode}</p>
                     </div>
-                    <Badge variant="secondary" className={STATUS_COLORS[job.status as RepairStatus]}>
+                    <Badge variant="secondary" className={`${STATUS_COLORS[job.status as RepairStatus]} rounded-full text-[10px] px-2 py-0 shrink-0`}>
                       {STATUS_LABELS[job.status as RepairStatus]}
                     </Badge>
                   </Link>

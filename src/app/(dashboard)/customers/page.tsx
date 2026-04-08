@@ -36,10 +36,10 @@ export default async function CustomersPage({ searchParams }: Props) {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+          <h1 className="text-lg font-bold tracking-tight">Customers</h1>
           <p className="text-sm text-muted-foreground">{total} customer{total !== 1 ? "s" : ""}</p>
         </div>
         <NewCustomerDialog />
@@ -74,8 +74,8 @@ export default async function CustomersPage({ searchParams }: Props) {
                 </TableCell>
               </TableRow>
             ) : (
-              customers.map((c) => (
-                <TableRow key={c.id} className="group">
+              customers.map((c, idx) => (
+                <TableRow key={c.id} className="group table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
                   <TableCell>
                     <Link href={`/customers/${c.id}`} className="font-medium text-[13px] group-hover:text-primary transition-colors">
                       {c.name}

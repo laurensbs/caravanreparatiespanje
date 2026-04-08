@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Truck } from "lucide-react";
 import Link from "next/link";
 import { UnitDialog } from "./unit-dialog";
 import { NewUnitDialog } from "./new-unit-dialog";
@@ -80,10 +80,10 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
   }, [units]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Units</h1>
+          <h1 className="text-lg font-bold tracking-tight">Units</h1>
           <p className="text-sm text-muted-foreground">
             {total} unit{total !== 1 ? "s" : ""} registered
           </p>
@@ -145,15 +145,20 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
           <TableBody>
             {units.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2} className="py-12 text-center text-sm text-muted-foreground">
-                  No units found
+                <TableCell colSpan={2} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Truck className="h-8 w-8 opacity-20" />
+                    <p className="font-medium text-sm">No units found</p>
+                    <p className="text-xs">Try adjusting your search or filters</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
-              units.map((u) => (
+              units.map((u, idx) => (
                 <TableRow
                   key={u.id}
-                  className="group cursor-pointer transition-colors hover:bg-muted/50"
+                  className="group cursor-pointer transition-colors hover:bg-muted/50 table-row-animate"
+                  style={{ animationDelay: `${idx * 20}ms` }}
                   onClick={() => setSelectedUnit(u)}
                 >
                   <TableCell className="font-mono text-[13px] font-medium group-hover:text-primary transition-colors">

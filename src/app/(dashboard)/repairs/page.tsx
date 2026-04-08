@@ -44,10 +44,10 @@ export default async function RepairsPage({ searchParams }: Props) {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Repairs</h1>
+          <h1 className="text-lg font-bold tracking-tight">Repairs</h1>
           <p className="text-sm text-muted-foreground">
             {total} repair{total !== 1 ? "s" : ""} found
           </p>

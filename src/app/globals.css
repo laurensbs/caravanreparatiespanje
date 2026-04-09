@@ -171,3 +171,24 @@
   from { opacity: 0; transform: translateX(-6px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* Print styles for planning calendar */
+@media print {
+  body { font-size: 11px; }
+  nav, aside, header,
+  [data-sidebar], [data-header] {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .print\:hidden { display: none !important; }
+  .print\:block { display: block !important; }
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+}

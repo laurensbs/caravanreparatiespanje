@@ -16,6 +16,7 @@ import {
   Package,
   Receipt,
   Trash2,
+  CalendarDays,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -32,6 +33,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" /> },
   { label: "Repairs", href: "/repairs", icon: <Wrench className="h-[18px] w-[18px]" /> },
+  { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" /> },
   { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" /> },
   { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" /> },
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },

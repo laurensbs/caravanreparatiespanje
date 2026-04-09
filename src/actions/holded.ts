@@ -408,7 +408,8 @@ export async function getCustomerHoldedInvoices(
   if (!customer?.holdedContactId) return [];
 
   try {
-    return await listInvoicesByContact(customer.holdedContactId);
+    const { filterRepairInvoices } = await import("@/lib/holded/filter");
+    return filterRepairInvoices(await listInvoicesByContact(customer.holdedContactId));
   } catch {
     return [];
   }
@@ -431,7 +432,8 @@ export async function getCustomerHoldedQuotes(
   if (!customer?.holdedContactId) return [];
 
   try {
-    return await listQuotesByContact(customer.holdedContactId);
+    const { filterRepairQuotes } = await import("@/lib/holded/filter");
+    return filterRepairQuotes(await listQuotesByContact(customer.holdedContactId));
   } catch {
     return [];
   }

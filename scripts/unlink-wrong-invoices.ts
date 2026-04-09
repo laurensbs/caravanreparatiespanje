@@ -19,37 +19,9 @@ import { repairJobs, repairJobEvents } from "@/lib/db/schema";
 import { eq, isNull, isNotNull } from "drizzle-orm";
 import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
 import { isHoldedConfigured } from "@/lib/holded/client";
+import { isNonRepairInvoice, isBlankInvoice } from "@/lib/holded/filter";
 
 const DRY_RUN = process.argv.includes("--dry-run");
-
-const NON_REPAIR_KEYWORDS = [
-  "stalling", "storage", "reservering", "aanbetaling",
-  "transport", "tarieven", "tarief",
-  "huur", "verhuur", "rental",
-];
-
-const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling"];
-
-function isNonRepairInvoice(inv: HoldedInvoice): boolean {
-  const tagMatch = (inv.tags ?? []).some(tag => {
-    const t = tag.toLowerCase();
-    return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
-  });
-  if (tagMatch) return true;
-
-  const textToCheck = [
-    inv.desc ?? "",
-    ...(inv.items ?? []).map(i => `${i.name ?? ""} ${i.desc ?? ""}`),
-  ].join(" ").toLowerCase();
-
-  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
-}
-
-function isBlankInvoice(inv: HoldedInvoice): boolean {
-  const hasDesc = inv.desc && inv.desc.trim().length > 3;
-  const hasItems = (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
-  return !hasDesc && !hasItems;
-}
 
 async function main() {
   const mode = DRY_RUN ? "DRY RUN" : "LIVE";

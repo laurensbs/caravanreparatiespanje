@@ -5,6 +5,7 @@ import { repairJobs, customers } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, listAllQuotes, payInvoice, sendInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
+import { filterRepairInvoices, filterRepairQuotes } from "@/lib/holded/filter";
 import { eq, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -19,10 +20,10 @@ export async function getAllInvoices(): Promise<InvoiceWithRepair[]> {
   await requireAuth();
   if (!isHoldedConfigured()) return [];
 
-  // Fetch invoices from Holded
+  // Fetch invoices from Holded (filtered to repair-only)
   let holdedInvoices: HoldedInvoice[];
   try {
-    holdedInvoices = await listAllInvoices();
+    holdedInvoices = filterRepairInvoices(await listAllInvoices());
   } catch {
     return [];
   }
@@ -149,7 +150,7 @@ export async function getAllQuotes(): Promise<QuoteWithRepair[]> {
 
   let holdedQuotes: HoldedQuote[];
   try {
-    holdedQuotes = await listAllQuotes();
+    holdedQuotes = filterRepairQuotes(await listAllQuotes());
   } catch {
     return [];
   }

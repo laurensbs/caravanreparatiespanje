@@ -4,6 +4,7 @@ import { repairJobs, repairJobEvents, customers } from "@/lib/db/schema";
 import { eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
+import { isNonRepairInvoice, isBlankInvoice } from "@/lib/holded/filter";
 
 // Vercel cron: runs every minute
 // Fetches ALL invoices from Holded, matches to repairs, syncs invoice status
@@ -14,33 +15,6 @@ function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" 
   if (invoice.status === 1) return "paid";
   if (invoice.draft || !invoice.docNumber || invoice.docNumber === "---") return "draft";
   return "sent";
-}
-
-// Keywords that indicate a non-repair invoice (transport, storage, deposits, etc.)
-const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling"];
-
-// Description/item keywords that indicate a non-repair invoice
-const NON_REPAIR_KEYWORDS = [
-  "stalling", "storage", "reservering", "aanbetaling",
-  "transport", "tarieven", "tarief",
-  "huur", "verhuur", "rental",
-];
-
-function isNonRepairInvoice(inv: HoldedInvoice): boolean {
-  // Check tags
-  const tagMatch = (inv.tags ?? []).some(tag => {
-    const t = tag.toLowerCase();
-    return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
-  });
-  if (tagMatch) return true;
-
-  // Check description and item names for non-repair keywords
-  const textToCheck = [
-    inv.desc ?? "",
-    ...(inv.items ?? []).map(i => `${i.name ?? ""} ${i.desc ?? ""}`),
-  ].join(" ").toLowerCase();
-
-  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
 }
 
 export async function GET(request: Request) {
@@ -114,12 +88,8 @@ export async function GET(request: Request) {
       try {
         const newStatus = holdedInvoiceStatus(inv);
 
-        // Skip invoices with no meaningful content (blank storage deposits, etc.)
-        const hasInvoiceContent = (inv.desc && inv.desc.trim().length > 3)
-          || (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
-        if (!hasInvoiceContent) continue;
-
-        // Skip non-repair invoices (transport, storage, etc.)
+        // Skip blank invoices and non-repair invoices (transport, storage, etc.)
+        if (isBlankInvoice(inv)) continue;
         if (isNonRepairInvoice(inv)) continue;
 
         // Case A: Invoice already linked to a repair → sync status + dates

@@ -19,6 +19,7 @@ import { repairJobs, repairJobEvents, customers, units } from "@/lib/db/schema";
 import { eq, isNotNull, isNull, inArray } from "drizzle-orm";
 import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
 import { isHoldedConfigured } from "@/lib/holded/client";
+import { isNonRepairInvoice, isBlankInvoice } from "@/lib/holded/filter";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
@@ -48,33 +49,6 @@ function repairStatusFromInvoice(invStatus: "draft" | "sent" | "paid"): string {
     case "draft":
       return "completed"; // draft invoice → completed (work done)
   }
-}
-
-// Keywords that indicate a non-repair invoice (transport, storage, deposits, etc.)
-const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling"];
-
-// Description/item keywords that indicate a non-repair invoice
-const NON_REPAIR_KEYWORDS = [
-  "stalling", "storage", "reservering", "aanbetaling",
-  "transport", "tarieven", "tarief",
-  "huur", "verhuur", "rental",
-];
-
-function isNonRepairInvoice(inv: HoldedInvoice): boolean {
-  // Check tags
-  const tagMatch = (inv.tags ?? []).some(tag => {
-    const t = tag.toLowerCase();
-    return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
-  });
-  if (tagMatch) return true;
-
-  // Check description and item names for non-repair keywords
-  const textToCheck = [
-    inv.desc ?? "",
-    ...(inv.items ?? []).map(i => `${i.name ?? ""} ${i.desc ?? ""}`),
-  ].join(" ").toLowerCase();
-
-  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
 }
 
 // Build a title from invoice items/description
@@ -243,9 +217,7 @@ async function main() {
       }
 
       // Skip invoices with no description and no items — can't determine purpose
-      const hasContent = (inv.desc && inv.desc.trim().length > 3)
-        || (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
-      if (!hasContent) {
+      if (isBlankInvoice(inv)) {
         console.log(`   ⏭️  SKIP blank: ${inv.docNumber || "(no number)"} — no description or items`);
         skipped++;
         continue;

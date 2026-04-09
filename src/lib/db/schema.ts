@@ -40,6 +40,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
   "blocked",
   "completed",
   "invoiced",
+  "rejected",
   "archived",
 ]);
 
@@ -65,6 +66,7 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "sent",
   "paid",
   "warranty",
+  "rejected",
 ]);
 
 export const businessProcessTypeEnum = pgEnum("business_process_type", [

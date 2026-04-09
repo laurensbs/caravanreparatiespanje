@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
   FileText, Wrench, Receipt, CheckCircle2, ExternalLink,
-  Inbox, CircleDot, BanknoteIcon,
+  Inbox, CircleDot, BanknoteIcon, XCircle,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -17,6 +17,7 @@ interface WorkflowStep {
   icon: React.ReactNode;
   done: boolean;
   active: boolean;
+  rejected?: boolean;
   detail?: string;
   href?: string;
 }
@@ -38,6 +39,7 @@ const DONE_STATUSES = ["completed", "invoiced", "archived"];
 // ─── Step builder (4 steps: Quote → Repair → Invoice → Paid) ─
 
 function buildSteps(data: RepairWorkflowData): WorkflowStep[] {
+  const isRejected = data.status === "rejected" || data.invoiceStatus === "rejected";
   const hasQuote = !!data.holdedQuoteId;
   const repairActive = ACTIVE_STATUSES.includes(data.status);
   const repairDone = DONE_STATUSES.includes(data.status);
@@ -47,10 +49,12 @@ function buildSteps(data: RepairWorkflowData): WorkflowStep[] {
 
   // Determine current active step
   let activeKey: StepKey | null = null;
-  if (!hasQuote && !repairActive && !repairDone) activeKey = "quote";
-  else if (!repairDone) activeKey = "repair";
-  else if (!invoiced) activeKey = "invoice";
-  else if (!isPaid) activeKey = "paid";
+  if (!isRejected) {
+    if (!hasQuote && !repairActive && !repairDone) activeKey = "quote";
+    else if (!repairDone) activeKey = "repair";
+    else if (!invoiced) activeKey = "invoice";
+    else if (!isPaid) activeKey = "paid";
+  }
 
   const invoiceDetail = data.holdedInvoiceNum
     ? data.holdedInvoiceNum
@@ -72,9 +76,10 @@ function buildSteps(data: RepairWorkflowData): WorkflowStep[] {
       key: "repair",
       label: "Repair",
       icon: <Wrench className="h-3 w-3" />,
-      done: repairDone,
-      active: activeKey === "repair" || repairActive,
-      detail: repairActive ? "In progress" : repairDone ? "Done" : undefined,
+      done: repairDone && !isRejected,
+      active: !isRejected && (activeKey === "repair" || repairActive),
+      rejected: isRejected,
+      detail: isRejected ? "Rejected" : repairActive ? "In progress" : repairDone ? "Done" : undefined,
     },
     {
       key: "invoice",
@@ -126,11 +131,12 @@ function StepPill({ step }: { step: WorkflowStep }) {
   const content = (
     <div className={cn(
       "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all whitespace-nowrap",
-      step.done && "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
-      step.active && !step.done && "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
-      !step.done && !step.active && "text-muted-foreground/50",
+      step.rejected && "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
+      step.done && !step.rejected && "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
+      step.active && !step.done && !step.rejected && "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
+      !step.done && !step.active && !step.rejected && "text-muted-foreground/50",
     )}>
-      {step.done ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : step.icon}
+      {step.rejected ? <XCircle className="h-3 w-3 text-rose-500" /> : step.done ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : step.icon}
       <span>{step.label}</span>
       {step.detail && (
         <span className={cn(
@@ -175,13 +181,14 @@ export function CompactProgressTracker({ data, className }: CompactProgressTrack
             className={cn(
               "flex items-center justify-center rounded-full transition-all",
               "h-5 w-5",
-              step.done && "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
-              step.active && !step.done && "bg-blue-100 text-blue-600 ring-1 ring-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:ring-blue-700",
-              !step.done && !step.active && "bg-muted/50 text-muted-foreground/30",
+              step.rejected && "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
+              step.done && !step.rejected && "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+              step.active && !step.done && !step.rejected && "bg-blue-100 text-blue-600 ring-1 ring-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:ring-blue-700",
+              !step.done && !step.active && !step.rejected && "bg-muted/50 text-muted-foreground/30",
             )}
-            title={`${step.label}${step.detail ? ` — ${step.detail}` : ""}${step.done ? " ✓" : step.active ? " (current)" : ""}`}
+            title={`${step.label}${step.detail ? ` — ${step.detail}` : ""}${step.done ? " ✓" : step.rejected ? " ✗" : step.active ? " (current)" : ""}`}
           >
-            {step.done ? <CheckCircle2 className="h-2.5 w-2.5" /> : step.icon}
+            {step.rejected ? <XCircle className="h-2.5 w-2.5" /> : step.done ? <CheckCircle2 className="h-2.5 w-2.5" /> : step.icon}
           </div>
           {i < steps.length - 1 && (
             <div className={cn(

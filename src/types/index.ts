@@ -34,6 +34,7 @@ export type RepairStatus =
   | "blocked"
   | "completed"
   | "invoiced"
+  | "rejected"
   | "archived";
 
 export type Priority = "low" | "normal" | "high" | "urgent";
@@ -51,7 +52,8 @@ export type InvoiceStatus =
   | "draft"
   | "sent"
   | "paid"
-  | "warranty";
+  | "warranty"
+  | "rejected";
 
 export type BusinessProcessType =
   | "repair"
@@ -154,6 +156,7 @@ export const STATUS_LABELS: Record<RepairStatus, string> = {
   blocked: "Blocked",
   completed: "Completed",
   invoiced: "Invoiced",
+  rejected: "Rejected by Client",
   archived: "Archived",
 };
 
@@ -170,6 +173,7 @@ export const STATUS_COLORS: Record<RepairStatus, string> = {
   blocked: "bg-red-100 text-red-800",
   completed: "bg-emerald-100 text-emerald-800",
   invoiced: "bg-teal-100 text-teal-800",
+  rejected: "bg-rose-100 text-rose-800",
   archived: "bg-gray-100 text-gray-500",
 };
 
@@ -202,6 +206,7 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   sent: "Sent",
   paid: "Paid",
   warranty: "Warranty / Internal",
+  rejected: "Rejected by Client",
 };
 
 export const BUSINESS_PROCESS_LABELS: Record<BusinessProcessType, string> = {

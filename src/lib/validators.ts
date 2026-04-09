@@ -20,7 +20,7 @@ export const repairJobSchema = z.object({
   status: z.enum([
     "new", "todo", "in_inspection", "quote_needed", "waiting_approval",
     "waiting_customer", "waiting_parts", "scheduled", "in_progress",
-    "blocked", "completed", "invoiced", "archived",
+    "blocked", "completed", "invoiced", "rejected", "archived",
   ]).optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   businessProcessType: z.enum([
@@ -34,7 +34,7 @@ export const repairJobSchema = z.object({
   estimatedHours: z.string().nullable().optional(),
   actualHours: z.string().nullable().optional(),
   invoiceStatus: z.enum([
-    "not_invoiced", "draft", "sent", "paid", "warranty",
+    "not_invoiced", "draft", "sent", "paid", "warranty", "rejected",
   ]).optional(),
   customerResponseStatus: z.enum([
     "not_contacted", "contacted", "waiting_response",

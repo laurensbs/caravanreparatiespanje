@@ -430,6 +430,20 @@ export function getCustomerSuggestions(
     });
   }
 
+  // Completed repairs ready to invoice
+  const completedNoInvoice = customer.repairJobs?.filter(
+    (j: any) => j.status === "completed" && !j.holdedInvoiceId
+  ) ?? [];
+  if (completedNoInvoice.length > 0) {
+    suggestions.push({
+      id: "ready-to-invoice",
+      level: "action",
+      title: `${completedNoInvoice.length} completed repair${completedNoInvoice.length !== 1 ? "s" : ""} ready to invoice`,
+      description: "Create invoices for finished work.",
+      href: `/repairs/${completedNoInvoice[0].id}`,
+    });
+  }
+
   // Not linked to Holded
   if (!customer.holdedContactId && (customer.email || customer.phone)) {
     suggestions.push({
@@ -437,6 +451,29 @@ export function getCustomerSuggestions(
       level: "action",
       title: "Not synced to Holded yet",
       description: "Save the contact to create it in Holded automatically.",
+    });
+  }
+
+  // No units linked
+  if (!customer.units || customer.units.length === 0) {
+    suggestions.push({
+      id: "no-units",
+      level: "info",
+      title: "No units linked",
+      description: "Add a caravan or trailer to track repairs per unit.",
+    });
+  }
+
+  // Unit missing storage location
+  const unitsNoStorage = customer.units?.filter(
+    (u: any) => !u.storageLocation
+  ) ?? [];
+  if (unitsNoStorage.length > 0 && customer.units?.length > 0) {
+    suggestions.push({
+      id: "unit-no-storage",
+      level: "info",
+      title: `${unitsNoStorage.length} unit${unitsNoStorage.length !== 1 ? "s" : ""} without storage location`,
+      description: "Set the stalling location to keep track of where units are stored.",
     });
   }
 
@@ -449,6 +486,19 @@ export function getCustomerSuggestions(
       level: "warning",
       title: `${unpaid.length} unpaid invoice${unpaid.length !== 1 ? "s" : ""} (€${total.toFixed(2)})`,
       description: "Review outstanding invoices.",
+      href: "/invoices",
+    });
+  }
+
+  // Paid invoices total (success)
+  const paid = holdedInvoices.filter((inv: any) => inv.status === 1);
+  if (paid.length > 0 && unpaid.length === 0 && openRepairs.length === 0) {
+    const total = paid.reduce((sum: number, inv: any) => sum + (inv.total ?? 0), 0);
+    suggestions.push({
+      id: "all-paid",
+      level: "success",
+      title: `All invoices paid (€${total.toFixed(2)} total)`,
+      description: "This customer is fully up to date.",
     });
   }
 

@@ -249,14 +249,28 @@ export async function pullContacts(): Promise<SyncResult & { holdedTotal: number
 
       const brand = cf("Merk Caravan");
       const model = cf("Type Caravan");
+      const length = cf("Lengte Caravan");
+      const storageLocation = cf("Stalling");
+      const storageType = cf("Stalling Type");
+      const nfcTag = cf("NFC Tag");
+      const checklist = cf("Checklist");
+      const currentPosition = cf("Huidige Positie");
+      const locatie = cf("Locatie");
 
       if (existing) {
-        // Update brand/model if we have them from Holded
+        // Update brand/model and all custom fields from Holded
         await db
           .update(units)
           .set({
             ...(brand ? { brand } : {}),
             ...(model ? { model } : {}),
+            ...(length ? { length } : {}),
+            ...(storageLocation ? { storageLocation } : {}),
+            ...(storageType ? { storageType } : {}),
+            ...(nfcTag ? { nfcTag } : {}),
+            ...(checklist ? { checklist } : {}),
+            ...(currentPosition ? { currentPosition } : {}),
+            ...(locatie ? { currentPosition: locatie } : {}),
             customerId,
             updatedAt: new Date(),
           })
@@ -267,8 +281,14 @@ export async function pullContacts(): Promise<SyncResult & { holdedTotal: number
           registration: kenteken,
           brand: brand ?? null,
           model: model ?? null,
+          length: length ?? null,
           unitType: "caravan",
           customerId,
+          storageLocation: storageLocation ?? null,
+          storageType: storageType ?? null,
+          nfcTag: nfcTag ?? null,
+          checklist: checklist ?? null,
+          currentPosition: currentPosition ?? locatie ?? null,
           provisional: false,
         }).returning({ id: units.id });
         if (newUnit[0]) {
@@ -307,6 +327,27 @@ export async function pushContactToHolded(customerId: string): Promise<void> {
   // Don't push contacts that only have a name — no useful data for Holded
   if (!customer.holdedContactId && !hasRealContactData(customer)) return;
 
+  // Get the customer's units to sync custom fields to Holded
+  const customerUnits = await db
+    .select()
+    .from(units)
+    .where(eq(units.customerId, customerId));
+  const primaryUnit = customerUnits[0]; // Use first unit for custom fields
+
+  // Build custom fields from unit data
+  const customFields: Array<{ field: string; value: string }> = [];
+  if (primaryUnit) {
+    if (primaryUnit.registration) customFields.push({ field: "Kenteken", value: primaryUnit.registration });
+    if (primaryUnit.brand) customFields.push({ field: "Merk Caravan", value: primaryUnit.brand });
+    if (primaryUnit.model) customFields.push({ field: "Type Caravan", value: primaryUnit.model });
+    if (primaryUnit.length) customFields.push({ field: "Lengte Caravan", value: primaryUnit.length });
+    if (primaryUnit.storageLocation) customFields.push({ field: "Stalling", value: primaryUnit.storageLocation });
+    if (primaryUnit.storageType) customFields.push({ field: "Stalling Type", value: primaryUnit.storageType });
+    if (primaryUnit.nfcTag) customFields.push({ field: "NFC Tag", value: primaryUnit.nfcTag });
+    if (primaryUnit.checklist) customFields.push({ field: "Checklist", value: primaryUnit.checklist });
+    if (primaryUnit.currentPosition) customFields.push({ field: "Huidige Positie", value: primaryUnit.currentPosition });
+  }
+
   if (customer.holdedContactId) {
     // Update existing Holded contact
     await updateHoldedContact(customer.holdedContactId, {
@@ -322,6 +363,7 @@ export async function pushContactToHolded(customerId: string): Promise<void> {
         province: customer.province ?? undefined,
         country: customer.country ?? undefined,
       } : undefined,
+      ...(customFields.length > 0 ? { customFields } : {}),
     });
     await db
       .update(customers)
@@ -344,6 +386,12 @@ export async function pushContactToHolded(customerId: string): Promise<void> {
         country: customer.country ?? undefined,
       } : undefined,
     });
+    // Update with custom fields after creation
+    if (customFields.length > 0) {
+      try {
+        await updateHoldedContact(result.id, { customFields });
+      } catch { /* best effort */ }
+    }
     await db
       .update(customers)
       .set({

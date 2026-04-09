@@ -39,6 +39,11 @@ interface UnitRow {
   model: string | null;
   year: number | null;
   chassisId: string | null;
+  length: string | null;
+  storageLocation: string | null;
+  storageType: string | null;
+  currentPosition: string | null;
+  nfcTag: string | null;
   customerId: string | null;
   customerName: string | null;
   createdAt: Date;

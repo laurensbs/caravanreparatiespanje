@@ -645,8 +645,14 @@ export async function getDashboardSuggestions() {
 
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-  const [completedNoInvoice, noEstimate, stale, unassignedUrgent, noCustomer] = await Promise.all([
+  const [
+    completedNoInvoice, noEstimate, stale, unassignedUrgent, noCustomer,
+    draftInvoices, waitingApproval, waitingParts, blockedRepairs,
+    noResponseFollowUp, quoteNoInvoice, overdueRepairs,
+  ] = await Promise.all([
     // Completed but not invoiced
     db
       .select({ count: count() })
@@ -654,6 +660,7 @@ export async function getDashboardSuggestions() {
       .where(
         and(
           isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
           eq(repairJobs.status, "completed"),
           eq(repairJobs.invoiceStatus, "not_invoiced"),
           isNull(repairJobs.holdedInvoiceId)
@@ -666,6 +673,7 @@ export async function getDashboardSuggestions() {
       .where(
         and(
           isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
           sql`${repairJobs.status} IN ('in_progress', 'scheduled', 'blocked')`,
           isNull(repairJobs.estimatedCost),
           isNull(repairJobs.actualCost)
@@ -678,6 +686,7 @@ export async function getDashboardSuggestions() {
       .where(
         and(
           isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
           sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
           sql`${repairJobs.updatedAt} < ${twoWeeksAgo}`
         )
@@ -689,6 +698,7 @@ export async function getDashboardSuggestions() {
       .where(
         and(
           isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
           sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
           sql`${repairJobs.priority} IN ('urgent', 'high')`,
           isNull(repairJobs.assignedUserId)
@@ -701,8 +711,85 @@ export async function getDashboardSuggestions() {
       .where(
         and(
           isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
           sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
           isNull(repairJobs.customerId)
+        )
+      ),
+    // Draft invoices not yet sent
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.invoiceStatus, "draft"),
+          isNotNull(repairJobs.holdedInvoiceId)
+        )
+      ),
+    // Waiting for customer approval (quote sent)
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.status, "waiting_approval"),
+          sql`${repairJobs.updatedAt} < ${threeDaysAgo}`
+        )
+      ),
+    // Waiting for parts
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.status, "waiting_parts")
+        )
+      ),
+    // Blocked repairs
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.status, "blocked")
+        )
+      ),
+    // No response from customer for 3+ days
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          eq(repairJobs.customerResponseStatus, "no_response")
+        )
+      ),
+    // Has quote but no invoice (completed)
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.status, "invoiced"),
+          isNotNull(repairJobs.holdedQuoteId),
+          isNull(repairJobs.holdedInvoiceId)
+        )
+      ),
+    // Overdue repairs (past due date)
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          sql`${repairJobs.dueDate} < NOW()`
         )
       ),
   ]);
@@ -713,5 +800,12 @@ export async function getDashboardSuggestions() {
     stale: stale[0]?.count ?? 0,
     unassignedUrgent: unassignedUrgent[0]?.count ?? 0,
     noCustomer: noCustomer[0]?.count ?? 0,
+    draftInvoices: draftInvoices[0]?.count ?? 0,
+    waitingApproval: waitingApproval[0]?.count ?? 0,
+    waitingParts: waitingParts[0]?.count ?? 0,
+    blockedRepairs: blockedRepairs[0]?.count ?? 0,
+    noResponseFollowUp: noResponseFollowUp[0]?.count ?? 0,
+    quoteNoInvoice: quoteNoInvoice[0]?.count ?? 0,
+    overdueRepairs: overdueRepairs[0]?.count ?? 0,
   };
 }

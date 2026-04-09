@@ -34,6 +34,11 @@ export function NewUnitForm({ customers }: NewUnitFormProps) {
         model: fd.get("model") || undefined,
         year: fd.get("year") ? Number(fd.get("year")) : undefined,
         chassisId: fd.get("chassisId") || undefined,
+        length: fd.get("length") || undefined,
+        storageLocation: fd.get("storageLocation") || undefined,
+        storageType: fd.get("storageType") || undefined,
+        currentPosition: fd.get("currentPosition") || undefined,
+        nfcTag: fd.get("nfcTag") || undefined,
         notes: fd.get("notes") || undefined,
         customerId: customerId || undefined,
       });
@@ -78,6 +83,26 @@ export function NewUnitForm({ customers }: NewUnitFormProps) {
           <div className="sm:col-span-2">
             <Label htmlFor="chassisId">Chassis / Internal ID</Label>
             <Input id="chassisId" name="chassisId" className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="length">Length (m)</Label>
+            <Input id="length" name="length" className="mt-1" placeholder="e.g. 5.05" />
+          </div>
+          <div>
+            <Label htmlFor="storageLocation">Storage Location</Label>
+            <Input id="storageLocation" name="storageLocation" className="mt-1" placeholder="e.g. Peratallada Outside" />
+          </div>
+          <div>
+            <Label htmlFor="storageType">Storage Type</Label>
+            <Input id="storageType" name="storageType" className="mt-1" placeholder="e.g. Outside, Inside" />
+          </div>
+          <div>
+            <Label htmlFor="currentPosition">Current Position</Label>
+            <Input id="currentPosition" name="currentPosition" className="mt-1" placeholder="e.g. 2F17" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="nfcTag">NFC Tag</Label>
+            <Input id="nfcTag" name="nfcTag" className="mt-1" />
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="notes">Notes</Label>

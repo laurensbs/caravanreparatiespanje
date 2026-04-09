@@ -76,9 +76,15 @@ export const unitSchema = z.object({
   brand: z.string().max(255).optional(),
   model: z.string().max(255).optional(),
   year: z.coerce.number().min(1900).max(2100).optional(),
+  length: z.string().max(50).optional(),
   chassisId: z.string().max(255).optional(),
   internalNumber: z.string().max(100).optional(),
   customerId: z.string().uuid().nullable().optional(),
+  storageLocation: z.string().max(255).optional(),
+  storageType: z.string().max(100).optional(),
+  currentPosition: z.string().max(255).optional(),
+  nfcTag: z.string().max(255).optional(),
+  checklist: z.string().optional(),
   notes: z.string().optional(),
 });
 

@@ -231,11 +231,18 @@ export const units = pgTable(
     brand: varchar("brand", { length: 255 }),
     model: varchar("model", { length: 255 }),
     year: integer("year"),
+    length: varchar("length", { length: 50 }),
     chassisId: varchar("chassis_id", { length: 255 }),
     internalNumber: varchar("internal_number", { length: 100 }),
     customerId: uuid("customer_id").references(() => customers.id, {
       onDelete: "set null",
     }),
+    // Holded custom fields
+    storageLocation: varchar("storage_location", { length: 255 }),
+    storageType: varchar("storage_type", { length: 100 }),
+    currentPosition: varchar("current_position", { length: 255 }),
+    nfcTag: varchar("nfc_tag", { length: 255 }),
+    checklist: text("checklist"),
     notes: text("notes"),
     provisional: boolean("provisional").notNull().default(false),
     registrationRaw: text("registration_raw"),

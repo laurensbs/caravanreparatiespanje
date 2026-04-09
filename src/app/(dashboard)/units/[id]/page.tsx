@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Hash, Truck, Calendar, User, Wrench, StickyNote } from "lucide-react";
+import { ArrowLeft, Hash, Truck, Calendar, User, Wrench, StickyNote, MapPin, Ruler, Warehouse, Navigation, Tag } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
@@ -64,6 +64,12 @@ export default async function UnitDetailPage({ params }: Props) {
                 <span className="flex items-center gap-2 text-muted-foreground"><Hash className="h-3.5 w-3.5" /> Chassis</span>
                 <span className="font-mono text-xs">{unit.chassisId ?? "—"}</span>
               </div>
+              {unit.length && (
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground"><Ruler className="h-3.5 w-3.5" /> Length</span>
+                  <span className="font-medium">{unit.length}m</span>
+                </div>
+              )}
               {unit.customer && (
                 <div className="flex items-center justify-between border-t pt-3">
                   <span className="flex items-center gap-2 text-muted-foreground"><User className="h-3.5 w-3.5" /> Owner</span>
@@ -73,6 +79,44 @@ export default async function UnitDetailPage({ params }: Props) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Storage & Location */}
+        {(unit.storageLocation || unit.storageType || unit.currentPosition || unit.nfcTag) && (
+          <Card>
+            <CardContent>
+              <div className="flex items-center gap-2 mb-2">
+                <Warehouse className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Storage & Location</p>
+              </div>
+              <div className="space-y-3 text-sm">
+                {unit.storageLocation && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-3.5 w-3.5" /> Storage</span>
+                    <span className="font-medium">{unit.storageLocation}</span>
+                  </div>
+                )}
+                {unit.storageType && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground"><Warehouse className="h-3.5 w-3.5" /> Type</span>
+                    <span className="font-medium">{unit.storageType}</span>
+                  </div>
+                )}
+                {unit.currentPosition && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground"><Navigation className="h-3.5 w-3.5" /> Current Position</span>
+                    <span className="font-medium">{unit.currentPosition}</span>
+                  </div>
+                )}
+                {unit.nfcTag && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground"><Tag className="h-3.5 w-3.5" /> NFC Tag</span>
+                    <span className="font-mono text-xs">{unit.nfcTag}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notes */}
         {unit.notes && (

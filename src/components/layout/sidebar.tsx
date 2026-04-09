@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -25,18 +26,19 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   minRole?: UserRole;
+  bottom?: boolean;
 }
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" /> },
   { label: "Repairs", href: "/repairs", icon: <Wrench className="h-[18px] w-[18px]" /> },
-  { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" /> },
   { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" /> },
   { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" /> },
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" /> },
   { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" /> },
   { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
+  { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
 
 interface SidebarProps {
@@ -47,9 +49,30 @@ export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
   const { collapsed, setCollapsed } = useSidebar();
 
+  // Swipe gesture handling
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+    // Only trigger on horizontal swipes (dx > 50px, dy < 30px)
+    if (Math.abs(dx) > 50 && dy < 30) {
+      if (dx < 0) setCollapsed(true);   // swipe left → collapse
+      else setCollapsed(false);          // swipe right → expand
+    }
+  }, [setCollapsed]);
+
   const filteredItems = navItems.filter(
     (item) => !item.minRole || hasMinRole(userRole, item.minRole)
   );
+  const mainItems = filteredItems.filter((item) => !item.bottom);
+  const bottomItems = filteredItems.filter((item) => item.bottom);
 
   function NavLink({ item }: { item: NavItem }) {
     const isActive =
@@ -82,6 +105,8 @@ export function Sidebar({ userRole }: SidebarProps) {
 
   return (
     <aside
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={cn(
         "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[oklch(0.16_0.025_260)] transition-all duration-300 ease-in-out",
         collapsed ? "w-[60px]" : "w-60"
@@ -105,21 +130,34 @@ export function Sidebar({ userRole }: SidebarProps) {
         "flex-1 space-y-0.5 overflow-y-auto py-3 transition-all duration-300",
         collapsed ? "px-1.5" : "px-3"
       )}>
-        {filteredItems.map((item) => (
+        {mainItems.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
       </nav>
 
-      <div className="border-t border-white/10 px-2 py-3">
+      {/* Bottom items (Bin) + collapse toggle */}
+      <div className={cn(
+        "border-t border-white/10 py-2 space-y-0.5",
+        collapsed ? "px-1.5" : "px-3"
+      )}>
+        {bottomItems.map((item) => (
+          <NavLink key={item.href} item={item} />
+        ))}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex w-full items-center justify-center rounded-lg p-2 text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
+          className={cn(
+            "flex w-full items-center rounded-lg text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70",
+            collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
+          )}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
             <ChevronsRight className="h-4 w-4" />
           ) : (
-            <ChevronsLeft className="h-4 w-4" />
+            <>
+              <ChevronsLeft className="h-4 w-4" />
+              <span className="text-[13px] font-medium">Collapse</span>
+            </>
           )}
         </button>
       </div>

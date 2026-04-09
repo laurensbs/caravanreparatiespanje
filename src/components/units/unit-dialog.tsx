@@ -28,6 +28,11 @@ interface UnitRow {
   model: string | null;
   year: number | null;
   chassisId: string | null;
+  length: string | null;
+  storageLocation: string | null;
+  storageType: string | null;
+  currentPosition: string | null;
+  nfcTag: string | null;
   customerId: string | null;
   customerName: string | null;
   createdAt: Date;
@@ -67,6 +72,11 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
           model: fd.get("model") || null,
           year: fd.get("year") ? Number(fd.get("year")) : null,
           chassisId: fd.get("chassisId") || null,
+          length: fd.get("length") || null,
+          storageLocation: fd.get("storageLocation") || null,
+          storageType: fd.get("storageType") || null,
+          currentPosition: fd.get("currentPosition") || null,
+          nfcTag: fd.get("nfcTag") || null,
           notes: fd.get("notes") || null,
         });
         setEditing(false);
@@ -132,6 +142,26 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
                   <Label htmlFor="u-chassis">Chassis ID</Label>
                   <Input id="u-chassis" name="chassisId" defaultValue={unit.chassisId ?? ""} className="mt-1" />
                 </div>
+                <div>
+                  <Label htmlFor="u-length">Length (m)</Label>
+                  <Input id="u-length" name="length" defaultValue={unit.length ?? ""} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="u-storageLocation">Storage Location</Label>
+                  <Input id="u-storageLocation" name="storageLocation" defaultValue={unit.storageLocation ?? ""} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="u-storageType">Storage Type</Label>
+                  <Input id="u-storageType" name="storageType" defaultValue={unit.storageType ?? ""} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="u-currentPosition">Current Position</Label>
+                  <Input id="u-currentPosition" name="currentPosition" defaultValue={unit.currentPosition ?? ""} className="mt-1" />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="u-nfcTag">NFC Tag</Label>
+                  <Input id="u-nfcTag" name="nfcTag" defaultValue={unit.nfcTag ?? ""} className="mt-1" />
+                </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="u-notes">Notes</Label>
                   <Textarea id="u-notes" name="notes" rows={3} className="mt-1" />
@@ -155,6 +185,11 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
                 <DetailField label="Model" value={unit.model} />
                 <DetailField label="Year" value={unit.year?.toString()} />
                 <DetailField label="Chassis ID" value={unit.chassisId} mono />
+                <DetailField label="Length" value={unit.length ? `${unit.length}m` : null} />
+                <DetailField label="Storage" value={unit.storageLocation} />
+                <DetailField label="Storage Type" value={unit.storageType} />
+                <DetailField label="Position" value={unit.currentPosition} />
+                {unit.nfcTag && <DetailField label="NFC Tag" value={unit.nfcTag} mono />}
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Customer</p>
                   {unit.customerName ? (

@@ -7,6 +7,7 @@ import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { eq, desc, asc, ilike, or, and, count, inArray, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { syncCustomerToHolded } from "./holded";
 
 export async function getUnits(filters: { q?: string; tagId?: string; dateFrom?: string; dateTo?: string; page?: number; limit?: number } = {}) {
   await requireAuth();
@@ -59,6 +60,11 @@ export async function getUnits(filters: { q?: string; tagId?: string; dateFrom?:
         model: units.model,
         year: units.year,
         chassisId: units.chassisId,
+        length: units.length,
+        storageLocation: units.storageLocation,
+        storageType: units.storageType,
+        currentPosition: units.currentPosition,
+        nfcTag: units.nfcTag,
         customerId: units.customerId,
         customerName: customers.name,
         createdAt: units.createdAt,
@@ -118,6 +124,12 @@ export async function updateUnit(id: string, data: unknown) {
   await createAuditLog("update", "unit", id);
   revalidatePath("/units");
   revalidatePath(`/units/${id}`);
+
+  // Sync unit custom fields back to Holded via the customer
+  if (updated?.customerId) {
+    syncCustomerToHolded(updated.customerId).catch(() => {});
+  }
+
   return updated;
 }
 

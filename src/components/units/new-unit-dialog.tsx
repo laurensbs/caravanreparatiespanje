@@ -43,6 +43,11 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
         model: fd.get("model") || undefined,
         year: fd.get("year") ? Number(fd.get("year")) : undefined,
         chassisId: fd.get("chassisId") || undefined,
+        length: fd.get("length") || undefined,
+        storageLocation: fd.get("storageLocation") || undefined,
+        storageType: fd.get("storageType") || undefined,
+        currentPosition: fd.get("currentPosition") || undefined,
+        nfcTag: fd.get("nfcTag") || undefined,
         notes: fd.get("notes") || undefined,
         customerId: customerId || undefined,
       });
@@ -103,6 +108,24 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
           <div>
             <Label htmlFor="dlg-chassis" className="text-xs">Chassis / Internal ID</Label>
             <Input id="dlg-chassis" name="chassisId" className="mt-1 h-9 rounded-lg" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="dlg-length" className="text-xs">Length (m)</Label>
+              <Input id="dlg-length" name="length" className="mt-1 h-9 rounded-lg" placeholder="e.g. 5.05" />
+            </div>
+            <div>
+              <Label htmlFor="dlg-storageType" className="text-xs">Storage Type</Label>
+              <Input id="dlg-storageType" name="storageType" className="mt-1 h-9 rounded-lg" placeholder="Outside, Inside" />
+            </div>
+            <div>
+              <Label htmlFor="dlg-storageLocation" className="text-xs">Storage Location</Label>
+              <Input id="dlg-storageLocation" name="storageLocation" className="mt-1 h-9 rounded-lg" />
+            </div>
+            <div>
+              <Label htmlFor="dlg-currentPosition" className="text-xs">Current Position</Label>
+              <Input id="dlg-currentPosition" name="currentPosition" className="mt-1 h-9 rounded-lg" />
+            </div>
           </div>
           <div>
             <Label htmlFor="dlg-notes" className="text-xs">Notes</Label>

@@ -155,6 +155,7 @@ export async function updateContact(
       country?: string;
       countryCode?: string;
     };
+    customFields?: Array<{ field: string; value: string }>;
   },
 ): Promise<void> {
   const body: Record<string, unknown> = {};
@@ -165,6 +166,7 @@ export async function updateContact(
   if (data.vatnumber !== undefined) body.vatnumber = data.vatnumber ?? undefined;
   if (data.tradeName !== undefined) body.tradeName = data.tradeName ?? undefined;
   if (data.billAddress) body.billAddress = data.billAddress;
+  if (data.customFields) body.customFields = data.customFields;
   await holdedFetch(`/contacts/${contactId}`, {
     method: "PUT",
     body: JSON.stringify(body),

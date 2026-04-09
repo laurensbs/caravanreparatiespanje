@@ -114,6 +114,14 @@ export async function GET(request: Request) {
       try {
         const newStatus = holdedInvoiceStatus(inv);
 
+        // Skip invoices with no meaningful content (blank storage deposits, etc.)
+        const hasInvoiceContent = (inv.desc && inv.desc.trim().length > 3)
+          || (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
+        if (!hasInvoiceContent) continue;
+
+        // Skip non-repair invoices (transport, storage, etc.)
+        if (isNonRepairInvoice(inv)) continue;
+
         // Case A: Invoice already linked to a repair → sync status + dates
         const existingRepair = repairByInvoiceId.get(inv.id);
         if (existingRepair) {
@@ -174,9 +182,6 @@ export async function GET(request: Request) {
         const customerId = customerByHoldedId.get(inv.contact);
         if (!customerId) continue;
 
-        // Skip non-repair invoices (transport, storage, etc.)
-        if (isNonRepairInvoice(inv)) continue;
-
         const customerRepairs = repairsByCustomer.get(customerId);
         if (!customerRepairs) continue;
 
@@ -206,12 +211,7 @@ export async function GET(request: Request) {
         }
 
         // Strategy 3: Date proximity — match invoice date to closest repair
-        // Only use this strategy when the invoice has a meaningful description
-        // (prevents blank storage/transport invoices from matching random repairs)
-        const hasContent = (inv.desc && inv.desc.trim().length > 3)
-          || (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
-
-        if (!matched && hasContent) {
+        if (!matched) {
           const invDate = inv.date * 1000;
           let bestMatch: (typeof unlinkedRepairs)[0] | null = null;
           let bestDist = Infinity;

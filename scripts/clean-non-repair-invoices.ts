@@ -44,6 +44,12 @@ function isNonRepairInvoice(inv: HoldedInvoice): boolean {
   return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
 }
 
+function isBlankInvoice(inv: HoldedInvoice): boolean {
+  const hasDesc = inv.desc && inv.desc.trim().length > 3;
+  const hasItems = (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
+  return !hasDesc && !hasItems;
+}
+
 async function main() {
   const mode = DRY_RUN ? "DRY RUN" : "LIVE";
   console.log(`\n🧹 Clean Non-Repair Invoice Records (${mode})\n`);
@@ -86,7 +92,11 @@ async function main() {
     const inv = invoiceMap.get(repair.holdedInvoiceId!);
     if (!inv) continue;
 
-    if (!isNonRepairInvoice(inv)) continue;
+    const shouldClean = isNonRepairInvoice(inv)
+      || (isBlankInvoice(inv) && repair.title?.startsWith("Repair (invoice"));
+    if (!shouldClean) continue;
+
+    const reason = isBlankInvoice(inv) ? "blank invoice (auto-generated)" : "non-repair invoice";
 
     found++;
     const invDesc = inv.desc || inv.items?.[0]?.name || "(no description)";
@@ -97,7 +107,7 @@ async function main() {
       continue;
     }
 
-    console.log(`   ${DRY_RUN ? "📝" : "🗑️ "} ${repair.publicCode} — "${repair.title}"`);
+    console.log(`   ${DRY_RUN ? "📝" : "🗑️ "} ${repair.publicCode} — "${repair.title}" [${reason}]`);
     console.log(`      Invoice: ${repair.holdedInvoiceNum} — "${invDesc}"`);
 
     if (!DRY_RUN) {
@@ -111,7 +121,7 @@ async function main() {
       await db.insert(repairJobEvents).values({
         repairJobId: repair.id,
         eventType: "deleted",
-        comment: `Auto-cleaned: non-repair invoice "${invDesc}" (${repair.holdedInvoiceNum})`,
+        comment: `Auto-cleaned: ${reason} "${invDesc}" (${repair.holdedInvoiceNum})`,
       });
     }
 

@@ -27,7 +27,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "Holded not configured" });
   }
 
-  const stats = { discovered: 0, statusUpdated: 0, errors: 0, invoicesTotal: 0 };
+  const stats = { discovered: 0, statusUpdated: 0, statusAdvanced: 0, errors: 0, invoicesTotal: 0 };
+
+  // Statuses that should auto-advance when invoice is paid
+  const earlyStatuses = ["new", "todo", "in_inspection", "quote_needed", "waiting_approval",
+    "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked", "completed"];
 
   try {
     // ─── Step 1: Fetch ALL invoices from Holded ───
@@ -92,11 +96,19 @@ export async function GET(request: Request) {
           const dateChanged = existingRepair.holdedInvoiceDate?.getTime() !== invDate.getTime();
           const dueDateChanged = invDueDate && existingRepair.dueDate?.getTime() !== invDueDate.getTime();
 
-          if (statusChanged || dateChanged || dueDateChanged) {
+          // Auto-advance repair status when invoice is paid
+          const shouldAdvanceStatus = newStatus === "paid"
+            && earlyStatuses.includes(existingRepair.status);
+
+          if (statusChanged || dateChanged || dueDateChanged || shouldAdvanceStatus) {
             const updates: Record<string, unknown> = { updatedAt: new Date() };
             if (statusChanged) updates.invoiceStatus = newStatus;
             if (dateChanged) updates.holdedInvoiceDate = invDate;
             if (dueDateChanged) updates.dueDate = invDueDate;
+            if (shouldAdvanceStatus) {
+              updates.status = "invoiced";
+              if (!existingRepair.completedAt) updates.completedAt = new Date();
+            }
 
             await db
               .update(repairJobs)
@@ -113,6 +125,18 @@ export async function GET(request: Request) {
                 comment: `Invoice ${inv.docNumber} status synced: ${existingRepair.invoiceStatus} → ${newStatus}`,
               });
               existingRepair.invoiceStatus = newStatus;
+            }
+            if (shouldAdvanceStatus) {
+              await db.insert(repairJobEvents).values({
+                repairJobId: existingRepair.id,
+                eventType: "status_changed",
+                fieldChanged: "status",
+                oldValue: existingRepair.status,
+                newValue: "invoiced",
+                comment: `Auto-advanced to invoiced — invoice ${inv.docNumber} is paid`,
+              });
+              existingRepair.status = "invoiced";
+              stats.statusAdvanced++;
             }
             if (dateChanged || dueDateChanged) {
               existingRepair.holdedInvoiceDate = invDate;
@@ -176,6 +200,8 @@ export async function GET(request: Request) {
 
         if (matched) {
           const invDueDate = inv.dueDate ? new Date(inv.dueDate * 1000) : null;
+          // If invoice is paid, auto-advance repair status
+          const advanceStatus = newStatus === "paid" && earlyStatuses.includes(matched.status);
           await db
             .update(repairJobs)
             .set({
@@ -184,6 +210,7 @@ export async function GET(request: Request) {
               holdedInvoiceDate: new Date(inv.date * 1000),
               ...(invDueDate ? { dueDate: invDueDate } : {}),
               invoiceStatus: newStatus,
+              ...(advanceStatus ? { status: "invoiced" as const, completedAt: matched.completedAt ?? new Date() } : {}),
               updatedAt: new Date(),
             })
             .where(eq(repairJobs.id, matched.id));

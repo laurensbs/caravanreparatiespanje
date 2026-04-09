@@ -239,6 +239,31 @@ export async function createInvoice(
   );
 }
 
+/**
+ * Holded PDF endpoints return JSON: { status: 1, data: "<base64>" }
+ * The base64 decodes to HTTP headers + PDF body separated by \n%PDF.
+ */
+function extractPdfFromHolded(raw: Buffer): Buffer {
+  // Try to parse as JSON wrapper first
+  try {
+    const text = raw.toString("utf8");
+    const json = JSON.parse(text);
+    if (json.data && typeof json.data === "string") {
+      const decoded = Buffer.from(json.data, "base64");
+      // The decoded data may contain HTTP headers before the actual PDF
+      const pdfMarker = decoded.indexOf("%PDF");
+      if (pdfMarker >= 0) {
+        return decoded.subarray(pdfMarker);
+      }
+      return decoded;
+    }
+  } catch {
+    // Not JSON — might be raw PDF already
+  }
+  // Return as-is (might already be a raw PDF)
+  return raw;
+}
+
 export async function getInvoicePdf(invoiceId: string): Promise<Buffer> {
   const res = await holdedFetchRaw(
     `/documents/invoice/${invoiceId}/pdf`,
@@ -249,7 +274,7 @@ export async function getInvoicePdf(invoiceId: string): Promise<Buffer> {
     throw new Error(`PDF download failed: ${res.status} ${body.slice(0, 200)}`);
   }
   const ab = await res.arrayBuffer();
-  return Buffer.from(ab);
+  return extractPdfFromHolded(Buffer.from(ab));
 }
 
 export async function sendInvoice(
@@ -324,7 +349,7 @@ export async function getQuotePdf(quoteId: string): Promise<Buffer> {
     throw new Error(`PDF download failed: ${res.status} ${body.slice(0, 200)}`);
   }
   const ab = await res.arrayBuffer();
-  return Buffer.from(ab);
+  return extractPdfFromHolded(Buffer.from(ab));
 }
 
 export async function sendQuote(

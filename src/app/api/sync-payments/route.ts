@@ -17,7 +17,7 @@ function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" 
 }
 
 // Holded tag prefixes that indicate a non-repair invoice (transport, storage)
-const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling", "outside_storage", "outsidestorage"];
+const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling"];
 
 function isNonRepairInvoice(inv: HoldedInvoice): boolean {
   return (inv.tags ?? []).some(tag => {

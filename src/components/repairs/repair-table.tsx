@@ -41,6 +41,9 @@ interface Job {
   descriptionRaw: string | null;
   partsNeededRaw: string | null;
   notesRaw: string | null;
+  warrantyInternalCostFlag: boolean;
+  internalCost: string | null;
+  tags: { id: string; name: string; color: string }[];
 }
 
 interface RepairTableProps {
@@ -159,6 +162,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("invoiceStatus")}>
                 <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
               </TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Tags</TableHead>
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("updatedAt")}>
                 <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
               </TableHead>
@@ -168,7 +172,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="py-16 text-center">
+                <TableCell colSpan={13} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ArrowUpDown className="h-8 w-8 opacity-20" />
                     <p className="font-medium text-sm">No repair jobs found</p>
@@ -258,15 +262,39 @@ export function RepairTable({ jobs }: RepairTableProps) {
                     ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      job.invoiceStatus === "paid" ? "bg-emerald-100 text-emerald-700" :
-                      job.invoiceStatus === "sent" ? "bg-blue-100 text-blue-700" :
-                      job.invoiceStatus === "draft" ? "bg-amber-100 text-amber-700" :
-                      job.invoiceStatus === "warranty" ? "bg-purple-100 text-purple-700" :
-                      "bg-gray-100 text-gray-500"
-                    }`}>
-                      {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium w-fit ${
+                        job.invoiceStatus === "paid" ? "bg-emerald-100 text-emerald-700" :
+                        job.invoiceStatus === "sent" ? "bg-blue-100 text-blue-700" :
+                        job.invoiceStatus === "draft" ? "bg-amber-100 text-amber-700" :
+                        job.invoiceStatus === "warranty" ? "bg-purple-100 text-purple-700" :
+                        "bg-gray-100 text-gray-500"
+                      }`}>
+                        {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
+                      </span>
+                      {(job.warrantyInternalCostFlag || (job.internalCost && parseFloat(job.internalCost) > 0)) && (
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 w-fit">
+                          Our Cost{job.internalCost ? ` €${parseFloat(job.internalCost).toFixed(0)}` : ""}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {job.tags.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {job.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="inline-block rounded-full px-1.5 py-0 text-[10px] font-medium text-white leading-4"
+                            style={{ backgroundColor: tag.color }}
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-[11px]">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <SmartDate date={job.updatedAt} className="text-xs text-muted-foreground" />

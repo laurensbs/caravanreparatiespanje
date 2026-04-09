@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -14,6 +14,7 @@ import {
   ChevronsRight,
   Package,
   Receipt,
+  FileText,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" /> },
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },
   { label: "Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" /> },
+  { label: "Quotes", href: "/invoices?tab=quotes", icon: <FileText className="h-[18px] w-[18px]" /> },
   { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" /> },
   { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
 ];
@@ -43,6 +45,7 @@ interface SidebarProps {
 
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { collapsed, setCollapsed } = useSidebar();
 
   const filteredItems = navItems.filter(
@@ -50,10 +53,23 @@ export function Sidebar({ userRole }: SidebarProps) {
   );
 
   function NavLink({ item }: { item: NavItem }) {
-    const isActive =
-      item.href === "/"
-        ? pathname === "/"
-        : pathname.startsWith(item.href);
+    const [hrefPath, hrefQuery] = item.href.split("?");
+    const hrefParams = new URLSearchParams(hrefQuery ?? "");
+    let isActive: boolean;
+    if (hrefPath === "/") {
+      isActive = pathname === "/";
+    } else if (hrefQuery) {
+      // Match path AND specific query param (e.g. /invoices?tab=quotes)
+      isActive = pathname.startsWith(hrefPath) && [...hrefParams.entries()].every(([k, v]) => searchParams.get(k) === v);
+    } else {
+      // Match path but NOT if a sibling has the same path with a query param that matches
+      isActive = pathname.startsWith(hrefPath) && !navItems.some(
+        (other) => other !== item && other.href.startsWith(hrefPath + "?") && (() => {
+          const oParams = new URLSearchParams(other.href.split("?")[1] ?? "");
+          return [...oParams.entries()].every(([k, v]) => searchParams.get(k) === v);
+        })()
+      );
+    }
 
     return (
       <Link

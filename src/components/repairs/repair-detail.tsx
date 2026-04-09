@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -76,6 +77,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [status, setStatus] = useState(job.status);
   const [priority, setPriority] = useState(job.priority);
   const [invoiceStatus, setInvoiceStatus] = useState(job.invoiceStatus);
+  const [warrantyFlag, setWarrantyFlag] = useState(job.warrantyInternalCostFlag ?? false);
   const [customerResponseStatus, setCustomerResponseStatus] = useState(job.customerResponseStatus);
   const [notes, setNotes] = useState(job.notesRaw && job.notesRaw !== "true" && job.notesRaw !== "false" ? job.notesRaw : "");
   const [internalComments, setInternalComments] = useState(job.internalComments ?? "");
@@ -180,6 +182,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         estimatedCost: estimatedCost || null,
         actualCost: actualCost || null,
         internalCost: internalCost || null,
+        warrantyInternalCostFlag: warrantyFlag,
       });
       router.refresh();
       toast.success("Changes saved");
@@ -656,6 +659,21 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </Select>
                 </div>
               </div>
+              <label className="flex items-center gap-2 cursor-pointer py-1">
+                <Checkbox
+                  checked={warrantyFlag}
+                  onCheckedChange={(checked) => {
+                    const val = checked === true;
+                    setWarrantyFlag(val);
+                    if (val && invoiceStatus === "not_invoiced") {
+                      setInvoiceStatus("warranty");
+                    } else if (!val && invoiceStatus === "warranty") {
+                      setInvoiceStatus("not_invoiced");
+                    }
+                  }}
+                />
+                <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
+              </label>
             </CardContent>
           </Card>
 

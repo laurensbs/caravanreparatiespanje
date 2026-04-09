@@ -60,9 +60,9 @@ interface InvoicesClientProps {
 type StatusFilter = "all" | "unpaid" | "paid" | "partial";
 type Tab = "invoices" | "quotes";
 
-export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
+export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientProps & { initialTab?: Tab }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("invoices");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "invoices");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFrom, setDateFrom] = useState("");

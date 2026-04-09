@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, repairJobTags, customers, units, locations, users } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, repairJobTags, customers, units, locations, users, tags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
@@ -148,6 +148,8 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
         descriptionRaw: repairJobs.descriptionRaw,
         partsNeededRaw: repairJobs.partsNeededRaw,
         notesRaw: repairJobs.notesRaw,
+        warrantyInternalCostFlag: repairJobs.warrantyInternalCostFlag,
+        internalCost: repairJobs.internalCost,
       })
       .from(repairJobs)
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
@@ -166,8 +168,29 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
       .where(where),
   ]);
 
+  // Fetch tags for jobs in one query
+  const jobIds = jobsResult.map((j) => j.id);
+  const jobTagRows = jobIds.length > 0
+    ? await db
+        .select({
+          repairJobId: repairJobTags.repairJobId,
+          tagId: tags.id,
+          tagName: tags.name,
+          tagColor: tags.color,
+        })
+        .from(repairJobTags)
+        .innerJoin(tags, eq(repairJobTags.tagId, tags.id))
+        .where(inArray(repairJobTags.repairJobId, jobIds))
+    : [];
+
+  const tagsByJob = new Map<string, { id: string; name: string; color: string }[]>();
+  for (const row of jobTagRows) {
+    if (!tagsByJob.has(row.repairJobId)) tagsByJob.set(row.repairJobId, []);
+    tagsByJob.get(row.repairJobId)!.push({ id: row.tagId, name: row.tagName, color: row.tagColor });
+  }
+
   return {
-    jobs: jobsResult,
+    jobs: jobsResult.map((j) => ({ ...j, tags: tagsByJob.get(j.id) ?? [] })),
     total: countResult[0]?.count ?? 0,
     page,
     limit,

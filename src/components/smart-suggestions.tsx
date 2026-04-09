@@ -224,8 +224,8 @@ export function getRepairSuggestions(job: any): Suggestion[] {
     });
   }
 
-  // Completed but not invoiced
-  if (job.status === "completed" && job.invoiceStatus === "not_invoiced" && !job.holdedInvoiceId) {
+  // Completed but not invoiced (skip warranty / internal cost)
+  if (job.status === "completed" && job.invoiceStatus === "not_invoiced" && !job.holdedInvoiceId && !job.warrantyInternalCostFlag) {
     suggestions.push({
       id: "completed-no-invoice",
       level: "action",
@@ -432,7 +432,7 @@ export function getCustomerSuggestions(
 
   // Completed repairs ready to invoice
   const completedNoInvoice = customer.repairJobs?.filter(
-    (j: any) => j.status === "completed" && !j.holdedInvoiceId
+    (j: any) => j.status === "completed" && !j.holdedInvoiceId && !j.warrantyInternalCostFlag
   ) ?? [];
   if (completedNoInvoice.length > 0) {
     suggestions.push({

@@ -657,7 +657,7 @@ export async function getDashboardSuggestions() {
     invoiceSentNotPaid, noUnit, customersNotSynced, completedRevenue,
     scheduledThisWeek,
   ] = await Promise.all([
-    // Completed but not invoiced
+    // Completed but not invoiced (exclude warranty)
     db
       .select({ count: count() })
       .from(repairJobs)
@@ -667,7 +667,8 @@ export async function getDashboardSuggestions() {
           isNull(repairJobs.deletedAt),
           eq(repairJobs.status, "completed"),
           eq(repairJobs.invoiceStatus, "not_invoiced"),
-          isNull(repairJobs.holdedInvoiceId)
+          isNull(repairJobs.holdedInvoiceId),
+          eq(repairJobs.warrantyInternalCostFlag, false)
         )
       ),
     // Active repairs in later stages with no cost estimate
@@ -833,7 +834,7 @@ export async function getDashboardSuggestions() {
           )`
         )
       ),
-    // Total estimated revenue from completed uninvoiced repairs
+    // Total estimated revenue from completed uninvoiced repairs (exclude warranty)
     db
       .select({ total: sql<string>`COALESCE(SUM(COALESCE(${repairJobs.actualCost}, ${repairJobs.estimatedCost}, '0')::numeric), 0)` })
       .from(repairJobs)
@@ -842,7 +843,8 @@ export async function getDashboardSuggestions() {
           isNull(repairJobs.deletedAt),
           eq(repairJobs.status, "completed"),
           eq(repairJobs.invoiceStatus, "not_invoiced"),
-          isNull(repairJobs.holdedInvoiceId)
+          isNull(repairJobs.holdedInvoiceId),
+          eq(repairJobs.warrantyInternalCostFlag, false)
         )
       ),
     // Repairs scheduled for this week (upcoming due dates within 7 days)

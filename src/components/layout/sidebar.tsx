@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -48,6 +48,31 @@ interface SidebarProps {
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
   const { collapsed, setCollapsed } = useSidebar();
+
+  // Hover expand/collapse (desktop only)
+  const supportsHover = useRef(true);
+  const leaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(hover: hover)");
+    supportsHover.current = mql.matches;
+    const handler = (e: MediaQueryListEvent) => {
+      supportsHover.current = e.matches;
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!supportsHover.current) return;
+    if (leaveTimeout.current) clearTimeout(leaveTimeout.current);
+    setCollapsed(false);
+  }, [setCollapsed]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!supportsHover.current) return;
+    leaveTimeout.current = setTimeout(() => setCollapsed(true), 200);
+  }, [setCollapsed]);
 
   // Swipe gesture handling
   const touchStartX = useRef(0);
@@ -107,9 +132,11 @@ export function Sidebar({ userRole }: SidebarProps) {
     <aside
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
         "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[oklch(0.16_0.025_260)] transition-all duration-300 ease-in-out",
-        collapsed ? "w-[60px]" : "w-60"
+        collapsed ? "w-[60px]" : "w-60 shadow-2xl shadow-black/30"
       )}
     >
       <div className={cn(

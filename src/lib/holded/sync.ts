@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { customers, suppliers, parts } from "@/lib/db/schema";
+import { customers, suppliers, parts, units } from "@/lib/db/schema";
 import {
   listContacts,
   listProducts,
@@ -200,6 +200,86 @@ export async function pullContacts(): Promise<SyncResult & { holdedTotal: number
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       result.errors.push(`Supplier "${hs.name}": ${msg}`);
+    }
+  }
+
+  // 7. Sync units from Holded customFields → DB units
+  // Holded stores Kenteken, Merk Caravan, Type Caravan, Lengte Caravan per contact
+  const dbUnits = await db
+    .select({ id: units.id, registration: units.registration, customerId: units.customerId })
+    .from(units);
+  const unitByRegCustomer = new Map<string, { id: string }>();
+  const unitByReg = new Map<string, { id: string }>();
+  for (const u of dbUnits) {
+    if (u.registration) {
+      const regNorm = u.registration.replace(/[\s-]/g, "").toUpperCase();
+      unitByReg.set(regNorm, u);
+      if (u.customerId) unitByRegCustomer.set(`${regNorm}:${u.customerId}`, u);
+    }
+  }
+
+  // Re-fetch dbContacts to get their IDs after sync
+  const dbContactsAfterSync = await db
+    .select({ id: customers.id, holdedContactId: customers.holdedContactId })
+    .from(customers);
+  const customerByHoldedId = new Map<string, string>();
+  for (const c of dbContactsAfterSync) {
+    if (c.holdedContactId) customerByHoldedId.set(c.holdedContactId, c.id);
+  }
+
+  for (const hc of holdedClients) {
+    try {
+      if (!hc.customFields?.length) continue;
+
+      const cf = (field: string) => {
+        const f = hc.customFields?.find(f => f.field === field);
+        return f?.value && String(f.value).trim() ? String(f.value).trim() : null;
+      };
+
+      const kenteken = cf("Kenteken");
+      if (!kenteken) continue;
+
+      const customerId = customerByHoldedId.get(hc.id);
+      if (!customerId) continue;
+
+      const regNorm = kenteken.replace(/[\s-]/g, "").toUpperCase();
+      const existingByBoth = unitByRegCustomer.get(`${regNorm}:${customerId}`);
+      const existingByReg = unitByReg.get(regNorm);
+      const existing = existingByBoth ?? existingByReg;
+
+      const brand = cf("Merk Caravan");
+      const model = cf("Type Caravan");
+
+      if (existing) {
+        // Update brand/model if we have them from Holded
+        await db
+          .update(units)
+          .set({
+            ...(brand ? { brand } : {}),
+            ...(model ? { model } : {}),
+            customerId,
+            updatedAt: new Date(),
+          })
+          .where(eq(units.id, existing.id));
+      } else {
+        // Create new unit from Holded customFields
+        const newUnit = await db.insert(units).values({
+          registration: kenteken,
+          brand: brand ?? null,
+          model: model ?? null,
+          unitType: "caravan",
+          customerId,
+          provisional: false,
+        }).returning({ id: units.id });
+        if (newUnit[0]) {
+          const key = `${regNorm}:${customerId}`;
+          unitByRegCustomer.set(key, newUnit[0]);
+          unitByReg.set(regNorm, newUnit[0]);
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      result.errors.push(`Unit for "${hc.name}": ${msg}`);
     }
   }
 

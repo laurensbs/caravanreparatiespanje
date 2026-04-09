@@ -1,9 +1,9 @@
-import { getAllInvoices } from "@/actions/invoices";
+import { getAllInvoices, getAllQuotes } from "@/actions/invoices";
 import { InvoicesClient } from "./invoices-client";
 
 export default async function InvoicesPage() {
-  const invoices = await getAllInvoices();
+  const [invoices, quotes] = await Promise.all([getAllInvoices(), getAllQuotes()]);
 
-  return <InvoicesClient invoices={invoices} />;
+  return <InvoicesClient invoices={invoices} quotes={quotes} />;
 }
 

@@ -71,6 +71,30 @@ export interface HoldedInvoice {
   }>;
 }
 
+export interface HoldedQuote {
+  id: string;
+  docNumber: string;
+  contact: string;
+  contactName: string;
+  date: number;
+  dueDate?: number;
+  total: number;
+  subtotal: number;
+  status: number; // 1 = active/approved
+  currency: string;
+  desc?: string;
+  approvedAt?: number | null;
+  draft?: number | null;
+  products?: Array<{
+    name: string;
+    desc?: string;
+    price: number;
+    units: number;
+    tax: number;
+    discount?: number;
+  }>;
+}
+
 // ─── Contact Operations ───
 
 export async function getContact(contactId: string): Promise<HoldedContact> {
@@ -301,6 +325,20 @@ export async function sendQuote(
     method: "POST",
     body: JSON.stringify({ emails }),
   });
+}
+
+// ─── Quote Listing Operations ───
+
+export async function listAllQuotes(): Promise<HoldedQuote[]> {
+  return holdedFetchAll<HoldedQuote>("/documents/estimate");
+}
+
+export async function listQuotesByContact(
+  contactId: string,
+): Promise<HoldedQuote[]> {
+  return holdedFetch<HoldedQuote[]>(
+    `/documents/estimate?contactid=${contactId}`,
+  );
 }
 
 // ─── Product Operations ───

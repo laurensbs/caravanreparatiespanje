@@ -1,6 +1,7 @@
 import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/actions/repairs";
 import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
 import { WorkflowGuide } from "@/components/workflow-guide";
+import { PipelineSummary } from "@/components/repair-progress";
 
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
@@ -78,6 +79,8 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <PipelineSummary repairs={pipelineJobs} />
 
       <WorkflowGuide page="dashboard" />
 

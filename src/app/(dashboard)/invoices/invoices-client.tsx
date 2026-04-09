@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, ExternalLink, Wrench, Search, FileDown, Send, X, Filter } from "lucide-react";
+import { Receipt, ExternalLink, Wrench, Search, FileDown, Send, X, Filter, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
 import { markInvoicePaid } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
 import { WorkflowGuide } from "@/components/workflow-guide";
+import { cn } from "@/lib/utils";
 
 interface Invoice {
   id: string;
@@ -33,14 +34,35 @@ interface Invoice {
   customerEmail?: string;
 }
 
+interface Quote {
+  id: string;
+  docNumber: string;
+  contact: string;
+  contactName: string;
+  date: number;
+  dueDate?: number;
+  total: number;
+  subtotal: number;
+  status: number;
+  currency: string;
+  desc?: string;
+  approvedAt?: number | null;
+  repairJobId?: string;
+  repairPublicCode?: string;
+  customerName?: string;
+}
+
 interface InvoicesClientProps {
   invoices: Invoice[];
+  quotes: Quote[];
 }
 
 type StatusFilter = "all" | "unpaid" | "paid" | "partial";
+type Tab = "invoices" | "quotes";
 
-export function InvoicesClient({ invoices }: InvoicesClientProps) {
+export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("invoices");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -143,16 +165,46 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
   return (
     <div className="space-y-4 animate-fade-in">
       <div>
-        <h1 className="text-lg font-bold tracking-tight">Invoices</h1>
+        <h1 className="text-lg font-bold tracking-tight">Invoices & Quotes</h1>
         <p className="text-sm text-muted-foreground">
-          {filtered.length} invoice{filtered.length !== 1 ? "s" : ""} from Holded
-          {hasActiveFilters && ` (${invoices.length} total)`}
+          {tab === "invoices"
+            ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
+            : `${quotes.length} quotes from Holded`
+          }
         </p>
+      </div>
+
+      {/* Tab selector */}
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl w-fit">
+        <button
+          type="button"
+          onClick={() => setTab("invoices")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+            tab === "invoices" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Receipt className="h-3 w-3" />
+          Invoices ({invoices.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("quotes")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+            tab === "quotes" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <FileText className="h-3 w-3" />
+          Quotes ({quotes.length})
+        </button>
       </div>
 
       <WorkflowGuide page="invoices" />
 
-      {/* Summary cards */}
+      {tab === "invoices" ? (
+        <>
+          {/* Invoice summary cards */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <Card className="rounded-xl">
           <CardContent className="pt-4 pb-3">
@@ -352,6 +404,111 @@ export function InvoicesClient({ invoices }: InvoicesClientProps) {
           </Table>
         </div>
       </div>
+        </>
+      ) : (
+        /* ─── Quotes Tab ─── */
+        <>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
+                <p className="text-xl font-bold tabular-nums">{quotes.length}</p>
+                <p className="text-[11px] text-muted-foreground">quotes</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-emerald-600 uppercase tracking-wider">Approved</p>
+                <p className="text-xl font-bold text-emerald-600 tabular-nums">{quotes.filter(q => q.approvedAt).length}</p>
+                <p className="text-[11px] text-muted-foreground">quotes</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-blue-600 uppercase tracking-wider">Linked</p>
+                <p className="text-xl font-bold text-blue-600 tabular-nums">{quotes.filter(q => q.repairJobId).length}</p>
+                <p className="text-[11px] text-muted-foreground">to repairs</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-card">
+                  <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Quote</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quotes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <FileText className="h-8 w-8 opacity-20" />
+                          <p className="font-medium text-sm">No quotes found in Holded</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    quotes.map((q, idx) => (
+                      <TableRow key={q.id} className="group table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                        <TableCell>
+                          <a
+                            href="https://app.holded.com/sales/revenue"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            {q.docNumber}
+                            <ExternalLink className="h-2.5 w-2.5" />
+                          </a>
+                        </TableCell>
+                        <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
+                        <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
+                          {q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                        </TableCell>
+                        <TableCell className="text-[13px] font-medium tabular-nums text-right">
+                          €{q.total?.toFixed(2) ?? "0.00"}
+                        </TableCell>
+                        <TableCell>
+                          {q.approvedAt ? (
+                            <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400">
+                              Approved
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400">
+                              Pending
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {q.repairJobId ? (
+                            <Link
+                              href={`/repairs/${q.repairJobId}`}
+                              className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                            >
+                              <Wrench className="h-2.5 w-2.5" />
+                              {q.repairPublicCode}
+                            </Link>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

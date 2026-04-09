@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { repairJobs, customers } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { listAllInvoices, payInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
+import { listAllInvoices, listAllQuotes, payInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
 import { eq, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -92,4 +92,60 @@ export async function markInvoicePaid(invoiceId: string) {
   revalidatePath("/invoices");
   revalidatePath("/repairs");
   return { success: true };
+}
+
+// ─── Quotes from Holded ───
+
+export interface QuoteWithRepair extends HoldedQuote {
+  repairJobId?: string;
+  repairPublicCode?: string;
+  customerName?: string;
+}
+
+export async function getAllQuotes(): Promise<QuoteWithRepair[]> {
+  await requireAuth();
+  if (!isHoldedConfigured()) return [];
+
+  let holdedQuotes: HoldedQuote[];
+  try {
+    holdedQuotes = await listAllQuotes();
+  } catch {
+    return [];
+  }
+
+  // Get repair jobs that have holdedQuoteId to link them
+  const linkedRepairs = await db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      holdedQuoteId: repairJobs.holdedQuoteId,
+      holdedInvoiceId: repairJobs.holdedInvoiceId,
+    })
+    .from(repairJobs)
+    .where(isNotNull(repairJobs.holdedQuoteId));
+
+  const repairByQuote = new Map<string, { id: string; publicCode: string | null; hasInvoice: boolean }>();
+  for (const r of linkedRepairs) {
+    if (r.holdedQuoteId) repairByQuote.set(r.holdedQuoteId, { id: r.id, publicCode: r.publicCode, hasInvoice: !!r.holdedInvoiceId });
+  }
+
+  // Get customer names mapped by holdedContactId
+  const dbCustomers = await db
+    .select({ id: customers.id, name: customers.name, holdedContactId: customers.holdedContactId })
+    .from(customers)
+    .where(isNotNull(customers.holdedContactId));
+  const customerByHolded = new Map<string, string>();
+  for (const c of dbCustomers) {
+    if (c.holdedContactId) customerByHolded.set(c.holdedContactId, c.name);
+  }
+
+  return holdedQuotes.map((q) => {
+    const repair = repairByQuote.get(q.id);
+    return {
+      ...q,
+      repairJobId: repair?.id,
+      repairPublicCode: repair?.publicCode ?? undefined,
+      customerName: customerByHolded.get(q.contact) ?? q.contactName,
+    };
+  }).sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
 }

@@ -28,6 +28,7 @@ import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
 import { WorkflowGuide } from "@/components/workflow-guide";
+import { RepairProgressTracker } from "@/components/repair-progress";
 import { useAssistantContext } from "@/components/assistant-context";
 
 interface PartItem {
@@ -228,6 +229,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           Save
         </Button>
       </div>
+
+      <RepairProgressTracker
+        data={{
+          status,
+          invoiceStatus,
+          holdedQuoteId: job.holdedQuoteId,
+          holdedQuoteNum: job.holdedQuoteNum,
+          holdedInvoiceId: job.holdedInvoiceId,
+          holdedInvoiceNum: job.holdedInvoiceNum,
+        }}
+      />
 
       <WorkflowGuide page="repair-detail" context={{ job, settings }} />
 

@@ -333,7 +333,7 @@ export async function bulkUpdateRepairJobs(data: unknown) {
 export async function getDashboardStats() {
   await requireAuth();
 
-  const [stats, recentJobs, jobsByStatus, jobsByLocation] = await Promise.all([
+  const [stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs] = await Promise.all([
     db
       .select({
         total: count(),
@@ -401,6 +401,17 @@ export async function getDashboardStats() {
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
       .where(isNull(repairJobs.archivedAt))
       .groupBy(locations.id, locations.name),
+
+    // Pipeline data for workflow visualization
+    db
+      .select({
+        status: repairJobs.status,
+        invoiceStatus: repairJobs.invoiceStatus,
+        holdedQuoteId: repairJobs.holdedQuoteId,
+        holdedInvoiceId: repairJobs.holdedInvoiceId,
+      })
+      .from(repairJobs)
+      .where(isNull(repairJobs.archivedAt)),
   ]);
 
   return {
@@ -408,6 +419,7 @@ export async function getDashboardStats() {
     recentJobs,
     jobsByStatus,
     jobsByLocation,
+    pipelineJobs,
   };
 }
 

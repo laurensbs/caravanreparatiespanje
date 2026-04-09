@@ -13,7 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   ArrowLeft, Save, Phone, Mail, StickyNote, Wrench, Truck,
   Receipt, ExternalLink, Building2, User, MapPin, Pencil,
-  RefreshCw,
+  RefreshCw, Plus, X as XIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
@@ -21,6 +21,8 @@ import type { RepairStatus } from "@/types";
 import { toast } from "sonner";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getCustomerSuggestions } from "@/components/smart-suggestions";
+import { CompactProgressTracker } from "@/components/repair-progress";
+import { createUnit, updateUnit } from "@/actions/units";
 
 interface CustomerDetailProps {
   customer: any;
@@ -43,6 +45,10 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
   const [country, setCountry] = useState(customer.country ?? "");
   const [vatnumber, setVatnumber] = useState(customer.vatnumber ?? "");
   const [notes, setNotes] = useState(customer.notes ?? "");
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
+  const [unitForm, setUnitForm] = useState({ registration: "", brand: "", model: "", year: "" });
+  const [unitSaving, setUnitSaving] = useState(false);
+  const [addingUnit, setAddingUnit] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -304,29 +310,170 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
         <div className="space-y-5">
           <Card className="rounded-xl">
             <CardContent>
-              <div className="flex items-center gap-2 mb-3">
-                <Truck className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs font-semibold">Units ({customer.units.length})</p>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-semibold">Units ({customer.units.length})</p>
+                </div>
+                {!addingUnit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[11px] px-2"
+                    onClick={() => {
+                      setAddingUnit(true);
+                      setEditingUnitId(null);
+                      setUnitForm({ registration: "", brand: "", model: "", year: "" });
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add
+                  </Button>
+                )}
               </div>
-              {customer.units.length === 0 ? (
+
+              {/* Add new unit form */}
+              {addingUnit && (
+                <div className="mb-3 border rounded-lg p-2.5 bg-muted/30 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Registration</Label>
+                      <Input value={unitForm.registration} onChange={(e) => setUnitForm(f => ({ ...f, registration: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" placeholder="XX-999-X" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Year</Label>
+                      <Input value={unitForm.year} onChange={(e) => setUnitForm(f => ({ ...f, year: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" placeholder="2020" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Brand</Label>
+                      <Input value={unitForm.brand} onChange={(e) => setUnitForm(f => ({ ...f, brand: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Model</Label>
+                      <Input value={unitForm.model} onChange={(e) => setUnitForm(f => ({ ...f, model: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 pt-1">
+                    <Button
+                      size="sm"
+                      className="h-6 text-[11px] rounded-lg flex-1"
+                      disabled={unitSaving}
+                      onClick={async () => {
+                        setUnitSaving(true);
+                        try {
+                          await createUnit({
+                            registration: unitForm.registration || undefined,
+                            brand: unitForm.brand || undefined,
+                            model: unitForm.model || undefined,
+                            year: unitForm.year ? parseInt(unitForm.year) : undefined,
+                            customerId: customer.id,
+                          });
+                          toast.success("Unit added");
+                          setAddingUnit(false);
+                          router.refresh();
+                        } catch { toast.error("Failed to add unit"); }
+                        finally { setUnitSaving(false); }
+                      }}
+                    >
+                      Save
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={() => setAddingUnit(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {customer.units.length === 0 && !addingUnit ? (
                 <p className="text-sm text-muted-foreground italic">No units linked</p>
               ) : (
                 <div className="space-y-1.5">
                   {customer.units.map((unit: any) => (
-                    <Link
-                      key={unit.id}
-                      href={`/units/${unit.id}`}
-                      className="flex items-center gap-2 rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-[13px] truncate">
-                          {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unknown unit"}
-                        </p>
-                        {unit.registration && (
-                          <p className="font-mono text-[11px] text-muted-foreground">{unit.registration}</p>
-                        )}
+                    editingUnitId === unit.id ? (
+                      <div key={unit.id} className="border rounded-lg p-2.5 bg-muted/30 space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[10px]">Registration</Label>
+                            <Input value={unitForm.registration} onChange={(e) => setUnitForm(f => ({ ...f, registration: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Year</Label>
+                            <Input value={unitForm.year} onChange={(e) => setUnitForm(f => ({ ...f, year: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[10px]">Brand</Label>
+                            <Input value={unitForm.brand} onChange={(e) => setUnitForm(f => ({ ...f, brand: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Model</Label>
+                            <Input value={unitForm.model} onChange={(e) => setUnitForm(f => ({ ...f, model: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 pt-1">
+                          <Button
+                            size="sm"
+                            className="h-6 text-[11px] rounded-lg flex-1"
+                            disabled={unitSaving}
+                            onClick={async () => {
+                              setUnitSaving(true);
+                              try {
+                                await updateUnit(unit.id, {
+                                  registration: unitForm.registration || undefined,
+                                  brand: unitForm.brand || undefined,
+                                  model: unitForm.model || undefined,
+                                  year: unitForm.year ? parseInt(unitForm.year) : undefined,
+                                  customerId: customer.id,
+                                });
+                                toast.success("Unit updated");
+                                setEditingUnitId(null);
+                                router.refresh();
+                              } catch { toast.error("Failed to update"); }
+                              finally { setUnitSaving(false); }
+                            }}
+                          >
+                            Save
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={() => setEditingUnitId(null)}>
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
-                    </Link>
+                    ) : (
+                      <div
+                        key={unit.id}
+                        className="flex items-center gap-2 rounded-lg border p-2.5 text-sm hover:bg-muted/50 transition-colors group"
+                      >
+                        <Link href={`/units/${unit.id}`} className="min-w-0 flex-1">
+                          <p className="font-medium text-[13px] truncate">
+                            {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unknown unit"}
+                          </p>
+                          {unit.registration && (
+                            <p className="font-mono text-[11px] text-muted-foreground">{unit.registration}</p>
+                          )}
+                        </Link>
+                        <button
+                          type="button"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                          title="Edit unit"
+                          onClick={() => {
+                            setEditingUnitId(unit.id);
+                            setAddingUnit(false);
+                            setUnitForm({
+                              registration: unit.registration ?? "",
+                              brand: unit.brand ?? "",
+                              model: unit.model ?? "",
+                              year: unit.year?.toString() ?? "",
+                            });
+                          }}
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                      </div>
+                    )
                   ))}
                 </div>
               )}
@@ -349,13 +496,20 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
                       href={`/repairs/${job.id}`}
                       className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
                     >
-                      <div className="min-w-0 mr-2">
+                      <div className="min-w-0 mr-2 flex-1">
                         <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>
                         <p className="font-mono text-[11px] text-muted-foreground">{job.publicCode}</p>
                       </div>
-                      <Badge variant="secondary" className={`${STATUS_COLORS[job.status as RepairStatus]} rounded-full text-[10px] px-2 py-0 shrink-0`}>
-                        {STATUS_LABELS[job.status as RepairStatus]}
-                      </Badge>
+                      <CompactProgressTracker
+                        data={{
+                          status: job.status,
+                          invoiceStatus: job.invoiceStatus ?? "not_invoiced",
+                          holdedQuoteId: job.holdedQuoteId,
+                          holdedQuoteNum: job.holdedQuoteNum,
+                          holdedInvoiceId: job.holdedInvoiceId,
+                          holdedInvoiceNum: job.holdedInvoiceNum,
+                        }}
+                      />
                     </Link>
                   ))}
                 </div>

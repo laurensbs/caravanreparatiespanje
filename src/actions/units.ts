@@ -5,7 +5,7 @@ import { units, customers, repairJobs } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
-import { eq, desc, ilike, or, and, count } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function getUnits(filters: { q?: string; type?: string; page?: number; limit?: number } = {}) {
@@ -50,7 +50,7 @@ export async function getUnits(filters: { q?: string; type?: string; page?: numb
       .from(units)
       .leftJoin(customers, eq(units.customerId, customers.id))
       .where(where)
-      .orderBy(desc(units.updatedAt))
+      .orderBy(asc(units.registration), desc(units.updatedAt))
       .limit(limit)
       .offset(offset),
     db.select({ count: count() }).from(units).where(where),

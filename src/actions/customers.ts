@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { customers, repairJobs, units } from "@/lib/db/schema";
+import { customers, repairJobs, units, customerTags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 
 function capitalizeWords(name: string): string {
@@ -19,7 +19,7 @@ function capitalizeWords(name: string): string {
 import { customerSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { syncCustomerToHolded } from "./holded";
-import { eq, desc, ilike, or, and, count, sql } from "drizzle-orm";
+import { eq, desc, ilike, or, and, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type CustomerFilters = {
@@ -27,6 +27,7 @@ export type CustomerFilters = {
   contactType?: string;
   repairStatus?: string;
   locationId?: string;
+  tagId?: string;
   page?: number;
   limit?: number;
 };
@@ -80,6 +81,13 @@ export async function getCustomers(filters: CustomerFilters = {}) {
     conditions.push(
       sql`EXISTS (SELECT 1 FROM repair_jobs WHERE repair_jobs.customer_id = ${customers.id} AND repair_jobs.location_id = ${filters.locationId} AND repair_jobs.archived_at IS NULL)`
     );
+  }
+
+  if (filters.tagId) {
+    const tagRows = await db.select({ customerId: customerTags.customerId }).from(customerTags).where(eq(customerTags.tagId, filters.tagId));
+    const ids = tagRows.map((r) => r.customerId);
+    if (ids.length === 0) return { customers: [], total: 0, page, limit };
+    conditions.push(inArray(customers.id, ids));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

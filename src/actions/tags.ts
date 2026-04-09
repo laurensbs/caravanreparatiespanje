@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tags } from "@/lib/db/schema";
-import { requireRole } from "@/lib/auth-utils";
-import { eq } from "drizzle-orm";
+import { tags, repairJobTags, customerTags, unitTags } from "@/lib/db/schema";
+import { requireRole, requireAuth } from "@/lib/auth-utils";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/utils";
 
@@ -42,4 +42,69 @@ export async function deleteTag(id: string) {
   await requireRole("manager");
   await db.delete(tags).where(eq(tags.id, id));
   revalidatePath("/settings/tags");
+}
+
+// ── Assign / remove tags for any entity ──────────────────────────────────
+
+export async function addTagToRepair(repairJobId: string, tagId: string) {
+  await requireAuth();
+  await db.insert(repairJobTags).values({ repairJobId, tagId }).onConflictDoNothing();
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+export async function removeTagFromRepair(repairJobId: string, tagId: string) {
+  await requireAuth();
+  await db.delete(repairJobTags).where(and(eq(repairJobTags.repairJobId, repairJobId), eq(repairJobTags.tagId, tagId)));
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+export async function getRepairTags(repairJobId: string) {
+  const rows = await db
+    .select({ id: tags.id, name: tags.name, color: tags.color })
+    .from(repairJobTags)
+    .innerJoin(tags, eq(repairJobTags.tagId, tags.id))
+    .where(eq(repairJobTags.repairJobId, repairJobId));
+  return rows;
+}
+
+export async function addTagToCustomer(customerId: string, tagId: string) {
+  await requireAuth();
+  await db.insert(customerTags).values({ customerId, tagId }).onConflictDoNothing();
+  revalidatePath(`/customers/${customerId}`);
+}
+
+export async function removeTagFromCustomer(customerId: string, tagId: string) {
+  await requireAuth();
+  await db.delete(customerTags).where(and(eq(customerTags.customerId, customerId), eq(customerTags.tagId, tagId)));
+  revalidatePath(`/customers/${customerId}`);
+}
+
+export async function getCustomerTags(customerId: string) {
+  const rows = await db
+    .select({ id: tags.id, name: tags.name, color: tags.color })
+    .from(customerTags)
+    .innerJoin(tags, eq(customerTags.tagId, tags.id))
+    .where(eq(customerTags.customerId, customerId));
+  return rows;
+}
+
+export async function addTagToUnit(unitId: string, tagId: string) {
+  await requireAuth();
+  await db.insert(unitTags).values({ unitId, tagId }).onConflictDoNothing();
+  revalidatePath(`/units/${unitId}`);
+}
+
+export async function removeTagFromUnit(unitId: string, tagId: string) {
+  await requireAuth();
+  await db.delete(unitTags).where(and(eq(unitTags.unitId, unitId), eq(unitTags.tagId, tagId)));
+  revalidatePath(`/units/${unitId}`);
+}
+
+export async function getUnitTags(unitId: string) {
+  const rows = await db
+    .select({ id: tags.id, name: tags.name, color: tags.color })
+    .from(unitTags)
+    .innerJoin(tags, eq(unitTags.tagId, tags.id))
+    .where(eq(unitTags.unitId, unitId));
+  return rows;
 }

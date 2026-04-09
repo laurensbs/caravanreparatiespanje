@@ -1,6 +1,7 @@
 import { getCustomers, type CustomerFilters } from "@/actions/customers";
 import { getLocations } from "@/actions/locations";
 import { getSuppliers } from "@/actions/parts";
+import { getTags } from "@/actions/tags";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -36,13 +37,15 @@ export default async function CustomersPage({ searchParams }: Props) {
     contactType: isBusiness ? undefined : params.contactType,
     repairStatus: params.repairStatus,
     locationId: params.locationId,
+    tagId: params.tagId,
     page,
   };
 
-  const [{ customers, total, limit }, locationsList, allSuppliers] = await Promise.all([
+  const [{ customers, total, limit }, locationsList, allSuppliers, allTags] = await Promise.all([
     isBusiness ? Promise.resolve({ customers: [], total: 0, limit: 50 }) : getCustomers(filters),
     getLocations(),
     isBusiness ? getSuppliers() : Promise.resolve([]),
+    getTags(),
   ]);
 
   // Filter suppliers by search query if present
@@ -101,6 +104,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         <CustomerFiltersBar
           locations={filteredLocations}
           currentFilters={filters}
+          allTags={allTags}
         />
       )}
 

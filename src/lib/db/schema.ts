@@ -397,6 +397,48 @@ export const repairJobTags = pgTable(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER ↔ TAG (junction)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const customerTags = pgTable(
+  "customer_tags",
+  {
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customers.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.customerId, table.tagId] }),
+    index("customer_tags_customer_idx").on(table.customerId),
+    index("customer_tags_tag_idx").on(table.tagId),
+  ]
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIT ↔ TAG (junction)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const unitTags = pgTable(
+  "unit_tags",
+  {
+    unitId: uuid("unit_id")
+      .notNull()
+      .references(() => units.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.unitId, table.tagId] }),
+    index("unit_tags_unit_idx").on(table.unitId),
+    index("unit_tags_tag_idx").on(table.tagId),
+  ]
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // REPAIR JOB EVENTS (Timeline)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -857,6 +899,7 @@ export const customersRelations = relations(customers, ({ many }) => ({
   units: many(units),
   repairJobs: many(repairJobs),
   importRows: many(importRows),
+  tags: many(customerTags),
 }));
 
 export const unitsRelations = relations(units, ({ one, many }) => ({
@@ -866,6 +909,7 @@ export const unitsRelations = relations(units, ({ one, many }) => ({
   }),
   repairJobs: many(repairJobs),
   importRows: many(importRows),
+  tags: many(unitTags),
 }));
 
 export const locationsRelations = relations(locations, ({ many }) => ({
@@ -914,6 +958,8 @@ export const repairJobEventsRelations = relations(
 
 export const tagsRelations = relations(tags, ({ many }) => ({
   repairJobs: many(repairJobTags),
+  customers: many(customerTags),
+  units: many(unitTags),
 }));
 
 export const repairJobTagsRelations = relations(repairJobTags, ({ one }) => ({
@@ -923,6 +969,28 @@ export const repairJobTagsRelations = relations(repairJobTags, ({ one }) => ({
   }),
   tag: one(tags, {
     fields: [repairJobTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const customerTagsRelations = relations(customerTags, ({ one }) => ({
+  customer: one(customers, {
+    fields: [customerTags.customerId],
+    references: [customers.id],
+  }),
+  tag: one(tags, {
+    fields: [customerTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const unitTagsRelations = relations(unitTags, ({ one }) => ({
+  unit: one(units, {
+    fields: [unitTags.unitId],
+    references: [units.id],
+  }),
+  tag: one(tags, {
+    fields: [unitTags.tagId],
     references: [tags.id],
   }),
 }));

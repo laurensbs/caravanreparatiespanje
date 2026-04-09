@@ -14,12 +14,19 @@ interface Location {
   name: string;
 }
 
+interface TagItem {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface RepairFiltersBarProps {
   locations: Location[];
   currentFilters: RepairFilters;
+  allTags?: TagItem[];
 }
 
-export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBarProps) {
+export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: RepairFiltersBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -140,6 +147,28 @@ export function RepairFiltersBar({ locations, currentFilters }: RepairFiltersBar
             ))}
           </SelectContent>
         </Select>
+
+        {allTags.length > 0 && (
+          <Select
+            value={currentFilters.tagId ?? "all"}
+            onValueChange={(val) => updateFilter("tagId", val)}
+          >
+            <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
+              <SelectValue placeholder="Tag" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tags</SelectItem>
+              {allTags.map((tag) => (
+                <SelectItem key={tag.id} value={tag.id}>
+                  <span className="flex items-center gap-1.5">
+                    {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
+                    {tag.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs rounded-lg text-muted-foreground hover:text-foreground">

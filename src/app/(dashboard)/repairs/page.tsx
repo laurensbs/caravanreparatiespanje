@@ -2,6 +2,7 @@ import { getRepairJobs, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
 import { getParts } from "@/actions/parts";
+import { getTags } from "@/actions/tags";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
@@ -25,17 +26,19 @@ export default async function RepairsPage({ searchParams }: Props) {
     assignedUserId: params.assignedUserId,
     invoiceStatus: params.invoiceStatus,
     customerResponseStatus: params.customerResponseStatus,
+    tagId: params.tagId,
     archived: params.archived,
     sort: params.sort,
     dir: params.dir,
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog] = await Promise.all([
+  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog, allTags] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
     getAllCustomers(),
     getParts(),
+    getTags(),
   ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -61,6 +64,7 @@ export default async function RepairsPage({ searchParams }: Props) {
       <RepairFiltersBar
         locations={filteredLocations}
         currentFilters={filters}
+        allTags={allTags}
       />
 
       <RepairTable jobs={jobs} />

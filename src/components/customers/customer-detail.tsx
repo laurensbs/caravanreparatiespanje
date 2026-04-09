@@ -23,13 +23,17 @@ import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getCustomerSuggestions } from "@/components/smart-suggestions";
 import { CompactProgressTracker } from "@/components/repair-progress";
 import { createUnit, updateUnit } from "@/actions/units";
+import { TagPicker, type TagItem } from "@/components/tag-picker";
+import { addTagToCustomer, removeTagFromCustomer } from "@/actions/tags";
 
 interface CustomerDetailProps {
   customer: any;
   holdedInvoices: any[];
+  allTags?: TagItem[];
+  customerTags?: TagItem[];
 }
 
-export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps) {
+export function CustomerDetail({ customer, holdedInvoices, allTags = [], customerTags = [] }: CustomerDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -100,6 +104,16 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
             <p className="text-sm text-muted-foreground">
               {[customer.phone, customer.email].filter(Boolean).join(" · ") || "No contact info"}
             </p>
+            {allTags.length > 0 && (
+              <div className="mt-1">
+                <TagPicker
+                  allTags={allTags}
+                  activeTags={customerTags}
+                  onAdd={(tagId) => addTagToCustomer(customer.id, tagId)}
+                  onRemove={(tagId) => removeTagFromCustomer(customer.id, tagId)}
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2">

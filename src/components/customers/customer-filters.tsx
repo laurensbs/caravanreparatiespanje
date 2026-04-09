@@ -24,9 +24,10 @@ const REPAIR_STATUS_OPTIONS: Record<string, string> = {
 interface CustomerFiltersBarProps {
   locations: Location[];
   currentFilters: CustomerFilters;
+  allTags?: { id: string; name: string; color: string | null }[];
 }
 
-export function CustomerFiltersBar({ locations, currentFilters }: CustomerFiltersBarProps) {
+export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: CustomerFiltersBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -116,6 +117,28 @@ export function CustomerFiltersBar({ locations, currentFilters }: CustomerFilter
           ))}
         </SelectContent>
       </Select>
+
+      {allTags.length > 0 && (
+        <Select
+          value={currentFilters.tagId ?? "all"}
+          onValueChange={(val) => updateFilter("tagId", val)}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Tag" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {allTags.map((tag) => (
+              <SelectItem key={tag.id} value={tag.id}>
+                <span className="flex items-center gap-1.5">
+                  {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
+                  {tag.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {hasActiveFilters && (
         <Button variant="ghost" size="sm" onClick={clearFilters}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,12 @@ import Link from "next/link";
 import { UnitDialog } from "./unit-dialog";
 import { NewUnitDialog } from "./new-unit-dialog";
 
+interface TagItem {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface UnitRow {
   id: string;
   registration: string | null;
@@ -45,10 +51,11 @@ interface UnitsClientProps {
   page: number;
   limit: number;
   currentQ?: string;
-  currentType?: string;
+  currentTagId?: string;
+  allTags: TagItem[];
 }
 
-export function UnitsClient({ units, total, page, limit, currentQ, currentType }: UnitsClientProps) {
+export function UnitsClient({ units, total, page, limit, currentQ, currentTagId, allTags }: UnitsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQ ?? "");
@@ -73,12 +80,6 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => updateParams({ q: q || undefined }), 300);
   }
-
-  // Derive unique brands for quick filter
-  const brands = useMemo(() => {
-    const set = new Set(units.map((u) => u.brand).filter(Boolean) as string[]);
-    return Array.from(set).sort();
-  }, [units]);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -106,22 +107,29 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
             />
           </div>
 
-        <Select
-          value={currentType ?? "all"}
-          onValueChange={(v) => updateParams({ type: v === "all" ? undefined : v })}
-        >
-          <SelectTrigger className="w-[140px] h-8 text-xs rounded-lg">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            <SelectItem value="caravan">Caravan</SelectItem>
-            <SelectItem value="trailer">Trailer</SelectItem>
-            <SelectItem value="camper">Camper</SelectItem>
-          </SelectContent>
-        </Select>
+        {allTags.length > 0 && (
+          <Select
+            value={currentTagId ?? "all"}
+            onValueChange={(v) => updateParams({ tagId: v === "all" ? undefined : v })}
+          >
+            <SelectTrigger className="w-[160px] h-8 text-xs rounded-lg">
+              <SelectValue placeholder="Tag" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tags</SelectItem>
+              {allTags.map((tag) => (
+                <SelectItem key={tag.id} value={tag.id}>
+                  <span className="flex items-center gap-1.5">
+                    {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
+                    {tag.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
-        {(currentQ || currentType) && (
+        {(currentQ || currentTagId) && (
           <Button
             variant="ghost"
             size="sm"
@@ -207,6 +215,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
           unit={selectedUnit}
           open={!!selectedUnit}
           onOpenChange={(open) => { if (!open) setSelectedUnit(null); }}
+          allTags={allTags}
         />
       )}
     </div>

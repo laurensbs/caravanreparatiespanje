@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, customers, units, locations, users } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, repairJobTags, customers, units, locations, users } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
@@ -18,6 +18,7 @@ export type RepairFilters = {
   assignedUserId?: string;
   customerResponseStatus?: string;
   invoiceStatus?: string;
+  tagId?: string;
   archived?: string;
   sort?: string;
   dir?: string;
@@ -85,6 +86,14 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
         ilike(units.registration, searchTerm),
       )!
     );
+  }
+
+  // Tag filter: get repair IDs with that tag, then filter
+  if (filters.tagId) {
+    const tagRows = await db.select({ repairJobId: repairJobTags.repairJobId }).from(repairJobTags).where(eq(repairJobTags.tagId, filters.tagId));
+    const ids = tagRows.map((r) => r.repairJobId);
+    if (ids.length === 0) return { jobs: [], total: 0, page, limit };
+    conditions.push(inArray(repairJobs.id, ids));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

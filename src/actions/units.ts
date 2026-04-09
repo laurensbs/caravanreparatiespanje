@@ -1,19 +1,27 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { units, customers, repairJobs } from "@/lib/db/schema";
+import { units, customers, repairJobs, unitTags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
-import { eq, desc, asc, ilike, or, and, count } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, count, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function getUnits(filters: { q?: string; type?: string; page?: number; limit?: number } = {}) {
+export async function getUnits(filters: { q?: string; tagId?: string; page?: number; limit?: number } = {}) {
   await requireAuth();
 
   const page = filters.page ?? 1;
   const limit = filters.limit ?? 50;
   const offset = (page - 1) * limit;
+
+  // If filtering by tag, first get matching unit IDs
+  let tagUnitIds: string[] | undefined;
+  if (filters.tagId) {
+    const rows = await db.select({ unitId: unitTags.unitId }).from(unitTags).where(eq(unitTags.tagId, filters.tagId));
+    tagUnitIds = rows.map((r) => r.unitId);
+    if (tagUnitIds.length === 0) return { units: [], total: 0, page, limit };
+  }
 
   const conditions = [];
   if (filters.q) {
@@ -27,8 +35,8 @@ export async function getUnits(filters: { q?: string; type?: string; page?: numb
       )!
     );
   }
-  if (filters.type && filters.type !== "all") {
-    conditions.push(eq(units.unitType, filters.type as any));
+  if (tagUnitIds) {
+    conditions.push(inArray(units.id, tagUnitIds));
   }
 
   const where = conditions.length > 1 ? and(...conditions) : conditions.length === 1 ? conditions[0] : undefined;

@@ -30,6 +30,8 @@ import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-sugge
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { RepairProgressTracker } from "@/components/repair-progress";
 import { useAssistantContext } from "@/components/assistant-context";
+import { TagPicker, type TagItem } from "@/components/tag-picker";
+import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
 
 interface PartItem {
   id: string;
@@ -61,9 +63,11 @@ interface RepairDetailProps {
   partsList?: PartItem[];
   backTo?: string;
   settings?: PricingSettings;
+  allTags?: TagItem[];
+  repairTags?: TagItem[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 } }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -199,6 +203,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {PRIORITY_LABELS[priority as Priority]}
               </Badge>
             </div>
+            {allTags.length > 0 && (
+              <div className="mt-1">
+                <TagPicker
+                  allTags={allTags}
+                  activeTags={repairTags}
+                  onAdd={(tagId) => addTagToRepair(job.id, tagId)}
+                  onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
+                />
+              </div>
+            )}
             {editingTitle ? (
               <div className="flex items-center gap-2 mt-1">
                 <Input

@@ -1,4 +1,5 @@
 import { getUnits } from "@/actions/units";
+import { getTags } from "@/actions/tags";
 import { UnitsClient } from "@/components/units/units-client";
 
 interface Props {
@@ -7,11 +8,14 @@ interface Props {
 
 export default async function UnitsPage({ searchParams }: Props) {
   const params = await searchParams;
-  const { units, total, page, limit } = await getUnits({
-    q: params.q,
-    type: params.type,
-    page: params.page ? parseInt(params.page) : 1,
-  });
+  const [{ units, total, page, limit }, allTags] = await Promise.all([
+    getUnits({
+      q: params.q,
+      tagId: params.tagId,
+      page: params.page ? parseInt(params.page) : 1,
+    }),
+    getTags(),
+  ]);
 
   return (
     <UnitsClient
@@ -20,7 +24,8 @@ export default async function UnitsPage({ searchParams }: Props) {
       page={page}
       limit={limit}
       currentQ={params.q}
-      currentType={params.type}
+      currentTagId={params.tagId}
+      allTags={allTags}
     />
   );
 }

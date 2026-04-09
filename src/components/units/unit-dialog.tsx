@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateUnit } from "@/actions/units";
+import { getUnitTags, addTagToUnit, removeTagFromUnit } from "@/actions/tags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { Pencil, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { TagPicker, type TagItem } from "@/components/tag-picker";
 
 interface UnitRow {
   id: string;
@@ -36,13 +38,21 @@ interface UnitDialogProps {
   unit: UnitRow;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  allTags?: TagItem[];
 }
 
-export function UnitDialog({ unit, open, onOpenChange }: UnitDialogProps) {
+export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialogProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [unitTags, setUnitTags] = useState<TagItem[]>([]);
+
+  useEffect(() => {
+    if (open && allTags.length > 0) {
+      getUnitTags(unit.id).then(setUnitTags);
+    }
+  }, [open, unit.id, allTags.length]);
 
   const handleSave = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -156,6 +166,17 @@ export function UnitDialog({ unit, open, onOpenChange }: UnitDialogProps) {
                   )}
                 </div>
               </div>
+              {allTags.length > 0 && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground mb-1.5">Tags</p>
+                  <TagPicker
+                    allTags={allTags}
+                    activeTags={unitTags}
+                    onAdd={async (tagId) => { await addTagToUnit(unit.id, tagId); setUnitTags(await getUnitTags(unit.id)); }}
+                    onRemove={async (tagId) => { await removeTagFromUnit(unit.id, tagId); setUnitTags(await getUnitTags(unit.id)); }}
+                  />
+                </div>
+              )}
               <div className="text-xs text-muted-foreground pt-2 border-t">
                 Updated {new Date(unit.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
               </div>

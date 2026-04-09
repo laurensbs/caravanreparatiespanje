@@ -124,7 +124,7 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Tag className="mb-2 h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">
-              No tags yet. Add tags to categorize repair jobs.
+              No tags yet. Add tags to categorize repairs, contacts, and units.
             </p>
           </CardContent>
         </Card>

@@ -2,6 +2,7 @@ import { getRepairJobById } from "@/actions/repairs";
 import { getCommunicationLogs } from "@/actions/communications";
 import { getParts } from "@/actions/parts";
 import { getAppSettings } from "@/actions/settings";
+import { getTags, getRepairTags } from "@/actions/tags";
 import { notFound } from "next/navigation";
 import { RepairDetail } from "@/components/repairs/repair-detail";
 
@@ -13,11 +14,13 @@ interface Props {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
     getAppSettings(),
+    getTags(),
+    getRepairTags(id),
   ]);
   if (!job) notFound();
 
@@ -27,6 +30,8 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       communicationLogs={communicationLogs}
       partsList={partsList}
       backTo={sp.backTo}
+      allTags={allTags}
+      repairTags={repairTags}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

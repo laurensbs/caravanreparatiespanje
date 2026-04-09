@@ -685,8 +685,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   onCheckedChange={(checked) => {
                     const val = checked === true;
                     setWarrantyFlag(val);
-                    if (val && invoiceStatus === "not_invoiced") {
+                    if (val) {
                       setInvoiceStatus("warranty");
+                      if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                        setStatus("completed");
+                      }
                     } else if (!val && invoiceStatus === "warranty") {
                       setInvoiceStatus("not_invoiced");
                     }
@@ -908,6 +911,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       >
                         {job.holdedQuoteNum} ↗
                       </a>
+                      <a
+                        href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                      >
+                        View in Holded ↗
+                      </a>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -940,30 +951,65 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </div>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs"
-                    disabled={!job.customer || costLines.length === 0}
-                    onClick={async () => {
-                      try {
-                        const result = await createHoldedQuote(job.id, costLines.map(l => ({
-                          name: l.description || "Line item",
-                          units: l.quantity,
-                          subtotal: l.unitPrice * l.quantity,
-                          tax: settings.defaultTax,
-                          discount: 0,
-                        })), discountPercent);
-                        toast.success(`Quote ${result.quoteNum} created`);
-                        router.refresh();
-                      } catch (e: any) {
-                        toast.error(e.message ?? "Failed to create quote");
-                      }
-                    }}
-                  >
-                    <FileText className="h-3 w-3 mr-1" />
-                    Create Quote
-                  </Button>
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                      disabled={!job.customer || costLines.length === 0}
+                      onClick={async () => {
+                        try {
+                          const result = await createHoldedQuote(job.id, costLines.map(l => ({
+                            name: l.description || "Line item",
+                            units: l.quantity,
+                            subtotal: l.unitPrice * l.quantity,
+                            tax: settings.defaultTax,
+                            discount: 0,
+                          })), discountPercent);
+                          toast.success(`Quote ${result.quoteNum} created`);
+                          router.refresh();
+                        } catch (e: any) {
+                          toast.error(e.message ?? "Failed to create quote");
+                        }
+                      }}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      Create Quote
+                    </Button>
+                    {job.customer?.email && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        disabled={!job.customer || costLines.length === 0}
+                        onClick={async () => {
+                          try {
+                            const result = await createHoldedQuote(job.id, costLines.map(l => ({
+                              name: l.description || "Line item",
+                              units: l.quantity,
+                              subtotal: l.unitPrice * l.quantity,
+                              tax: settings.defaultTax,
+                              discount: 0,
+                            })), discountPercent);
+                            await sendHoldedQuote(job.id);
+                            toast.success(`Quote ${result.quoteNum} created & sent to ${job.customer.email}`);
+                            router.refresh();
+                          } catch (e: any) {
+                            toast.error(e.message ?? "Failed to create & send quote");
+                          }
+                        }}
+                      >
+                        <Send className="h-3 w-3 mr-1" />
+                        Create & Send Quote
+                      </Button>
+                    )}
+                    {!job.customer && (
+                      <p className="text-[11px] text-muted-foreground">Link a contact first</p>
+                    )}
+                    {job.customer && costLines.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground">Add cost lines first</p>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -979,6 +1025,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       className="text-sm font-medium text-primary hover:underline"
                     >
                       {job.holdedInvoiceNum} ↗
+                    </a>
+                    <a
+                      href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      View in Holded ↗
                     </a>
                   </div>
                   <HoldedHint variant="sync">

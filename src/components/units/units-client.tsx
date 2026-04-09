@@ -53,9 +53,10 @@ interface UnitsClientProps {
   currentQ?: string;
   currentTagId?: string;
   allTags: TagItem[];
+  customers?: { id: string; name: string }[];
 }
 
-export function UnitsClient({ units, total, page, limit, currentQ, currentTagId, allTags }: UnitsClientProps) {
+export function UnitsClient({ units, total, page, limit, currentQ, currentTagId, allTags, customers = [] }: UnitsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQ ?? "");
@@ -90,7 +91,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
             {total} unit{total !== 1 ? "s" : ""} registered
           </p>
         </div>
-        <NewUnitDialog />
+        <NewUnitDialog customers={customers} />
       </div>
 
       <WorkflowGuide page="units" />

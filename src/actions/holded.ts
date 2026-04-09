@@ -241,6 +241,30 @@ export async function sendHoldedQuote(repairJobId: string) {
   return { sent: true };
 }
 
+// ─── Direct PDF downloads by Holded ID ───
+
+export async function downloadInvoicePdfById(holdedInvoiceId: string) {
+  await requireAuth();
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const buffer = await getInvoicePdf(holdedInvoiceId);
+  return {
+    data: Buffer.from(buffer).toString("base64"),
+    filename: `invoice-${holdedInvoiceId}.pdf`,
+  };
+}
+
+export async function downloadQuotePdfById(holdedQuoteId: string) {
+  await requireAuth();
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const buffer = await getQuotePdf(holdedQuoteId);
+  return {
+    data: Buffer.from(buffer).toString("base64"),
+    filename: `quote-${holdedQuoteId}.pdf`,
+  };
+}
+
 // ─── Quote creation from repair ───
 
 export async function createHoldedQuote(repairJobId: string, lineItems: LineItemInput[], discountPercent?: number) {

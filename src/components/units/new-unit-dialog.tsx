@@ -17,12 +17,18 @@ import {
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { CustomerSearch } from "@/components/customers/customer-search";
 
-export function NewUnitDialog() {
+interface NewUnitDialogProps {
+  customers?: { id: string; name: string }[];
+}
+
+export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,8 +44,10 @@ export function NewUnitDialog() {
         year: fd.get("year") ? Number(fd.get("year")) : undefined,
         chassisId: fd.get("chassisId") || undefined,
         notes: fd.get("notes") || undefined,
+        customerId: customerId || undefined,
       });
       setOpen(false);
+      setCustomerId(null);
       toast.success("Unit created");
       router.push(`/units/${unit.id}`);
       router.refresh();
@@ -50,7 +58,7 @@ export function NewUnitDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setCustomerId(null); }}>
       <Button onClick={() => setOpen(true)} size="sm" className="h-8 rounded-lg gap-1.5 text-xs font-medium">
         <Plus className="h-3.5 w-3.5" />
         Add Unit
@@ -64,6 +72,16 @@ export function NewUnitDialog() {
           {error && (
             <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive">{error}</div>
           )}
+          <div>
+            <Label className="text-xs">Customer</Label>
+            <div className="mt-1">
+              <CustomerSearch
+                customers={customers}
+                value={customerId ?? undefined}
+                onSelect={setCustomerId}
+              />
+            </div>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="dlg-reg" className="text-xs">Registration</Label>

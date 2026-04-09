@@ -758,14 +758,31 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.holdedQuoteId ? (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{job.holdedQuoteNum}</p>
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-primary hover:underline cursor-pointer"
+                        onClick={async () => {
+                          try {
+                            const { data, filename } = await downloadHoldedQuotePdf(job.id);
+                            const link = document.createElement("a");
+                            link.href = `data:application/pdf;base64,${data}`;
+                            link.download = filename;
+                            link.click();
+                            toast.success("PDF downloaded");
+                          } catch {
+                            toast.error("Failed to download PDF");
+                          }
+                        }}
+                      >
+                        {job.holdedQuoteNum}
+                      </button>
                       <a
                         href={`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] text-primary hover:underline"
+                        className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
                       >
-                        Open in Holded
+                        Holded ↗
                       </a>
                     </div>
                     <div className="flex gap-2">
@@ -842,14 +859,31 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.holdedInvoiceId ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{job.holdedInvoiceNum}</p>
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-primary hover:underline cursor-pointer"
+                      onClick={async () => {
+                        try {
+                          const { data, filename } = await downloadHoldedInvoicePdf(job.id);
+                          const link = document.createElement("a");
+                          link.href = `data:application/pdf;base64,${data}`;
+                          link.download = filename;
+                          link.click();
+                          toast.success("PDF downloaded");
+                        } catch {
+                          toast.error("Failed to download PDF");
+                        }
+                      }}
+                    >
+                      {job.holdedInvoiceNum}
+                    </button>
                     <a
                       href={`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] text-primary hover:underline"
+                      className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
                     >
-                      Open in Holded
+                      Holded ↗
                     </a>
                   </div>
                   <HoldedHint variant="sync">

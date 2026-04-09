@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, ExternalLink, Wrench, Search, FileDown, Send, X, Filter, FileText } from "lucide-react";
+import { Receipt, Wrench, Search, FileDown, Send, X, Filter, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { downloadHoldedInvoicePdf, sendHoldedInvoice } from "@/actions/holded";
+import { downloadHoldedInvoicePdf, sendHoldedInvoice, downloadInvoicePdfById, downloadQuotePdfById } from "@/actions/holded";
 import { markInvoicePaid } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
 import { WorkflowGuide } from "@/components/workflow-guide";
@@ -113,18 +113,21 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
   }
 
   async function handleDownloadPdf(inv: Invoice) {
-    if (!inv.repairJobId) {
-      // Open in Holded if no repair job linked
-      window.open(`https://app.holded.com/documents/invoice/${inv.id}`, "_blank");
-      return;
-    }
     setActionLoading(`pdf-${inv.id}`);
     try {
-      const { data, filename } = await downloadHoldedInvoicePdf(inv.repairJobId);
-      const link = document.createElement("a");
-      link.href = `data:application/pdf;base64,${data}`;
-      link.download = filename;
-      link.click();
+      if (inv.repairJobId) {
+        const { data, filename } = await downloadHoldedInvoicePdf(inv.repairJobId);
+        const link = document.createElement("a");
+        link.href = `data:application/pdf;base64,${data}`;
+        link.download = filename;
+        link.click();
+      } else {
+        const { data, filename } = await downloadInvoicePdfById(inv.id);
+        const link = document.createElement("a");
+        link.href = `data:application/pdf;base64,${data}`;
+        link.download = filename;
+        link.click();
+      }
       toast.success("PDF downloaded");
     } catch {
       toast.error("Failed to download PDF");
@@ -318,15 +321,25 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                 filtered.map((inv, idx) => (
                   <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                     <TableCell>
-                      <a
-                        href={`https://app.holded.com/documents/invoice/${inv.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                      <button
+                        type="button"
+                        className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        onClick={async () => {
+                          try {
+                            const { data, filename } = await downloadInvoicePdfById(inv.id);
+                            const link = document.createElement("a");
+                            link.href = `data:application/pdf;base64,${data}`;
+                            link.download = filename;
+                            link.click();
+                            toast.success("PDF downloaded");
+                          } catch {
+                            toast.error("Failed to download PDF");
+                          }
+                        }}
                       >
                         {inv.docNumber}
-                        <ExternalLink className="h-2.5 w-2.5" />
-                      </a>
+                        <FileDown className="h-2.5 w-2.5" />
+                      </button>
                     </TableCell>
                     <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
                     <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
@@ -459,15 +472,25 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                     quotes.map((q, idx) => (
                       <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
-                          <a
-                            href={`https://app.holded.com/documents/estimate/${q.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                          <button
+                            type="button"
+                            className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                            onClick={async () => {
+                              try {
+                                const { data, filename } = await downloadQuotePdfById(q.id);
+                                const link = document.createElement("a");
+                                link.href = `data:application/pdf;base64,${data}`;
+                                link.download = filename;
+                                link.click();
+                                toast.success("PDF downloaded");
+                              } catch {
+                                toast.error("Failed to download PDF");
+                              }
+                            }}
                           >
                             {q.docNumber}
-                            <ExternalLink className="h-2.5 w-2.5" />
-                          </a>
+                            <FileDown className="h-2.5 w-2.5" />
+                          </button>
                         </TableCell>
                         <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
                         <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">

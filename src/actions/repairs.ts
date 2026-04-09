@@ -473,6 +473,19 @@ export async function deleteRepairJob(id: string) {
   return { deleted: true };
 }
 
+export async function bulkDeleteRepairJobs(ids: string[]) {
+  await requireRole("admin");
+  if (ids.length === 0) throw new Error("No IDs provided");
+
+  await db.delete(repairJobs).where(inArray(repairJobs.id, ids));
+
+  await createAuditLog("bulk_delete", "repair_job", null, { ids, count: ids.length });
+
+  revalidatePath("/repairs");
+  revalidatePath("/");
+  return { deleted: ids.length };
+}
+
 export async function getFollowUpItems() {
   await requireAuth();
 

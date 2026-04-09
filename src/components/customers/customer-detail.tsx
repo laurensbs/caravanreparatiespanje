@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateCustomer } from "@/actions/customers";
+import { updateCustomer, deleteCustomer } from "@/actions/customers";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   ArrowLeft, Save, Phone, Mail, StickyNote, Wrench, Truck,
   Receipt, ExternalLink, Building2, User, MapPin, Pencil,
-  RefreshCw, Plus, X as XIcon,
+  RefreshCw, Plus, X as XIcon, Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
@@ -23,6 +23,10 @@ import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getCustomerSuggestions } from "@/components/smart-suggestions";
 import { CompactProgressTracker } from "@/components/repair-progress";
 import { createUnit, updateUnit } from "@/actions/units";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { addTagToCustomer, removeTagFromCustomer } from "@/actions/tags";
 
@@ -53,6 +57,10 @@ export function CustomerDetail({ customer, holdedInvoices, allTags = [], custome
   const [unitForm, setUnitForm] = useState({ registration: "", brand: "", model: "", year: "" });
   const [unitSaving, setUnitSaving] = useState(false);
   const [addingUnit, setAddingUnit] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteFromHolded, setDeleteFromHolded] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -117,6 +125,9 @@ export function CustomerDetail({ customer, holdedInvoices, allTags = [], custome
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
           {!editing ? (
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => setEditing(true)}>
               <Pencil className="h-3.5 w-3.5" />
@@ -581,6 +592,60 @@ export function CustomerDetail({ customer, holdedInvoices, allTags = [], custome
           </CardContent>
         </Card>
       )}
+
+      {/* Delete dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete &ldquo;{customer.name}&rdquo;?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">This will remove the customer from the admin. Linked repairs and units will be unlinked.</p>
+          {customer.holdedContactId && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="delete-holded"
+                  checked={deleteFromHolded}
+                  onCheckedChange={(c) => { setDeleteFromHolded(!!c); if (!c) setDeletePassword(""); }}
+                />
+                <label htmlFor="delete-holded" className="text-sm leading-tight cursor-pointer">
+                  Also delete from Holded
+                </label>
+              </div>
+              {deleteFromHolded && (
+                <Input
+                  type="password"
+                  placeholder="Enter admin password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                />
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={deleting || (deleteFromHolded && !deletePassword)}
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  await deleteCustomer(customer.id, deleteFromHolded, deleteFromHolded ? deletePassword : undefined);
+                  toast.success("Customer deleted");
+                  router.push("/customers");
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Failed to delete");
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? <Spinner className="mr-1" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

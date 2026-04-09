@@ -203,3 +203,34 @@ export async function getAllCustomers() {
   await requireAuth();
   return db.select({ id: customers.id, name: customers.name }).from(customers).orderBy(customers.name);
 }
+
+export async function deleteCustomer(id: string, deleteFromHolded?: boolean, password?: string) {
+  await requireRole("admin");
+
+  const [customer] = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.id, id))
+    .limit(1);
+
+  if (!customer) throw new Error("Customer not found");
+
+  // If deleting from Holded too, require password
+  if (deleteFromHolded) {
+    if (password !== "admin1234") throw new Error("Incorrect password");
+    if (customer.holdedContactId) {
+      try {
+        const { deleteContact } = await import("@/lib/holded/invoices");
+        await deleteContact(customer.holdedContactId);
+      } catch {
+        // Continue with local delete even if Holded delete fails
+      }
+    }
+  }
+
+  await db.delete(customers).where(eq(customers.id, id));
+  await createAuditLog("delete", "customer", id, { name: customer.name, deletedFromHolded: deleteFromHolded ?? false });
+
+  revalidatePath("/customers");
+  return { deleted: true };
+}

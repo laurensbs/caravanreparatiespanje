@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { bulkUpdateRepairJobs } from "@/actions/repairs";
+import { bulkUpdateRepairJobs, bulkDeleteRepairJobs } from "@/actions/repairs";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
-import { X, Check } from "lucide-react";
+import { X, Check, Trash2 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -40,6 +40,21 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
       router.refresh();
     } catch {
       toast.error("Failed to apply bulk update");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (!confirm(`Delete ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    setLoading(true);
+    try {
+      await bulkDeleteRepairJobs(selectedIds);
+      toast.success(`Deleted ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""}`);
+      onClear();
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete");
     } finally {
       setLoading(false);
     }
@@ -91,6 +106,13 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
       <Button variant="ghost" size="sm" onClick={onClear}>
         <X className="h-4 w-4" />
       </Button>
+
+      <div className="ml-auto">
+        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleBulkDelete} disabled={loading}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" />
+          Delete
+        </Button>
+      </div>
     </div>
   );
 }

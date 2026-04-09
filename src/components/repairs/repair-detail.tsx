@@ -78,6 +78,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [priority, setPriority] = useState(job.priority);
   const [invoiceStatus, setInvoiceStatus] = useState(job.invoiceStatus);
   const [warrantyFlag, setWarrantyFlag] = useState(job.warrantyInternalCostFlag ?? false);
+  const [prepaidFlag, setPrepaidFlag] = useState(job.prepaidFlag ?? false);
+  const [waterDamageFlag, setWaterDamageFlag] = useState(job.waterDamageRiskFlag ?? false);
+  const [safetyFlag, setSafetyFlag] = useState(job.safetyFlag ?? false);
+  const [tyresFlag, setTyresFlag] = useState(job.tyresFlag ?? false);
+  const [lightsFlag, setLightsFlag] = useState(job.lightsFlag ?? false);
+  const [brakesFlag, setBrakesFlag] = useState(job.brakesFlag ?? false);
+  const [windowsFlag, setWindowsFlag] = useState(job.windowsFlag ?? false);
+  const [sealsFlag, setSealsFlag] = useState(job.sealsFlag ?? false);
+  const [partsRequiredFlag, setPartsRequiredFlag] = useState(job.partsRequiredFlag ?? false);
+  const [followUpRequiredFlag, setFollowUpRequiredFlag] = useState(job.followUpRequiredFlag ?? false);
   const [customerResponseStatus, setCustomerResponseStatus] = useState(job.customerResponseStatus);
   const [notes, setNotes] = useState(job.notesRaw && job.notesRaw !== "true" && job.notesRaw !== "false" ? job.notesRaw : "");
   const [internalComments, setInternalComments] = useState(job.internalComments ?? "");
@@ -183,6 +193,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         actualCost: actualCost || null,
         internalCost: internalCost || null,
         warrantyInternalCostFlag: warrantyFlag,
+        prepaidFlag,
+        waterDamageRiskFlag: waterDamageFlag,
+        safetyFlag,
+        tyresFlag,
+        lightsFlag,
+        brakesFlag,
+        windowsFlag,
+        sealsFlag,
+        partsRequiredFlag,
+        followUpRequiredFlag,
       });
       router.refresh();
       toast.success("Changes saved");
@@ -726,6 +746,24 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </span>
                   <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
                 </div>
+                {job.holdedInvoiceDate && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Receipt className="h-3.5 w-3.5" />
+                      Invoice Date
+                    </span>
+                    <span className="text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
+                  </div>
+                )}
+                {job.dueDate && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Due Date
+                    </span>
+                    <span className="text-right">{format(new Date(job.dueDate), "dd MMM yyyy")}</span>
+                  </div>
+                )}
                 {(job.estimatedCost || job.actualCost || true) && (
                   <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
                     <div className="flex items-center justify-between gap-2">
@@ -797,29 +835,56 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </Card>
 
           {/* Flags */}
-          {(job.waterDamageRiskFlag || job.safetyFlag || job.tyresFlag || job.lightsFlag || job.brakesFlag || job.windowsFlag || job.sealsFlag || job.partsRequiredFlag || job.followUpRequiredFlag || job.warrantyInternalCostFlag || job.prepaidFlag) && (
-            <Card className="rounded-xl">
-              <CardContent className="pt-5">
-                <p className="flex items-center gap-2 text-xs font-semibold mb-3">
-                  <Flag className="h-3.5 w-3.5 text-muted-foreground" />
-                  Flags
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {job.waterDamageRiskFlag && <Badge variant="destructive" className="rounded-full text-[10px] px-2 py-0">Water Damage</Badge>}
-                  {job.safetyFlag && <Badge variant="destructive" className="rounded-full text-[10px] px-2 py-0">Safety</Badge>}
-                  {job.tyresFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Tyres</Badge>}
-                  {job.lightsFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Lighting</Badge>}
-                  {job.brakesFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Brakes</Badge>}
-                  {job.windowsFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Windows</Badge>}
-                  {job.sealsFlag && <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0">Seals</Badge>}
-                  {job.partsRequiredFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Parts</Badge>}
-                  {job.followUpRequiredFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Follow-up</Badge>}
-                  {job.warrantyInternalCostFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Warranty</Badge>}
-                  {job.prepaidFlag && <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">Prepaid</Badge>}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="rounded-xl">
+            <CardContent className="pt-5">
+              <p className="flex items-center gap-2 text-xs font-semibold mb-3">
+                <Flag className="h-3.5 w-3.5 text-muted-foreground" />
+                Flags
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={waterDamageFlag} onCheckedChange={(v) => setWaterDamageFlag(v === true)} />
+                  <span className="text-xs text-red-600 dark:text-red-400">Water Damage</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={safetyFlag} onCheckedChange={(v) => setSafetyFlag(v === true)} />
+                  <span className="text-xs text-red-600 dark:text-red-400">Safety</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={tyresFlag} onCheckedChange={(v) => setTyresFlag(v === true)} />
+                  <span className="text-xs">Tyres</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={lightsFlag} onCheckedChange={(v) => setLightsFlag(v === true)} />
+                  <span className="text-xs">Lighting</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={brakesFlag} onCheckedChange={(v) => setBrakesFlag(v === true)} />
+                  <span className="text-xs">Brakes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={windowsFlag} onCheckedChange={(v) => setWindowsFlag(v === true)} />
+                  <span className="text-xs">Windows</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={sealsFlag} onCheckedChange={(v) => setSealsFlag(v === true)} />
+                  <span className="text-xs">Seals</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={partsRequiredFlag} onCheckedChange={(v) => setPartsRequiredFlag(v === true)} />
+                  <span className="text-xs">Parts Required</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={followUpRequiredFlag} onCheckedChange={(v) => setFollowUpRequiredFlag(v === true)} />
+                  <span className="text-xs">Follow-up</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={prepaidFlag} onCheckedChange={(v) => setPrepaidFlag(v === true)} />
+                  <span className="text-xs">Prepaid</span>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Holded Documents */}
           <Card className="rounded-xl">

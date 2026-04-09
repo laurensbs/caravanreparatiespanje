@@ -40,10 +40,12 @@ export async function GET(request: Request) {
         id: repairJobs.id,
         customerId: repairJobs.customerId,
         holdedInvoiceId: repairJobs.holdedInvoiceId,
+        holdedInvoiceDate: repairJobs.holdedInvoiceDate,
         invoiceStatus: repairJobs.invoiceStatus,
         publicCode: repairJobs.publicCode,
         title: repairJobs.title,
         status: repairJobs.status,
+        dueDate: repairJobs.dueDate,
         createdAt: repairJobs.createdAt,
         completedAt: repairJobs.completedAt,
       })
@@ -81,25 +83,41 @@ export async function GET(request: Request) {
       try {
         const newStatus = holdedInvoiceStatus(inv);
 
-        // Case A: Invoice already linked to a repair → sync status
+        // Case A: Invoice already linked to a repair → sync status + dates
         const existingRepair = repairByInvoiceId.get(inv.id);
         if (existingRepair) {
-          if (existingRepair.invoiceStatus !== newStatus && existingRepair.invoiceStatus !== "warranty") {
+          const invDate = new Date(inv.date * 1000);
+          const invDueDate = inv.dueDate ? new Date(inv.dueDate * 1000) : null;
+          const statusChanged = existingRepair.invoiceStatus !== newStatus && existingRepair.invoiceStatus !== "warranty";
+          const dateChanged = existingRepair.holdedInvoiceDate?.getTime() !== invDate.getTime();
+          const dueDateChanged = invDueDate && existingRepair.dueDate?.getTime() !== invDueDate.getTime();
+
+          if (statusChanged || dateChanged || dueDateChanged) {
+            const updates: Record<string, unknown> = { updatedAt: new Date() };
+            if (statusChanged) updates.invoiceStatus = newStatus;
+            if (dateChanged) updates.holdedInvoiceDate = invDate;
+            if (dueDateChanged) updates.dueDate = invDueDate;
+
             await db
               .update(repairJobs)
-              .set({ invoiceStatus: newStatus, updatedAt: new Date() })
+              .set(updates)
               .where(eq(repairJobs.id, existingRepair.id));
 
-            await db.insert(repairJobEvents).values({
-              repairJobId: existingRepair.id,
-              eventType: "payment_synced",
-              fieldChanged: "invoiceStatus",
-              oldValue: existingRepair.invoiceStatus,
-              newValue: newStatus,
-              comment: `Invoice ${inv.docNumber} status synced: ${existingRepair.invoiceStatus} → ${newStatus}`,
-            });
-
-            existingRepair.invoiceStatus = newStatus;
+            if (statusChanged) {
+              await db.insert(repairJobEvents).values({
+                repairJobId: existingRepair.id,
+                eventType: "payment_synced",
+                fieldChanged: "invoiceStatus",
+                oldValue: existingRepair.invoiceStatus,
+                newValue: newStatus,
+                comment: `Invoice ${inv.docNumber} status synced: ${existingRepair.invoiceStatus} → ${newStatus}`,
+              });
+              existingRepair.invoiceStatus = newStatus;
+            }
+            if (dateChanged || dueDateChanged) {
+              existingRepair.holdedInvoiceDate = invDate;
+              if (invDueDate) existingRepair.dueDate = invDueDate;
+            }
             stats.statusUpdated++;
           }
           continue;
@@ -157,12 +175,14 @@ export async function GET(request: Request) {
         }
 
         if (matched) {
+          const invDueDate = inv.dueDate ? new Date(inv.dueDate * 1000) : null;
           await db
             .update(repairJobs)
             .set({
               holdedInvoiceId: inv.id,
               holdedInvoiceNum: inv.docNumber,
               holdedInvoiceDate: new Date(inv.date * 1000),
+              ...(invDueDate ? { dueDate: invDueDate } : {}),
               invoiceStatus: newStatus,
               updatedAt: new Date(),
             })

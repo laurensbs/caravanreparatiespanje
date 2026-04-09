@@ -62,6 +62,7 @@ export interface HoldedInvoice {
   status: number; // 0 = not paid, 1 = paid, 2 = partially paid
   currency: string;
   desc?: string;
+  draft?: number | null;
   items?: Array<{
     name: string;
     desc?: string;

@@ -24,7 +24,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
-import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote } from "@/actions/holded";
+import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
@@ -836,7 +836,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <a
-                        href={`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`}
+                        href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-medium text-primary hover:underline"
@@ -849,10 +849,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         variant="outline"
                         size="sm"
                         className="flex-1 text-xs"
-                        onClick={() => window.open(`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`, "_blank")}
+                        onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}
                       >
                         <FileDown className="h-3 w-3 mr-1" />
-                        Open in Holded
+                        View PDF
                       </Button>
                       {job.customer?.email && (
                         <Button
@@ -908,7 +908,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <a
-                      href={`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`}
+                      href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-medium text-primary hover:underline"
@@ -924,10 +924,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       variant="outline"
                       size="sm"
                       className="flex-1 text-xs"
-                      onClick={() => window.open(`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`, "_blank")}
+                      onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}
                     >
                       <FileDown className="h-3 w-3 mr-1" />
-                      Open in Holded
+                      View PDF
                     </Button>
                     {job.customer?.email && (
                       <Button
@@ -993,6 +993,33 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
               )}
               </div>
+
+              {/* Verify Holded links */}
+              {(job.holdedInvoiceId || job.holdedQuoteId) && (
+                <div className="border-t pt-3 mt-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground"
+                    onClick={async () => {
+                      try {
+                        const result = await verifyHoldedDocuments(job.id);
+                        if (result.fixed) {
+                          toast.success(result.issues.join(". "));
+                          router.refresh();
+                        } else {
+                          toast.success("All Holded links verified ✓");
+                        }
+                      } catch (e: any) {
+                        toast.error(e.message ?? "Verification failed");
+                      }
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Verify Holded Links
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

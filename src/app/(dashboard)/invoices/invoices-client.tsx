@@ -134,7 +134,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
   }
 
   function openInvoiceInHolded(inv: Invoice) {
-    window.open(`https://app.holded.com/documents/invoice/${inv.id}`, "_blank");
+    window.open(`/api/holded/pdf?type=invoice&id=${inv.id}`, "_blank");
   }
 
   async function handleSendEmail(inv: Invoice) {
@@ -321,7 +321,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                   <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                     <TableCell>
                       <a
-                        href={`https://app.holded.com/documents/invoice/${inv.id}`}
+                        href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
@@ -379,7 +379,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
-                          title="Open in Holded"
+                          title="View PDF"
                           onClick={() => openInvoiceInHolded(inv)}
                         >
                           <ExternalLink className="h-3 w-3" />
@@ -461,7 +461,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                       <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
                           <a
-                            href={`https://app.holded.com/documents/estimate/${q.id}`}
+                            href={`/api/holded/pdf?type=estimate&id=${q.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"

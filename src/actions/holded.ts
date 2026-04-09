@@ -17,6 +17,7 @@ import {
   sendInvoice,
   sendQuote,
   listInvoicesByContact,
+  listQuotesByContact,
   updateContact as updateHoldedContact,
   getContact,
   type HoldedInvoice,
@@ -439,4 +440,131 @@ export async function getCustomerHoldedContact(
   } catch {
     return null;
   }
+}
+
+// ─── Verify and fix Holded document links for a repair ───
+
+export async function verifyHoldedDocuments(repairJobId: string) {
+  const session = await requireRole("admin");
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const [job] = await db
+    .select()
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+  if (!job) throw new Error("Repair job not found");
+
+  let customer = null;
+  if (job.customerId) {
+    const [c] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, job.customerId))
+      .limit(1);
+    customer = c ?? null;
+  }
+
+  const updates: Record<string, any> = {};
+  const issues: string[] = [];
+
+  // Check stored invoice ID
+  if (job.holdedInvoiceId) {
+    try {
+      const inv = await getInvoice(job.holdedInvoiceId);
+      // ID is valid — update docNumber if missing/wrong
+      if (inv.docNumber && inv.docNumber !== job.holdedInvoiceNum) {
+        updates.holdedInvoiceNum = inv.docNumber;
+        issues.push(`Invoice number updated to ${inv.docNumber}`);
+      }
+    } catch {
+      // Invoice ID is invalid — try to find it by searching contact
+      issues.push("Stored invoice ID not found in Holded");
+      if (customer?.holdedContactId) {
+        try {
+          const contactInvoices = await listInvoicesByContact(customer.holdedContactId);
+          // Match by description containing publicCode
+          const match = contactInvoices.find(
+            (inv) =>
+              inv.desc?.includes(job.publicCode ?? "") ||
+              inv.docNumber === job.holdedInvoiceNum
+          );
+          if (match) {
+            updates.holdedInvoiceId = match.id;
+            updates.holdedInvoiceNum = match.docNumber;
+            if (match.date) updates.holdedInvoiceDate = new Date(match.date * 1000);
+            issues.push(`Found correct invoice: ${match.docNumber}`);
+          } else {
+            // No match found — clear the broken link
+            updates.holdedInvoiceId = null;
+            updates.holdedInvoiceNum = null;
+            updates.holdedInvoiceDate = null;
+            updates.invoiceStatus = "not_invoiced";
+            issues.push("No matching invoice found in Holded — cleared broken link");
+          }
+        } catch {
+          issues.push("Could not search contact invoices");
+        }
+      } else {
+        updates.holdedInvoiceId = null;
+        updates.holdedInvoiceNum = null;
+        updates.holdedInvoiceDate = null;
+        updates.invoiceStatus = "not_invoiced";
+        issues.push("No Holded contact — cleared broken link");
+      }
+    }
+  }
+
+  // Check stored quote ID
+  if (job.holdedQuoteId) {
+    try {
+      const q = await getQuote(job.holdedQuoteId);
+      if (q.docNumber && q.docNumber !== job.holdedQuoteNum) {
+        updates.holdedQuoteNum = q.docNumber;
+        issues.push(`Quote number updated to ${q.docNumber}`);
+      }
+    } catch {
+      issues.push("Stored quote ID not found in Holded");
+      if (customer?.holdedContactId) {
+        try {
+          const contactQuotes = await listQuotesByContact(customer.holdedContactId);
+          const match = contactQuotes.find(
+            (q) =>
+              q.desc?.includes(job.publicCode ?? "") ||
+              q.docNumber === job.holdedQuoteNum
+          );
+          if (match) {
+            updates.holdedQuoteId = match.id;
+            updates.holdedQuoteNum = match.docNumber;
+            if (match.date) updates.holdedQuoteDate = new Date(match.date * 1000);
+            issues.push(`Found correct quote: ${match.docNumber}`);
+          } else {
+            updates.holdedQuoteId = null;
+            updates.holdedQuoteNum = null;
+            updates.holdedQuoteDate = null;
+            issues.push("No matching quote found in Holded — cleared broken link");
+          }
+        } catch {
+          issues.push("Could not search contact quotes");
+        }
+      } else {
+        updates.holdedQuoteId = null;
+        updates.holdedQuoteNum = null;
+        updates.holdedQuoteDate = null;
+        issues.push("No Holded contact — cleared broken link");
+      }
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    updates.updatedAt = new Date();
+    await db
+      .update(repairJobs)
+      .set(updates)
+      .where(eq(repairJobs.id, repairJobId));
+  }
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  revalidatePath("/repairs");
+  return { fixed: Object.keys(updates).length > 0, issues };
 }

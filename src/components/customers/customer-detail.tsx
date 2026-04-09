@@ -558,7 +558,7 @@ export function CustomerDetail({ customer, holdedInvoices, allTags = [], custome
               {holdedInvoices.map((inv: any) => (
                 <a
                   key={inv.id}
-                  href={`https://app.holded.com/documents/invoice/${inv.id}`}
+                  href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"

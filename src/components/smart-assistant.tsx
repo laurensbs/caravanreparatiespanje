@@ -809,7 +809,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full shadow-lg transition-all duration-200",
+          "fixed bottom-20 right-5 z-50 flex items-center justify-center rounded-full shadow-lg transition-all duration-200",
           "h-12 w-12 hover:scale-105 active:scale-95",
           open
             ? "bg-foreground text-background"
@@ -822,7 +822,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-20 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-8rem))] flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-[6.5rem] right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-8rem))] flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
           {/* Header */}
           <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white shrink-0">
             <div className="flex items-center justify-between">

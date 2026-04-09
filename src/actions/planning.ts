@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, customers, locations, users } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, customers, locations, users, units } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { eq, and, gte, lte, isNull, isNotNull, or, ilike, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -16,6 +16,7 @@ export interface PlannedRepair {
   id: string;
   publicCode: string | null;
   title: string | null;
+  descriptionRaw: string | null;
   dueDate: Date;
   status: string;
   priority: string;
@@ -25,6 +26,7 @@ export interface PlannedRepair {
   locationId: string | null;
   assignedUserName: string | null;
   assignedUserId: string | null;
+  unitInfo: string | null;
 }
 
 export async function getPlannedRepairs(
@@ -38,6 +40,7 @@ export async function getPlannedRepairs(
       id: repairJobs.id,
       publicCode: repairJobs.publicCode,
       title: repairJobs.title,
+      descriptionRaw: repairJobs.descriptionRaw,
       dueDate: repairJobs.dueDate,
       status: repairJobs.status,
       priority: repairJobs.priority,
@@ -47,11 +50,15 @@ export async function getPlannedRepairs(
       locationId: repairJobs.locationId,
       assignedUserName: users.name,
       assignedUserId: repairJobs.assignedUserId,
+      unitBrand: units.brand,
+      unitModel: units.model,
+      unitRegistration: units.registration,
     })
     .from(repairJobs)
     .leftJoin(customers, eq(repairJobs.customerId, customers.id))
     .leftJoin(locations, eq(repairJobs.locationId, locations.id))
     .leftJoin(users, eq(repairJobs.assignedUserId, users.id))
+    .leftJoin(units, eq(repairJobs.unitId, units.id))
     .where(
       and(
         isNull(repairJobs.deletedAt),
@@ -63,7 +70,22 @@ export async function getPlannedRepairs(
 
   return rows
     .filter((r) => r.dueDate !== null)
-    .map((r) => ({ ...r, dueDate: r.dueDate! }) as PlannedRepair);
+    .map((r) => ({
+      id: r.id,
+      publicCode: r.publicCode,
+      title: r.title,
+      descriptionRaw: r.descriptionRaw,
+      dueDate: r.dueDate!,
+      status: r.status,
+      priority: r.priority,
+      estimatedHours: r.estimatedHours,
+      customerName: r.customerName,
+      locationName: r.locationName,
+      locationId: r.locationId,
+      assignedUserName: r.assignedUserName,
+      assignedUserId: r.assignedUserId,
+      unitInfo: [r.unitBrand, r.unitModel, r.unitRegistration].filter(Boolean).join(" · ") || null,
+    }) as PlannedRepair);
 }
 
 export async function scheduleRepair(repairId: string, dueDate: string) {

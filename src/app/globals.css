@@ -187,8 +187,9 @@
   }
   .print\:hidden { display: none !important; }
   .print\:block { display: block !important; }
+  .print\:flex { display: flex !important; }
   @page {
-    size: landscape;
-    margin: 10mm;
+    size: A4 portrait;
+    margin: 12mm;
   }
 }

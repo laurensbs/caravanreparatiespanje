@@ -3,7 +3,7 @@
 import { useState, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Printer, Globe, Filter, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Globe, Filter, Plus, Clock, MapPin, User, Wrench, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,34 +14,21 @@ import { getPlannedRepairs, scheduleRepair, type PlannedRepair } from "@/actions
 import { AddRepairDialog } from "./add-repair-dialog";
 import { toast } from "sonner";
 
-// Location → color mapping for visual coding
+// Location → dot color mapping
 const LOCATION_COLORS: Record<string, string> = {};
-const LOCATION_PALETTE = [
-  "border-l-blue-500", "border-l-emerald-500", "border-l-amber-500",
-  "border-l-purple-500", "border-l-rose-500", "border-l-cyan-500",
-  "border-l-lime-500", "border-l-orange-500",
-];
 const LOCATION_DOT_PALETTE = [
   "bg-blue-500", "bg-emerald-500", "bg-amber-500",
   "bg-purple-500", "bg-rose-500", "bg-cyan-500",
   "bg-lime-500", "bg-orange-500",
 ];
-function getLocationColor(locationId: string | null): string {
-  if (!locationId) return "border-l-gray-300";
+function getLocationDot(locationId: string | null): string {
+  if (!locationId) return "bg-gray-400";
   if (!LOCATION_COLORS[locationId]) {
-    const idx = Object.keys(LOCATION_COLORS).length % LOCATION_PALETTE.length;
-    LOCATION_COLORS[locationId] = LOCATION_PALETTE[idx];
+    const idx = Object.keys(LOCATION_COLORS).length % LOCATION_DOT_PALETTE.length;
+    LOCATION_COLORS[locationId] = LOCATION_DOT_PALETTE[idx];
   }
   return LOCATION_COLORS[locationId];
 }
-function getLocationDot(locationId: string | null): string {
-  if (!locationId) return "bg-gray-400";
-  if (!LOCATION_COLORS[locationId]) getLocationColor(locationId);
-  const idx = Object.keys(LOCATION_COLORS).indexOf(locationId);
-  return LOCATION_DOT_PALETTE[idx >= 0 ? idx % LOCATION_DOT_PALETTE.length : 0];
-}
-
-const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 interface Props {
   initialRepairs: PlannedRepair[];
@@ -64,8 +51,6 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
     return "en";
   });
   const [filterUser, setFilterUser] = useState<string>("all");
-  const [view, setView] = useState<"week" | "day">("week");
-  const [selectedDay, setSelectedDay] = useState(0); // 0=Mon for day view
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogDate, setAddDialogDate] = useState<Date | null>(null);
   const [dragRepairId, setDragRepairId] = useState<string | null>(null);
@@ -75,12 +60,9 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
   function changeLang(newLang: PlanningLang) {
     setLang(newLang);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("planning-lang", newLang);
-    }
+    if (typeof window !== "undefined") localStorage.setItem("planning-lang", newLang);
   }
 
-  // Week navigation
   function navigateWeek(offset: number) {
     const newMonday = new Date(monday);
     newMonday.setDate(newMonday.getDate() + offset * 7);
@@ -118,75 +100,52 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
     });
   }
 
-  // Get day columns (Mon–Sun)
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
   });
 
-  // Is today?
   const todayStr = new Date().toDateString();
 
-  // Filter repairs
   const filteredRepairs = filterUser === "all"
     ? repairs
     : repairs.filter((r) => r.assignedUserId === filterUser);
 
-  // Get repairs for a specific day + hour
-  function repairsForSlot(dayIndex: number, hour: number) {
-    const dayDate = days[dayIndex];
-    return filteredRepairs.filter((r) => {
-      const d = new Date(r.dueDate);
-      return d.getDate() === dayDate.getDate()
-        && d.getMonth() === dayDate.getMonth()
-        && d.getFullYear() === dayDate.getFullYear()
-        && d.getHours() === hour;
-    });
-  }
-
-  // Get all repairs for a day (for day view, grouped by hour)
   function repairsForDay(dayIndex: number) {
     const dayDate = days[dayIndex];
-    return filteredRepairs.filter((r) => {
-      const d = new Date(r.dueDate);
-      return d.getDate() === dayDate.getDate()
-        && d.getMonth() === dayDate.getMonth()
-        && d.getFullYear() === dayDate.getFullYear();
-    });
+    return filteredRepairs
+      .filter((r) => {
+        const d = new Date(r.dueDate);
+        return d.getDate() === dayDate.getDate()
+          && d.getMonth() === dayDate.getMonth()
+          && d.getFullYear() === dayDate.getFullYear();
+      })
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }
 
-  // Drag & drop
   function handleDragStart(e: React.DragEvent, repairId: string) {
     e.dataTransfer.setData("text/plain", repairId);
     e.dataTransfer.effectAllowed = "move";
     setDragRepairId(repairId);
   }
 
-  function handleDragEnd() {
-    setDragRepairId(null);
-  }
+  function handleDragEnd() { setDragRepairId(null); }
 
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   }
 
-  const handleDrop = useCallback((e: React.DragEvent, dayIndex: number, hour: number) => {
+  const handleDrop = useCallback((e: React.DragEvent, dayIndex: number) => {
     e.preventDefault();
     const repairId = e.dataTransfer.getData("text/plain");
     if (!repairId) return;
     setDragRepairId(null);
-
     const targetDate = new Date(days[dayIndex]);
-    targetDate.setHours(hour, 0, 0, 0);
+    targetDate.setHours(8, 0, 0, 0);
     const iso = targetDate.toISOString();
-
-    // Optimistic update
-    setRepairs((prev) =>
-      prev.map((r) => (r.id === repairId ? { ...r, dueDate: targetDate } : r))
-    );
-
+    setRepairs((prev) => prev.map((r) => (r.id === repairId ? { ...r, dueDate: targetDate } : r)));
     startTransition(async () => {
       try {
         await scheduleRepair(repairId, iso);
@@ -198,10 +157,16 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
     });
   }, [days, weekStart, weekEnd]);
 
-  // Add repair via dialog
-  function openAddDialog(dayIndex: number, hour: number) {
+  const usedLocationIds = [...new Set(filteredRepairs.map((r) => r.locationId).filter(Boolean))] as string[];
+  const locationLegend = usedLocationIds.map((id) => ({
+    id,
+    name: locations.find((l) => l.id === id)?.name ?? "?",
+    dot: getLocationDot(id),
+  }));
+
+  function openAddDialog(dayIndex: number) {
     const d = new Date(days[dayIndex]);
-    d.setHours(hour, 0, 0, 0);
+    d.setHours(8, 0, 0, 0);
     setAddDialogDate(d);
     setAddDialogOpen(true);
   }
@@ -212,21 +177,15 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
     setRepairs(data);
   }
 
-  // Location legend
-  const usedLocationIds = [...new Set(filteredRepairs.map((r) => r.locationId).filter(Boolean))] as string[];
-  const locationLegend = usedLocationIds.map((id) => ({
-    id,
-    name: locations.find((l) => l.id === id)?.name ?? "?",
-    dot: getLocationDot(id),
-  }));
+  const totalCount = filteredRepairs.length;
 
   return (
-    <div className="space-y-3 print:space-y-2">
+    <div className="space-y-4 print:space-y-2">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 print:justify-center">
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-extrabold tracking-tight print:text-2xl">{t.planning}</h1>
-          <div className="flex items-center gap-1 ml-2 print:hidden">
+          <h1 className="text-xl font-extrabold tracking-tight">{t.planning}</h1>
+          <div className="flex items-center gap-1 ml-2">
             <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={() => navigateWeek(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -240,26 +199,12 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
           <span className="text-sm text-muted-foreground font-medium ml-1">
             {formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}
           </span>
+          {totalCount > 0 && (
+            <Badge variant="secondary" className="ml-2 text-xs">{totalCount}</Badge>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 print:hidden">
-          {/* View toggle */}
-          <div className="flex bg-muted rounded-lg p-0.5">
-            <button
-              onClick={() => setView("week")}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${view === "week" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              {t.week}
-            </button>
-            <button
-              onClick={() => setView("day")}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${view === "day" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              {t.day}
-            </button>
-          </div>
-
-          {/* User filter */}
+        <div className="flex items-center gap-2">
           <Select value={filterUser} onValueChange={setFilterUser}>
             <SelectTrigger className="h-8 w-[140px] text-xs rounded-lg">
               <Filter className="h-3 w-3 mr-1" />
@@ -273,7 +218,6 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
             </SelectContent>
           </Select>
 
-          {/* Language */}
           <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
             <SelectTrigger className="h-8 w-[80px] text-xs rounded-lg">
               <Globe className="h-3 w-3 mr-1" />
@@ -286,7 +230,6 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
             </SelectContent>
           </Select>
 
-          {/* Print */}
           <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs gap-1.5" onClick={() => window.print()}>
             <Printer className="h-3.5 w-3.5" />
             {t.print}
@@ -294,9 +237,18 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
         </div>
       </div>
 
+      {/* Print header */}
+      <div className="hidden print:block">
+        <h1 className="text-2xl font-bold text-center mb-1">{t.planning}</h1>
+        <p className="text-center text-sm text-gray-600 mb-4">
+          {formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}
+          {filterUser !== "all" && ` — ${staff.find(u => u.id === filterUser)?.name}`}
+        </p>
+      </div>
+
       {/* Location legend */}
       {locationLegend.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground print:hidden">
           {locationLegend.map((l) => (
             <span key={l.id} className="flex items-center gap-1.5">
               <span className={`h-2.5 w-2.5 rounded-full ${l.dot}`} />
@@ -306,136 +258,76 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
         </div>
       )}
 
-      {/* Loading overlay */}
-      {isPending && (
-        <div className="text-xs text-muted-foreground animate-pulse">Loading…</div>
-      )}
+      {isPending && <div className="text-xs text-muted-foreground animate-pulse">Loading…</div>}
 
-      {/* WEEK VIEW */}
-      {view === "week" && (
-        <div className="border rounded-xl overflow-hidden bg-background print:border-gray-300">
-          {/* Day headers */}
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b print:border-gray-300">
-            <div className="p-2 text-[10px] text-muted-foreground" />
-            {days.map((d, i) => {
-              const isToday = d.toDateString() === todayStr;
-              return (
-                <div
-                  key={i}
-                  className={`p-2 text-center border-l print:border-gray-300 ${isToday ? "bg-primary/5" : ""}`}
-                >
-                  <div className="text-[11px] font-semibold">{t.daysShort[i]}</div>
-                  <div className={`text-lg font-bold ${isToday ? "text-primary" : ""}`}>{d.getDate()}</div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Day list */}
+      <div className="space-y-2 print:space-y-4">
+        {days.map((day, dayIdx) => {
+          const dayRepairs = repairsForDay(dayIdx);
+          const isToday = day.toDateString() === todayStr;
+          const isEmpty = dayRepairs.length === 0;
 
-          {/* Time slots */}
-          {HOURS.map((hour) => (
-            <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b last:border-b-0 print:border-gray-300">
-              <div className="p-1.5 text-[10px] text-muted-foreground text-right pr-2 pt-2">
-                {String(hour).padStart(2, "0")}:00
-              </div>
-              {days.map((_, dayIdx) => {
-                const slotRepairs = repairsForSlot(dayIdx, hour);
-                const isToday = days[dayIdx].toDateString() === todayStr;
-                return (
-                  <div
-                    key={dayIdx}
-                    className={`border-l min-h-[56px] p-0.5 relative group transition-colors print:border-gray-300 print:min-h-[40px] ${
-                      isToday ? "bg-primary/[0.02]" : ""
-                    } ${dragRepairId ? "hover:bg-primary/5" : ""}`}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, dayIdx, hour)}
-                  >
-                    {slotRepairs.map((r) => (
-                      <RepairCard key={r.id} repair={r} lang={lang} onDragStart={handleDragStart} onDragEnd={handleDragEnd} isDragging={dragRepairId === r.id} />
-                    ))}
-                    {/* Add button — only visible on hover */}
-                    <button
-                      onClick={() => openAddDialog(dayIdx, hour)}
-                      className="absolute top-0.5 right-0.5 h-5 w-5 flex items-center justify-center rounded text-muted-foreground/40 hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* DAY VIEW */}
-      {view === "day" && (
-        <div>
-          {/* Day selector tabs */}
-          <div className="flex gap-1 mb-3 print:hidden">
-            {days.map((d, i) => {
-              const isToday = d.toDateString() === todayStr;
-              const hasRepairs = repairsForDay(i).length > 0;
-              return (
-                <button
-                  key={i}
-                  onClick={() => setSelectedDay(i)}
-                  className={`flex-1 py-2 px-1 rounded-lg text-center text-xs font-medium transition-colors ${
-                    selectedDay === i
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : isToday
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted hover:bg-muted/80"
-                  }`}
-                >
-                  <div>{t.daysShort[i]}</div>
-                  <div className="text-lg font-bold">{d.getDate()}</div>
-                  {hasRepairs && selectedDay !== i && (
-                    <div className="h-1 w-1 rounded-full bg-primary mx-auto mt-0.5" />
+          return (
+            <div
+              key={dayIdx}
+              className={`rounded-xl border overflow-hidden transition-colors print:break-inside-avoid print:border-gray-300 ${
+                isToday ? "border-primary/30 bg-primary/[0.02]" : "bg-background"
+              } ${dragRepairId ? "hover:border-primary/40" : ""}`}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, dayIdx)}
+            >
+              {/* Day header */}
+              <div className={`flex items-center justify-between px-3 py-2 border-b print:border-gray-300 ${
+                isToday ? "bg-primary/5" : "bg-muted/30"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-bold ${isToday ? "text-primary" : ""}`}>
+                    {t.days[dayIdx]}
+                  </span>
+                  <span className={`text-sm ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                    {day.getDate()} {t.months[day.getMonth()]}
+                  </span>
+                  {dayRepairs.length > 0 && (
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 print:hidden">
+                      {dayRepairs.length}
+                    </Badge>
                   )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Day header for print */}
-          <div className="hidden print:block text-center mb-2">
-            <div className="text-lg font-bold">{t.days[selectedDay]} {days[selectedDay].getDate()}</div>
-          </div>
-
-          {/* Hour slots for selected day */}
-          <div className="border rounded-xl overflow-hidden bg-background print:border-gray-300">
-            {HOURS.map((hour) => {
-              const slotRepairs = repairsForSlot(selectedDay, hour);
-              return (
-                <div key={hour} className="flex border-b last:border-b-0 print:border-gray-300">
-                  <div className="w-16 shrink-0 p-2 text-sm text-muted-foreground text-right pr-3 pt-3 font-medium">
-                    {String(hour).padStart(2, "0")}:00
-                  </div>
-                  <div
-                    className={`flex-1 min-h-[64px] p-1 border-l relative group transition-colors print:border-gray-300 ${dragRepairId ? "hover:bg-primary/5" : ""}`}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, selectedDay, hour)}
-                  >
-                    <div className="space-y-1">
-                      {slotRepairs.map((r) => (
-                        <RepairCard key={r.id} repair={r} lang={lang} expanded onDragStart={handleDragStart} onDragEnd={handleDragEnd} isDragging={dragRepairId === r.id} />
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => openAddDialog(selectedDay, hour)}
-                      className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[11px] text-muted-foreground hover:text-primary print:hidden"
+                  onClick={() => openAddDialog(dayIdx)}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              </div>
 
-      {/* Add repair dialog */}
+              {/* Repairs */}
+              {isEmpty ? (
+                <div className="px-3 py-3 text-xs text-muted-foreground print:py-1 print:text-gray-400 print:italic">
+                  —
+                </div>
+              ) : (
+                <div className="divide-y print:divide-gray-200">
+                  {dayRepairs.map((r) => (
+                    <RepairRow
+                      key={r.id}
+                      repair={r}
+                      lang={lang}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      isDragging={dragRepairId === r.id}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       <AddRepairDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
@@ -447,25 +339,26 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
   );
 }
 
-// ─── Repair Card ───
+// ─── Compact Repair Row ───
 
-function RepairCard({
+function RepairRow({
   repair,
   lang,
-  expanded,
   onDragStart,
   onDragEnd,
   isDragging,
 }: {
   repair: PlannedRepair;
   lang: PlanningLang;
-  expanded?: boolean;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
 }) {
   const t = getLocaleStrings(lang);
-  const locColor = getLocationColor(repair.locationId);
+  const locDot = getLocationDot(repair.locationId);
+  const time = new Date(repair.dueDate);
+  const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
+  const priorityDot = PRIORITY_COLORS[repair.priority as Priority]?.split(" ")[0] ?? "bg-gray-300";
 
   return (
     <Link
@@ -473,32 +366,75 @@ function RepairCard({
       draggable
       onDragStart={(e) => { e.stopPropagation(); onDragStart(e, repair.id); }}
       onDragEnd={onDragEnd}
-      className={`block rounded-md border-l-[3px] ${locColor} bg-card px-1.5 py-1 text-[11px] leading-tight shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing print:shadow-none print:border print:border-gray-300 print:break-inside-avoid ${
+      className={`flex items-start gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing group print:cursor-default print:py-2 ${
         isDragging ? "opacity-40" : ""
-      } ${expanded ? "py-2 px-2.5" : ""}`}
+      }`}
     >
-      <div className="flex items-center gap-1">
-        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${PRIORITY_COLORS[repair.priority as Priority]?.split(" ")[0] ?? "bg-gray-300"}`} />
-        <span className="font-semibold truncate">{repair.title ?? repair.publicCode ?? "—"}</span>
+      {/* Drag handle + time */}
+      <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+        <GripVertical className="h-3 w-3 text-muted-foreground/30 group-hover:text-muted-foreground/60 print:hidden" />
+        <span className="text-xs font-mono text-muted-foreground w-10 print:font-bold print:text-black">{timeStr}</span>
       </div>
-      {repair.customerName && (
-        <div className="text-muted-foreground truncate mt-0.5 print:text-gray-600">
-          {repair.customerName}
-        </div>
-      )}
-      {expanded && (
-        <>
-          {repair.locationName && (
-            <div className="text-muted-foreground truncate">{t.location}: {repair.locationName}</div>
-          )}
-          {repair.assignedUserName && (
-            <div className="text-muted-foreground truncate">{t.assignedTo}: {repair.assignedUserName}</div>
-          )}
-          <Badge className={`${STATUS_COLORS[repair.status as RepairStatus]} rounded-full text-[9px] px-1.5 py-0 mt-1`}>
+
+      {/* Location dot + priority */}
+      <div className="flex items-center gap-1 shrink-0 pt-1 print:hidden">
+        <span className={`h-2 w-2 rounded-full ${locDot}`} />
+        <span className={`h-2 w-2 rounded-full ${priorityDot}`} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold truncate">{repair.title ?? repair.publicCode ?? "—"}</span>
+          <Badge className={`${STATUS_COLORS[repair.status as RepairStatus]} rounded-full text-[9px] px-1.5 py-0 shrink-0 print:hidden`}>
             {repair.status.replace(/_/g, " ")}
           </Badge>
-        </>
-      )}
+        </div>
+
+        {/* Meta: customer, unit, location */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground print:text-gray-600">
+          {repair.customerName && (
+            <span className="flex items-center gap-1">
+              <User className="h-3 w-3 print:hidden" />
+              {repair.customerName}
+            </span>
+          )}
+          {repair.unitInfo && (
+            <span className="flex items-center gap-1">
+              <Wrench className="h-3 w-3 print:hidden" />
+              {repair.unitInfo}
+            </span>
+          )}
+          {repair.locationName && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 print:hidden" />
+              {repair.locationName}
+            </span>
+          )}
+          {repair.assignedUserName && (
+            <span className="print:hidden">→ {repair.assignedUserName}</span>
+          )}
+        </div>
+
+        {/* Description: truncated on screen, full on print */}
+        {repair.descriptionRaw && (
+          <>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1 print:hidden">
+              {repair.descriptionRaw}
+            </p>
+            <p className="hidden print:block text-xs text-gray-700 mt-1 whitespace-pre-line">
+              {repair.descriptionRaw}
+            </p>
+          </>
+        )}
+
+        {/* Print-only extra info */}
+        <div className="hidden print:flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+          {repair.locationName && <span>📍 {repair.locationName}</span>}
+          {repair.assignedUserName && <span>👤 {repair.assignedUserName}</span>}
+          {repair.estimatedHours && <span>⏱ {repair.estimatedHours}h</span>}
+        </div>
+      </div>
     </Link>
   );
 }

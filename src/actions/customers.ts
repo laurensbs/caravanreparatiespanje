@@ -136,7 +136,17 @@ export async function getCustomerById(id: string) {
 
   const [jobs, unitsList] = await Promise.all([
     db
-      .select({ id: repairJobs.id, publicCode: repairJobs.publicCode, title: repairJobs.title, status: repairJobs.status })
+      .select({
+        id: repairJobs.id,
+        publicCode: repairJobs.publicCode,
+        title: repairJobs.title,
+        status: repairJobs.status,
+        invoiceStatus: repairJobs.invoiceStatus,
+        holdedQuoteId: repairJobs.holdedQuoteId,
+        holdedQuoteNum: repairJobs.holdedQuoteNum,
+        holdedInvoiceId: repairJobs.holdedInvoiceId,
+        holdedInvoiceNum: repairJobs.holdedInvoiceNum,
+      })
       .from(repairJobs)
       .where(eq(repairJobs.customerId, id))
       .orderBy(desc(repairJobs.updatedAt)),

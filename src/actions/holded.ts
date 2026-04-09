@@ -106,6 +106,7 @@ export async function createHoldedInvoice(repairJobId: string, lineItems?: LineI
     .set({
       holdedInvoiceId: result.id,
       holdedInvoiceNum: invoiceNum,
+      holdedInvoiceDate: new Date(),
       invoiceStatus: "sent",
       updatedAt: new Date(),
     })
@@ -302,6 +303,7 @@ export async function createHoldedQuote(repairJobId: string, lineItems: LineItem
     .set({
       holdedQuoteId: result.id,
       holdedQuoteNum: quoteNum,
+      holdedQuoteDate: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(repairJobs.id, repairJobId));

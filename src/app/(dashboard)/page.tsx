@@ -6,6 +6,7 @@ import { PipelineSummary } from "@/components/repair-progress";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
 import { getParts } from "@/actions/parts";
+import { getAllUnits } from "@/actions/units";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
       getAllCustomers(),
       getParts(),
       getDashboardSuggestions(),
+      getAllUnits(),
     ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -56,7 +58,7 @@ export default async function DashboardPage() {
           <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Overview of all repair operations</p>
         </div>
-        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
+        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
       </div>
 
       {/* KPI Grid */}

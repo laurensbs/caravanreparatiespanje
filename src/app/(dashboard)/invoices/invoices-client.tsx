@@ -115,7 +115,7 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
   async function handleDownloadPdf(inv: Invoice) {
     if (!inv.repairJobId) {
       // Open in Holded if no repair job linked
-      window.open("https://app.holded.com/sales/revenue", "_blank");
+      window.open(`https://app.holded.com/documents/invoice/${inv.id}`, "_blank");
       return;
     }
     setActionLoading(`pdf-${inv.id}`);
@@ -319,7 +319,7 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                   <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                     <TableCell>
                       <a
-                        href="https://app.holded.com/sales/revenue"
+                        href={`https://app.holded.com/documents/invoice/${inv.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
@@ -460,7 +460,7 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                       <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
                           <a
-                            href="https://app.holded.com/sales/revenue"
+                            href={`https://app.holded.com/documents/estimate/${q.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"

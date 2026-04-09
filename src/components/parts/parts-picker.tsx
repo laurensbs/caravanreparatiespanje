@@ -3,13 +3,17 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { X, Plus, Search, ExternalLink } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { createPart } from "@/actions/parts";
+import { toast } from "sonner";
 
 interface CatalogPart {
   id: string;
@@ -35,6 +39,8 @@ interface PartsPickerProps {
 export function PartsPicker({ catalog, value, onChange }: PartsPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -65,6 +71,39 @@ export function PartsPicker({ catalog, value, onChange }: PartsPickerProps) {
   function updateQuantity(partId: string, quantity: number) {
     if (quantity < 1) return;
     onChange(value.map((p) => (p.partId === partId ? { ...p, quantity } : p)));
+  }
+
+  async function handleCreatePart(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCreating(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      const part = await createPart({
+        name: fd.get("name") as string,
+        partNumber: (fd.get("partNumber") as string) || undefined,
+        defaultCost: (fd.get("defaultCost") as string) || undefined,
+      });
+      catalog.push({
+        id: part.id,
+        name: part.name,
+        partNumber: part.partNumber,
+        defaultCost: part.defaultCost,
+        orderUrl: null,
+      });
+      onChange([
+        ...value,
+        { partId: part.id, name: part.name, partNumber: part.partNumber, quantity: 1 },
+      ]);
+      setShowCreate(false);
+      setSearch("");
+      setOpen(false);
+      toast.success(`Part "${part.name}" created & added`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create part");
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -134,28 +173,79 @@ export function PartsPicker({ catalog, value, onChange }: PartsPickerProps) {
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <p className="p-3 text-center text-xs text-muted-foreground">
-                {catalog.length === 0 ? "No parts in catalog yet" : "No matching parts"}
-              </p>
-            ) : (
-              filtered.map((part) => (
-                <button
-                  key={part.id}
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50"
-                  onClick={() => addPart(part)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate font-medium">{part.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {[part.partNumber, part.defaultCost ? `€${part.defaultCost}` : null]
-                        .filter(Boolean)
-                        .join(" · ") || "No details"}
-                    </p>
+            {showCreate ? (
+              <div className="p-3 space-y-2">
+                <p className="text-xs font-semibold">Quick add part</p>
+                <form onSubmit={handleCreatePart} className="space-y-2">
+                  <div>
+                    <Label className="text-[11px]">Name *</Label>
+                    <Input name="name" required defaultValue={search} className="h-8 text-xs mt-0.5" autoFocus />
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[11px]">Part number</Label>
+                      <Input name="partNumber" className="h-8 text-xs mt-0.5" />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Cost (€)</Label>
+                      <Input name="defaultCost" type="number" step="0.01" className="h-8 text-xs mt-0.5" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowCreate(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" size="sm" className="h-7 text-xs" disabled={creating}>
+                      {creating ? <Spinner className="mr-1 h-3 w-3" /> : <Plus className="mr-1 h-3 w-3" />}
+                      Create & Add
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="p-3">
+                <p className="text-center text-xs text-muted-foreground mb-2">
+                  {catalog.length === 0 ? "No parts in catalog yet" : "No matching parts"}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => setShowCreate(true)}
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  Create &quot;{search || "new part"}&quot;
+                </Button>
+              </div>
+            ) : (
+              <>
+                {filtered.map((part) => (
+                  <button
+                    key={part.id}
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50"
+                    onClick={() => addPart(part)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate font-medium">{part.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {[part.partNumber, part.defaultCost ? `€${part.defaultCost}` : null]
+                          .filter(Boolean)
+                          .join(" · ") || "No details"}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(true)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs text-primary hover:bg-muted transition-colors text-left border-t"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New part...
                 </button>
-              ))
+              </>
             )}
           </div>
         </PopoverContent>

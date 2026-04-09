@@ -760,7 +760,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{job.holdedQuoteNum}</p>
                       <a
-                        href="https://app.holded.com/sales/revenue"
+                        href={`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[11px] text-primary hover:underline"
@@ -844,7 +844,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{job.holdedInvoiceNum}</p>
                     <a
-                      href="https://app.holded.com/sales/revenue"
+                      href={`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[11px] text-primary hover:underline"

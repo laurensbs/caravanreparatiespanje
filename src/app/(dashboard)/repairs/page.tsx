@@ -2,6 +2,7 @@ import { getRepairJobs, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
 import { getParts } from "@/actions/parts";
+import { getAllUnits } from "@/actions/units";
 import { getTags } from "@/actions/tags";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
@@ -33,12 +34,13 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog, allTags] = await Promise.all([
+  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog, allTags, unitsList] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
     getAllCustomers(),
     getParts(),
     getTags(),
+    getAllUnits(),
   ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -56,7 +58,7 @@ export default async function RepairsPage({ searchParams }: Props) {
             {total} repair{total !== 1 ? "s" : ""} found
           </p>
         </div>
-        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
+        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
       </div>
 
       <WorkflowGuide page="repairs" />

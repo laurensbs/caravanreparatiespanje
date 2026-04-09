@@ -111,3 +111,18 @@ export async function updateUnit(id: string, data: unknown) {
   revalidatePath(`/units/${id}`);
   return updated;
 }
+
+export async function getAllUnits() {
+  await requireAuth();
+  return db
+    .select({
+      id: units.id,
+      registration: units.registration,
+      brand: units.brand,
+      model: units.model,
+      year: units.year,
+      customerId: units.customerId,
+    })
+    .from(units)
+    .orderBy(asc(units.registration));
+}

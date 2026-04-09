@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerSearch } from "@/components/customers/customer-search";
 import { LocationSelect } from "@/components/repairs/location-select";
 import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
+import { UnitSearch } from "@/components/units/unit-search";
 import { createPartRequest } from "@/actions/parts";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { Plus } from "lucide-react";
@@ -34,18 +35,29 @@ interface CatalogPart {
   orderUrl: string | null;
 }
 
+interface UnitOption {
+  id: string;
+  registration: string | null;
+  brand: string | null;
+  model: string | null;
+  year: number | null;
+  customerId: string | null;
+}
+
 interface NewRepairDialogProps {
   locations: { id: string; name: string }[];
   customers: { id: string; name: string }[];
   partsCatalog?: CatalogPart[];
+  units?: UnitOption[];
 }
 
-export function NewRepairDialog({ locations, customers, partsCatalog = [] }: NewRepairDialogProps) {
+export function NewRepairDialog({ locations, customers, partsCatalog = [], units = [] }: NewRepairDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [unitId, setUnitId] = useState<string | null>(null);
   const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -64,6 +76,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [] }: New
 
     if (data.locationId === "none") data.locationId = null;
     data.customerId = customerId;
+    data.unitId = unitId;
 
     try {
       const job = await createRepairJob(data);
@@ -80,6 +93,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [] }: New
       );
       setOpen(false);
       setCustomerId(null);
+      setUnitId(null);
       setSelectedParts([]);
       toast.success("Repair job created");
       router.push(`/repairs/${job.id}`);
@@ -140,6 +154,17 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [] }: New
                     customers={customers}
                     value={customerId ?? undefined}
                     onSelect={setCustomerId}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="dlg-unit">Unit / Vehicle</Label>
+                <div className="mt-1">
+                  <UnitSearch
+                    units={units}
+                    value={unitId ?? undefined}
+                    customerId={customerId}
+                    onSelect={setUnitId}
                   />
                 </div>
               </div>

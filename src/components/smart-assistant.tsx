@@ -680,6 +680,15 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Listen for toggle event from header button
+  useEffect(() => {
+    function handleToggle() {
+      setOpen((prev) => !prev);
+    }
+    window.addEventListener("toggle-assistant", handleToggle);
+    return () => window.removeEventListener("toggle-assistant", handleToggle);
+  }, []);
+
   const repairTips = useMemo(
     () => (page === "repair-detail" ? getRepairTips(context) : []),
     [page, context],
@@ -804,25 +813,9 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className={cn(
-          "fixed bottom-20 right-5 z-50 flex items-center justify-center rounded-full shadow-lg transition-all duration-200",
-          "h-12 w-12 hover:scale-105 active:scale-95",
-          open
-            ? "bg-foreground text-background"
-            : "bg-blue-600 text-white hover:bg-blue-700",
-        )}
-        title="Ask the Assistant"
-      >
-        {open ? <X className="h-5 w-5" /> : <MessageCircleQuestion className="h-5 w-5" />}
-      </button>
-
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-[6.5rem] right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-8rem))] flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed top-14 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-5rem))] flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
           {/* Header */}
           <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white shrink-0">
             <div className="flex items-center justify-between">

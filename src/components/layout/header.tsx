@@ -2,7 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, User, Settings } from "lucide-react";
+import { Search, LogOut, User, Settings, MessageCircleQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -52,6 +52,15 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
 
         {/* Right actions */}
         <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-blue-600"
+            title="Smart Assistant"
+            onClick={() => window.dispatchEvent(new Event("toggle-assistant"))}
+          >
+            <MessageCircleQuestion className="h-4 w-4" />
+          </Button>
           <ReminderPanel />
           <ThemeToggle />
 

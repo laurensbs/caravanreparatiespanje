@@ -66,7 +66,7 @@ function buildSteps(data: RepairWorkflowData): WorkflowStep[] {
       done: hasQuote,
       active: activeKey === "quote",
       detail: data.holdedQuoteNum ?? undefined,
-      href: data.holdedQuoteId ? "https://app.holded.com/sales/revenue" : undefined,
+      href: data.holdedQuoteId ? `https://app.holded.com/documents/estimate/${data.holdedQuoteId}` : undefined,
     },
     {
       key: "repair",
@@ -83,7 +83,7 @@ function buildSteps(data: RepairWorkflowData): WorkflowStep[] {
       done: invoiced,
       active: activeKey === "invoice",
       detail: invoiceDetail,
-      href: data.holdedInvoiceId ? "https://app.holded.com/sales/revenue" : undefined,
+      href: data.holdedInvoiceId ? `https://app.holded.com/documents/invoice/${data.holdedInvoiceId}` : undefined,
     },
     {
       key: "paid",

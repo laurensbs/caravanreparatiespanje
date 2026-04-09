@@ -91,6 +91,7 @@ export async function getParts() {
       markupPercent: parts.markupPercent,
       description: parts.description,
       orderUrl: parts.orderUrl,
+      createdAt: parts.createdAt,
     })
     .from(parts)
     .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))

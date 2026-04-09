@@ -19,7 +19,7 @@ function capitalizeWords(name: string): string {
 import { customerSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { syncCustomerToHolded } from "./holded";
-import { eq, desc, ilike, or, and, count, sql, inArray } from "drizzle-orm";
+import { eq, desc, ilike, or, and, count, sql, inArray, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type CustomerFilters = {
@@ -28,6 +28,8 @@ export type CustomerFilters = {
   repairStatus?: string;
   locationId?: string;
   tagId?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 };
@@ -88,6 +90,15 @@ export async function getCustomers(filters: CustomerFilters = {}) {
     const ids = tagRows.map((r) => r.customerId);
     if (ids.length === 0) return { customers: [], total: 0, page, limit };
     conditions.push(inArray(customers.id, ids));
+  }
+
+  if (filters.dateFrom) {
+    conditions.push(gte(customers.createdAt, new Date(filters.dateFrom)));
+  }
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo);
+    to.setDate(to.getDate() + 1);
+    conditions.push(lte(customers.createdAt, to));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

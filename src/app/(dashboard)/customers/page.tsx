@@ -38,6 +38,8 @@ export default async function CustomersPage({ searchParams }: Props) {
     repairStatus: params.repairStatus,
     locationId: params.locationId,
     tagId: params.tagId,
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
     page,
   };
 

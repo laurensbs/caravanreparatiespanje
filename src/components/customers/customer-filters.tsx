@@ -140,6 +140,21 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
         </Select>
       )}
 
+      <Input
+        type="date"
+        className="w-[130px] h-9 text-xs rounded-lg"
+        value={currentFilters.dateFrom ?? ""}
+        onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+        placeholder="From"
+      />
+      <Input
+        type="date"
+        className="w-[130px] h-9 text-xs rounded-lg"
+        value={currentFilters.dateTo ?? ""}
+        onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+        placeholder="To"
+      />
+
       {hasActiveFilters && (
         <Button variant="ghost" size="sm" onClick={clearFilters}>
           <X className="mr-1 h-4 w-4" />

@@ -36,6 +36,7 @@ interface Part {
   markupPercent: string | null;
   description: string | null;
   orderUrl: string | null;
+  createdAt: Date;
 }
 
 interface Supplier {
@@ -53,17 +54,29 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
 
   const filtered = parts.filter((p) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       p.name.toLowerCase().includes(q) ||
       (p.partNumber?.toLowerCase().includes(q) ?? false) ||
       (p.supplierName?.toLowerCase().includes(q) ?? false) ||
-      (p.description?.toLowerCase().includes(q) ?? false)
-    );
+      (p.description?.toLowerCase().includes(q) ?? false);
+    if (!matchesSearch) return false;
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      if (new Date(p.createdAt) < from) return false;
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setDate(to.getDate() + 1);
+      if (new Date(p.createdAt) > to) return false;
+    }
+    return true;
   });
 
   function openCreate() {
@@ -87,13 +100,27 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="flex flex-wrap gap-2 items-center flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search parts..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <Input
-            placeholder="Search parts..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            type="date"
+            className="w-[130px] h-9 text-xs rounded-lg"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+          <Input
+            type="date"
+            className="w-[130px] h-9 text-xs rounded-lg"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
           />
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

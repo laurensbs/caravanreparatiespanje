@@ -329,6 +329,10 @@ export async function sendQuote(
 
 // ─── Quote Listing Operations ───
 
+export async function getQuote(quoteId: string): Promise<HoldedQuote> {
+  return holdedFetch<HoldedQuote>(`/documents/estimate/${quoteId}`);
+}
+
 export async function listAllQuotes(): Promise<HoldedQuote[]> {
   return holdedFetchAll<HoldedQuote>("/documents/estimate");
 }

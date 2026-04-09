@@ -170,6 +170,21 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           </Select>
         )}
 
+        <Input
+          type="date"
+          className="w-[130px] h-8 text-xs rounded-lg"
+          value={currentFilters.dateFrom ?? ""}
+          onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+          placeholder="From"
+        />
+        <Input
+          type="date"
+          className="w-[130px] h-8 text-xs rounded-lg"
+          value={currentFilters.dateTo ?? ""}
+          onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+          placeholder="To"
+        />
+
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs rounded-lg text-muted-foreground hover:text-foreground">
             <X className="mr-1 h-3 w-3" />

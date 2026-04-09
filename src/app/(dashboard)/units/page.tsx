@@ -13,6 +13,8 @@ export default async function UnitsPage({ searchParams }: Props) {
     getUnits({
       q: params.q,
       tagId: params.tagId,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
       page: params.page ? parseInt(params.page) : 1,
     }),
     getTags(),
@@ -27,6 +29,8 @@ export default async function UnitsPage({ searchParams }: Props) {
       limit={limit}
       currentQ={params.q}
       currentTagId={params.tagId}
+      currentDateFrom={params.dateFrom}
+      currentDateTo={params.dateTo}
       allTags={allTags}
       customers={customersList}
     />

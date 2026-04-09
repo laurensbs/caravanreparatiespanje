@@ -1,13 +1,13 @@
 import { db } from "@/lib/db";
 import { auditLogs, users } from "@/lib/db/schema";
 import { requireRole } from "@/lib/auth-utils";
-import { desc, eq, like, and, sql } from "drizzle-orm";
+import { desc, eq, like, and, sql, gte, lte } from "drizzle-orm";
 import { format } from "date-fns";
 
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; action?: string; entity?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; action?: string; entity?: string; q?: string; dateFrom?: string; dateTo?: string }>;
 }) {
   await requireRole("admin");
   const params = await searchParams;
@@ -19,6 +19,12 @@ export default async function AuditLogPage({
   if (params.action) conditions.push(eq(auditLogs.action, params.action));
   if (params.entity) conditions.push(eq(auditLogs.entityType, params.entity));
   if (params.q) conditions.push(like(auditLogs.entityType, `%${params.q}%`));
+  if (params.dateFrom) conditions.push(gte(auditLogs.createdAt, new Date(params.dateFrom)));
+  if (params.dateTo) {
+    const to = new Date(params.dateTo);
+    to.setDate(to.getDate() + 1);
+    conditions.push(lte(auditLogs.createdAt, to));
+  }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -108,6 +114,32 @@ export default async function AuditLogPage({
           <option value="user">Users</option>
           <option value="import">Imports</option>
         </select>
+        <input
+          type="date"
+          defaultValue={params.dateFrom ?? ""}
+          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          onChange={(e) => {
+            const p = new URLSearchParams();
+            if (params.action) p.set("action", params.action);
+            if (params.entity) p.set("entity", params.entity);
+            if (e.target.value) p.set("dateFrom", e.target.value);
+            if (params.dateTo) p.set("dateTo", params.dateTo);
+            window.location.href = `/audit?${p.toString()}`;
+          }}
+        />
+        <input
+          type="date"
+          defaultValue={params.dateTo ?? ""}
+          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          onChange={(e) => {
+            const p = new URLSearchParams();
+            if (params.action) p.set("action", params.action);
+            if (params.entity) p.set("entity", params.entity);
+            if (params.dateFrom) p.set("dateFrom", params.dateFrom);
+            if (e.target.value) p.set("dateTo", e.target.value);
+            window.location.href = `/audit?${p.toString()}`;
+          }}
+        />
       </div>
 
       {/* Log table */}

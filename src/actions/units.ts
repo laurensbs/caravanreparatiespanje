@@ -5,10 +5,10 @@ import { units, customers, repairJobs, unitTags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
-import { eq, desc, asc, ilike, or, and, count, inArray } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, count, inArray, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function getUnits(filters: { q?: string; tagId?: string; page?: number; limit?: number } = {}) {
+export async function getUnits(filters: { q?: string; tagId?: string; dateFrom?: string; dateTo?: string; page?: number; limit?: number } = {}) {
   await requireAuth();
 
   const page = filters.page ?? 1;
@@ -37,6 +37,15 @@ export async function getUnits(filters: { q?: string; tagId?: string; page?: num
   }
   if (tagUnitIds) {
     conditions.push(inArray(units.id, tagUnitIds));
+  }
+
+  if (filters.dateFrom) {
+    conditions.push(gte(units.createdAt, new Date(filters.dateFrom)));
+  }
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo);
+    to.setDate(to.getDate() + 1);
+    conditions.push(lte(units.createdAt, to));
   }
 
   const where = conditions.length > 1 ? and(...conditions) : conditions.length === 1 ? conditions[0] : undefined;

@@ -52,11 +52,13 @@ interface UnitsClientProps {
   limit: number;
   currentQ?: string;
   currentTagId?: string;
+  currentDateFrom?: string;
+  currentDateTo?: string;
   allTags: TagItem[];
   customers?: { id: string; name: string }[];
 }
 
-export function UnitsClient({ units, total, page, limit, currentQ, currentTagId, allTags, customers = [] }: UnitsClientProps) {
+export function UnitsClient({ units, total, page, limit, currentQ, currentTagId, currentDateFrom, currentDateTo, allTags, customers = [] }: UnitsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQ ?? "");
@@ -130,7 +132,22 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
           </Select>
         )}
 
-        {(currentQ || currentTagId) && (
+        <Input
+          type="date"
+          className="w-[130px] h-8 text-xs rounded-lg"
+          value={currentDateFrom ?? ""}
+          onChange={(e) => updateParams({ dateFrom: e.target.value || undefined })}
+          placeholder="From"
+        />
+        <Input
+          type="date"
+          className="w-[130px] h-8 text-xs rounded-lg"
+          value={currentDateTo ?? ""}
+          onChange={(e) => updateParams({ dateTo: e.target.value || undefined })}
+          placeholder="To"
+        />
+
+        {(currentQ || currentTagId || currentDateFrom || currentDateTo) && (
           <Button
             variant="ghost"
             size="sm"

@@ -7,7 +7,7 @@ import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
 import { generatePublicCode } from "@/lib/utils";
-import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type RepairFilters = {
@@ -20,6 +20,8 @@ export type RepairFilters = {
   invoiceStatus?: string;
   tagId?: string;
   archived?: string;
+  dateFrom?: string;
+  dateTo?: string;
   sort?: string;
   dir?: string;
   page?: number;
@@ -94,6 +96,15 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     const ids = tagRows.map((r) => r.repairJobId);
     if (ids.length === 0) return { jobs: [], total: 0, page, limit };
     conditions.push(inArray(repairJobs.id, ids));
+  }
+
+  if (filters.dateFrom) {
+    conditions.push(gte(repairJobs.createdAt, new Date(filters.dateFrom)));
+  }
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo);
+    to.setDate(to.getDate() + 1);
+    conditions.push(lte(repairJobs.createdAt, to));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

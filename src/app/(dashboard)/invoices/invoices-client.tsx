@@ -100,6 +100,27 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
     return result;
   }, [invoices, statusFilter, search, dateFrom, dateTo]);
 
+  const filteredQuotes = useMemo(() => {
+    let result = quotes;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(i =>
+        i.docNumber?.toLowerCase().includes(q) ||
+        (i.customerName ?? i.contactName)?.toLowerCase().includes(q) ||
+        i.desc?.toLowerCase().includes(q)
+      );
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime() / 1000;
+      result = result.filter(i => (i.date ?? 0) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo).getTime() / 1000 + 86400;
+      result = result.filter(i => (i.date ?? 0) <= to);
+    }
+    return result;
+  }, [quotes, search, dateFrom, dateTo]);
+
   const paidCount = filtered.filter(i => i.status === 1).length;
   const unpaidCount = filtered.filter(i => i.status === 0).length;
 
@@ -172,7 +193,7 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
         <p className="text-sm text-muted-foreground">
           {tab === "invoices"
             ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
-            : `${quotes.length} quotes from Holded`
+            : `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
           }
         </p>
       </div>
@@ -204,6 +225,50 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
       </div>
 
       <WorkflowGuide page="invoices" />
+
+      {/* Shared filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder={tab === "invoices" ? "Search invoices..." : "Search quotes..."}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 pl-8 text-xs rounded-lg"
+          />
+        </div>
+        {tab === "invoices" && (
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="h-8 w-[120px] text-xs rounded-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All status</SelectItem>
+              <SelectItem value="unpaid">Unpaid</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="partial">Partial</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+        <Input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="h-8 w-[130px] text-xs rounded-lg"
+        />
+        <Input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="h-8 w-[130px] text-xs rounded-lg"
+        />
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
+            <X className="h-3 w-3 mr-1" />
+            Clear
+          </Button>
+        )}
+      </div>
 
       {tab === "invoices" ? (
         <>
@@ -237,52 +302,6 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
             <p className="text-[11px] text-muted-foreground">invoices</p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search invoices..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 pl-8 text-xs rounded-lg"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="h-8 w-[120px] text-xs rounded-lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All status</SelectItem>
-            <SelectItem value="unpaid">Unpaid</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="partial">Partial</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span>From</span>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-8 w-[130px] text-xs rounded-lg"
-          />
-          <span>to</span>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-8 w-[130px] text-xs rounded-lg"
-          />
-        </div>
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
-            <X className="h-3 w-3 mr-1" />
-            Clear
-          </Button>
-        )}
       </div>
 
       {/* Table */}
@@ -459,17 +478,17 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {quotes.length === 0 ? (
+                  {filteredQuotes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="py-16 text-center">
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <FileText className="h-8 w-8 opacity-20" />
-                          <p className="font-medium text-sm">No quotes found in Holded</p>
+                          <p className="font-medium text-sm">No quotes found</p>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    quotes.map((q, idx) => (
+                    filteredQuotes.map((q, idx) => (
                       <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
                           <button

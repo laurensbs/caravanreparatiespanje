@@ -10,6 +10,8 @@ import {
   findOrCreateContact,
   createInvoice,
   createQuote,
+  getInvoice,
+  getQuote,
   getInvoicePdf,
   getQuotePdf,
   sendInvoice,
@@ -101,12 +103,19 @@ export async function createHoldedInvoice(repairJobId: string, lineItems?: LineI
 
   const invoiceNum = result.docNumber ?? result.id;
 
+  // Fetch actual date from Holded
+  let invoiceDate = new Date();
+  try {
+    const inv = await getInvoice(result.id);
+    if (inv.date) invoiceDate = new Date(inv.date * 1000);
+  } catch { /* fallback to now */ }
+
   await db
     .update(repairJobs)
     .set({
       holdedInvoiceId: result.id,
       holdedInvoiceNum: invoiceNum,
-      holdedInvoiceDate: new Date(),
+      holdedInvoiceDate: invoiceDate,
       invoiceStatus: "sent",
       updatedAt: new Date(),
     })
@@ -322,12 +331,19 @@ export async function createHoldedQuote(repairJobId: string, lineItems: LineItem
 
   const quoteNum = result.docNumber ?? result.id;
 
+  // Fetch actual date from Holded
+  let quoteDate = new Date();
+  try {
+    const q = await getQuote(result.id);
+    if (q.date) quoteDate = new Date(q.date * 1000);
+  } catch { /* fallback to now */ }
+
   await db
     .update(repairJobs)
     .set({
       holdedQuoteId: result.id,
       holdedQuoteNum: quoteNum,
-      holdedQuoteDate: new Date(),
+      holdedQuoteDate: quoteDate,
       updatedAt: new Date(),
     })
     .where(eq(repairJobs.id, repairJobId));

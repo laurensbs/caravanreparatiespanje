@@ -223,7 +223,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-extrabold tracking-tight">{job.publicCode ?? "Repair Job"}</h1>
+              <h1 className="text-xl font-extrabold tracking-tight truncate max-w-[400px]">{job.publicCode ?? title ?? "Repair Job"}</h1>
               <Badge className={`${STATUS_COLORS[status as RepairStatus]} rounded-full text-[11px] px-2 py-0`}>
                 {STATUS_LABELS[status as RepairStatus]}
               </Badge>

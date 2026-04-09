@@ -5,10 +5,18 @@ import { getAppSettings } from "@/actions/settings";
 import { getTags, getRepairTags } from "@/actions/tags";
 import { notFound } from "next/navigation";
 import { RepairDetail } from "@/components/repairs/repair-detail";
+import type { Metadata } from "next";
 
 interface Props {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | undefined>>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const job = await getRepairJobById(id);
+  const label = job?.publicCode ?? job?.title ?? "Repair";
+  return { title: label };
 }
 
 export default async function RepairDetailPage({ params, searchParams }: Props) {

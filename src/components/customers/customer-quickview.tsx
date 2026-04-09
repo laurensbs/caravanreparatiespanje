@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ExternalLink, Phone, Mail, Wrench, Pencil, Save, Truck,
-  MapPin, User, Building2, Receipt, FileText, RefreshCw,
+  MapPin, User, Receipt, FileText, RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -141,6 +141,10 @@ function CustomerQuickView({
   const [name, setName] = useState(customer.name);
   const [phone, setPhone] = useState(customer.phone ?? "");
   const [email, setEmail] = useState(customer.email ?? "");
+  const [mobile, setMobile] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
 
   // Load full data when dialog opens
   useEffect(() => {
@@ -163,6 +167,10 @@ function CustomerQuickView({
         setName(data.name);
         setPhone(data.phone ?? "");
         setEmail(data.email ?? "");
+        setMobile(data.mobile ?? "");
+        setAddress(data.address ?? "");
+        setCity(data.city ?? "");
+        setPostalCode(data.postalCode ?? "");
       }
     }).finally(() => setLoading(false));
   }, [open, customer.id]);
@@ -183,6 +191,10 @@ function CustomerQuickView({
           name,
           phone: phone || undefined,
           email: email || undefined,
+          mobile: mobile || undefined,
+          address: address || undefined,
+          city: city || undefined,
+          postalCode: postalCode || undefined,
         });
         toast.success("Saved — synced to Holded");
         setEditing(false);
@@ -215,6 +227,10 @@ function CustomerQuickView({
                   setName(c.name);
                   setPhone(c.phone ?? "");
                   setEmail(c.email ?? "");
+                  setMobile(fullData?.mobile ?? "");
+                  setAddress(fullData?.address ?? "");
+                  setCity(fullData?.city ?? "");
+                  setPostalCode(fullData?.postalCode ?? "");
                   setEditing(true);
                 }}>
                   <Pencil className="h-3 w-3 mr-1" /> Edit
@@ -254,19 +270,48 @@ function CustomerQuickView({
               </div>
             ) : editing ? (
               /* ─── Edit mode ─── */
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-[11px]">Name</Label>
+                  <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Name</Label>
                   <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
                 </div>
-                <div>
-                  <Label className="text-[11px]">Phone</Label>
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Phone</Label>
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
+                  </div>
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Mobile</Label>
+                    <Input value={mobile} onChange={(e) => setMobile(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-[11px]">Email</Label>
+                  <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Email</Label>
                   <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="mt-1 h-8 text-sm rounded-lg" />
                 </div>
+
+                <div className="border-t pt-3">
+                  <p className="text-[11px] font-semibold mb-2 flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3 text-muted-foreground" /> Address
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Street</Label>
+                      <Input value={address} onChange={(e) => setAddress(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">City</Label>
+                        <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Postal Code</Label>
+                        <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {c.holdedContactId && (
                   <p className="text-[10px] text-emerald-600">Changes will sync to Holded automatically.</p>
                 )}
@@ -291,51 +336,31 @@ function CustomerQuickView({
                       <User className="h-3.5 w-3.5 text-muted-foreground" />
                       <p className="text-[11px] font-semibold">Contact Info</p>
                     </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
-                          {c.contactType === "business" ? <Building2 className="h-3 w-3 text-primary" /> : <User className="h-3 w-3 text-primary" />}
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Type</p>
-                          <p className="text-xs font-medium">{c.contactType === "business" ? "Business" : "Person"}</p>
-                        </div>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">Type</span>
+                        <span className="font-medium">{c.contactType === "business" ? "Business" : "Person"}</span>
                       </div>
                       {c.phone && (
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
-                            <Phone className="h-3 w-3 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground">Phone</p>
-                            <a href={`tel:${c.phone}`} className="text-xs font-medium hover:text-primary">{c.phone}</a>
-                          </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-muted-foreground flex items-center gap-1"><Phone className="h-2.5 w-2.5" /> Phone</span>
+                          <a href={`tel:${c.phone}`} className="font-medium hover:text-primary">{c.phone}</a>
                         </div>
                       )}
                       {fullData?.mobile && (
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
-                            <Phone className="h-3 w-3 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground">Mobile</p>
-                            <p className="text-xs font-medium">{fullData.mobile}</p>
-                          </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-muted-foreground flex items-center gap-1"><Phone className="h-2.5 w-2.5" /> Mobile</span>
+                          <a href={`tel:${fullData.mobile}`} className="font-medium hover:text-primary">{fullData.mobile}</a>
                         </div>
                       )}
                       {c.email && (
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
-                            <Mail className="h-3 w-3 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground">Email</p>
-                            <a href={`mailto:${c.email}`} className="text-xs font-medium hover:text-primary truncate">{c.email}</a>
-                          </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-muted-foreground flex items-center gap-1"><Mail className="h-2.5 w-2.5" /> Email</span>
+                          <a href={`mailto:${c.email}`} className="font-medium hover:text-primary truncate max-w-[140px]">{c.email}</a>
                         </div>
                       )}
                       {c.holdedContactId && (
-                        <div className="pt-2 border-t">
+                        <div className="pt-1.5 border-t">
                           <a
                             href={`https://app.holded.com/contacts/${c.holdedContactId}`}
                             target="_blank"

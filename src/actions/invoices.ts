@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { repairJobs, customers } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { listAllInvoices, listAllQuotes, payInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
+import { listAllInvoices, listAllQuotes, payInvoice, sendInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
 import { eq, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -91,6 +91,47 @@ export async function markInvoicePaid(invoiceId: string) {
 
   revalidatePath("/invoices");
   revalidatePath("/repairs");
+  return { success: true };
+}
+
+// ─── Overdue invoices (unpaid > N days) ───
+
+export interface OverdueInvoice extends InvoiceWithRepair {
+  daysOverdue: number;
+}
+
+export async function getOverdueInvoices(thresholdDays = 30): Promise<OverdueInvoice[]> {
+  await requireAuth();
+  const all = await getAllInvoices();
+  const now = Date.now();
+  const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
+
+  return all
+    .filter((inv) => {
+      // Only unpaid or partial (status 0 or 2), not draft
+      if (inv.status === 1) return false;
+      if ((inv as any).draft === 1) return false;
+      // Must have a date
+      if (!inv.date) return false;
+      const invoiceDate = inv.date * 1000;
+      return now - invoiceDate > thresholdMs;
+    })
+    .map((inv) => ({
+      ...inv,
+      daysOverdue: Math.floor((now - (inv.date ?? 0) * 1000) / (24 * 60 * 60 * 1000)),
+    }))
+    .sort((a, b) => b.daysOverdue - a.daysOverdue);
+}
+
+// ─── Send payment reminder via Holded ───
+
+export async function sendPaymentReminder(invoiceId: string, emails: string[]) {
+  await requireRole("staff");
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+  if (!emails.length) throw new Error("No email addresses provided");
+
+  await sendInvoice(invoiceId, emails);
+  revalidatePath("/invoices");
   return { success: true };
 }
 

@@ -523,7 +523,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
                         <Button variant="outline" size="sm" className="h-7 text-xs" onClick={applyLinesToEstimate}>
-                          Apply
+                          → Estimated
                         </Button>
                       </div>
                     </div>
@@ -543,7 +543,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </p>
               )}
               <HoldedHint variant="info" className="mt-3">
-                Prices are excl. VAT. Use <strong>"Create Quote"</strong> or <strong>"Create Invoice"</strong> in the sidebar to send to Holded.
+                Prices are excl. VAT. Build lines → click <strong>"→ Estimated"</strong> → <strong>Create Quote</strong>. After work: adjust actual → <strong>Create Invoice</strong>.
               </HoldedHint>
             </CardContent>
           </Card>
@@ -769,10 +769,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {(job.estimatedCost || job.actualCost || true) && (
                 <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-muted-foreground shrink-0">
-                      <DollarSign className="h-3.5 w-3.5" />
-                      Estimated
-                    </span>
+                    <div className="shrink-0">
+                      <span className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Estimated
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60 ml-5.5 leading-none">→ for quote</span>
+                    </div>
                     <div className="relative w-28">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                       <Input
@@ -787,10 +790,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-muted-foreground shrink-0">
-                      <DollarSign className="h-3.5 w-3.5" />
-                      Actual
-                    </span>
+                    <div className="shrink-0">
+                      <span className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Actual
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60 ml-5.5 leading-none">→ for invoice</span>
+                    </div>
                     <div className="relative w-28">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                       <Input

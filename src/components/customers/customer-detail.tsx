@@ -92,7 +92,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
   }
 
   return (
-    <div className="space-y-3 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" asChild>
@@ -131,8 +131,9 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
           {!editing ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => setEditing(true)}>
-              <Pencil className="h-3.5 w-3.5" />
+            <Button variant="outline" size="sm" className="h-8 rounded-xl gap-1.5" onClick={() => setEditing(true)}>
+              <Pencil className="h-3 w-3" />
+              Edit
             </Button>
           ) : (
             <>
@@ -161,13 +162,9 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
       {!editing && <SmartSuggestions suggestions={getCustomerSuggestions(customer, holdedInvoices)} />}
 
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* Contact info */}
-        <Card className="rounded-xl">
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 mb-1">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs font-semibold">Contact Info</p>
-            </div>
+        {/* Left column: Contact + Address merged */}
+        <Card className="rounded-xl lg:col-span-1">
+          <CardContent className="space-y-4">
             {editing ? (
               <div className="space-y-3">
                 <div>
@@ -192,6 +189,20 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                   <Label className="text-[11px]">VAT / NIF</Label>
                   <Input value={vatnumber} onChange={(e) => setVatnumber(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
                 </div>
+                <div className="border-t pt-3">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Address</p>
+                  <div className="space-y-2">
+                    <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street" className="h-8 text-sm rounded-lg" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="Postal code" className="h-8 text-sm rounded-lg" />
+                      <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className="h-8 text-sm rounded-lg" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={province} onChange={(e) => setProvince(e.target.value)} placeholder="Province" className="h-8 text-sm rounded-lg" />
+                      <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country" className="h-8 text-sm rounded-lg" />
+                    </div>
+                  </div>
+                </div>
                 <div>
                   <Label className="text-[11px]">Notes</Label>
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="mt-1 text-sm rounded-lg" />
@@ -199,69 +210,68 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    {customer.contactType === "business" ? (
-                      <Building2 className="h-3.5 w-3.5 text-primary" />
-                    ) : (
-                      <User className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">Type</p>
-                    <p className="text-sm font-medium">{customer.contactType === "business" ? "Business" : "Person"}</p>
-                  </div>
+                {/* Contact details — compact rows */}
+                <div className="space-y-2.5 text-sm">
+                  {customer.phone && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3.5 w-3.5" /> Phone</span>
+                      <a href={`tel:${customer.phone}`} className="font-medium hover:text-primary">{customer.phone}</a>
+                    </div>
+                  )}
+                  {customer.mobile && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3.5 w-3.5" /> Mobile</span>
+                      <a href={`tel:${customer.mobile}`} className="font-medium hover:text-primary">{customer.mobile}</a>
+                    </div>
+                  )}
+                  {customer.email && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-muted-foreground"><Mail className="h-3.5 w-3.5" /> Email</span>
+                      <a href={`mailto:${customer.email}`} className="font-medium hover:text-primary truncate ml-2 max-w-[180px]">{customer.email}</a>
+                    </div>
+                  )}
+                  {!customer.phone && !customer.email && (
+                    <p className="text-muted-foreground italic text-xs">No contact details — click Edit to add</p>
+                  )}
+                  {customer.vatnumber && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-3.5 w-3.5" /> VAT / NIF</span>
+                      <span className="font-medium">{customer.vatnumber}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Phone className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">Phone</p>
-                    <p className="text-sm font-medium">{customer.phone ?? "—"}</p>
-                  </div>
+
+                {/* Address */}
+                <div className="border-t pt-3">
+                  <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-2">
+                    <MapPin className="h-3.5 w-3.5" /> Address
+                  </p>
+                  {customer.address || customer.city ? (
+                    <div className="text-sm space-y-0.5">
+                      {customer.address && <p className="font-medium">{customer.address}</p>}
+                      <p className="text-muted-foreground">{[customer.postalCode, customer.city].filter(Boolean).join(" ")}</p>
+                      {(customer.province || customer.country) && (
+                        <p className="text-muted-foreground">{[customer.province, customer.country].filter(Boolean).join(", ")}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No address on file</p>
+                  )}
                 </div>
-                {customer.mobile && (
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <Phone className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-muted-foreground">Mobile</p>
-                      <p className="text-sm font-medium">{customer.mobile}</p>
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Mail className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">Email</p>
-                    <p className="text-sm font-medium">{customer.email ?? "—"}</p>
-                  </div>
-                </div>
-                {customer.vatnumber && (
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-muted-foreground">VAT / NIF</p>
-                      <p className="text-sm font-medium">{customer.vatnumber}</p>
-                    </div>
-                  </div>
-                )}
+
+                {/* Notes */}
                 {customer.notes && (
-                  <div className="flex items-start gap-2.5 pt-2 border-t">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
-                      <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm whitespace-pre-wrap pt-1">{customer.notes}</p>
+                  <div className="border-t pt-3">
+                    <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-1.5">
+                      <StickyNote className="h-3.5 w-3.5" /> Notes
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap">{customer.notes}</p>
                   </div>
                 )}
+
+                {/* Holded link */}
                 {customer.holdedContactId && (
-                  <div className="pt-2 border-t">
+                  <div className="border-t pt-3">
                     <a
                       href={`https://app.holded.com/contacts/${customer.holdedContactId}`}
                       target="_blank"
@@ -278,62 +288,8 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
           </CardContent>
         </Card>
 
-        {/* Address */}
-        <Card className="rounded-xl">
-          <CardContent>
-            <div className="flex items-center gap-2 mb-3">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs font-semibold">Address</p>
-            </div>
-            {editing ? (
-              <div className="space-y-2">
-                <div>
-                  <Label className="text-[11px]">Street</Label>
-                  <Input value={address} onChange={(e) => setAddress(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-[11px]">Postal code</Label>
-                    <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                  </div>
-                  <div>
-                    <Label className="text-[11px]">City</Label>
-                    <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-[11px]">Province</Label>
-                    <Input value={province} onChange={(e) => setProvince(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                  </div>
-                  <div>
-                    <Label className="text-[11px]">Country</Label>
-                    <Input value={country} onChange={(e) => setCountry(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                {customer.address || customer.city ? (
-                  <div className="text-sm space-y-1">
-                    {customer.address && <p className="font-medium">{customer.address}</p>}
-                    <p className="text-muted-foreground">
-                      {[customer.postalCode, customer.city].filter(Boolean).join(" ")}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {[customer.province, customer.country].filter(Boolean).join(", ")}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No address on file</p>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Units + Repairs stacked */}
-        <div className="space-y-5">
+        {/* Right column: Units + Repairs */}
+        <div className="space-y-5 lg:col-span-2">
           <Card className="rounded-xl">
             <CardContent>
               <div className="flex items-center justify-between mb-3">

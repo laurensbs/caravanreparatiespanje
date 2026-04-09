@@ -50,15 +50,31 @@ function repairStatusFromInvoice(invStatus: "draft" | "sent" | "paid"): string {
   }
 }
 
-// Keywords that indicate an invoice is NOT a repair (transport, storage, etc.)
-// Holded tag prefixes that indicate a non-repair invoice (transport, storage)
+// Keywords that indicate a non-repair invoice (transport, storage, deposits, etc.)
 const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling"];
 
+// Description/item keywords that indicate a non-repair invoice
+const NON_REPAIR_KEYWORDS = [
+  "stalling", "storage", "reservering", "aanbetaling",
+  "transport", "tarieven", "tarief",
+  "huur", "verhuur", "rental",
+];
+
 function isNonRepairInvoice(inv: HoldedInvoice): boolean {
-  return (inv.tags ?? []).some(tag => {
+  // Check tags
+  const tagMatch = (inv.tags ?? []).some(tag => {
     const t = tag.toLowerCase();
     return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
   });
+  if (tagMatch) return true;
+
+  // Check description and item names for non-repair keywords
+  const textToCheck = [
+    inv.desc ?? "",
+    ...(inv.items ?? []).map(i => `${i.name ?? ""} ${i.desc ?? ""}`),
+  ].join(" ").toLowerCase();
+
+  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
 }
 
 // Build a title from invoice items/description
@@ -223,6 +239,15 @@ async function main() {
       if (isNonRepairInvoice(inv)) {
         console.log(`   ⏭️  SKIP non-repair: ${inv.docNumber || "(no number)"} — "${title}"`);
         skippedNonRepair++;
+        continue;
+      }
+
+      // Skip invoices with no description and no items — can't determine purpose
+      const hasContent = (inv.desc && inv.desc.trim().length > 3)
+        || (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
+      if (!hasContent) {
+        console.log(`   ⏭️  SKIP blank: ${inv.docNumber || "(no number)"} — no description or items`);
+        skipped++;
         continue;
       }
 

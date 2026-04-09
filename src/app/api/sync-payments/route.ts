@@ -16,14 +16,31 @@ function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" 
   return "sent";
 }
 
-// Holded tag prefixes that indicate a non-repair invoice (transport, storage)
+// Keywords that indicate a non-repair invoice (transport, storage, deposits, etc.)
 const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling"];
 
+// Description/item keywords that indicate a non-repair invoice
+const NON_REPAIR_KEYWORDS = [
+  "stalling", "storage", "reservering", "aanbetaling",
+  "transport", "tarieven", "tarief",
+  "huur", "verhuur", "rental",
+];
+
 function isNonRepairInvoice(inv: HoldedInvoice): boolean {
-  return (inv.tags ?? []).some(tag => {
+  // Check tags
+  const tagMatch = (inv.tags ?? []).some(tag => {
     const t = tag.toLowerCase();
     return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
   });
+  if (tagMatch) return true;
+
+  // Check description and item names for non-repair keywords
+  const textToCheck = [
+    inv.desc ?? "",
+    ...(inv.items ?? []).map(i => `${i.name ?? ""} ${i.desc ?? ""}`),
+  ].join(" ").toLowerCase();
+
+  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
 }
 
 export async function GET(request: Request) {
@@ -189,7 +206,12 @@ export async function GET(request: Request) {
         }
 
         // Strategy 3: Date proximity — match invoice date to closest repair
-        if (!matched) {
+        // Only use this strategy when the invoice has a meaningful description
+        // (prevents blank storage/transport invoices from matching random repairs)
+        const hasContent = (inv.desc && inv.desc.trim().length > 3)
+          || (inv.items ?? []).some(i => i.name && i.name.trim().length > 3);
+
+        if (!matched && hasContent) {
           const invDate = inv.date * 1000;
           let bestMatch: (typeof unlinkedRepairs)[0] | null = null;
           let bestDist = Infinity;

@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
-import { markInvoicePaid } from "@/actions/invoices";
+import { markInvoicePaid, sendPaymentReminder } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { cn } from "@/lib/utils";
@@ -52,15 +52,20 @@ interface Quote {
   customerName?: string;
 }
 
+interface OverdueInvoice extends Invoice {
+  daysOverdue: number;
+}
+
 interface InvoicesClientProps {
   invoices: Invoice[];
   quotes: Quote[];
+  overdue: OverdueInvoice[];
 }
 
 type StatusFilter = "all" | "unpaid" | "paid" | "partial";
-type Tab = "invoices" | "quotes";
+type Tab = "invoices" | "quotes" | "overdue";
 
-export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientProps & { initialTab?: Tab }) {
+export function InvoicesClient({ invoices, quotes, overdue, initialTab }: InvoicesClientProps & { initialTab?: Tab }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(initialTab ?? "invoices");
   const [search, setSearch] = useState("");
@@ -166,6 +171,25 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
     }
   }
 
+  async function handleSendReminder(inv: OverdueInvoice) {
+    const email = inv.customerEmail;
+    if (!email) {
+      toast.error("No customer email on file — send from Holded directly");
+      return;
+    }
+    setActionLoading(`reminder-${inv.id}`);
+    try {
+      await sendPaymentReminder(inv.id, [email]);
+      toast.success(`Reminder sent to ${email}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to send reminder");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  const overdueTotal = overdue.reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div>
@@ -173,7 +197,9 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
         <p className="text-sm text-muted-foreground">
           {tab === "invoices"
             ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
-            : `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
+            : tab === "quotes"
+            ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
+            : `${overdue.length} overdue invoice${overdue.length !== 1 ? "s" : ""} · €${overdueTotal.toFixed(2)} outstanding`
           }
         </p>
       </div>
@@ -201,6 +227,22 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
         >
           <FileText className="h-3 w-3" />
           Quotes ({quotes.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("overdue")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+            tab === "overdue" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <AlertTriangle className="h-3 w-3" />
+          Overdue ({overdue.length})
+          {overdue.length > 0 && (
+            <span className="ml-0.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold px-1">
+              {overdue.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -250,7 +292,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
         )}
       </div>
 
-      {tab === "invoices" ? (
+      {tab === "invoices" && (
         <>
           {/* Invoice summary cards */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
@@ -414,7 +456,8 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
         </div>
       </div>
         </>
-      ) : (
+      )}
+      {tab === "quotes" && (
         /* ─── Quotes Tab ─── */
         <>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
@@ -524,6 +567,142 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
               </Table>
             </div>
           </div>
+        </>
+      )}
+      {tab === "overdue" && (
+        /* ─── Overdue Tab ─── */
+        <>
+          {/* Overdue summary */}
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+            <Card className="rounded-xl border-red-200 dark:border-red-900">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-red-600 uppercase tracking-wider">Overdue</p>
+                <p className="text-xl font-bold text-red-600 tabular-nums">{overdue.length}</p>
+                <p className="text-[11px] text-muted-foreground">invoices</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-red-200 dark:border-red-900">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-red-600 uppercase tracking-wider">Outstanding</p>
+                <p className="text-xl font-bold text-red-600 tabular-nums">€{overdueTotal.toFixed(2)}</p>
+                <p className="text-[11px] text-muted-foreground">total owed</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">With Email</p>
+                <p className="text-xl font-bold tabular-nums">{overdue.filter(i => i.customerEmail).length}</p>
+                <p className="text-[11px] text-muted-foreground">can send reminder</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Oldest</p>
+                <p className="text-xl font-bold tabular-nums">{overdue[0]?.daysOverdue ?? 0}d</p>
+                <p className="text-[11px] text-muted-foreground">overdue</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {overdue.length === 0 ? (
+            <div className="rounded-xl border bg-card p-12 text-center">
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <AlertTriangle className="h-8 w-8 opacity-20" />
+                <p className="font-medium text-sm">No overdue invoices</p>
+                <p className="text-xs">All invoices have been paid within 30 days</p>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-card">
+                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Invoice</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overdue.map((inv, idx) => (
+                      <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                        <TableCell>
+                          <a
+                            href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            {inv.docNumber || "—"}
+                            <ExternalLink className="h-2.5 w-2.5" />
+                          </a>
+                        </TableCell>
+                        <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
+                        <TableCell className="text-[11px] text-muted-foreground max-w-[150px] truncate">
+                          {inv.customerEmail || <span className="italic">No email</span>}
+                        </TableCell>
+                        <TableCell className="text-[13px] font-medium tabular-nums text-right">
+                          €{inv.total?.toFixed(2) ?? "0.00"}
+                        </TableCell>
+                        <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
+                          {inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "rounded-full text-[10px] px-2 py-0",
+                              inv.daysOverdue > 90
+                                ? "bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-400"
+                                : inv.daysOverdue > 60
+                                ? "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950 dark:text-orange-400"
+                                : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400"
+                            )}
+                          >
+                            <Clock className="h-2.5 w-2.5 mr-0.5" />
+                            {inv.daysOverdue}d
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              disabled={!inv.customerEmail || actionLoading === `reminder-${inv.id}`}
+                              onClick={() => handleSendReminder(inv)}
+                              title={inv.customerEmail ? `Send reminder to ${inv.customerEmail}` : "No email on file"}
+                            >
+                              {actionLoading === `reminder-${inv.id}` ? (
+                                <span className="animate-spin">⏳</span>
+                              ) : (
+                                <Send className="h-3 w-3" />
+                              )}
+                              Remind
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              disabled={actionLoading === `pay-${inv.id}`}
+                              onClick={() => handleMarkPaid(inv)}
+                              title="Mark as paid"
+                            >
+                              {actionLoading === `pay-${inv.id}` ? "..." : "✓ Paid"}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

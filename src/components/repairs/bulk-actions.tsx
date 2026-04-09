@@ -46,11 +46,11 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
   }
 
   async function handleBulkDelete() {
-    if (!confirm(`Delete ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    if (!confirm(`Move ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""} to the bin?`)) return;
     setLoading(true);
     try {
       await bulkDeleteRepairJobs(selectedIds);
-      toast.success(`Deleted ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""}`);
+      toast.success(`Moved ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""} to bin`);
       onClear();
       router.refresh();
     } catch {

@@ -9,6 +9,7 @@ import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
@@ -60,7 +61,15 @@ export default async function RepairsPage({ searchParams }: Props) {
             {total} repair{total !== 1 ? "s" : ""} found
           </p>
         </div>
-        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="h-9 rounded-lg text-xs">
+            <Link href="/repairs/bin">
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Bin
+            </Link>
+          </Button>
+          <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
+        </div>
       </div>
 
       <WorkflowGuide page="repairs" />

@@ -276,10 +276,10 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       type="button"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer"
                       onClick={async () => {
-                        if (!confirm("Delete this repair job? This cannot be undone.")) return;
+                        if (!confirm("Move this repair to the bin?")) return;
                         try {
                           await deleteRepairJob(job.id);
-                          toast.success("Repair deleted");
+                          toast.success("Moved to bin");
                           router.refresh();
                         } catch {
                           toast.error("Failed to delete");

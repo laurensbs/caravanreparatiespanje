@@ -37,6 +37,9 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
 
   const conditions = [];
 
+  // Always exclude soft-deleted repairs from the main list
+  conditions.push(isNull(repairJobs.deletedAt));
+
   if (filters.archived !== "true") {
     conditions.push(isNull(repairJobs.archivedAt));
   }
@@ -368,28 +371,28 @@ export async function getDashboardStats() {
       .select({
         total: count(),
         active: count(
-          sql`CASE WHEN ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         open: count(
-          sql`CASE WHEN ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         todo: count(
-          sql`CASE WHEN ${repairJobs.status} IN ('new', 'todo') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} IN ('new', 'todo') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         inProgress: count(
-          sql`CASE WHEN ${repairJobs.status} IN ('in_progress', 'in_inspection', 'scheduled') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} IN ('in_progress', 'in_inspection', 'scheduled') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         waitingParts: count(
-          sql`CASE WHEN ${repairJobs.status} = 'waiting_parts' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} = 'waiting_parts' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         waitingCustomer: count(
-          sql`CASE WHEN ${repairJobs.status} = 'waiting_customer' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} = 'waiting_customer' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         completed: count(
-          sql`CASE WHEN ${repairJobs.status} = 'completed' AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} = 'completed' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         urgent: count(
-          sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
       })
       .from(repairJobs),
@@ -408,7 +411,7 @@ export async function getDashboardStats() {
       .from(repairJobs)
       .leftJoin(customers, eq(repairJobs.customerId, customers.id))
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
-      .where(isNull(repairJobs.archivedAt))
+      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
       .orderBy(desc(repairJobs.updatedAt))
       .limit(10),
 
@@ -418,7 +421,7 @@ export async function getDashboardStats() {
         count: count(),
       })
       .from(repairJobs)
-      .where(isNull(repairJobs.archivedAt))
+      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
       .groupBy(repairJobs.status),
 
     db
@@ -429,7 +432,7 @@ export async function getDashboardStats() {
       })
       .from(repairJobs)
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
-      .where(isNull(repairJobs.archivedAt))
+      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
       .groupBy(locations.id, locations.name),
 
     // Pipeline data for workflow visualization
@@ -441,7 +444,7 @@ export async function getDashboardStats() {
         holdedInvoiceId: repairJobs.holdedInvoiceId,
       })
       .from(repairJobs)
-      .where(isNull(repairJobs.archivedAt)),
+      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt))),
   ]);
 
   return {
@@ -464,11 +467,13 @@ export async function deleteRepairJob(id: string) {
 
   if (!existing) throw new Error("Job not found");
 
-  await db.delete(repairJobs).where(eq(repairJobs.id, id));
+  // Soft delete — move to bin
+  await db.update(repairJobs).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(repairJobs.id, id));
 
   await createAuditLog("delete", "repair_job", id, { publicCode: existing.publicCode });
 
   revalidatePath("/repairs");
+  revalidatePath("/repairs/bin");
   revalidatePath("/");
   return { deleted: true };
 }
@@ -477,13 +482,89 @@ export async function bulkDeleteRepairJobs(ids: string[]) {
   await requireRole("admin");
   if (ids.length === 0) throw new Error("No IDs provided");
 
-  await db.delete(repairJobs).where(inArray(repairJobs.id, ids));
+  // Soft delete — move to bin
+  await db.update(repairJobs).set({ deletedAt: new Date(), updatedAt: new Date() }).where(inArray(repairJobs.id, ids));
 
   await createAuditLog("bulk_delete", "repair_job", null, { ids, count: ids.length });
 
   revalidatePath("/repairs");
+  revalidatePath("/repairs/bin");
   revalidatePath("/");
   return { deleted: ids.length };
+}
+
+export async function getDeletedRepairJobs() {
+  await requireRole("admin");
+
+  return db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      status: repairJobs.status,
+      priority: repairJobs.priority,
+      invoiceStatus: repairJobs.invoiceStatus,
+      deletedAt: repairJobs.deletedAt,
+      createdAt: repairJobs.createdAt,
+      customerName: customers.name,
+      locationName: locations.name,
+      unitRegistration: units.registration,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .leftJoin(locations, eq(repairJobs.locationId, locations.id))
+    .leftJoin(units, eq(repairJobs.unitId, units.id))
+    .where(isNotNull(repairJobs.deletedAt))
+    .orderBy(desc(repairJobs.deletedAt));
+}
+
+export async function restoreRepairJob(id: string) {
+  await requireRole("admin");
+
+  await db.update(repairJobs).set({ deletedAt: null, updatedAt: new Date() }).where(eq(repairJobs.id, id));
+
+  await createAuditLog("restore", "repair_job", id, {});
+
+  revalidatePath("/repairs");
+  revalidatePath("/repairs/bin");
+  revalidatePath("/");
+  return { restored: true };
+}
+
+export async function permanentDeleteRepairJob(id: string) {
+  await requireRole("admin");
+
+  const [existing] = await db
+    .select({ id: repairJobs.id, publicCode: repairJobs.publicCode })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, id))
+    .limit(1);
+
+  if (!existing) throw new Error("Job not found");
+
+  await db.delete(repairJobs).where(eq(repairJobs.id, id));
+
+  await createAuditLog("permanent_delete", "repair_job", id, { publicCode: existing.publicCode });
+
+  revalidatePath("/repairs/bin");
+  return { deleted: true };
+}
+
+export async function purgeOldDeletedRepairs() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const result = await db
+    .delete(repairJobs)
+    .where(
+      and(
+        isNotNull(repairJobs.deletedAt),
+        lte(repairJobs.deletedAt, thirtyDaysAgo)
+      )
+    )
+    .returning({ id: repairJobs.id });
+
+  return { purged: result.length };
 }
 
 export async function getFollowUpItems() {

@@ -30,6 +30,7 @@ export const repairJobSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
   estimatedCost: z.string().optional(),
   actualCost: z.string().optional(),
+  internalCost: z.string().nullable().optional(),
   estimatedHours: z.string().optional(),
   actualHours: z.string().optional(),
   invoiceStatus: z.enum([

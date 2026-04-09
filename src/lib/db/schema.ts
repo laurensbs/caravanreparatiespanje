@@ -347,6 +347,7 @@ export const repairJobs = pgTable(
     }),
     estimatedCost: numeric("estimated_cost", { precision: 10, scale: 2 }),
     actualCost: numeric("actual_cost", { precision: 10, scale: 2 }),
+    internalCost: numeric("internal_cost", { precision: 10, scale: 2 }),
     estimatedHours: numeric("estimated_hours", { precision: 6, scale: 2 }),
     actualHours: numeric("actual_hours", { precision: 6, scale: 2 }),
 
@@ -354,6 +355,7 @@ export const repairJobs = pgTable(
     lastContactAt: timestamp("last_contact_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -374,6 +376,7 @@ export const repairJobs = pgTable(
     index("repair_jobs_bay_reference_idx").on(table.bayReference),
     index("repair_jobs_business_type_idx").on(table.businessProcessType),
     index("repair_jobs_archived_idx").on(table.archivedAt),
+    index("repair_jobs_deleted_idx").on(table.deletedAt),
   ]
 );
 

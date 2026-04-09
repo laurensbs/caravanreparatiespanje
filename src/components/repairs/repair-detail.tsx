@@ -47,6 +47,7 @@ interface CostLineItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  internalCost: number;
   partId?: string;
   type: "part" | "labour" | "custom";
 }
@@ -84,12 +85,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [editingDescription, setEditingDescription] = useState(false);
   const [estimatedCost, setEstimatedCost] = useState(job.estimatedCost ?? "");
   const [actualCost, setActualCost] = useState(job.actualCost ?? "");
+  const [internalCost, setInternalCost] = useState(job.internalCost ?? "");
   const [costLines, setCostLines] = useState<CostLineItem[]>([]);
   const [showPartPicker, setShowPartPicker] = useState(false);
   const [partSearch, setPartSearch] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
 
   const costLinesSubtotal = costLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+  const costLinesInternalTotal = costLines.reduce((sum, l) => sum + l.quantity * l.internalCost, 0);
   const discountAmount = costLinesSubtotal * (discountPercent / 100);
   const costLinesTotal = costLinesSubtotal - discountAmount;
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
@@ -106,7 +109,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     const sellingPrice = baseCost * (1 + markup / 100);
     setCostLines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: part.name, quantity: 1, unitPrice: Math.round(sellingPrice * 100) / 100, partId: part.id, type: "part" },
+      { id: crypto.randomUUID(), description: part.name, quantity: 1, unitPrice: Math.round(sellingPrice * 100) / 100, internalCost: baseCost, partId: part.id, type: "part" },
     ]);
     setShowPartPicker(false);
     setPartSearch("");
@@ -115,14 +118,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   function addLabourLine() {
     setCostLines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: "Labour", quantity: 1, unitPrice: settings.hourlyRate, type: "labour" },
+      { id: crypto.randomUUID(), description: "Labour", quantity: 1, unitPrice: settings.hourlyRate, internalCost: 0, type: "labour" },
     ]);
   }
 
   function addCustomLine() {
     setCostLines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: "", quantity: 1, unitPrice: 0, type: "custom" },
+      { id: crypto.randomUUID(), description: "", quantity: 1, unitPrice: 0, internalCost: 0, type: "custom" },
     ]);
   }
 
@@ -138,6 +141,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
   function applyLinesToEstimate() {
     setEstimatedCost(costLinesTotalInclTax.toFixed(2));
+    setInternalCost(costLinesInternalTotal.toFixed(2));
   }
 
   const filteredParts = partSearch.length > 0
@@ -149,11 +153,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     : partsList.slice(0, 8);
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this repair job? This cannot be undone.")) return;
+    if (!confirm("Move this repair job to the bin? You can restore it later.")) return;
     setDeleting(true);
     try {
       await deleteRepairJob(job.id);
-      toast.success("Repair job deleted");
+      toast.success("Moved to bin");
       router.push("/repairs");
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to delete");
@@ -175,6 +179,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         internalComments: internalComments || null,
         estimatedCost: estimatedCost || null,
         actualCost: actualCost || null,
+        internalCost: internalCost || null,
       });
       router.refresh();
       toast.success("Changes saved");
@@ -410,7 +415,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         className="h-7 text-xs rounded-lg w-14 text-center"
                         title={line.type === "labour" ? "Hours" : "Quantity"}
                       />
-                      <div className="relative w-24">
+                      <div className="relative w-20">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={line.internalCost}
+                          onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)}
+                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                          title="Our cost (purchase/internal)"
+                        />
+                      </div>
+                      <div className="relative w-20">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
                         <Input
                           type="number"
@@ -419,6 +436,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           value={line.unitPrice}
                           onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)}
                           className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                          title="Sell price"
                         />
                       </div>
                       <span className="text-xs font-medium w-16 text-right tabular-nums">
@@ -429,6 +447,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       </Button>
                     </div>
                   ))}
+
+                  {/* Column labels */}
+                  <div className="flex items-center gap-2 text-[9px] text-muted-foreground uppercase tracking-wider pt-1">
+                    <span className="w-10 shrink-0" />
+                    <span className="flex-1" />
+                    <span className="w-14 text-center">Qty</span>
+                    <span className="w-20 text-right">Our cost</span>
+                    <span className="w-20 text-right">Sell</span>
+                    <span className="w-16 text-right">Total</span>
+                    <span className="w-6" />
+                  </div>
 
                   {/* Discount row */}
                   <div className="flex items-center justify-between pt-2 border-t gap-2">
@@ -455,6 +484,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   {/* Totals */}
                   <div className="space-y-1 pt-1">
                     <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Our total cost</span>
+                      <span className="text-xs tabular-nums text-orange-600 dark:text-orange-400">€{costLinesInternalTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
                       <span className="text-xs font-medium tabular-nums">€{costLinesTotal.toFixed(2)}</span>
                     </div>
@@ -471,6 +504,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         </Button>
                       </div>
                     </div>
+                    {costLinesInternalTotal > 0 && (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs text-muted-foreground">Margin</span>
+                        <span className={`text-xs font-medium tabular-nums ${costLinesTotal - costLinesInternalTotal >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                          €{(costLinesTotal - costLinesInternalTotal).toFixed(2)} ({costLinesInternalTotal > 0 ? Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100) : 0}%)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -702,6 +743,24 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           value={actualCost}
                           onChange={(e) => setActualCost(e.target.value)}
                           className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 text-orange-600 dark:text-orange-400 shrink-0">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Our Cost
+                      </span>
+                      <div className="relative w-28">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={internalCost}
+                          onChange={(e) => setInternalCost(e.target.value)}
+                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
                         />
                       </div>
                     </div>

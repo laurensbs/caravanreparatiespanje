@@ -16,6 +16,16 @@ function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" 
   return "sent";
 }
 
+// Holded tag prefixes that indicate a non-repair invoice (transport, storage)
+const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling", "outside_storage", "outsidestorage"];
+
+function isNonRepairInvoice(inv: HoldedInvoice): boolean {
+  return (inv.tags ?? []).some(tag => {
+    const t = tag.toLowerCase();
+    return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
+  });
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -91,20 +101,17 @@ export async function GET(request: Request) {
         const existingRepair = repairByInvoiceId.get(inv.id);
         if (existingRepair) {
           const invDate = new Date(inv.date * 1000);
-          const invDueDate = inv.dueDate ? new Date(inv.dueDate * 1000) : null;
           const statusChanged = existingRepair.invoiceStatus !== newStatus && existingRepair.invoiceStatus !== "warranty";
           const dateChanged = existingRepair.holdedInvoiceDate?.getTime() !== invDate.getTime();
-          const dueDateChanged = invDueDate && existingRepair.dueDate?.getTime() !== invDueDate.getTime();
 
           // Auto-advance repair status when invoice is sent or paid
           const shouldAdvanceStatus = (newStatus === "paid" || newStatus === "sent")
             && earlyStatuses.includes(existingRepair.status);
 
-          if (statusChanged || dateChanged || dueDateChanged || shouldAdvanceStatus) {
+          if (statusChanged || dateChanged || shouldAdvanceStatus) {
             const updates: Record<string, unknown> = { updatedAt: new Date() };
             if (statusChanged) updates.invoiceStatus = newStatus;
             if (dateChanged) updates.holdedInvoiceDate = invDate;
-            if (dueDateChanged) updates.dueDate = invDueDate;
             if (shouldAdvanceStatus) {
               updates.status = "invoiced";
               if (!existingRepair.completedAt) updates.completedAt = new Date();
@@ -138,9 +145,8 @@ export async function GET(request: Request) {
               existingRepair.status = "invoiced";
               stats.statusAdvanced++;
             }
-            if (dateChanged || dueDateChanged) {
+            if (dateChanged) {
               existingRepair.holdedInvoiceDate = invDate;
-              if (invDueDate) existingRepair.dueDate = invDueDate;
             }
             stats.statusUpdated++;
           }
@@ -150,6 +156,9 @@ export async function GET(request: Request) {
         // Case B: Invoice not linked — try to discover and link to a repair
         const customerId = customerByHoldedId.get(inv.contact);
         if (!customerId) continue;
+
+        // Skip non-repair invoices (transport, storage, etc.)
+        if (isNonRepairInvoice(inv)) continue;
 
         const customerRepairs = repairsByCustomer.get(customerId);
         if (!customerRepairs) continue;
@@ -199,7 +208,6 @@ export async function GET(request: Request) {
         }
 
         if (matched) {
-          const invDueDate = inv.dueDate ? new Date(inv.dueDate * 1000) : null;
           // If invoice is sent or paid, auto-advance repair status
           const advanceStatus = (newStatus === "paid" || newStatus === "sent") && earlyStatuses.includes(matched.status);
           await db
@@ -208,7 +216,6 @@ export async function GET(request: Request) {
               holdedInvoiceId: inv.id,
               holdedInvoiceNum: inv.docNumber,
               holdedInvoiceDate: new Date(inv.date * 1000),
-              ...(invDueDate ? { dueDate: invDueDate } : {}),
               invoiceStatus: newStatus,
               ...(advanceStatus ? { status: "invoiced" as const, completedAt: matched.completedAt ?? new Date() } : {}),
               updatedAt: new Date(),

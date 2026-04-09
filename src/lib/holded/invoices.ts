@@ -63,12 +63,21 @@ export interface HoldedInvoice {
   currency: string;
   desc?: string;
   draft?: number | null;
+  tags?: string[];
   items?: Array<{
     name: string;
     desc?: string;
     units: number;
     subtotal: number;
     tax: number;
+  }>;
+  products?: Array<{
+    name: string;
+    desc?: string;
+    price: number;
+    units: number;
+    tax: number;
+    tags?: string[];
   }>;
 }
 

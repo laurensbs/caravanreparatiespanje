@@ -50,6 +50,17 @@ function repairStatusFromInvoice(invStatus: "draft" | "sent" | "paid"): string {
   }
 }
 
+// Keywords that indicate an invoice is NOT a repair (transport, storage, etc.)
+// Holded tag prefixes that indicate a non-repair invoice (transport, storage)
+const NON_REPAIR_TAG_PREFIXES = ["transport", "stalling", "outside_storage", "outsidestorage"];
+
+function isNonRepairInvoice(inv: HoldedInvoice): boolean {
+  return (inv.tags ?? []).some(tag => {
+    const t = tag.toLowerCase();
+    return NON_REPAIR_TAG_PREFIXES.some(prefix => t.includes(prefix));
+  });
+}
+
 // Build a title from invoice items/description
 function buildTitle(inv: HoldedInvoice): string {
   // Try invoice description first
@@ -170,6 +181,7 @@ async function main() {
 
   let created = 0;
   let skipped = 0;
+  let skippedNonRepair = 0;
   let noCustomer = 0;
 
   for (const [holdedContactId, invoices] of invoicesByContact) {
@@ -204,6 +216,13 @@ async function main() {
       if (invStatus === "draft" && inv.total === 0) {
         console.log(`   ⏭️  SKIP draft €0.00: ${inv.docNumber || "(no number)"}`);
         skipped++;
+        continue;
+      }
+
+      // Skip non-repair invoices (transport, storage, etc.)
+      if (isNonRepairInvoice(inv)) {
+        console.log(`   ⏭️  SKIP non-repair: ${inv.docNumber || "(no number)"} — "${title}"`);
+        skippedNonRepair++;
         continue;
       }
 
@@ -260,6 +279,7 @@ async function main() {
   console.log(`  Unlinked invoices:      ${unlinkedInvoices.length}`);
   console.log(`  No DB customer (skip):  ${noCustomer}`);
   console.log(`  Skipped (draft €0):     ${skipped}`);
+  console.log(`  Skipped (non-repair):   ${skippedNonRepair}`);
   console.log(`  Repairs created:        ${created}`);
   console.log(`${"═".repeat(60)}\n`);
 

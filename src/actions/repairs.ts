@@ -39,7 +39,12 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
   }
 
   if (filters.status) {
-    conditions.push(eq(repairJobs.status, filters.status as any));
+    const statuses = filters.status.split(",").filter(Boolean);
+    if (statuses.length === 1) {
+      conditions.push(eq(repairJobs.status, statuses[0] as any));
+    } else if (statuses.length > 1) {
+      conditions.push(inArray(repairJobs.status, statuses as any));
+    }
   }
 
   if (filters.locationId) {
@@ -59,7 +64,12 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
   }
 
   if (filters.invoiceStatus) {
-    conditions.push(eq(repairJobs.invoiceStatus, filters.invoiceStatus as any));
+    const invoiceStatuses = filters.invoiceStatus.split(",").filter(Boolean);
+    if (invoiceStatuses.length === 1) {
+      conditions.push(eq(repairJobs.invoiceStatus, invoiceStatuses[0] as any));
+    } else if (invoiceStatuses.length > 1) {
+      conditions.push(inArray(repairJobs.invoiceStatus, invoiceStatuses as any));
+    }
   }
 
   if (filters.q) {

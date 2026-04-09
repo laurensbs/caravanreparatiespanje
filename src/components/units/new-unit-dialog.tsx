@@ -51,8 +51,8 @@ export function NewUnitDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button onClick={() => setOpen(true)} size="sm" className="rounded-lg">
-        <Plus className="mr-2 h-4 w-4" />
+      <Button onClick={() => setOpen(true)} size="sm" className="h-8 rounded-lg gap-1.5 text-xs font-medium">
+        <Plus className="h-3.5 w-3.5" />
         Add Unit
       </Button>
       <DialogContent className="max-w-md">

@@ -316,7 +316,7 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                 </TableRow>
               ) : (
                 filtered.map((inv, idx) => (
-                  <TableRow key={inv.id} className="group table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                  <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                     <TableCell>
                       <a
                         href="https://app.holded.com/sales/revenue"
@@ -457,7 +457,7 @@ export function InvoicesClient({ invoices, quotes }: InvoicesClientProps) {
                     </TableRow>
                   ) : (
                     quotes.map((q, idx) => (
-                      <TableRow key={q.id} className="group table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                      <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
                           <a
                             href="https://app.holded.com/sales/revenue"

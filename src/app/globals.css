@@ -134,6 +134,18 @@
   .table-row-animate {
     animation: tableRowIn 0.25s ease-out both;
   }
+
+  /* Interactive list/table row */
+  .interactive-row {
+    @apply cursor-pointer transition-all duration-150;
+  }
+  .interactive-row:hover {
+    @apply bg-muted/50;
+    transform: translateX(2px);
+  }
+  .interactive-row:active {
+    transform: translateX(2px) scale(0.995);
+  }
 }
 
 @keyframes fadeIn {

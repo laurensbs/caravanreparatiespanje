@@ -78,15 +78,15 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-3 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" asChild>
             <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold tracking-tight">{customer.name}</h1>
+              <h1 className="text-lg font-extrabold tracking-tight">{customer.name}</h1>
               <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
                 {customer.contactType === "business" ? "Business" : "Person"}
               </Badge>
@@ -104,9 +104,8 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
         </div>
         <div className="flex gap-2">
           {!editing ? (
-            <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setEditing(true)}>
-              <Pencil className="mr-2 h-3.5 w-3.5" />
-              Edit
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => setEditing(true)}>
+              <Pencil className="h-3.5 w-3.5" />
             </Button>
           ) : (
             <>
@@ -449,7 +448,7 @@ export function CustomerDetail({ customer, holdedInvoices }: CustomerDetailProps
                       >
                         <Link href={`/units/${unit.id}`} className="min-w-0 flex-1">
                           <p className="font-medium text-[13px] truncate">
-                            {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unknown unit"}
+                            {[unit.brand, unit.model].filter(Boolean).join(" ") || "No details yet"}
                           </p>
                           {unit.registration && (
                             <p className="font-mono text-[11px] text-muted-foreground">{unit.registration}</p>

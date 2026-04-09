@@ -11,6 +11,7 @@ import { CustomerFiltersBar } from "@/components/customers/customer-filters";
 import { NewCustomerDialog } from "@/components/customers/new-customer-dialog";
 import { HoldedHint } from "@/components/holded-hint";
 import { WorkflowGuide } from "@/components/workflow-guide";
+import { CustomersTableClient } from "@/components/customers/customer-quickview";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
@@ -138,9 +139,9 @@ export default async function CustomersPage({ searchParams }: Props) {
               )}
             </TableRow>
           </TableHeader>
+          {isBusiness ? (
           <TableBody>
-            {isBusiness ? (
-              suppliersList.length === 0 ? (
+            {suppliersList.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -152,7 +153,7 @@ export default async function CustomersPage({ searchParams }: Props) {
                 </TableRow>
               ) : (
                 suppliersList.map((s, idx) => (
-                  <TableRow key={s.id} className="group table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
+                  <TableRow key={s.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
                     <TableCell>
                       <span className="font-medium text-[13px]">{s.name}</span>
                     </TableCell>
@@ -177,55 +178,11 @@ export default async function CustomersPage({ searchParams }: Props) {
                     </TableCell>
                   </TableRow>
                 ))
-              )
-            ) : (
-              customers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Users className="h-8 w-8 opacity-20" />
-                      <p className="font-medium text-sm">No contacts found</p>
-                      <p className="text-xs">Try adjusting your search or filters</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                customers.map((c, idx) => (
-                  <TableRow key={c.id} className="group table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
-                    <TableCell>
-                      <Link href={`/customers/${c.id}`} className="font-medium text-[13px] group-hover:text-primary transition-colors">
-                        {c.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
-                        {c.contactType === "business" ? "Business" : "Person"}
-                      </Badge>
-                      {c.holdedContactId && (
-                        <span className="inline-flex items-center text-[10px] text-emerald-600" title="Linked to Holded">
-                          <ExternalLink className="h-2.5 w-2.5" />
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {c.repairCount > 0 ? (
-                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
-                          {c.repairCount}
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground">{c.phone ?? "—"}</TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground hidden md:table-cell">{c.email ?? "—"}</TableCell>
-                    <TableCell>
-                      <SmartDate date={c.updatedAt} className="text-[11px] text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              )
-            )}
+              )}
           </TableBody>
+          ) : (
+            <CustomersTableClient customers={customers} />
+          )}
         </Table>
         </div>
       </div>

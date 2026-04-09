@@ -182,10 +182,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-3 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
+        <div className="flex items-start gap-2.5 min-w-0">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0 mt-0.5" asChild>
             <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-4 w-4" /></Link>
           </Button>

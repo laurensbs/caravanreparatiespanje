@@ -179,7 +179,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
               jobs.map((job, idx) => (
                 <TableRow
                   key={job.id}
-                  className="cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60 group table-row-animate"
+                  className="interactive-row group table-row-animate"
                   style={{ animationDelay: `${idx * 20}ms` }}
                   data-state={selected.has(job.id) ? "selected" : undefined}
                   onClick={() => {

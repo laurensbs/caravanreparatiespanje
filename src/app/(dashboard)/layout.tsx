@@ -31,7 +31,7 @@ export default async function DashboardLayout({
               userEmail={session.user.email}
               userRole={session.user.role as UserRole}
             />
-            <main className="flex-1 overflow-y-auto bg-background p-3 md:p-5 animate-fade-in">
+            <main className="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-fade-in">
               {children}
             </main>
             <Toaster richColors position="bottom-right" toastOptions={{ className: "rounded-lg" }} />

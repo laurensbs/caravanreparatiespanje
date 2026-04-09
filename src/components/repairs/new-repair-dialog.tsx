@@ -92,8 +92,8 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [] }: New
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button onClick={() => setOpen(true)}>
-        <Plus className="mr-2 h-4 w-4" />
+      <Button onClick={() => setOpen(true)} size="sm" className="h-8 rounded-lg gap-1.5 text-xs font-medium">
+        <Plus className="h-3.5 w-3.5" />
         New Repair
       </Button>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">

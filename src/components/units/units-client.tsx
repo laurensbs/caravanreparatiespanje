@@ -160,7 +160,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentType }
               units.map((u, idx) => (
                 <TableRow
                   key={u.id}
-                  className="group cursor-pointer transition-colors hover:bg-muted/50 table-row-animate"
+                  className="group interactive-row table-row-animate"
                   style={{ animationDelay: `${idx * 20}ms` }}
                   onClick={() => setSelectedUnit(u)}
                 >

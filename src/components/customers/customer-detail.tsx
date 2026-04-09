@@ -13,7 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   ArrowLeft, Save, Phone, Mail, StickyNote, Wrench, Truck,
   Receipt, ExternalLink, Building2, User, MapPin, Pencil,
-  RefreshCw, Plus, X as XIcon, Trash2,
+  RefreshCw, Plus, X as XIcon, Trash2, FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
@@ -33,11 +33,12 @@ import { addTagToCustomer, removeTagFromCustomer } from "@/actions/tags";
 interface CustomerDetailProps {
   customer: any;
   holdedInvoices: any[];
+  holdedQuotes: any[];
   allTags?: TagItem[];
   customerTags?: TagItem[];
 }
 
-export function CustomerDetail({ customer, holdedInvoices, allTags = [], customerTags = [] }: CustomerDetailProps) {
+export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], allTags = [], customerTags = [] }: CustomerDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -61,6 +62,7 @@ export function CustomerDetail({ customer, holdedInvoices, allTags = [], custome
   const [deleteFromHolded, setDeleteFromHolded] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [holdedTab, setHoldedTab] = useState<"invoices" | "quotes">("invoices");
 
   async function handleSave() {
     setSaving(true);
@@ -543,52 +545,119 @@ export function CustomerDetail({ customer, holdedInvoices, allTags = [], custome
         </div>
       </div>
 
-      {/* Invoices */}
-      {holdedInvoices.length > 0 && (
+      {/* Holded Documents — Invoices & Quotes */}
+      {(holdedInvoices.length > 0 || holdedQuotes.length > 0) && (
         <Card className="rounded-xl">
           <CardContent>
             <div className="flex items-center gap-2 mb-3">
               <Receipt className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs font-semibold">Invoices ({holdedInvoices.length})</p>
+              <p className="text-xs font-semibold">Holded Documents</p>
+              <div className="ml-auto flex gap-1">
+                <Button
+                  variant={holdedTab === "invoices" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-6 text-[11px] px-2.5 rounded-lg"
+                  onClick={() => setHoldedTab("invoices")}
+                >
+                  Invoices ({holdedInvoices.length})
+                </Button>
+                <Button
+                  variant={holdedTab === "quotes" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-6 text-[11px] px-2.5 rounded-lg"
+                  onClick={() => setHoldedTab("quotes")}
+                >
+                  Quotes ({holdedQuotes.length})
+                </Button>
+              </div>
             </div>
             <HoldedHint variant="readonly" className="mb-3">
-              Invoices are from Holded. Click to open in Holded.
+              Documents are synced from Holded. Click to view PDF.
             </HoldedHint>
-            <div className="space-y-1.5">
-              {holdedInvoices.map((inv: any) => (
-                <a
-                  key={inv.id}
-                  href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
-                >
-                  <div className="min-w-0 mr-2">
-                    <p className="font-medium text-[13px]">{inv.docNumber}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {inv.desc || "No description"}
-                      {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-medium tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</span>
-                    <Badge
-                      variant="secondary"
-                      className={`rounded-full text-[10px] px-2 py-0 ${
-                        inv.status === 1
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
-                          : inv.status === 2
-                          ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400"
-                          : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400"
-                      }`}
+
+            {holdedTab === "invoices" && (
+              <div className="space-y-1.5">
+                {holdedInvoices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">No invoices</p>
+                ) : (
+                  holdedInvoices.map((inv: any) => (
+                    <a
+                      key={inv.id}
+                      href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
                     >
-                      {inv.status === 1 ? "Paid" : inv.status === 2 ? "Partial" : "Unpaid"}
-                    </Badge>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </a>
-              ))}
-            </div>
+                      <div className="min-w-0 mr-2">
+                        <p className="font-medium text-[13px]">{inv.docNumber}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {inv.desc || "No description"}
+                          {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-medium tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</span>
+                        <Badge
+                          variant="secondary"
+                          className={`rounded-full text-[10px] px-2 py-0 ${
+                            inv.status === 1
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
+                              : inv.status === 2
+                              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400"
+                              : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400"
+                          }`}
+                        >
+                          {inv.status === 1 ? "Paid" : inv.status === 2 ? "Partial" : "Unpaid"}
+                        </Badge>
+                        <FileText className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                    </a>
+                  ))
+                )}
+              </div>
+            )}
+
+            {holdedTab === "quotes" && (
+              <div className="space-y-1.5">
+                {holdedQuotes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">No quotes</p>
+                ) : (
+                  holdedQuotes.map((q: any) => (
+                    <a
+                      key={q.id}
+                      href={`/api/holded/pdf?type=estimate&id=${q.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
+                    >
+                      <div className="min-w-0 mr-2">
+                        <p className="font-medium text-[13px]">{q.docNumber}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {q.desc || "No description"}
+                          {q.date && ` · ${new Date(q.date * 1000).toLocaleDateString("nl-NL")}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-medium tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</span>
+                        <Badge
+                          variant="secondary"
+                          className={`rounded-full text-[10px] px-2 py-0 ${
+                            q.status === 1
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
+                              : q.draft === 1
+                              ? "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-400"
+                              : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400"
+                          }`}
+                        >
+                          {q.status === 1 ? "Accepted" : q.draft === 1 ? "Draft" : "Sent"}
+                        </Badge>
+                        <FileText className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                    </a>
+                  ))
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

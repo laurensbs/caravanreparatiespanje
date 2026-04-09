@@ -4,10 +4,11 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, X } from "lucide-react";
+import { Search, X, SlidersHorizontal } from "lucide-react";
 import { STATUS_LABELS, PRIORITY_LABELS, INVOICE_STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
 import type { RepairFilters } from "@/actions/repairs";
 import { useState, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface Location {
   id: string;
@@ -60,8 +61,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
     ([key, val]) => key !== "page" && key !== "limit" && val
   );
 
+  // Count how many secondary filters are active
+  const secondaryFilterKeys = ["locationId", "invoiceStatus", "customerResponseStatus", "tagId", "dateFrom", "dateTo"] as const;
+  const activeSecondaryCount = secondaryFilterKeys.filter(k => currentFilters[k]).length;
+  const [showMore, setShowMore] = useState(activeSecondaryCount > 0);
+
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="rounded-lg border bg-card p-3 space-y-2.5">
+      {/* Primary filters — always visible */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1 min-w-0 sm:max-w-56">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -103,95 +110,115 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           </SelectContent>
         </Select>
 
-        <Select
-          value={currentFilters.locationId ?? "all"}
-          onValueChange={(val) => updateFilter("locationId", val)}
+        <Button
+          variant={showMore ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => setShowMore(!showMore)}
+          className="h-8 text-xs rounded-lg gap-1.5"
         >
-          <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
-            <SelectValue placeholder="Location" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All locations</SelectItem>
-            {locations.map((loc) => (
-              <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={currentFilters.invoiceStatus ?? "all"}
-          onValueChange={(val) => updateFilter("invoiceStatus", val)}
-        >
-          <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
-            <SelectValue placeholder="Invoice" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All invoices</SelectItem>
-            {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={currentFilters.customerResponseStatus ?? "all"}
-          onValueChange={(val) => updateFilter("customerResponseStatus", val)}
-        >
-          <SelectTrigger className="w-40 h-8 text-xs rounded-lg">
-            <SelectValue placeholder="Response" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All responses</SelectItem>
-            {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {allTags.length > 0 && (
-          <Select
-            value={currentFilters.tagId ?? "all"}
-            onValueChange={(val) => updateFilter("tagId", val)}
-          >
-            <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
-              <SelectValue placeholder="Tag" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tags</SelectItem>
-              {allTags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id}>
-                  <span className="flex items-center gap-1.5">
-                    {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
-                    {tag.name}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        <Input
-          type="date"
-          className="w-[130px] h-8 text-xs rounded-lg"
-          value={currentFilters.dateFrom ?? ""}
-          onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
-          placeholder="From"
-        />
-        <Input
-          type="date"
-          className="w-[130px] h-8 text-xs rounded-lg"
-          value={currentFilters.dateTo ?? ""}
-          onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
-          placeholder="To"
-        />
+          <SlidersHorizontal className="h-3 w-3" />
+          Filters
+          {activeSecondaryCount > 0 && (
+            <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[10px] rounded-full bg-primary text-primary-foreground">
+              {activeSecondaryCount}
+            </Badge>
+          )}
+        </Button>
 
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs rounded-lg text-muted-foreground hover:text-foreground">
             <X className="mr-1 h-3 w-3" />
-            Clear
+            Clear all
           </Button>
         )}
       </div>
+
+      {/* Secondary filters — collapsible */}
+      {showMore && (
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center pt-0.5 border-t">
+          <Select
+            value={currentFilters.locationId ?? "all"}
+            onValueChange={(val) => updateFilter("locationId", val)}
+          >
+            <SelectTrigger className="w-36 h-8 text-xs rounded-lg mt-2.5 sm:mt-0">
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All locations</SelectItem>
+              {locations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={currentFilters.invoiceStatus ?? "all"}
+            onValueChange={(val) => updateFilter("invoiceStatus", val)}
+          >
+            <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
+              <SelectValue placeholder="Invoice" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All invoices</SelectItem>
+              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={currentFilters.customerResponseStatus ?? "all"}
+            onValueChange={(val) => updateFilter("customerResponseStatus", val)}
+          >
+            <SelectTrigger className="w-40 h-8 text-xs rounded-lg">
+              <SelectValue placeholder="Response" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All responses</SelectItem>
+              {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {allTags.length > 0 && (
+            <Select
+              value={currentFilters.tagId ?? "all"}
+              onValueChange={(val) => updateFilter("tagId", val)}
+            >
+              <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
+                <SelectValue placeholder="Tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tags</SelectItem>
+                {allTags.map((tag) => (
+                  <SelectItem key={tag.id} value={tag.id}>
+                    <span className="flex items-center gap-1.5">
+                      {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
+                      {tag.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <Input
+            type="date"
+            className="w-[130px] h-8 text-xs rounded-lg"
+            value={currentFilters.dateFrom ?? ""}
+            onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+            placeholder="From"
+          />
+          <Input
+            type="date"
+            className="w-[130px] h-8 text-xs rounded-lg"
+            value={currentFilters.dateTo ?? ""}
+            onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+            placeholder="To"
+          />
+        </div>
+      )}
     </div>
   );
 }

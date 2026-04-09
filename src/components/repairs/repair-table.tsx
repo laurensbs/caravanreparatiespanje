@@ -156,8 +156,6 @@ export function RepairTable({ jobs }: RepairTableProps) {
               <TableHead className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("customerName")}>
                 <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
               </TableHead>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Location</TableHead>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Unit</TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Assigned</TableHead>
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("invoiceStatus")}>
                 <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
@@ -172,7 +170,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={13} className="py-16 text-center">
+                <TableCell colSpan={11} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ArrowUpDown className="h-8 w-8 opacity-20" />
                     <p className="font-medium text-sm">No repair jobs found</p>
@@ -203,7 +201,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className="max-w-xs">
-                      <p className="truncate font-medium text-[13px] group-hover:text-primary transition-colors">
+                      <p className="truncate font-medium text-xs group-hover:text-primary transition-colors">
                         {job.title || "Unnamed repair"}
                       </p>
                       {job.descriptionRaw && (
@@ -241,23 +239,28 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       {PRIORITY_LABELS[job.priority as Priority]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-[13px]">{job.customerName ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell className="text-[13px]">
-                    {job.locationName ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-400"}`} />
-                        <span className="hidden xl:inline">{job.locationName}</span>
+                  <TableCell className="text-xs">
+                    <div className="min-w-0">
+                      <span className="flex items-center gap-1.5">
+                        {job.locationName && (
+                          <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-400"}`} title={job.locationName} />
+                        )}
+                        {job.customerName ?? <span className="text-muted-foreground">—</span>}
                       </span>
-                    ) : <span className="text-muted-foreground">—</span>}
+                      {(job.unitRegistration || job.locationName) && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                          {[job.locationName, job.unitRegistration].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
-                  <TableCell className="font-mono text-[11px] text-muted-foreground">{job.unitRegistration ?? "—"}</TableCell>
-                  <TableCell className="text-[13px]">
+                  <TableCell className="text-xs">
                     {job.assignedUserName ? (
                       <span className="inline-flex items-center gap-1.5">
                         <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm ${getInitialsColor(job.assignedUserName)}`}>
                           {getInitials(job.assignedUserName)}
                         </span>
-                        <span className="hidden xl:inline text-sm">{job.assignedUserName}</span>
+                        <span className="hidden xl:inline text-xs">{job.assignedUserName}</span>
                       </span>
                     ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
@@ -302,7 +305,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer"
+                      className="text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer"
                       onClick={async () => {
                         if (!confirm("Move this repair to the bin?")) return;
                         try {

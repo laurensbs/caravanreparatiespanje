@@ -416,9 +416,20 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {costLines.length > 0 ? (
                 <div className="space-y-1.5">
+                  {/* Column headers */}
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider pb-1 border-b">
+                    <span className="w-10 shrink-0">Type</span>
+                    <span className="flex-1">Description</span>
+                    <span className="w-14 text-center">Qty</span>
+                    <span className="w-20 text-right">Our cost</span>
+                    <span className="w-20 text-right">Sell</span>
+                    <span className="w-16 text-right">Total</span>
+                    <span className="w-6" />
+                  </div>
+
                   {costLines.map((line) => (
                     <div key={line.id} className="flex items-center gap-2">
-                      <span className={`text-[9px] font-medium uppercase tracking-wider w-10 shrink-0 ${
+                      <span className={`text-[10px] font-medium uppercase tracking-wider w-10 shrink-0 ${
                         line.type === "labour" ? "text-blue-500" : line.type === "part" ? "text-green-600" : "text-muted-foreground"
                       }`}>
                         {line.type === "labour" ? "HRS" : line.type === "part" ? "PART" : "ITEM"}
@@ -470,17 +481,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       </Button>
                     </div>
                   ))}
-
-                  {/* Column labels */}
-                  <div className="flex items-center gap-2 text-[9px] text-muted-foreground uppercase tracking-wider pt-1">
-                    <span className="w-10 shrink-0" />
-                    <span className="flex-1" />
-                    <span className="w-14 text-center">Qty</span>
-                    <span className="w-20 text-right">Our cost</span>
-                    <span className="w-20 text-right">Sell</span>
-                    <span className="w-16 text-right">Total</span>
-                    <span className="w-6" />
-                  </div>
 
                   {/* Discount row */}
                   <div className="flex items-center justify-between pt-2 border-t gap-2">
@@ -635,7 +635,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
         {/* Sidebar */}
         <div className="space-y-5">
-          {/* Status controls */}
+          {/* Status + Info — merged card */}
           <Card className="rounded-xl">
             <CardContent className="space-y-3 pt-5">
               <div className="grid grid-cols-2 gap-3">
@@ -697,13 +697,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 />
                 <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
               </label>
-            </CardContent>
-          </Card>
 
-          {/* Info */}
-          <Card className="rounded-xl">
-            <CardContent className="pt-5">
-              <div className="space-y-2.5 text-sm">
+              {/* Info section — integrated */}
+              <div className="border-t pt-3 space-y-2.5 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" />
@@ -767,124 +763,114 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <span className="text-right">{format(new Date(job.dueDate), "dd MMM yyyy")}</span>
                   </div>
                 )}
-                {(job.estimatedCost || job.actualCost || true) && (
-                  <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2 text-muted-foreground shrink-0">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        Estimated
-                      </span>
-                      <div className="relative w-28">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          value={estimatedCost}
-                          onChange={(e) => setEstimatedCost(e.target.value)}
-                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2 text-muted-foreground shrink-0">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        Actual
-                      </span>
-                      <div className="relative w-28">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          value={actualCost}
-                          onChange={(e) => setActualCost(e.target.value)}
-                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2 text-orange-600 dark:text-orange-400 shrink-0">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        Our Cost
-                      </span>
-                      <div className="relative w-28">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          value={internalCost}
-                          onChange={(e) => setInternalCost(e.target.value)}
-                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {job.sourceSheet && (
-                  <div className="border-t pt-2.5 mt-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Source</span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[160px]">{job.sourceSheet}</span>
-                    </div>
-                  </div>
-                )}
               </div>
+
+              {/* Costs section — integrated */}
+              {(job.estimatedCost || job.actualCost || true) && (
+                <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 text-muted-foreground shrink-0">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      Estimated
+                    </span>
+                    <div className="relative w-28">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={estimatedCost}
+                        onChange={(e) => setEstimatedCost(e.target.value)}
+                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 text-muted-foreground shrink-0">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      Actual
+                    </span>
+                    <div className="relative w-28">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={actualCost}
+                        onChange={(e) => setActualCost(e.target.value)}
+                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 text-orange-600 dark:text-orange-400 shrink-0">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      Our Cost
+                    </span>
+                    <div className="relative w-28">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={internalCost}
+                        onChange={(e) => setInternalCost(e.target.value)}
+                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {job.sourceSheet && (
+                <div className="border-t pt-2.5 mt-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Source</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">{job.sourceSheet}</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Flags */}
+          {/* Flags — compact toggleable pills */}
           <Card className="rounded-xl">
             <CardContent className="pt-5">
               <p className="flex items-center gap-2 text-xs font-semibold mb-3">
                 <Flag className="h-3.5 w-3.5 text-muted-foreground" />
                 Flags
               </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={waterDamageFlag} onCheckedChange={(v) => setWaterDamageFlag(v === true)} />
-                  <span className="text-xs text-red-600 dark:text-red-400">Water Damage</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={safetyFlag} onCheckedChange={(v) => setSafetyFlag(v === true)} />
-                  <span className="text-xs text-red-600 dark:text-red-400">Safety</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={tyresFlag} onCheckedChange={(v) => setTyresFlag(v === true)} />
-                  <span className="text-xs">Tyres</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={lightsFlag} onCheckedChange={(v) => setLightsFlag(v === true)} />
-                  <span className="text-xs">Lighting</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={brakesFlag} onCheckedChange={(v) => setBrakesFlag(v === true)} />
-                  <span className="text-xs">Brakes</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={windowsFlag} onCheckedChange={(v) => setWindowsFlag(v === true)} />
-                  <span className="text-xs">Windows</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={sealsFlag} onCheckedChange={(v) => setSealsFlag(v === true)} />
-                  <span className="text-xs">Seals</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={partsRequiredFlag} onCheckedChange={(v) => setPartsRequiredFlag(v === true)} />
-                  <span className="text-xs">Parts Required</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={followUpRequiredFlag} onCheckedChange={(v) => setFollowUpRequiredFlag(v === true)} />
-                  <span className="text-xs">Follow-up</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={prepaidFlag} onCheckedChange={(v) => setPrepaidFlag(v === true)} />
-                  <span className="text-xs">Prepaid</span>
-                </label>
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { label: "Water Damage", value: waterDamageFlag, set: setWaterDamageFlag, danger: true },
+                  { label: "Safety", value: safetyFlag, set: setSafetyFlag, danger: true },
+                  { label: "Tyres", value: tyresFlag, set: setTyresFlag, danger: false },
+                  { label: "Lighting", value: lightsFlag, set: setLightsFlag, danger: false },
+                  { label: "Brakes", value: brakesFlag, set: setBrakesFlag, danger: false },
+                  { label: "Windows", value: windowsFlag, set: setWindowsFlag, danger: false },
+                  { label: "Seals", value: sealsFlag, set: setSealsFlag, danger: false },
+                  { label: "Parts Required", value: partsRequiredFlag, set: setPartsRequiredFlag, danger: false },
+                  { label: "Follow-up", value: followUpRequiredFlag, set: setFollowUpRequiredFlag, danger: false },
+                  { label: "Prepaid", value: prepaidFlag, set: setPrepaidFlag, danger: false },
+                ] as const).map((flag) => (
+                  <button
+                    key={flag.label}
+                    type="button"
+                    onClick={() => flag.set(!flag.value)}
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
+                      flag.value
+                        ? flag.danger
+                          ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
+                          : "bg-primary/10 text-primary border-primary/20"
+                        : "bg-muted/50 text-muted-foreground border-transparent hover:border-border"
+                    }`}
+                  >
+                    {flag.value && <span className="mr-1">✓</span>}
+                    {flag.label}
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>

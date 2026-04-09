@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -62,19 +62,17 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Grid */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2.5 grid-cols-4 lg:grid-cols-8">
         {kpiCards.map((kpi, i) => (
           <Link key={kpi.label} href={kpi.href}>
             <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-card animate-slide-up" style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}>
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xl font-bold tracking-tight">{kpi.value}</p>
-                    <p className="text-[11px] font-medium text-muted-foreground mt-0.5">{kpi.label}</p>
-                  </div>
-                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", kpi.bg)}>
+              <CardContent className="pt-3 pb-3 px-3">
+                <div className="flex flex-col items-center text-center gap-1">
+                  <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg", kpi.bg)}>
                     {kpi.icon}
                   </div>
+                  <p className="text-lg font-bold tracking-tight leading-none">{kpi.value}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground leading-tight">{kpi.label}</p>
                 </div>
               </CardContent>
             </Card>

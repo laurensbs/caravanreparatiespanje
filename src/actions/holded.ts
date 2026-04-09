@@ -101,14 +101,14 @@ export async function createHoldedInvoice(repairJobId: string, lineItems?: LineI
     notes: job.notesRaw ?? undefined,
   });
 
-  const invoiceNum = result.docNumber ?? result.id;
-
-  // Fetch actual date from Holded
+  // Fetch the full document from Holded to get the real docNumber and date
+  let invoiceNum = result.id;
   let invoiceDate = new Date();
   try {
     const inv = await getInvoice(result.id);
+    if (inv.docNumber) invoiceNum = inv.docNumber;
     if (inv.date) invoiceDate = new Date(inv.date * 1000);
-  } catch { /* fallback to now */ }
+  } catch { /* fallback to id and now */ }
 
   await db
     .update(repairJobs)
@@ -116,7 +116,8 @@ export async function createHoldedInvoice(repairJobId: string, lineItems?: LineI
       holdedInvoiceId: result.id,
       holdedInvoiceNum: invoiceNum,
       holdedInvoiceDate: invoiceDate,
-      invoiceStatus: "sent",
+      invoiceStatus: "draft",
+      status: "invoiced",
       updatedAt: new Date(),
     })
     .where(eq(repairJobs.id, repairJobId));
@@ -184,6 +185,11 @@ export async function sendHoldedInvoice(repairJobId: string) {
 
   await sendInvoice(job.holdedInvoiceId, [customer.email]);
 
+  await db
+    .update(repairJobs)
+    .set({ invoiceStatus: "sent", updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+
   await db.insert(repairJobEvents).values({
     repairJobId,
     userId: session.user.id,
@@ -238,6 +244,11 @@ export async function sendHoldedQuote(repairJobId: string) {
   if (!customer?.email) throw new Error("Customer has no email address");
 
   await sendQuote(job.holdedQuoteId, [customer.email]);
+
+  await db
+    .update(repairJobs)
+    .set({ customerResponseStatus: "waiting_response", updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
 
   await db.insert(repairJobEvents).values({
     repairJobId,
@@ -329,14 +340,14 @@ export async function createHoldedQuote(repairJobId: string, lineItems: LineItem
     notes: job.notesRaw ?? undefined,
   });
 
-  const quoteNum = result.docNumber ?? result.id;
-
-  // Fetch actual date from Holded
+  // Fetch the full document from Holded to get the real docNumber and date
+  let quoteNum = result.id;
   let quoteDate = new Date();
   try {
     const q = await getQuote(result.id);
+    if (q.docNumber) quoteNum = q.docNumber;
     if (q.date) quoteDate = new Date(q.date * 1000);
-  } catch { /* fallback to now */ }
+  } catch { /* fallback to id and now */ }
 
   await db
     .update(repairJobs)
@@ -344,6 +355,7 @@ export async function createHoldedQuote(repairJobId: string, lineItems: LineItem
       holdedQuoteId: result.id,
       holdedQuoteNum: quoteNum,
       holdedQuoteDate: quoteDate,
+      status: "waiting_approval",
       updatedAt: new Date(),
     })
     .where(eq(repairJobs.id, repairJobId));

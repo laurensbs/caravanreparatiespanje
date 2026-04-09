@@ -123,6 +123,9 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
   const orderCol = sortColumn[filters.sort ?? ""] ?? repairJobs.updatedAt;
   const orderDir = filters.dir === "asc" ? asc : desc;
 
+  // Push completed/invoiced repairs to the bottom of the list
+  const completedLast = sql`CASE WHEN ${repairJobs.status} IN ('completed', 'invoiced') THEN 1 ELSE 0 END`;
+
   const [jobsResult, countResult] = await Promise.all([
     db
       .select({
@@ -157,7 +160,7 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
       .leftJoin(units, eq(repairJobs.unitId, units.id))
       .leftJoin(users, eq(repairJobs.assignedUserId, users.id))
       .where(where)
-      .orderBy(orderDir(orderCol))
+      .orderBy(asc(completedLast), orderDir(orderCol))
       .limit(limit)
       .offset(offset),
     db.select({ count: count() }).from(repairJobs)

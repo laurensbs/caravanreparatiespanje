@@ -24,7 +24,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
-import { createHoldedInvoice, downloadHoldedInvoicePdf, sendHoldedInvoice, createHoldedQuote, downloadHoldedQuotePdf, sendHoldedQuote } from "@/actions/holded";
+import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
@@ -835,31 +835,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.holdedQuoteId ? (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        className="text-sm font-medium text-primary hover:underline cursor-pointer"
-                        onClick={async () => {
-                          try {
-                            const { data, filename } = await downloadHoldedQuotePdf(job.id);
-                            const link = document.createElement("a");
-                            link.href = `data:application/pdf;base64,${data}`;
-                            link.download = filename;
-                            link.click();
-                            toast.success("PDF downloaded");
-                          } catch {
-                            toast.error("Failed to download PDF");
-                          }
-                        }}
-                      >
-                        {job.holdedQuoteNum}
-                      </button>
                       <a
                         href={`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                        className="text-sm font-medium text-primary hover:underline"
                       >
-                        Holded ↗
+                        {job.holdedQuoteNum} ↗
                       </a>
                     </div>
                     <div className="flex gap-2">
@@ -867,21 +849,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         variant="outline"
                         size="sm"
                         className="flex-1 text-xs"
-                        onClick={async () => {
-                          try {
-                            const { data, filename } = await downloadHoldedQuotePdf(job.id);
-                            const link = document.createElement("a");
-                            link.href = `data:application/pdf;base64,${data}`;
-                            link.download = filename;
-                            link.click();
-                            toast.success("PDF downloaded");
-                          } catch {
-                            toast.error("Failed to download PDF");
-                          }
-                        }}
+                        onClick={() => window.open(`https://app.holded.com/documents/estimate/${job.holdedQuoteId}`, "_blank")}
                       >
                         <FileDown className="h-3 w-3 mr-1" />
-                        PDF
+                        Open in Holded
                       </Button>
                       {job.customer?.email && (
                         <Button
@@ -936,31 +907,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.holdedInvoiceId ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline cursor-pointer"
-                      onClick={async () => {
-                        try {
-                          const { data, filename } = await downloadHoldedInvoicePdf(job.id);
-                          const link = document.createElement("a");
-                          link.href = `data:application/pdf;base64,${data}`;
-                          link.download = filename;
-                          link.click();
-                          toast.success("PDF downloaded");
-                        } catch {
-                          toast.error("Failed to download PDF");
-                        }
-                      }}
-                    >
-                      {job.holdedInvoiceNum}
-                    </button>
                     <a
                       href={`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                      className="text-sm font-medium text-primary hover:underline"
                     >
-                      Holded ↗
+                      {job.holdedInvoiceNum} ↗
                     </a>
                   </div>
                   <HoldedHint variant="sync">
@@ -971,21 +924,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       variant="outline"
                       size="sm"
                       className="flex-1 text-xs"
-                      onClick={async () => {
-                        try {
-                          const { data, filename } = await downloadHoldedInvoicePdf(job.id);
-                          const link = document.createElement("a");
-                          link.href = `data:application/pdf;base64,${data}`;
-                          link.download = filename;
-                          link.click();
-                          toast.success("PDF downloaded");
-                        } catch {
-                          toast.error("Failed to download PDF");
-                        }
-                      }}
+                      onClick={() => window.open(`https://app.holded.com/documents/invoice/${job.holdedInvoiceId}`, "_blank")}
                     >
                       <FileDown className="h-3 w-3 mr-1" />
-                      PDF
+                      Open in Holded
                     </Button>
                     {job.customer?.email && (
                       <Button

@@ -96,8 +96,8 @@ export async function GET(request: Request) {
           const dateChanged = existingRepair.holdedInvoiceDate?.getTime() !== invDate.getTime();
           const dueDateChanged = invDueDate && existingRepair.dueDate?.getTime() !== invDueDate.getTime();
 
-          // Auto-advance repair status when invoice is paid
-          const shouldAdvanceStatus = newStatus === "paid"
+          // Auto-advance repair status when invoice is sent or paid
+          const shouldAdvanceStatus = (newStatus === "paid" || newStatus === "sent")
             && earlyStatuses.includes(existingRepair.status);
 
           if (statusChanged || dateChanged || dueDateChanged || shouldAdvanceStatus) {
@@ -133,7 +133,7 @@ export async function GET(request: Request) {
                 fieldChanged: "status",
                 oldValue: existingRepair.status,
                 newValue: "invoiced",
-                comment: `Auto-advanced to invoiced — invoice ${inv.docNumber} is paid`,
+                comment: `Auto-advanced to invoiced — invoice ${inv.docNumber} is ${newStatus}`,
               });
               existingRepair.status = "invoiced";
               stats.statusAdvanced++;
@@ -200,8 +200,8 @@ export async function GET(request: Request) {
 
         if (matched) {
           const invDueDate = inv.dueDate ? new Date(inv.dueDate * 1000) : null;
-          // If invoice is paid, auto-advance repair status
-          const advanceStatus = newStatus === "paid" && earlyStatuses.includes(matched.status);
+          // If invoice is sent or paid, auto-advance repair status
+          const advanceStatus = (newStatus === "paid" || newStatus === "sent") && earlyStatuses.includes(matched.status);
           await db
             .update(repairJobs)
             .set({

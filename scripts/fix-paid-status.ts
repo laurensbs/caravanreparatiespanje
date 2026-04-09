@@ -12,6 +12,7 @@ const earlyStatuses = [
 ] as const;
 
 async function main() {
+  // Find repairs with a sent or paid invoice that are still in an early status
   const stuck = await db
     .select({
       id: repairJobs.id,
@@ -23,14 +24,14 @@ async function main() {
     .where(
       and(
         isNull(repairJobs.deletedAt),
-        eq(repairJobs.invoiceStatus, "paid"),
+        inArray(repairJobs.invoiceStatus, ["paid", "sent"]),
         inArray(repairJobs.status, [...earlyStatuses]),
       ),
     );
 
-  console.log(`\nRepairs with paid invoice but early status: ${stuck.length}\n`);
+  console.log(`\nRepairs with sent/paid invoice but early status: ${stuck.length}\n`);
   for (const r of stuck) {
-    console.log(`  ${r.publicCode ?? "?"} — ${r.status} → invoiced`);
+    console.log(`  ${r.publicCode ?? "?"} — ${r.status} (invoice: ${r.invoiceStatus}) → invoiced`);
   }
 
   for (const r of stuck) {
@@ -45,7 +46,7 @@ async function main() {
       fieldChanged: "status",
       oldValue: r.status,
       newValue: "invoiced",
-      comment: "Auto-advanced to invoiced — invoice is paid",
+      comment: `Auto-advanced to invoiced — invoice is ${r.invoiceStatus}`,
     });
   }
 

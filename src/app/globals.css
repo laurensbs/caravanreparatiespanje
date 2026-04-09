@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Modern blue-gray palette with depth */
   --color-background: oklch(0.975 0.003 260);

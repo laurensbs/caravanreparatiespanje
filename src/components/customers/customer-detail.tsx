@@ -580,39 +580,41 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 {holdedInvoices.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic py-2">No invoices</p>
                 ) : (
-                  holdedInvoices.map((inv: any) => (
-                    <a
-                      key={inv.id}
-                      href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
-                    >
-                      <div className="min-w-0 mr-2">
-                        <p className="font-medium text-[13px]">{inv.docNumber}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {inv.desc || "No description"}
-                          {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-medium tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</span>
-                        <Badge
-                          variant="secondary"
-                          className={`rounded-full text-[10px] px-2 py-0 ${
-                            inv.status === 1
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
-                              : inv.status === 2
-                              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400"
-                              : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400"
-                          }`}
-                        >
-                          {inv.status === 1 ? "Paid" : inv.status === 2 ? "Partial" : "Unpaid"}
-                        </Badge>
-                        <FileText className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                    </a>
-                  ))
+                  holdedInvoices.map((inv: any) => {
+                    const isDraft = inv.status === 0 && inv.draft === 1;
+                    const Wrapper = isDraft ? "div" as const : "a" as const;
+                    return (
+                      <Wrapper
+                        key={inv.id}
+                        {...(!isDraft ? { href: `/api/holded/pdf?type=invoice&id=${inv.id}`, target: "_blank", rel: "noopener noreferrer" } : {})}
+                        className={`flex items-center justify-between rounded-lg border p-2.5 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-muted/50 active:bg-muted cursor-pointer"}`}
+                      >
+                        <div className="min-w-0 mr-2">
+                          <p className="font-medium text-[13px]">{inv.docNumber || "Draft"}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {inv.desc || "No description"}
+                            {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-medium tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</span>
+                          <Badge
+                            variant="secondary"
+                            className={`rounded-full text-[10px] px-2 py-0 ${
+                              inv.status === 1
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
+                                : inv.status === 2
+                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400"
+                                : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400"
+                            }`}
+                          >
+                            {inv.status === 1 ? "Paid" : inv.status === 2 ? "Partial" : isDraft ? "Draft" : "Unpaid"}
+                          </Badge>
+                          {!isDraft && <FileText className="h-3 w-3 text-muted-foreground" />}
+                        </div>
+                      </Wrapper>
+                    );
+                  })
                 )}
               </div>
             )}
@@ -622,39 +624,41 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 {holdedQuotes.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic py-2">No quotes</p>
                 ) : (
-                  holdedQuotes.map((q: any) => (
-                    <a
-                      key={q.id}
-                      href={`/api/holded/pdf?type=estimate&id=${q.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
-                    >
-                      <div className="min-w-0 mr-2">
-                        <p className="font-medium text-[13px]">{q.docNumber}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {q.desc || "No description"}
-                          {q.date && ` · ${new Date(q.date * 1000).toLocaleDateString("nl-NL")}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-medium tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</span>
-                        <Badge
-                          variant="secondary"
-                          className={`rounded-full text-[10px] px-2 py-0 ${
-                            q.status === 1
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
-                              : q.draft === 1
-                              ? "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-400"
-                              : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400"
-                          }`}
-                        >
-                          {q.status === 1 ? "Accepted" : q.draft === 1 ? "Draft" : "Sent"}
-                        </Badge>
-                        <FileText className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                    </a>
-                  ))
+                  holdedQuotes.map((q: any) => {
+                    const isDraft = q.draft === 1;
+                    const Wrapper = isDraft ? "div" as const : "a" as const;
+                    return (
+                      <Wrapper
+                        key={q.id}
+                        {...(!isDraft ? { href: `/api/holded/pdf?type=estimate&id=${q.id}`, target: "_blank", rel: "noopener noreferrer" } : {})}
+                        className={`flex items-center justify-between rounded-lg border p-2.5 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-muted/50 active:bg-muted cursor-pointer"}`}
+                      >
+                        <div className="min-w-0 mr-2">
+                          <p className="font-medium text-[13px]">{q.docNumber || "Draft"}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {q.desc || "No description"}
+                            {q.date && ` · ${new Date(q.date * 1000).toLocaleDateString("nl-NL")}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-medium tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</span>
+                          <Badge
+                            variant="secondary"
+                            className={`rounded-full text-[10px] px-2 py-0 ${
+                              q.status === 1
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
+                                : isDraft
+                                ? "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-400"
+                                : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400"
+                            }`}
+                          >
+                            {q.status === 1 ? "Accepted" : isDraft ? "Draft" : "Sent"}
+                          </Badge>
+                          {!isDraft && <FileText className="h-3 w-3 text-muted-foreground" />}
+                        </div>
+                      </Wrapper>
+                    );
+                  })
                 )}
               </div>
             )}

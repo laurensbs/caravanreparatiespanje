@@ -647,11 +647,15 @@ export async function getDashboardSuggestions() {
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
   const [
     completedNoInvoice, noEstimate, stale, unassignedUrgent, noCustomer,
     draftInvoices, waitingApproval, waitingParts, blockedRepairs,
     noResponseFollowUp, quoteNoInvoice, overdueRepairs,
+    invoiceSentNotPaid, noUnit, customersNotSynced, completedRevenue,
+    scheduledThisWeek,
   ] = await Promise.all([
     // Completed but not invoiced
     db
@@ -792,6 +796,67 @@ export async function getDashboardSuggestions() {
           sql`${repairJobs.dueDate} < NOW()`
         )
       ),
+    // Invoice sent but not paid (7+ days since status changed to sent)
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.invoiceStatus, "sent"),
+          sql`${repairJobs.updatedAt} < ${oneWeekAgo}`
+        )
+      ),
+    // Active repairs without a unit linked
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          isNull(repairJobs.unitId)
+        )
+      ),
+    // Customers with active repairs not synced to Holded
+    db
+      .select({ count: count() })
+      .from(customers)
+      .where(
+        and(
+          isNull(customers.holdedContactId),
+          sql`EXISTS (
+            SELECT 1 FROM ${repairJobs}
+            WHERE ${repairJobs.customerId} = ${customers.id}
+            AND ${repairJobs.deletedAt} IS NULL
+            AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')
+          )`
+        )
+      ),
+    // Total estimated revenue from completed uninvoiced repairs
+    db
+      .select({ total: sql<string>`COALESCE(SUM(COALESCE(${repairJobs.actualCost}, ${repairJobs.estimatedCost}, '0')::numeric), 0)` })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          eq(repairJobs.status, "completed"),
+          eq(repairJobs.invoiceStatus, "not_invoiced"),
+          isNull(repairJobs.holdedInvoiceId)
+        )
+      ),
+    // Repairs scheduled for this week (upcoming due dates within 7 days)
+    db
+      .select({ count: count() })
+      .from(repairJobs)
+      .where(
+        and(
+          isNull(repairJobs.deletedAt),
+          sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+          sql`${repairJobs.dueDate} >= NOW()`,
+          sql`${repairJobs.dueDate} <= NOW() + INTERVAL '7 days'`
+        )
+      ),
   ]);
 
   return {
@@ -807,5 +872,10 @@ export async function getDashboardSuggestions() {
     noResponseFollowUp: noResponseFollowUp[0]?.count ?? 0,
     quoteNoInvoice: quoteNoInvoice[0]?.count ?? 0,
     overdueRepairs: overdueRepairs[0]?.count ?? 0,
+    invoiceSentNotPaid: invoiceSentNotPaid[0]?.count ?? 0,
+    noUnit: noUnit[0]?.count ?? 0,
+    customersNotSynced: customersNotSynced[0]?.count ?? 0,
+    completedRevenue: parseFloat(completedRevenue[0]?.total ?? "0"),
+    scheduledThisWeek: scheduledThisWeek[0]?.count ?? 0,
   };
 }

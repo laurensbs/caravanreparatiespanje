@@ -44,6 +44,7 @@ export async function holdedFetchRaw(
 
   return fetch(`${HOLDED_BASE}${path}`, {
     ...options,
+    cache: "no-store",
     headers: {
       key: apiKey,
       ...options?.headers,

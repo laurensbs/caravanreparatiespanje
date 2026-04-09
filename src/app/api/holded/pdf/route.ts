@@ -29,21 +29,35 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const buffer = type === "invoice"
+    const buf = type === "invoice"
       ? await getInvoicePdf(id)
       : await getQuotePdf(id);
 
-    return new NextResponse(buffer, {
+    if (buf.length === 0) {
+      return NextResponse.json({ error: "Empty PDF returned from Holded" }, { status: 502 });
+    }
+
+    // Verify it starts with %PDF
+    const header = buf.subarray(0, 5).toString("ascii");
+    if (!header.startsWith("%PDF")) {
+      console.error("Holded PDF response is not a PDF:", buf.subarray(0, 200).toString("utf8"));
+      return NextResponse.json({ error: "Holded did not return a valid PDF" }, { status: 502 });
+    }
+
+    return new NextResponse(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/pdf",
+        "Content-Length": String(buf.length),
         "Content-Disposition": `inline; filename="${type}-${id}.pdf"`,
         "Cache-Control": "private, max-age=300",
       },
     });
   } catch (e: any) {
-    if (e.status === 404) {
+    console.error("PDF fetch error:", e);
+    const status = e.status ?? 500;
+    if (status === 404) {
       return NextResponse.json({ error: "Document not found in Holded" }, { status: 404 });
     }
-    return NextResponse.json({ error: e.message ?? "Failed to fetch PDF" }, { status: 500 });
+    return NextResponse.json({ error: e.message ?? "Failed to fetch PDF" }, { status });
   }
 }

@@ -317,18 +317,26 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((inv, idx) => (
+                filtered.map((inv, idx) => {
+                  const isDraft = inv.status === 0 && (inv as any).draft === 1;
+                  return (
                   <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                     <TableCell>
-                      <a
-                        href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        {inv.docNumber}
-                        <ExternalLink className="h-2.5 w-2.5" />
-                      </a>
+                      {isDraft ? (
+                        <span className="font-medium text-[13px] text-muted-foreground">
+                          {inv.docNumber || "Draft"}
+                        </span>
+                      ) : (
+                        <a
+                          href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          {inv.docNumber}
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      )}
                     </TableCell>
                     <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
                     <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
@@ -399,7 +407,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );})
               )}
             </TableBody>
           </Table>
@@ -457,18 +465,26 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredQuotes.map((q, idx) => (
+                    filteredQuotes.map((q, idx) => {
+                      const isDraft = (q as any).draft === 1;
+                      return (
                       <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
-                          <a
-                            href={`/api/holded/pdf?type=estimate&id=${q.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
-                          >
-                            {q.docNumber}
-                            <ExternalLink className="h-2.5 w-2.5" />
-                          </a>
+                          {isDraft ? (
+                            <span className="font-medium text-[13px] text-muted-foreground">
+                              {q.docNumber || "Draft"}
+                            </span>
+                          ) : (
+                            <a
+                              href={`/api/holded/pdf?type=estimate&id=${q.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                            >
+                              {q.docNumber}
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
                         </TableCell>
                         <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
                         <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
@@ -502,7 +518,7 @@ export function InvoicesClient({ invoices, quotes, initialTab }: InvoicesClientP
                           )}
                         </TableCell>
                       </TableRow>
-                    ))
+                      );})
                   )}
                 </TableBody>
               </Table>

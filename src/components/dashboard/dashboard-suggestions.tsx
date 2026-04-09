@@ -16,6 +16,11 @@ interface DashboardSuggestionsProps {
     noResponseFollowUp: number;
     quoteNoInvoice: number;
     overdueRepairs: number;
+    invoiceSentNotPaid: number;
+    noUnit: number;
+    customersNotSynced: number;
+    completedRevenue: number;
+    scheduledThisWeek: number;
   };
 }
 
@@ -135,6 +140,61 @@ export function DashboardSuggestions({ data }: DashboardSuggestionsProps) {
       title: `${data.noCustomer} repair${data.noCustomer !== 1 ? "s" : ""} without a customer`,
       description: "Link customers for communication and invoicing.",
       href: "/repairs",
+    });
+  }
+
+  // Revenue insight: show total € that could be invoiced
+  if (data.completedRevenue > 0 && data.completedNoInvoice > 0) {
+    suggestions.push({
+      id: "revenue-opportunity",
+      level: "action",
+      title: `€${data.completedRevenue.toFixed(2)} ready to invoice`,
+      description: `${data.completedNoInvoice} completed repair${data.completedNoInvoice !== 1 ? "s" : ""} — create invoices to collect revenue.`,
+      href: "/repairs?status=completed&invoiceStatus=not_invoiced",
+    });
+  }
+
+  // Invoices sent but unpaid for 7+ days
+  if (data.invoiceSentNotPaid > 0) {
+    suggestions.push({
+      id: "invoice-sent-not-paid",
+      level: "warning",
+      title: `${data.invoiceSentNotPaid} invoice${data.invoiceSentNotPaid !== 1 ? "s" : ""} unpaid for 7+ days`,
+      description: "Follow up on overdue payments or check in Holded.",
+      href: "/invoices",
+    });
+  }
+
+  // Customers with active repairs not linked to Holded
+  if (data.customersNotSynced > 0) {
+    suggestions.push({
+      id: "customers-not-synced",
+      level: "action",
+      title: `${data.customersNotSynced} customer${data.customersNotSynced !== 1 ? "s" : ""} not linked to Holded`,
+      description: "These customers have active repairs but can't receive invoices until synced.",
+      href: "/customers",
+    });
+  }
+
+  // Repairs with no unit
+  if (data.noUnit > 0) {
+    suggestions.push({
+      id: "no-unit",
+      level: "info",
+      title: `${data.noUnit} repair${data.noUnit !== 1 ? "s" : ""} without a unit linked`,
+      description: "Link a caravan/trailer for better tracking per vehicle.",
+      href: "/repairs",
+    });
+  }
+
+  // Upcoming schedule awareness
+  if (data.scheduledThisWeek > 0) {
+    suggestions.push({
+      id: "scheduled-this-week",
+      level: "info",
+      title: `${data.scheduledThisWeek} repair${data.scheduledThisWeek !== 1 ? "s" : ""} due this week`,
+      description: "Review your upcoming deadlines.",
+      href: "/repairs?sort=dueDate&dir=asc",
     });
   }
 

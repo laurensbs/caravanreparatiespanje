@@ -239,13 +239,17 @@ export async function createInvoice(
   );
 }
 
-export async function getInvoicePdf(invoiceId: string): Promise<ArrayBuffer> {
+export async function getInvoicePdf(invoiceId: string): Promise<Buffer> {
   const res = await holdedFetchRaw(
     `/documents/invoice/${invoiceId}/pdf`,
     { headers: { accept: "application/pdf" } },
   );
-  if (!res.ok) throw new Error(`PDF download failed: ${res.status}`);
-  return res.arrayBuffer();
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`PDF download failed: ${res.status} ${body.slice(0, 200)}`);
+  }
+  const ab = await res.arrayBuffer();
+  return Buffer.from(ab);
 }
 
 export async function sendInvoice(
@@ -310,13 +314,17 @@ export async function createQuote(
   );
 }
 
-export async function getQuotePdf(quoteId: string): Promise<ArrayBuffer> {
+export async function getQuotePdf(quoteId: string): Promise<Buffer> {
   const res = await holdedFetchRaw(
     `/documents/estimate/${quoteId}/pdf`,
     { headers: { accept: "application/pdf" } },
   );
-  if (!res.ok) throw new Error(`PDF download failed: ${res.status}`);
-  return res.arrayBuffer();
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`PDF download failed: ${res.status} ${body.slice(0, 200)}`);
+  }
+  const ab = await res.arrayBuffer();
+  return Buffer.from(ab);
 }
 
 export async function sendQuote(

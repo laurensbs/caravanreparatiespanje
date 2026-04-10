@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
 import { RepairCard } from "@/components/garage/repair-card";
 import { signOut } from "next-auth/react";
@@ -29,6 +30,12 @@ interface Props {
 export function GarageTodayClient({ repairs, userName }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 30000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",

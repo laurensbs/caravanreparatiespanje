@@ -28,6 +28,14 @@ const REMINDER_TYPE_LABELS: Record<string, string> = {
   custom: "📝 Custom",
 };
 
+const GARAGE_TRIGGER_LABELS: Record<string, string> = {
+  garage_comment: "💬 Garage",
+  garage_not_done: "🔧 Garage",
+  garage_task_suggestion: "➕ Garage",
+  garage_done: "✅ Garage",
+  garage_feedback: "🔧 Garage",
+};
+
 type Reminder = Awaited<ReturnType<typeof getActiveReminders>>[number];
 
 export function ReminderPanel() {
@@ -51,7 +59,7 @@ export function ReminderPanel() {
 
   useEffect(() => {
     loadReminders();
-    const interval = setInterval(loadReminders, 60000); // refresh every minute
+    const interval = setInterval(loadReminders, 30000); // refresh every 30s
     return () => clearInterval(interval);
   }, []);
 
@@ -113,7 +121,7 @@ export function ReminderPanel() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xs">
-                      {REMINDER_TYPE_LABELS[reminder.reminderType] ?? "📝"}
+                      {(reminder.triggerEvent && GARAGE_TRIGGER_LABELS[reminder.triggerEvent]) ?? REMINDER_TYPE_LABELS[reminder.reminderType] ?? "📝"}
                     </span>
                     <p className="text-sm font-medium truncate">
                       {reminder.title}

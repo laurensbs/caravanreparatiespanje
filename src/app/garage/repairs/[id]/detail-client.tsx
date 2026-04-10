@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
@@ -25,14 +25,31 @@ type RepairDetail = {
   internalComments: string | null;
   customerName: string | null;
   customerId: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  customerMobile: string | null;
   unitRegistration: string | null;
   unitBrand: string | null;
   unitModel: string | null;
   unitId: string | null;
+  unitYear: number | null;
+  unitLength: string | null;
+  unitChassisId: string | null;
+  unitStorageLocation: string | null;
+  unitCurrentPosition: string | null;
   assignedUserName: string | null;
   assignedUserId: string | null;
   finalCheckStatus: string | null;
   finalCheckNotes: string | null;
+  waterDamageRiskFlag: boolean;
+  safetyFlag: boolean;
+  tyresFlag: boolean;
+  lightsFlag: boolean;
+  brakesFlag: boolean;
+  windowsFlag: boolean;
+  sealsFlag: boolean;
+  partsRequiredFlag: boolean;
+  followUpRequiredFlag: boolean;
   tasks: RepairTask[];
   photos: RepairPhoto[];
 };
@@ -65,6 +82,24 @@ export function GarageRepairDetailClient({ repair }: Props) {
   const hasTasks = repair.tasks.length > 0;
   const doneCount = repair.tasks.filter((t) => t.status === "done").length;
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 30000);
+    return () => clearInterval(interval);
+  }, [router]);
+
+  // Collect active flags
+  const flags: { key: string; label: string; color: string }[] = [];
+  if (repair.waterDamageRiskFlag) flags.push({ key: "water", label: t("Water Damage Risk", "Riesgo de Agua", "Waterschade Risico"), color: "bg-blue-100 text-blue-800 border-blue-300" });
+  if (repair.safetyFlag) flags.push({ key: "safety", label: t("Safety", "Seguridad", "Veiligheid"), color: "bg-red-100 text-red-800 border-red-300" });
+  if (repair.tyresFlag) flags.push({ key: "tyres", label: t("Tyres", "Neumáticos", "Banden"), color: "bg-gray-100 text-gray-800 border-gray-300" });
+  if (repair.lightsFlag) flags.push({ key: "lights", label: t("Lights", "Luces", "Verlichting"), color: "bg-yellow-100 text-yellow-800 border-yellow-300" });
+  if (repair.brakesFlag) flags.push({ key: "brakes", label: t("Brakes", "Frenos", "Remmen"), color: "bg-red-100 text-red-800 border-red-300" });
+  if (repair.windowsFlag) flags.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), color: "bg-cyan-100 text-cyan-800 border-cyan-300" });
+  if (repair.sealsFlag) flags.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), color: "bg-teal-100 text-teal-800 border-teal-300" });
+  if (repair.partsRequiredFlag) flags.push({ key: "parts", label: t("Parts Required", "Piezas Necesarias", "Onderdelen Nodig"), color: "bg-orange-100 text-orange-800 border-orange-300" });
+  if (repair.followUpRequiredFlag) flags.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), color: "bg-purple-100 text-purple-800 border-purple-300" });
 
   function handleRefresh() {
     router.refresh();
@@ -189,6 +224,78 @@ export function GarageRepairDetailClient({ repair }: Props) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-4">
+
+        {/* Flags (prominent warnings) */}
+        {flags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {flags.map((f) => (
+              <span key={f.key} className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-bold ${f.color}`}>
+                ⚠ {f.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Vehicle & Customer info */}
+        <div className="grid grid-cols-1 gap-3">
+          {/* Vehicle card */}
+          {repair.unitId && (
+            <div className="rounded-xl border bg-card p-3">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+                🚐 {t("Vehicle", "Vehículo", "Voertuig")}
+              </h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                {repair.unitRegistration && (
+                  <div><span className="text-muted-foreground">{t("Reg", "Mat", "Kenteken")}:</span> <span className="font-medium">{repair.unitRegistration}</span></div>
+                )}
+                {(repair.unitBrand || repair.unitModel) && (
+                  <div><span className="text-muted-foreground">{t("Model", "Modelo", "Model")}:</span> <span className="font-medium">{[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ")}</span></div>
+                )}
+                {repair.unitYear && (
+                  <div><span className="text-muted-foreground">{t("Year", "Año", "Jaar")}:</span> <span className="font-medium">{repair.unitYear}</span></div>
+                )}
+                {repair.unitLength && (
+                  <div><span className="text-muted-foreground">{t("Length", "Longitud", "Lengte")}:</span> <span className="font-medium">{repair.unitLength}</span></div>
+                )}
+                {repair.unitChassisId && (
+                  <div className="col-span-2"><span className="text-muted-foreground">{t("Chassis", "Chasis", "Chassis")}:</span> <span className="font-medium">{repair.unitChassisId}</span></div>
+                )}
+                {repair.unitCurrentPosition && (
+                  <div><span className="text-muted-foreground">{t("Position", "Posición", "Positie")}:</span> <span className="font-medium">{repair.unitCurrentPosition}</span></div>
+                )}
+                {repair.unitStorageLocation && (
+                  <div><span className="text-muted-foreground">{t("Storage", "Almacén", "Opslag")}:</span> <span className="font-medium">{repair.unitStorageLocation}</span></div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Customer card */}
+          {repair.customerId && (repair.customerPhone || repair.customerEmail || repair.customerMobile) && (
+            <div className="rounded-xl border bg-card p-3">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+                👤 {repair.customerName ?? t("Customer", "Cliente", "Klant")}
+              </h3>
+              <div className="space-y-1 text-sm">
+                {repair.customerPhone && (
+                  <a href={`tel:${repair.customerPhone}`} className="flex items-center gap-2 text-blue-600 active:opacity-70">
+                    📞 {repair.customerPhone}
+                  </a>
+                )}
+                {repair.customerMobile && repair.customerMobile !== repair.customerPhone && (
+                  <a href={`tel:${repair.customerMobile}`} className="flex items-center gap-2 text-blue-600 active:opacity-70">
+                    📱 {repair.customerMobile}
+                  </a>
+                )}
+                {repair.customerEmail && (
+                  <a href={`mailto:${repair.customerEmail}`} className="flex items-center gap-2 text-blue-600 active:opacity-70">
+                    ✉ {repair.customerEmail}
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Office notes (read-only) */}
         {(repair.descriptionRaw || repair.notesRaw || repair.internalComments) && (

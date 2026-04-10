@@ -868,6 +868,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 )}
                 {/* Planning date — editable */}
                 <PlanningDateRow jobId={job.id} dueDate={job.dueDate} />
+                {/* Send to Garage (today) */}
+                <SendToGarageButton jobId={job.id} status={job.status} dueDate={job.dueDate} />
               </div>
 
               {/* Costs section — integrated */}
@@ -1182,6 +1184,77 @@ function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | 
         </button>
       </span>
     </div>
+  );
+}
+
+// ─── Send to Garage Button ───
+
+function SendToGarageButton({
+  jobId,
+  status,
+  dueDate,
+}: {
+  jobId: string;
+  status: string;
+  dueDate: string | Date | null;
+}) {
+  const router = useRouter();
+  const [sending, setSending] = useState(false);
+
+  // Already scheduled for today or in garage
+  const isToday =
+    dueDate &&
+    format(new Date(dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+  const garageStatuses = [
+    "scheduled",
+    "in_progress",
+    "blocked",
+    "in_inspection",
+  ];
+  const inGarage = garageStatuses.includes(status) && isToday;
+
+  async function handleSend() {
+    setSending(true);
+    try {
+      const today = new Date();
+      today.setHours(8, 0, 0, 0);
+      await scheduleRepair(jobId, today.toISOString());
+      toast.success("Sent to garage for today");
+      router.refresh();
+    } catch {
+      toast.error("Failed to send to garage");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (inGarage) {
+    return (
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-green-600 text-sm font-medium">
+          <Wrench className="h-3.5 w-3.5" />
+          In Garage Today
+        </span>
+        <Link
+          href={`/garage/repairs/${jobId}`}
+          target="_blank"
+          className="text-xs text-primary hover:underline"
+        >
+          Open →
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleSend}
+      disabled={sending}
+      className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 transition-colors disabled:opacity-50 mt-1"
+    >
+      <Wrench className="h-3.5 w-3.5" />
+      {sending ? "Sending..." : "Send to Garage (Today)"}
+    </button>
   );
 }
 

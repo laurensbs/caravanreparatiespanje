@@ -543,7 +543,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   )}
                   {(() => {
                     const availableUsers = activeUsers.filter(
-                      (u) => !repairWorkers.some((w) => w.userId === u.id)
+                      (u) => !repairWorkers.some((w) => w.userId === u.id) && u.role === "technician"
                     );
                     if (availableUsers.length === 0) return null;
                     return (
@@ -1380,7 +1380,6 @@ function TimelineCommunicationCard({
 function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: string | Date | null; status: string }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [showFuture, setShowFuture] = useState(false);
   const [saving, setSaving] = useState(false);
   const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
 
@@ -1397,7 +1396,6 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
       await scheduleRepair(jobId, d.toISOString());
       toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
       setEditing(false);
-      setShowFuture(false);
       router.refresh();
     } catch {
       toast.error("Failed to set planning date");
@@ -1508,27 +1506,22 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             <Wrench className="h-3.5 w-3.5" />
             {saving ? "..." : "Garage Now"}
           </button>
-          <button
-            onClick={() => setShowFuture(!showFuture)}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-medium py-2 px-3 transition-colors disabled:opacity-50"
+          <label
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-medium py-2 px-3 transition-colors cursor-pointer relative"
           >
             <CalendarDays className="h-3.5 w-3.5" />
             Plan Future
-          </button>
+            <input
+              type="date"
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={saving}
+              min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
+              onChange={(e) => {
+                if (e.target.value) handleSet(e.target.value);
+              }}
+            />
+          </label>
         </div>
-      )}
-      {showFuture && (
-        <Input
-          type="date"
-          className="h-8 text-xs rounded-lg"
-          disabled={saving}
-          autoFocus
-          min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
-          onChange={(e) => {
-            if (e.target.value) handleSet(e.target.value);
-          }}
-        />
       )}
     </div>
   );

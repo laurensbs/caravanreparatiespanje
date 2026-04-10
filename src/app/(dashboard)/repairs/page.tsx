@@ -1,4 +1,4 @@
-import { getRepairJobs, type RepairFilters } from "@/actions/repairs";
+import { getRepairJobs, getRepairStatusCounts, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
 import { getParts } from "@/actions/parts";
@@ -9,7 +9,7 @@ import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Wrench, Clock, Package, Users, AlertTriangle, CheckCircle, FileText, PhoneOff } from "lucide-react";
 import Link from "next/link";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
@@ -37,13 +37,14 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog, allTags, unitsList] = await Promise.all([
+  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog, allTags, unitsList, statusCounts] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
     getAllCustomers(),
     getParts(),
     getTags(),
     getAllUnits(),
+    getRepairStatusCounts(),
   ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -51,6 +52,17 @@ export default async function RepairsPage({ searchParams }: Props) {
   );
 
   const totalPages = Math.ceil(total / limit);
+
+  const { byStatus, urgent } = statusCounts;
+
+  const quickButtons = [
+    { label: "To Do", value: (byStatus["new"] ?? 0) + (byStatus["todo"] ?? 0), icon: <Clock className="h-4 w-4" />, status: "todo", bg: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400 ring-orange-300/40" },
+    { label: "In Progress", value: (byStatus["in_progress"] ?? 0) + (byStatus["scheduled"] ?? 0) + (byStatus["in_inspection"] ?? 0), icon: <Wrench className="h-4 w-4" />, status: "in_progress", bg: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400 ring-sky-300/40" },
+    { label: "Waiting Parts", value: byStatus["waiting_parts"] ?? 0, icon: <Package className="h-4 w-4" />, status: "waiting_parts", bg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400 ring-purple-300/40" },
+    { label: "Waiting Customer", value: byStatus["waiting_customer"] ?? 0, icon: <Users className="h-4 w-4" />, status: "waiting_customer", bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 ring-amber-300/40" },
+    { label: "Completed", value: byStatus["completed"] ?? 0, icon: <CheckCircle className="h-4 w-4" />, status: "completed", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 ring-emerald-300/40" },
+    { label: "Urgent", value: urgent, icon: <AlertTriangle className="h-4 w-4" />, status: undefined as string | undefined, priority: "urgent" as string | undefined, bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 ring-red-300/40" },
+  ];
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -70,6 +82,27 @@ export default async function RepairsPage({ searchParams }: Props) {
           </Button>
           <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
         </div>
+      </div>
+
+      {/* Quick status buttons */}
+      <div className="flex flex-wrap gap-2">
+        {quickButtons.map((btn) => {
+          const href = btn.priority
+            ? `/repairs?priority=${btn.priority}`
+            : `/repairs?status=${btn.status}`;
+          const isActive = btn.priority
+            ? filters.priority === btn.priority
+            : filters.status === btn.status;
+          return (
+            <Link key={btn.label} href={isActive ? "/repairs" : href}>
+              <span className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer ring-1 ${btn.bg} ${isActive ? "ring-2 shadow-md scale-[1.02]" : ""}`}>
+                {btn.icon}
+                {btn.label}
+                <span className="text-base font-bold tabular-nums">{btn.value}</span>
+              </span>
+            </Link>
+          );
+        })}
       </div>
 
       <WorkflowGuide page="repairs" />

@@ -14,8 +14,8 @@ import type { RepairStatus, Priority, InvoiceStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
 import { useState } from "react";
 import { BulkActions } from "./bulk-actions";
-import { ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from "lucide-react";
-import { updateRepairJob, deleteRepairJob } from "@/actions/repairs";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { updateRepairJob } from "@/actions/repairs";
 import { toast } from "sonner";
 
 interface Job {
@@ -164,13 +164,12 @@ export function RepairTable({ jobs }: RepairTableProps) {
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("updatedAt")}>
                 <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
               </TableHead>
-              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="py-16 text-center">
+                <TableCell colSpan={10} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ArrowUpDown className="h-8 w-8 opacity-20" />
                     <p className="font-medium text-sm">No repair jobs found</p>
@@ -301,24 +300,6 @@ export function RepairTable({ jobs }: RepairTableProps) {
                   </TableCell>
                   <TableCell>
                     <SmartDate date={job.updatedAt} className="text-xs text-muted-foreground" />
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer"
-                      onClick={async () => {
-                        if (!confirm("Move this repair to the bin?")) return;
-                        try {
-                          await deleteRepairJob(job.id);
-                          toast.success("Moved to bin");
-                          router.refresh();
-                        } catch {
-                          toast.error("Failed to delete");
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
                   </TableCell>
                 </TableRow>
               ))

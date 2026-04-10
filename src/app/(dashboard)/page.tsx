@@ -39,15 +39,18 @@ export default async function DashboardPage() {
     MAIN_LOCATIONS.includes(l.name.toLowerCase())
   );
 
-  const kpiCards = [
-    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-4 w-4" />, bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400", href: "/repairs" },
-    { label: "To Do", value: stats?.todo ?? 0, icon: <Clock className="h-4 w-4" />, bg: "bg-orange-500/10 text-orange-600 dark:text-orange-400", href: "/repairs?status=todo" },
-    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-4 w-4" />, bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400", href: "/repairs?status=in_progress" },
-    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, icon: <Package className="h-4 w-4" />, bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400", href: "/repairs?status=waiting_parts" },
-    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, icon: <Users className="h-4 w-4" />, bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
-    { label: "Completed", value: stats?.completed ?? 0, icon: <CheckCircle className="h-4 w-4" />, bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", href: "/repairs?status=completed" },
-    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-4 w-4" />, bg: "bg-red-500/10 text-red-600 dark:text-red-400", href: "/repairs?priority=urgent" },
-    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-4 w-4" />, bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400", href: "/repairs?customerResponseStatus=no_response" },
+  const heroCards = [
+    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5" />, bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-500/20", href: "/repairs" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5" />, bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 ring-sky-500/20", href: "/repairs?status=in_progress" },
+    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5" />, bg: "bg-red-500/10 text-red-600 dark:text-red-400 ring-red-500/20", href: "/repairs?priority=urgent" },
+    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5" />, bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-rose-500/20", href: "/repairs?customerResponseStatus=no_response" },
+  ];
+
+  const quickFilters = [
+    { label: "To Do", value: stats?.todo ?? 0, bg: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400", href: "/repairs?status=todo" },
+    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, bg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400", href: "/repairs?status=waiting_parts" },
+    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
+    { label: "Completed", value: stats?.completed ?? 0, bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400", href: "/repairs?status=completed" },
   ];
 
   return (
@@ -61,21 +64,35 @@ export default async function DashboardPage() {
         <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid gap-2.5 grid-cols-4 lg:grid-cols-8">
-        {kpiCards.map((kpi, i) => (
+      {/* Hero KPI Cards */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        {heroCards.map((kpi, i) => (
           <Link key={kpi.label} href={kpi.href}>
-            <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-card animate-slide-up" style={{ animationDelay: `${i * 40}ms`, animationFillMode: "backwards" }}>
-              <CardContent className="pt-3 pb-3 px-3">
-                <div className="flex flex-col items-center text-center gap-1">
-                  <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg", kpi.bg)}>
+            <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-card ring-1 ring-border/50 animate-slide-up" style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}>
+              <CardContent className="pt-4 pb-4 px-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-xl shrink-0", kpi.bg)}>
                     {kpi.icon}
                   </div>
-                  <p className="text-lg font-bold tracking-tight leading-none">{kpi.value}</p>
-                  <p className="text-[10px] font-medium text-muted-foreground leading-tight">{kpi.label}</p>
+                  <div>
+                    <p className="text-2xl font-bold tracking-tight leading-none">{kpi.value}</p>
+                    <p className="text-xs font-medium text-muted-foreground mt-0.5">{kpi.label}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Filter Pills */}
+      <div className="flex flex-wrap gap-2">
+        {quickFilters.map((f) => (
+          <Link key={f.label} href={f.href}>
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all hover:shadow-md hover:scale-105 active:scale-95 cursor-pointer", f.bg)}>
+              {f.label}
+              <span className="font-bold">{f.value}</span>
+            </span>
           </Link>
         ))}
       </div>

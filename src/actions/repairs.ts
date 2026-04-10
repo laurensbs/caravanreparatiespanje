@@ -412,6 +412,27 @@ export async function bulkUpdateRepairJobs(data: unknown) {
   return { updated: parsed.ids.length };
 }
 
+export async function getRepairStatusCounts() {
+  await requireAuth();
+  const rows = await db
+    .select({ status: repairJobs.status, count: count() })
+    .from(repairJobs)
+    .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
+    .groupBy(repairJobs.status);
+  const urgentRow = await db
+    .select({ count: count() })
+    .from(repairJobs)
+    .where(and(
+      isNull(repairJobs.archivedAt),
+      isNull(repairJobs.deletedAt),
+      sql`${repairJobs.priority} = 'urgent'`,
+      sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
+    ));
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.status] = Number(r.count);
+  return { byStatus: map, urgent: Number(urgentRow[0]?.count ?? 0) };
+}
+
 export async function getDashboardStats() {
   await requireAuth();
 

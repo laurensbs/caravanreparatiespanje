@@ -27,6 +27,7 @@ import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
+import { createPart } from "@/actions/parts";
 import { addRepairWorker, removeRepairWorker } from "@/actions/garage";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
@@ -334,30 +335,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <Badge className={`${PRIORITY_COLORS[priority as Priority]} rounded-full text-[11px] px-2 py-0`}>
                 {PRIORITY_LABELS[priority as Priority]}
               </Badge>
-              {/* Past Repairs — big card icons */}
-              {job.customer && customerRepairs.length > 0 && (
-                <>
-                  <span className="text-muted-foreground mx-1 hidden sm:inline">|</span>
-                  {customerRepairs.slice(0, 4).map((r) => (
-                    <Link
-                      key={r.id}
-                      href={`/repairs/${r.id}`}
-                      className={`hidden sm:flex flex-col items-center rounded-xl px-4 py-2 min-w-[80px] transition-all hover:ring-2 ring-primary/30 hover:scale-105 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
-                    >
-                      <span className="text-lg font-black leading-none">{r.publicCode ?? 'R'}</span>
-                      <span className="text-[10px] font-medium opacity-80 mt-0.5 truncate max-w-[100px]">
-                        {r.title ? r.title.slice(0, 18) + (r.title.length > 18 ? '…' : '') : STATUS_LABELS[r.status as RepairStatus] ?? r.status}
-                      </span>
-                      <span className="text-[9px] opacity-60 mt-0.5">
-                        {format(new Date(r.createdAt), "dd MMM yy")}
-                      </span>
-                    </Link>
-                  ))}
-                  {customerRepairs.length > 4 && (
-                    <span className="hidden sm:inline text-xs text-muted-foreground font-medium">+{customerRepairs.length - 4}</span>
-                  )}
-                </>
-              )}
             </div>
             {allTags.length > 0 && (
               <div className="mt-1">
@@ -411,6 +388,40 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </Button>
         </div>
       </div>
+
+      {/* Past Repairs — big cards below header */}
+      {job.customer && customerRepairs.length > 0 && (
+        <div className="mt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Past Repairs</p>
+          <div className="flex gap-3 flex-wrap">
+            {customerRepairs.slice(0, 6).map((r) => (
+              <Link
+                key={r.id}
+                href={`/repairs/${r.id}`}
+                className={`flex flex-col items-start rounded-xl px-5 py-3 min-w-[140px] max-w-[200px] transition-all hover:ring-2 ring-primary/30 hover:scale-[1.03] ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
+              >
+                <div className="flex items-center gap-2 w-full">
+                  <span className="text-2xl font-black leading-none">{r.publicCode ?? 'R'}</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">
+                    {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                  </Badge>
+                </div>
+                <span className="text-xs font-medium opacity-80 mt-1.5 truncate w-full">
+                  {r.title ? r.title.slice(0, 30) + (r.title.length > 30 ? '…' : '') : 'No title'}
+                </span>
+                <span className="text-[10px] opacity-60 mt-0.5">
+                  {format(new Date(r.createdAt), "dd MMM yyyy")}
+                </span>
+              </Link>
+            ))}
+            {customerRepairs.length > 6 && (
+              <div className="flex items-center text-sm text-muted-foreground font-medium px-3">
+                +{customerRepairs.length - 6} more
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <RepairProgressTracker
         data={{
@@ -656,45 +667,88 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   )}
                 </div>
-              {/* Inline add form */}
+              {/* Inline add form — search catalog */}
               {showAddPart && (
-                <div className="flex items-center gap-1.5 mb-3">
+                <div className="mb-3 space-y-2">
                   <Input
                     value={addingPartName}
                     onChange={(e) => setAddingPartName(e.target.value)}
-                    placeholder="Part name..."
-                    className="h-8 text-sm flex-1 rounded-lg"
+                    placeholder="Search parts catalog..."
+                    className="h-8 text-sm rounded-lg"
                     autoFocus
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && addingPartName.trim()) {
+                      if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); }
+                    }}
+                  />
+                  {/* Matching parts from catalog */}
+                  {addingPartName.trim().length >= 1 && (
+                    <div className="max-h-36 overflow-y-auto space-y-0.5 rounded-lg border bg-white/80 dark:bg-black/20 p-1">
+                      {partsList
+                        .filter((p) => p.name.toLowerCase().includes(addingPartName.toLowerCase()))
+                        .slice(0, 8)
+                        .map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              startPartTransition(async () => {
+                                await createPartRequest({ repairJobId: job.id, partName: p.name });
+                                setAddingPartName("");
+                                setShowAddPart(false);
+                                router.refresh();
+                              });
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors flex items-center justify-between"
+                          >
+                            <span className="font-medium truncate">{p.name}</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{p.partNumber ?? ''}</span>
+                          </button>
+                        ))}
+                      {partsList.filter((p) => p.name.toLowerCase().includes(addingPartName.toLowerCase())).length === 0 && (
+                        <p className="text-[11px] text-muted-foreground py-2 text-center">No matching parts in catalog</p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    {/* Add as custom (not in catalog) */}
+                    <button
+                      onClick={() => {
+                        if (!addingPartName.trim()) return;
                         startPartTransition(async () => {
                           await createPartRequest({ repairJobId: job.id, partName: addingPartName });
                           setAddingPartName("");
                           setShowAddPart(false);
                           router.refresh();
                         });
-                      }
-                      if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); }
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      if (!addingPartName.trim()) return;
-                      startPartTransition(async () => {
-                        await createPartRequest({ repairJobId: job.id, partName: addingPartName });
-                        setAddingPartName("");
-                        setShowAddPart(false);
-                        router.refresh();
-                      });
-                    }}
-                    disabled={!addingPartName.trim() || partRequestsPending}
-                    className="text-green-600 hover:text-green-700 disabled:opacity-50"
-                  >
-                    <CheckCircle className="h-5 w-5" />
-                  </button>
-                  <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground">
-                    <XIcon className="h-5 w-5" />
-                  </button>
+                      }}
+                      disabled={!addingPartName.trim() || partRequestsPending}
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" /> Use &quot;{addingPartName || '...'}&quot; as-is
+                    </button>
+                    <span className="text-muted-foreground text-[11px]">or</span>
+                    {/* Add New Part to catalog */}
+                    <button
+                      onClick={() => {
+                        if (!addingPartName.trim()) return;
+                        startPartTransition(async () => {
+                          const newPart = await createPart({ name: addingPartName, stockQuantity: 0, minStockLevel: 0 });
+                          await createPartRequest({ repairJobId: job.id, partName: newPart.name });
+                          setAddingPartName("");
+                          setShowAddPart(false);
+                          toast.success(`Part "${newPart.name}" added to catalog`);
+                          router.refresh();
+                        });
+                      }}
+                      disabled={!addingPartName.trim() || partRequestsPending}
+                      className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <Package className="h-3 w-3" /> Add &quot;{addingPartName || '...'}&quot; to catalog
+                    </button>
+                    <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground ml-auto">
+                      <XIcon className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               )}
 

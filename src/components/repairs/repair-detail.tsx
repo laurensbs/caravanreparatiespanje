@@ -32,14 +32,12 @@ import { addRepairWorker, removeRepairWorker } from "@/actions/garage";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
-import { HoldedHint } from "@/components/holded-hint";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CustomerSearch } from "@/components/customers/customer-search";
-import { SmartSuggestions, getRepairSuggestions, type RepairSuggestionActions } from "@/components/smart-suggestions";
-import { RepairProgressTracker } from "@/components/repair-progress";
+import { type RepairSuggestionActions } from "@/components/smart-suggestions";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
-import { WorkflowGuide } from "@/components/workflow-guide";
+
 import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import type { RepairTask } from "@/types";
@@ -275,8 +273,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const suggestionActions: RepairSuggestionActions = {
     onLinkCustomer: () => setShowCustomerLinker(true),
     onAssignUser: () => setShowUserAssigner(true),
-    onCreateInvoice: () => holdedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    onCreateQuote: () => holdedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    onCreateInvoice: () => costRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    onCreateQuote: () => costRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
     onEditDescription: () => {
       setEditingDescription(true);
       setTimeout(() => descriptionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
@@ -288,6 +286,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       toast.info("Follow-up flag cleared — save to apply");
     },
   };
+
+  // Workflow step computation for Estimate → Quote → Invoice stepper
+  const hasEstimate = parseFloat(estimatedCost || "0") > 0;
+  const hasQuote = !!job.holdedQuoteId;
+  const hasInvoice = !!job.holdedInvoiceId;
+  const isPaid = job.invoiceStatus === "paid";
+  const workflowStep = isPaid ? 4 : hasInvoice ? 3 : hasQuote ? 2 : hasEstimate ? 1 : 0;
 
   async function handleSave() {
     setSaving(true);
@@ -441,31 +446,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
       )}
 
-      {/* Progressive disclosure: helpers collapsed by default */}
-      <details className="group">
-        <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none inline-flex items-center gap-1.5">
-          Show guide & suggestions
-          <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-3 space-y-3">
-          <RepairProgressTracker
-            data={{
-              status,
-              invoiceStatus,
-              holdedQuoteId: job.holdedQuoteId,
-              holdedQuoteNum: job.holdedQuoteNum,
-              holdedInvoiceId: job.holdedInvoiceId,
-              holdedInvoiceNum: job.holdedInvoiceNum,
-            }}
-          />
-          <WorkflowGuide page="repair-detail" context={{ job, settings }} />
-          <SmartSuggestions suggestions={getRepairSuggestions(job, suggestionActions)} />
-        </div>
-      </details>
-
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
+
+          {/* ═══ WORK CLUSTER ═══ */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Work</p>
+
           {/* Issue description + notes merged */}
           <div className="rounded-xl bg-muted/30 border border-border/50 p-6" ref={descriptionRef}>
             <div className="flex items-center justify-between mb-4">
@@ -823,21 +810,40 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </details>
           </div>
 
+          {/* ═══ FINANCIAL CLUSTER ═══ */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mt-2">Financial</p>
+
           {/* Cost Estimate Builder */}
           <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden" ref={costRef}>
             <details open>
               <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                Cost Estimate
-                <ChevronDown className="h-3.5 w-3.5 opacity-40" />
+                <span>Cost Estimate</span>
+                <div className="flex items-center gap-0">
+                  {[
+                    { label: "Estimate", done: hasEstimate, active: workflowStep === 0 },
+                    { label: "Quote", done: hasQuote, active: workflowStep === 1 },
+                    { label: "Invoice", done: hasInvoice, active: workflowStep === 2 || workflowStep === 3 },
+                    { label: "Paid", done: isPaid, active: workflowStep === 3 && !isPaid },
+                  ].map((s, i, arr) => (
+                    <div key={s.label} className="flex items-center">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors ${
+                        s.done ? "text-emerald-600 dark:text-emerald-400" :
+                        s.active ? "text-foreground" :
+                        "text-muted-foreground/30"
+                      }`}>{s.label}</span>
+                      {i < arr.length - 1 && <span className={`text-[10px] ${s.done ? "text-emerald-400" : "text-muted-foreground/20"}`}>→</span>}
+                    </div>
+                  ))}
+                </div>
               </summary>
 
             <div className="px-6 pb-6">
               {/* ── Pricing: Estimated (primary), Actual (auto from lines), Our Cost (subtle) ── */}
               <div className="flex items-start gap-6 mb-5">
-                <div className="flex-1">
-                  <span className="text-xs text-muted-foreground block mb-1">Estimated</span>
+                <div className="flex-[1.2]">
+                  <span className="text-xs font-medium text-foreground/70 block mb-1">Estimated</span>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 text-base">€</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -845,17 +851,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       placeholder="0.00"
                       value={estimatedCost}
                       onChange={(e) => setEstimatedCost(e.target.value)}
-                      className="h-10 text-lg font-semibold pl-7 pr-2 text-right rounded-lg tabular-nums"
+                      className="h-12 text-xl font-bold pl-8 pr-2 text-right rounded-lg tabular-nums border-border"
                     />
                   </div>
                 </div>
                 <div className="flex-1">
                   <span className="text-xs text-muted-foreground block mb-1">
                     Actual
-                    {costLines.length > 0 && <span className="text-muted-foreground/50 ml-1">· auto</span>}
+                    {costLines.length > 0 && <span className="text-muted-foreground/40 ml-1">· auto</span>}
                   </span>
                   {costLines.length > 0 ? (
-                    <div className="h-10 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-2">
+                    <div className="h-12 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-2">
                       €{parseFloat(actualCost || "0").toFixed(2)}
                     </div>
                   ) : (
@@ -868,23 +874,23 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         placeholder="0.00"
                         value={actualCost}
                         onChange={(e) => setActualCost(e.target.value)}
-                        className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
+                        className="h-12 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
                       />
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
-                  <span className="text-xs text-muted-foreground/60 block mb-1">
+                  <span className="text-[11px] text-muted-foreground/50 block mb-1">
                     Our Cost
-                    {costLines.length > 0 && <span className="text-muted-foreground/40 ml-1">· auto</span>}
+                    {costLines.length > 0 && <span className="text-muted-foreground/30 ml-1">· auto</span>}
                   </span>
                   {costLines.length > 0 ? (
-                    <div className="h-10 flex items-center justify-end text-sm tabular-nums text-muted-foreground/50 px-2">
+                    <div className="h-12 flex items-center justify-end text-xs tabular-nums text-muted-foreground/40 px-2">
                       €{parseFloat(internalCost || "0").toFixed(2)}
                     </div>
                   ) : (
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-sm">€</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/30 text-sm">€</span>
                       <Input
                         type="number"
                         step="0.01"
@@ -892,7 +898,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         placeholder="0.00"
                         value={internalCost}
                         onChange={(e) => setInternalCost(e.target.value)}
-                        className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground"
+                        className="h-12 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground/60"
                       />
                     </div>
                   )}
@@ -924,13 +930,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Line items</span>
-                    <details className="relative inline-block">
-                      <summary className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground cursor-pointer select-none transition-colors">
-                        How it works
+                    <details className="relative inline-block group/hint">
+                      <summary className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground cursor-pointer select-none transition-colors">
+                        ?
                       </summary>
-                      <div className="absolute left-0 top-full mt-1 z-50 w-64 rounded-lg border border-border bg-popover p-3 text-xs text-popover-foreground shadow-md">
-                        <p className="leading-relaxed">Build lines → click <strong>"→ Estimated"</strong> to set the price. Then <strong>Create Quote</strong> below. After work: adjust actual → <strong>Create Invoice</strong>.</p>
-                        <p className="text-muted-foreground mt-1.5">Prices are excl. VAT.</p>
+                      <div className="absolute left-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-popover p-2.5 text-[11px] text-popover-foreground shadow-md">
+                        <p className="leading-relaxed">Add lines → <strong>→ Estimated</strong> → <strong>Create Quote</strong>. After work, create invoice.</p>
                       </div>
                     </details>
                   </div>
@@ -1116,11 +1121,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </div>
                   </div>
                 ) : (
-                  <div className="py-6 text-center">
-                    <p className="text-sm text-muted-foreground">No cost lines yet</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Add labour, parts, or custom items to build a quote</p>
-                    <div className="flex items-center justify-center gap-2 mt-3">
-                      <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
+                  <div className="py-8 text-center">
+                    <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted mb-3">
+                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">No cost lines yet</p>
+                    <p className="text-xs text-muted-foreground/50 mt-1 max-w-[240px] mx-auto">Add labour or parts to build a quote, then send it to the customer</p>
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <button className="inline-flex items-center h-8 text-xs font-medium px-3 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors" onClick={addLabourLine}>
                         + Labour
                       </button>
                       <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
@@ -1130,11 +1138,67 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 )}
               </div>
+
+              {/* ── Next action: contextual CTA ── */}
+              <div className="border-t border-border/30 pt-4 mt-4">
+                {!hasQuote && !hasInvoice && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="default" size="sm" className="flex-1 text-xs"
+                      disabled={!job.customer || costLines.length === 0}
+                      onClick={() => {
+                        const el = holdedRef.current;
+                        if (el) {
+                          const details = el.querySelector('details');
+                          if (details) details.open = true;
+                          setTimeout(() => el.querySelector<HTMLElement>('[data-action="create-quote"]')?.click(), 50);
+                        }
+                      }}
+                    >
+                      Create Quote
+                    </Button>
+                    {!job.customer && <span className="text-[11px] text-muted-foreground">Link a contact first</span>}
+                    {job.customer && costLines.length === 0 && <span className="text-[11px] text-muted-foreground">Add lines first</span>}
+                  </div>
+                )}
+                {hasQuote && !hasInvoice && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Quote {job.holdedQuoteNum}</span>
+                    <span className="text-muted-foreground/30">→</span>
+                    <Button
+                      variant="default" size="sm" className="text-xs"
+                      disabled={!job.customer}
+                      onClick={() => {
+                        const el = holdedRef.current;
+                        if (el) {
+                          const details = el.querySelector('details');
+                          if (details) details.open = true;
+                          setTimeout(() => el.querySelector<HTMLElement>('[data-action="create-invoice"]')?.click(), 50);
+                        }
+                      }}
+                    >
+                      Create Invoice
+                    </Button>
+                  </div>
+                )}
+                {hasInvoice && !isPaid && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">✓ Invoice {job.holdedInvoiceNum}</span>
+                    <span className="text-muted-foreground/30">→</span>
+                    <span className="text-muted-foreground">Awaiting payment</span>
+                  </div>
+                )}
+                {isPaid && (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                    <CheckCircle className="h-3.5 w-3.5" /> Paid
+                  </div>
+                )}
+              </div>
             </div>
             </details>
           </div>
 
-          {/* Holded Documents — directly under Cost Estimate */}
+          {/* Holded Documents — collapsible details */}
           <div ref={holdedRef}>
             <HoldedDocumentsCard
               job={job}
@@ -1795,9 +1859,9 @@ function HoldedDocumentsCard({
 
   return (
     <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
-      <details open>
+      <details open={!!(job.holdedQuoteId || job.holdedInvoiceId)}>
         <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-          Documents
+          <span className="flex items-center gap-2">Documents{(job.holdedQuoteId || job.holdedInvoiceId) && <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />}</span>
           <ChevronDown className="h-3.5 w-3.5 opacity-40" />
         </summary>
       <div className="px-6 pb-6">
@@ -1908,6 +1972,7 @@ function HoldedDocumentsCard({
           ) : (
             <div className="space-y-1.5">
               <Button
+                data-action="create-quote"
                 variant="default" size="sm" className="w-full text-xs"
                 disabled={!job.customer || costLines.length === 0 || !!loading}
                 onClick={() => handleAction("create-quote", async () => {
@@ -2045,6 +2110,7 @@ function HoldedDocumentsCard({
           ) : (
             <div>
               <Button
+                data-action="create-invoice"
                 variant="default" size="sm" className="w-full text-xs"
                 disabled={!job.customer || (costLines.length === 0 && !actualCost && !estimatedCost) || !!loading}
                 onClick={() => handleAction("create-invoice", async () => {

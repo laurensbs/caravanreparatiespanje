@@ -319,9 +319,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
+    <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
       {/* ── Header ── */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-start gap-3 min-w-0 flex-1">
             <button
@@ -433,27 +433,34 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
       )}
 
-      <RepairProgressTracker
-        data={{
-          status,
-          invoiceStatus,
-          holdedQuoteId: job.holdedQuoteId,
-          holdedQuoteNum: job.holdedQuoteNum,
-          holdedInvoiceId: job.holdedInvoiceId,
-          holdedInvoiceNum: job.holdedInvoiceNum,
-        }}
-      />
-
-      <WorkflowGuide page="repair-detail" context={{ job, settings }} />
-
-      <SmartSuggestions suggestions={getRepairSuggestions(job, suggestionActions)} />
+      {/* Progressive disclosure: helpers collapsed by default */}
+      <details className="group">
+        <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none inline-flex items-center gap-1.5">
+          Show guide & suggestions
+          <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-3 space-y-3">
+          <RepairProgressTracker
+            data={{
+              status,
+              invoiceStatus,
+              holdedQuoteId: job.holdedQuoteId,
+              holdedQuoteNum: job.holdedQuoteNum,
+              holdedInvoiceId: job.holdedInvoiceId,
+              holdedInvoiceNum: job.holdedInvoiceNum,
+            }}
+          />
+          <WorkflowGuide page="repair-detail" context={{ job, settings }} />
+          <SmartSuggestions suggestions={getRepairSuggestions(job, suggestionActions)} />
+        </div>
+      </details>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
           {/* Issue description + notes merged */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 p-5" ref={descriptionRef}>
-            <div className="flex items-center justify-between mb-3">
+          <div className="rounded-xl bg-muted/30 border border-border/50 p-6" ref={descriptionRef}>
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</h3>
               {!editingDescription && (
                 <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
@@ -505,23 +512,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* Parts needed */}
           {job.partsNeededRaw && (
-            <div className="rounded-xl bg-muted/30 border border-border/50 p-5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Parts Needed</h3>
+            <div className="rounded-xl bg-muted/30 border border-border/50 p-6">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Parts Needed</h3>
               <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
             </div>
           )}
 
           {/* ── GARAGE ZONE — workers, planning, flags, tasks, parts ── */}
-          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+          <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
             <details open>
-              <summary className="px-5 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <Wrench className="h-3.5 w-3.5" />
+              <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
                 Garage
-                <ChevronDown className="h-3.5 w-3.5 ml-auto opacity-50" />
+                <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
-            <div className="px-5 pb-5 space-y-4">
+            <div className="px-6 pb-6 space-y-5">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Assigned workers */}
                 <div>
                   <Label className="text-xs text-muted-foreground">Assigned</Label>
@@ -582,7 +588,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
 
               {/* Flags */}
-              <div className="border-t border-border/40 pt-3">
+              <div className="border-t border-border/30 pt-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-muted-foreground font-medium">Inspection Flags</p>
                   {!showAllFlags && (
@@ -630,20 +636,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   )}
                   {activeFlags.length === 0 && !showAllFlags && (
-                    <span className="text-[11px] text-muted-foreground">No flags set</span>
+                    <span className="text-xs text-muted-foreground">None</span>
                   )}
                 </div>
               </div>
               {/* Garage Tasks */}
-              <div className="border-t border-border/40 pt-3">
+              <div className="border-t border-border/30 pt-4">
                 <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
               </div>
 
               {/* Parts Used */}
-              <div className="border-t border-border/40 pt-3">
+              <div className="border-t border-border/30 pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                    <Package className="h-3.5 w-3.5" />
+                  <p className="text-xs text-muted-foreground font-medium">
                       Parts Used
                     {partRequests.length > 0 && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -695,7 +700,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                                 router.refresh();
                               });
                             }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors flex items-center justify-between"
+                            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs hover:bg-muted transition-colors flex items-center justify-between"
                           >
                             <span className="font-medium truncate">{p.name}</span>
                             <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{p.partNumber ?? ''}</span>
@@ -719,11 +724,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         });
                       }}
                       disabled={!addingPartName.trim() || partRequestsPending}
-                      className="text-[11px] text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 flex items-center gap-1"
+                      className="text-xs text-muted-foreground hover:text-foreground font-medium disabled:opacity-50 flex items-center gap-1"
                     >
                       <Plus className="h-3 w-3" /> Use &quot;{addingPartName || '...'}&quot; as-is
                     </button>
-                    <span className="text-muted-foreground text-[11px]">or</span>
+                    <span className="text-muted-foreground text-xs">·</span>
                     {/* Add New Part to catalog */}
                     <button
                       onClick={() => {
@@ -738,9 +743,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         });
                       }}
                       disabled={!addingPartName.trim() || partRequestsPending}
-                      className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50 flex items-center gap-1"
+                      className="text-xs text-muted-foreground hover:text-foreground font-medium disabled:opacity-50 flex items-center gap-1"
                     >
-                      <Package className="h-3 w-3" /> Add &quot;{addingPartName || '...'}&quot; to catalog
+                      Add &quot;{addingPartName || '...'}&quot; to catalog
                     </button>
                     <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground ml-auto">
                       <XIcon className="h-4 w-4" />
@@ -811,18 +816,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
 
           {/* Cost Estimate Builder */}
-          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden" ref={costRef}>
+          <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden" ref={costRef}>
             <details open>
-              <summary className="px-5 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between">
-                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Cost Estimate
-                  <span className="text-xs font-normal text-muted-foreground/60">→ client</span>
-                </span>
-                <div className="flex items-center gap-1">
-                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                </div>
+              <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                Cost Estimate
+                <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
-            <div className="px-5 pb-1 pt-0">
+            <div className="px-6 pb-1 pt-0">
               <div className="flex items-center justify-end gap-1">
                   <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
                     <Clock className="h-3 w-3 mr-1" />
@@ -838,7 +838,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </button>
               </div>
             </div>
-            <div className="px-5 pb-5 pt-2">
+            <div className="px-6 pb-6 pt-2">
               {showPartPicker && (
                 <div className="mb-3 border rounded-lg p-2 bg-muted/30">
                   <Input
@@ -1108,7 +1108,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         <div className="space-y-6">
 
           {/* ── Office ── */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 p-5 space-y-4">
+          <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Office</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -1180,7 +1180,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
 
           {/* ── Customer ── */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 p-5 space-y-4">
+          <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</h3>
 
             {/* Customer name + edit */}
@@ -1239,8 +1239,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
                 {job.holdedInvoiceDate && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Receipt className="h-3.5 w-3.5" />
+                    <span className="text-muted-foreground">
                       Invoice Date
                     </span>
                     <span className="text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
@@ -1465,11 +1464,10 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Planning date */}
       <div className="flex items-center justify-between group/plan">
-        <span className="flex items-center gap-2 text-muted-foreground text-sm">
-          <CalendarDays className="h-3.5 w-3.5" />
+        <span className="text-muted-foreground text-sm">
           Planning
         </span>
         {dueDate && !editing ? (
@@ -1513,8 +1511,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
       {/* Send to Garage / In Garage status */}
       {inGarage ? (
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-green-600 text-sm font-medium">
-            <Wrench className="h-3.5 w-3.5" />
+          <span className="text-sm font-medium text-foreground">
             In Garage Today
           </span>
           <Link
@@ -1530,9 +1527,8 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
           <button
             onClick={handleSendToday}
             disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 px-3 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2.5 px-3 transition-colors hover:bg-foreground/90 disabled:opacity-50"
           >
-            <Wrench className="h-3.5 w-3.5" />
             {saving ? "..." : "Garage Now"}
           </button>
           <button
@@ -1542,9 +1538,9 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
               }
             }}
             disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-medium py-2 px-3 transition-colors disabled:opacity-50 relative overflow-hidden"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2.5 px-3 transition-colors disabled:opacity-50 relative overflow-hidden"
           >
-            <CalendarDays className="h-3.5 w-3.5" />
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
             Plan Future
             <input
               ref={futureRef}

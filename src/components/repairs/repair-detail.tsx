@@ -155,9 +155,26 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [actualCost, setActualCost] = useState(job.actualCost ?? "");
   const [internalCost, setInternalCost] = useState(job.internalCost ?? "");
   const [costLines, setCostLines] = useState<CostLineItem[]>([]);
+  const [showAllFlags, setShowAllFlags] = useState(false);
   const [showPartPicker, setShowPartPicker] = useState(false);
   const [partSearch, setPartSearch] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
+
+  // Flag definitions for rendering
+  const allFlags = [
+    { label: "Water Damage", value: waterDamageFlag, set: setWaterDamageFlag, danger: true },
+    { label: "Safety", value: safetyFlag, set: setSafetyFlag, danger: true },
+    { label: "Tyres", value: tyresFlag, set: setTyresFlag, danger: false },
+    { label: "Lighting", value: lightsFlag, set: setLightsFlag, danger: false },
+    { label: "Brakes", value: brakesFlag, set: setBrakesFlag, danger: true },
+    { label: "Windows", value: windowsFlag, set: setWindowsFlag, danger: false },
+    { label: "Seals", value: sealsFlag, set: setSealsFlag, danger: false },
+    { label: "Parts Req.", value: partsRequiredFlag, set: setPartsRequiredFlag, danger: false },
+    { label: "Follow-up", value: followUpRequiredFlag, set: setFollowUpRequiredFlag, danger: false },
+    { label: "Prepaid", value: prepaidFlag, set: setPrepaidFlag, danger: false },
+  ] as const;
+  const activeFlags = allFlags.filter((f) => f.value);
+  const inactiveFlags = allFlags.filter((f) => !f.value);
 
   const costLinesSubtotal = costLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
   const costLinesInternalTotal = costLines.reduce((sum, l) => sum + l.quantity * l.internalCost, 0);
@@ -353,7 +370,29 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Past Repairs — prominent in header */}
+          {job.customer && customerRepairs.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Past:</span>
+              {customerRepairs.slice(0, 3).map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/repairs/${r.id}`}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:ring-2 ring-primary/30 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
+                  title={r.title ?? 'Repair'}
+                >
+                  {r.publicCode ?? 'R'}
+                  <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-0.5">
+                    {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                  </Badge>
+                </Link>
+              ))}
+              {customerRepairs.length > 3 && (
+                <span className="text-[10px] text-muted-foreground">+{customerRepairs.length - 3}</span>
+              )}
+            </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -466,6 +505,135 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* Garage Tasks — moved UP */}
           <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
+
+          {/* Parts Used — inside garage workflow area */}
+          <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/10">
+            <CardHeader className="pb-1">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Package className="h-4 w-4 text-blue-500" />
+                  Parts Used
+                  {partRequests.length > 0 && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      partRequests.every(p => p.status === "received" || p.status === "cancelled")
+                        ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                        : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
+                    }`}>
+                      {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
+                    </span>
+                  )}
+                </CardTitle>
+                {!showAddPart && (
+                  <button
+                    onClick={() => setShowAddPart(true)}
+                    className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
+                  >
+                    <Plus className="h-3 w-3" /> Add
+                  </button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {/* Inline add form */}
+              {showAddPart && (
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Input
+                    value={addingPartName}
+                    onChange={(e) => setAddingPartName(e.target.value)}
+                    placeholder="Part name..."
+                    className="h-8 text-sm flex-1 rounded-lg"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && addingPartName.trim()) {
+                        startPartTransition(async () => {
+                          await createPartRequest({ repairJobId: job.id, partName: addingPartName });
+                          setAddingPartName("");
+                          setShowAddPart(false);
+                          router.refresh();
+                        });
+                      }
+                      if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!addingPartName.trim()) return;
+                      startPartTransition(async () => {
+                        await createPartRequest({ repairJobId: job.id, partName: addingPartName });
+                        setAddingPartName("");
+                        setShowAddPart(false);
+                        router.refresh();
+                      });
+                    }}
+                    disabled={!addingPartName.trim() || partRequestsPending}
+                    className="text-green-600 hover:text-green-700 disabled:opacity-50"
+                  >
+                    <CheckCircle className="h-5 w-5" />
+                  </button>
+                  <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground">
+                    <XIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Parts from cost estimate */}
+              {costLines.filter(l => l.type === "part").length > 0 && partRequests.length === 0 && (
+                <div className="mb-2">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">From Quote</p>
+                  <div className="space-y-1">
+                    {costLines.filter(l => l.type === "part").map((l) => (
+                      <div key={l.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/60 dark:bg-white/5 border">
+                        <span className="truncate font-medium">{l.description}</span>
+                        <span className="text-muted-foreground shrink-0 ml-2">×{l.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Part requests */}
+              {partRequests.length > 0 ? (
+                <div className="space-y-1">
+                  {partRequests.map((pr) => (
+                    <div key={pr.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/60 dark:bg-white/5 border">
+                      <span className="truncate font-medium mr-2">
+                        {pr.partName}
+                        {pr.quantity > 1 && <span className="text-muted-foreground"> ×{pr.quantity}</span>}
+                      </span>
+                      <Select
+                        value={pr.status}
+                        onValueChange={(newStatus) => {
+                          startPartTransition(async () => {
+                            await updatePartRequestStatus(pr.id, newStatus as any);
+                            router.refresh();
+                          });
+                        }}
+                      >
+                        <SelectTrigger className={`h-6 w-[100px] text-[10px] font-semibold rounded-full border-0 ${
+                          pr.status === "received" ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" :
+                          pr.status === "shipped" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400" :
+                          pr.status === "ordered" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400" :
+                          pr.status === "cancelled" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" :
+                          "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400"
+                        }`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="requested">⏳ Requested</SelectItem>
+                          <SelectItem value="ordered">📋 Ordered</SelectItem>
+                          <SelectItem value="shipped">🚚 Shipped</SelectItem>
+                          <SelectItem value="received">✓ Received</SelectItem>
+                          <SelectItem value="cancelled">✗ Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              ) : !showAddPart && costLines.filter(l => l.type === "part").length === 0 ? (
+                <p className="text-xs text-muted-foreground">No parts used yet. Add from quote or manually.</p>
+              ) : null}
+            </CardContent>
+          </Card>
 
           {/* Cost Estimate Builder */}
           <Card className="rounded-xl" ref={costRef}>
@@ -829,40 +997,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </Select>
               </div>
 
-              {/* Past repairs inline */}
-              {job.customer && customerRepairs.length > 0 && (
-                <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3">
-                  <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 font-medium mb-2 flex items-center gap-1.5">
-                    <Wrench className="h-3 w-3" />
-                    Past Repairs
-                    <span className="text-muted-foreground font-normal">({customerRepairs.length})</span>
-                  </p>
-                  <div className="space-y-0.5">
-                    {customerRepairs.slice(0, 5).map((r) => (
-                      <Link
-                        key={r.id}
-                        href={`/repairs/${r.id}`}
-                        className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20 transition-colors group text-xs"
-                      >
-                        <span className="truncate font-medium group-hover:text-primary">
-                          {r.publicCode ? `${r.publicCode} — ` : ""}{r.title ?? "Untitled"}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className={`text-[9px] px-1.5 py-0 shrink-0 ml-2 ${STATUS_COLORS[r.status as RepairStatus] ?? ""}`}
-                        >
-                          {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
-                        </Badge>
-                      </Link>
-                    ))}
-                    {customerRepairs.length > 5 && (
-                      <p className="text-[10px] text-muted-foreground pl-2 pt-1">
-                        +{customerRepairs.length - 5} more
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+          {/* Remove past repairs from customer card — now in header */}
 
               {/* Invoice + pricing */}
               <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3 space-y-2.5">
@@ -971,27 +1106,57 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 Garage
               </p>
 
-              {/* Assigned tech — select from garage workers */}
+              {/* Assigned workers */}
               <div>
                 <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Assigned</Label>
-                <Select
-                  value={job.assignedUserId ?? "unassigned"}
-                  onValueChange={(userId) => {
-                    startPartTransition(async () => {
-                      await updateRepairJob(job.id, { assignedUserId: userId === "unassigned" ? null : userId });
-                      toast.success(userId === "unassigned" ? "Unassigned" : "Assigned");
-                      router.refresh();
-                    });
-                  }}
-                >
-                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {activeUsers.filter(u => u.role === "technician").map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                {repairWorkers.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {repairWorkers.map((w) => (
+                      <span key={w.id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-xs font-medium group">
+                        <span className="flex items-center justify-center h-4 w-4 rounded-full bg-blue-500 text-[9px] font-bold text-white">
+                          {w.userName.charAt(0).toUpperCase()}
+                        </span>
+                        {w.userName}
+                        <button
+                          onClick={() => {
+                            startPartTransition(async () => {
+                              await removeRepairWorker(job.id, w.userId);
+                              router.refresh();
+                            });
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-red-500 transition-all ml-0.5"
+                          title="Remove"
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </button>
+                      </span>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
+                {(() => {
+                  const availableUsers = activeUsers.filter(
+                    (u) => !repairWorkers.some((w) => w.userId === u.id)
+                  );
+                  if (availableUsers.length === 0) return null;
+                  return (
+                    <Select
+                      value=""
+                      onValueChange={(userId) => {
+                        startPartTransition(async () => {
+                          await addRepairWorker(job.id, userId);
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
+                      <SelectContent>
+                        {availableUsers.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>{u.name} <span className="text-muted-foreground ml-1 text-[10px]">({u.role})</span></SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
 
               {/* Planning + Send to Garage */}
@@ -999,224 +1164,64 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* Flags */}
               <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
-                <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium mb-2">Inspection Flags</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {([
-                    { label: "Water Damage", value: waterDamageFlag, set: setWaterDamageFlag, danger: true },
-                    { label: "Safety", value: safetyFlag, set: setSafetyFlag, danger: true },
-                    { label: "Tyres", value: tyresFlag, set: setTyresFlag, danger: false },
-                    { label: "Lighting", value: lightsFlag, set: setLightsFlag, danger: false },
-                    { label: "Brakes", value: brakesFlag, set: setBrakesFlag, danger: true },
-                    { label: "Windows", value: windowsFlag, set: setWindowsFlag, danger: false },
-                    { label: "Seals", value: sealsFlag, set: setSealsFlag, danger: false },
-                    { label: "Parts Req.", value: partsRequiredFlag, set: setPartsRequiredFlag, danger: false },
-                    { label: "Follow-up", value: followUpRequiredFlag, set: setFollowUpRequiredFlag, danger: false },
-                    { label: "Prepaid", value: prepaidFlag, set: setPrepaidFlag, danger: false },
-                  ] as const).map((flag) => (
-                    <button
-                      key={flag.label}
-                      type="button"
-                      onClick={() => flag.set(!flag.value)}
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
-                        flag.value
-                          ? flag.danger
-                            ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
-                            : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
-                          : "bg-white/60 dark:bg-white/5 text-muted-foreground border-blue-100 dark:border-blue-800/40 hover:border-blue-300"
-                      }`}
-                    >
-                      {flag.value && <span className="mr-1">✓</span>}
-                      {flag.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Part Requests */}
-              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium flex items-center gap-1.5">
-                    <Package className="h-3 w-3" />
-                    Parts
-                    {partRequests.length > 0 && (
-                      <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        partRequests.every(p => p.status === "received" || p.status === "cancelled")
-                          ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-                          : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
-                      }`}>
-                        {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
-                      </span>
-                    )}
-                  </p>
-                  {!showAddPart && (
+                  <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium">Inspection Flags</p>
+                  {!showAllFlags && (
                     <button
-                      onClick={() => setShowAddPart(true)}
+                      onClick={() => setShowAllFlags(true)}
                       className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
                     >
                       <Plus className="h-3 w-3" /> Add
                     </button>
                   )}
                 </div>
-
-                {/* Inline add form */}
-                {showAddPart && (
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Input
-                      value={addingPartName}
-                      onChange={(e) => setAddingPartName(e.target.value)}
-                      placeholder="Part name..."
-                      className="h-7 text-xs flex-1"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && addingPartName.trim()) {
-                          startPartTransition(async () => {
-                            await createPartRequest({ repairJobId: job.id, partName: addingPartName });
-                            setAddingPartName("");
-                            setShowAddPart(false);
-                            router.refresh();
-                          });
-                        }
-                        if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); }
-                      }}
-                    />
+                <div className="flex flex-wrap gap-1.5">
+                  {/* Active flags always shown */}
+                  {activeFlags.map((flag) => (
                     <button
-                      onClick={() => {
-                        if (!addingPartName.trim()) return;
-                        startPartTransition(async () => {
-                          await createPartRequest({ repairJobId: job.id, partName: addingPartName });
-                          setAddingPartName("");
-                          setShowAddPart(false);
-                          router.refresh();
-                        });
-                      }}
-                      disabled={!addingPartName.trim() || partRequestsPending}
-                      className="text-green-600 hover:text-green-700 disabled:opacity-50"
+                      key={flag.label}
+                      type="button"
+                      onClick={() => flag.set(!flag.value)}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
+                        flag.danger
+                          ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
+                          : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                      }`}
                     >
-                      <CheckCircle className="h-4 w-4" />
+                      <span className="mr-1">✓</span>
+                      {flag.label}
                     </button>
-                    <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground">
-                      <XIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
-
-                {partRequests.length > 0 ? (
-                  <div className="space-y-1">
-                    {partRequests.map((pr) => (
-                      <div key={pr.id} className="flex items-center justify-between text-xs py-1 group">
-                        <span className="truncate mr-2">
-                          {pr.partName}
-                          {pr.quantity > 1 && <span className="text-muted-foreground"> ×{pr.quantity}</span>}
-                        </span>
-                        <Select
-                          value={pr.status}
-                          onValueChange={(newStatus) => {
-                            startPartTransition(async () => {
-                              await updatePartRequestStatus(pr.id, newStatus as any);
-                              router.refresh();
-                            });
-                          }}
-                        >
-                          <SelectTrigger className={`h-6 w-[100px] text-[10px] font-semibold rounded-full border-0 ${
-                            pr.status === "received" ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" :
-                            pr.status === "shipped" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400" :
-                            pr.status === "ordered" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400" :
-                            pr.status === "cancelled" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" :
-                            "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400"
-                          }`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="requested">⏳ Requested</SelectItem>
-                            <SelectItem value="ordered">📋 Ordered</SelectItem>
-                            <SelectItem value="shipped">🚚 Shipped</SelectItem>
-                            <SelectItem value="received">✓ Received</SelectItem>
-                            <SelectItem value="cancelled">✗ Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
-                ) : !showAddPart ? (
-                  <p className="text-[11px] text-muted-foreground">No parts requested</p>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ── � WORKERS card ── */}
-          <Card className="rounded-xl">
-            <CardContent className="space-y-3 pt-4">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  👷 Workers
-                  {repairWorkers.length > 0 && (
-                    <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-bold">
-                      {repairWorkers.length}
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              {/* Current workers */}
-              {repairWorkers.length > 0 && (
-                <div className="space-y-1.5">
-                  {repairWorkers.map((w) => (
-                    <div key={w.id} className="flex items-center justify-between text-sm group">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500 text-[11px] font-bold text-white">
-                          {w.userName.charAt(0).toUpperCase()}
-                        </span>
-                        <span className="font-medium">{w.userName}</span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          startPartTransition(async () => {
-                            await removeRepairWorker(job.id, w.userId);
-                            router.refresh();
-                          });
-                        }}
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"
-                        title="Remove"
-                      >
-                        <XIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
                   ))}
+                  {/* Inactive flags shown only when expanded */}
+                  {showAllFlags && inactiveFlags.map((flag) => (
+                    <button
+                      key={flag.label}
+                      type="button"
+                      onClick={() => flag.set(true)}
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border bg-white/60 dark:bg-white/5 text-muted-foreground border-blue-100 dark:border-blue-800/40 hover:border-blue-300"
+                    >
+                      {flag.label}
+                    </button>
+                  ))}
+                  {showAllFlags && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllFlags(false)}
+                      className="inline-flex items-center rounded-full px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  )}
+                  {activeFlags.length === 0 && !showAllFlags && (
+                    <span className="text-[11px] text-muted-foreground">No flags set</span>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Add worker dropdown */}
-              {(() => {
-                const availableUsers = activeUsers.filter(
-                  (u) => !repairWorkers.some((w) => w.userId === u.id)
-                );
-                if (availableUsers.length === 0) return null;
-                return (
-                  <Select
-                    value=""
-                    onValueChange={(userId) => {
-                      startPartTransition(async () => {
-                        await addRepairWorker(job.id, userId);
-                        router.refresh();
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="+ Add worker..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableUsers.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              })()}
+              {/* Parts moved to main content area */}
             </CardContent>
           </Card>
+
         </div>
       </div>
 
@@ -1375,6 +1380,7 @@ function TimelineCommunicationCard({
 function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: string | Date | null; status: string }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [showFuture, setShowFuture] = useState(false);
   const [saving, setSaving] = useState(false);
   const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
 
@@ -1391,6 +1397,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
       await scheduleRepair(jobId, d.toISOString());
       toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
       setEditing(false);
+      setShowFuture(false);
       router.refresh();
     } catch {
       toast.error("Failed to set planning date");
@@ -1492,14 +1499,36 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
           </Link>
         </div>
       ) : (
-        <button
-          onClick={handleSendToday}
+        <div className="flex gap-2">
+          <button
+            onClick={handleSendToday}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 px-3 transition-colors disabled:opacity-50"
+          >
+            <Wrench className="h-3.5 w-3.5" />
+            {saving ? "..." : "Garage Now"}
+          </button>
+          <button
+            onClick={() => setShowFuture(!showFuture)}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-medium py-2 px-3 transition-colors disabled:opacity-50"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Plan Future
+          </button>
+        </div>
+      )}
+      {showFuture && (
+        <Input
+          type="date"
+          className="h-8 text-xs rounded-lg"
           disabled={saving}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 transition-colors disabled:opacity-50"
-        >
-          <Wrench className="h-3.5 w-3.5" />
-          {saving ? "Sending..." : "Send to Garage (Today)"}
-        </button>
+          autoFocus
+          min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
+          onChange={(e) => {
+            if (e.target.value) handleSet(e.target.value);
+          }}
+        />
       )}
     </div>
   );

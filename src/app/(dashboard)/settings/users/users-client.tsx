@@ -39,7 +39,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "manager" | "staff" | "viewer";
+  role: "admin" | "manager" | "staff" | "technician" | "viewer";
   active: boolean;
   createdAt: Date;
 }
@@ -47,6 +47,7 @@ interface User {
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-red-100 text-red-800",
   manager: "bg-blue-100 text-blue-800",
+  technician: "bg-cyan-100 text-cyan-800",
   staff: "bg-green-100 text-green-800",
   viewer: "bg-gray-100 text-gray-800",
 };
@@ -147,6 +148,7 @@ export function UsersClient({ users }: { users: User[] }) {
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="manager">Manager</SelectItem>
                     <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="technician">Technician</SelectItem>
                     <SelectItem value="viewer">Viewer</SelectItem>
                   </SelectContent>
                 </Select>

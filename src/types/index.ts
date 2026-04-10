@@ -17,9 +17,11 @@ import type {
   auditLogs,
   actionReminders,
   communicationLogs,
+  repairTasks,
+  repairPhotos,
 } from "@/lib/db/schema";
 
-export type UserRole = "admin" | "manager" | "staff" | "viewer";
+export type UserRole = "admin" | "manager" | "staff" | "technician" | "viewer";
 
 export type RepairStatus =
   | "new"
@@ -116,6 +118,14 @@ export type CandidateDuplicate = typeof candidateDuplicates.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type ActionReminder = typeof actionReminders.$inferSelect;
 export type CommunicationLog = typeof communicationLogs.$inferSelect;
+export type RepairTask = typeof repairTasks.$inferSelect;
+export type RepairPhoto = typeof repairPhotos.$inferSelect;
+
+export type RepairTaskStatus = "pending" | "in_progress" | "done" | "problem" | "review";
+export type FinalCheckStatus = "pending" | "passed" | "failed";
+export type PhotoType = "before" | "damage" | "after" | "problem" | "general";
+export type TaskSource = "office" | "garage";
+export type ProblemCategory = "missing_part" | "extra_damage" | "unclear_instructions" | "time_shortage" | "other";
 
 export type ReminderType =
   | "create_invoice"
@@ -212,6 +222,30 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   warranty: "Warranty / Internal",
   rejected: "Rejected by Client",
   no_damage: "No Damage",
+};
+
+export const TASK_STATUS_LABELS: Record<RepairTaskStatus, string> = {
+  pending: "To Do",
+  in_progress: "In Progress",
+  done: "Done",
+  problem: "Problem",
+  review: "Review",
+};
+
+export const TASK_STATUS_COLORS: Record<RepairTaskStatus, string> = {
+  pending: "bg-slate-100 text-slate-700",
+  in_progress: "bg-blue-100 text-blue-700",
+  done: "bg-green-100 text-green-700",
+  problem: "bg-red-100 text-red-700",
+  review: "bg-orange-100 text-orange-700",
+};
+
+export const PROBLEM_CATEGORY_LABELS: Record<ProblemCategory, string> = {
+  missing_part: "Missing Part",
+  extra_damage: "Extra Damage Found",
+  unclear_instructions: "Unclear Instructions",
+  time_shortage: "Time Shortage",
+  other: "Other",
 };
 
 export const BUSINESS_PROCESS_LABELS: Record<BusinessProcessType, string> = {

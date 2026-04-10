@@ -5,6 +5,7 @@ import { getAppSettings } from "@/actions/settings";
 import { getTags, getRepairTags } from "@/actions/tags";
 import { getUsers } from "@/actions/users";
 import { getAllCustomers } from "@/actions/customers";
+import { getRepairTasks } from "@/actions/garage";
 import { notFound } from "next/navigation";
 import { RepairDetail } from "@/components/repairs/repair-detail";
 import type { Metadata } from "next";
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
@@ -33,6 +34,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getRepairTags(id),
     getUsers().catch(() => []),
     getAllCustomers(),
+    getRepairTasks(id),
   ]);
   if (!job) notFound();
 
@@ -51,6 +53,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       customerRepairs={customerRepairs}
       users={usersList}
       allCustomers={allCustomers}
+      tasks={tasks}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

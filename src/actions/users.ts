@@ -28,7 +28,7 @@ export async function createUser(data: {
   name: string;
   email: string;
   password: string;
-  role: "admin" | "manager" | "staff" | "viewer";
+  role: "admin" | "manager" | "staff" | "technician" | "viewer";
 }) {
   const session = await requireRole("admin");
   const validated = userSchema.parse(data);
@@ -51,7 +51,7 @@ export async function createUser(data: {
 
 export async function updateUser(
   id: string,
-  data: { name?: string; email?: string; role?: "admin" | "manager" | "staff" | "viewer"; active?: boolean; password?: string }
+  data: { name?: string; email?: string; role?: "admin" | "manager" | "staff" | "technician" | "viewer"; active?: boolean; password?: string }
 ) {
   const session = await requireRole("admin");
 

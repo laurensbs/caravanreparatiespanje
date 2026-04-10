@@ -3,6 +3,7 @@ import type { UserRole } from "@/types";
 
 const roleHierarchy: Record<UserRole, number> = {
   viewer: 0,
+  technician: 1,
   staff: 1,
   manager: 2,
   admin: 3,

@@ -24,6 +24,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "admin",
   "manager",
   "staff",
+  "technician",
   "viewer",
 ]);
 
@@ -118,6 +119,20 @@ export const partRequestStatusEnum = pgEnum("part_request_status", [
   "shipped",
   "received",
   "cancelled",
+]);
+
+export const repairTaskStatusEnum = pgEnum("repair_task_status", [
+  "pending",
+  "in_progress",
+  "done",
+  "problem",
+  "review",
+]);
+
+export const finalCheckStatusEnum = pgEnum("final_check_status", [
+  "pending",
+  "passed",
+  "failed",
 ]);
 
 export const importStatusEnum = pgEnum("import_status", [
@@ -369,6 +384,16 @@ export const repairJobs = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+
+    // Final check (garage natest)
+    finalCheckStatus: finalCheckStatusEnum("final_check_status"),
+    finalCheckByUserId: uuid("final_check_by_user_id").references(
+      () => users.id,
+      { onDelete: "set null" }
+    ),
+    finalCheckAt: timestamp("final_check_at", { withTimezone: true }),
+    finalCheckNotes: text("final_check_notes"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1154,6 +1179,110 @@ export const communicationLogsRelations = relations(
 export const feedbackRelations = relations(feedback, ({ one }) => ({
   user: one(users, {
     fields: [feedback.userId],
+    references: [users.id],
+  }),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPAIR TASKS (garage subtasks per repair job)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const repairTasks = pgTable(
+  "repair_tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 500 }).notNull(),
+    titleEs: varchar("title_es", { length: 500 }),
+    titleNl: varchar("title_nl", { length: 500 }),
+    description: text("description"),
+    status: repairTaskStatusEnum("status").notNull().default("pending"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    assignedUserId: uuid("assigned_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    problemCategory: varchar("problem_category", { length: 100 }),
+    problemNote: text("problem_note"),
+    source: varchar("source", { length: 50 }).notNull().default("office"),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    completedByUserId: uuid("completed_by_user_id").references(
+      () => users.id,
+      { onDelete: "set null" }
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("repair_tasks_job_idx").on(table.repairJobId),
+    index("repair_tasks_status_idx").on(table.status),
+    index("repair_tasks_assigned_idx").on(table.assignedUserId),
+  ]
+);
+
+export const repairTasksRelations = relations(repairTasks, ({ one }) => ({
+  repairJob: one(repairJobs, {
+    fields: [repairTasks.repairJobId],
+    references: [repairJobs.id],
+  }),
+  assignedUser: one(users, {
+    fields: [repairTasks.assignedUserId],
+    references: [users.id],
+  }),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPAIR PHOTOS (images attached to repairs / tasks)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const repairPhotos = pgTable(
+  "repair_photos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    repairTaskId: uuid("repair_task_id").references(() => repairTasks.id, {
+      onDelete: "cascade",
+    }),
+    url: text("url").notNull(),
+    thumbnailUrl: text("thumbnail_url"),
+    caption: text("caption"),
+    photoType: varchar("photo_type", { length: 50 }).notNull().default("general"),
+    uploadedByUserId: uuid("uploaded_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("repair_photos_job_idx").on(table.repairJobId),
+    index("repair_photos_task_idx").on(table.repairTaskId),
+  ]
+);
+
+export const repairPhotosRelations = relations(repairPhotos, ({ one }) => ({
+  repairJob: one(repairJobs, {
+    fields: [repairPhotos.repairJobId],
+    references: [repairJobs.id],
+  }),
+  repairTask: one(repairTasks, {
+    fields: [repairPhotos.repairTaskId],
+    references: [repairTasks.id],
+  }),
+  uploadedBy: one(users, {
+    fields: [repairPhotos.uploadedByUserId],
     references: [users.id],
   }),
 }));

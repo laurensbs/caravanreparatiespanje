@@ -38,6 +38,8 @@ import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
+import { RepairTaskList } from "@/components/repairs/repair-task-list";
+import type { RepairTask } from "@/types";
 
 interface PartItem {
   id: string;
@@ -89,9 +91,10 @@ interface RepairDetailProps {
   repairTags?: TagItem[];
   customerRepairs?: CustomerRepairItem[];
   users?: UserItem[];
+  tasks?: RepairTask[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -624,6 +627,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
             </CardContent>
           </Card>
+
+          {/* Garage Tasks */}
+          <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
 
           {/* Timeline */}
           {job.events.length > 0 && (

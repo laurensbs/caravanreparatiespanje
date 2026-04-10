@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock, Phone, Info } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
@@ -73,6 +73,7 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmReminder, setConfirmReminder] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let result = invoices;
@@ -185,6 +186,7 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
       toast.error(e.message ?? "Failed to send reminder");
     } finally {
       setActionLoading(null);
+      setConfirmReminder(null);
     }
   }
 
@@ -588,11 +590,11 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                 <p className="text-[11px] text-muted-foreground">total owed</p>
               </CardContent>
             </Card>
-            <Card className="rounded-xl">
+            <Card className="rounded-xl border-amber-200 dark:border-amber-900">
               <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">With Email</p>
-                <p className="text-xl font-bold tabular-nums">{overdue.filter(i => i.customerEmail).length}</p>
-                <p className="text-[11px] text-muted-foreground">can send reminder</p>
+                <p className="text-[11px] text-amber-600 uppercase tracking-wider">Needs Follow-up</p>
+                <p className="text-xl font-bold text-amber-600 tabular-nums">{overdue.filter(i => i.daysOverdue >= 60).length}</p>
+                <p className="text-[11px] text-muted-foreground">60+ days overdue</p>
               </CardContent>
             </Card>
             <Card className="rounded-xl">
@@ -602,6 +604,16 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                 <p className="text-[11px] text-muted-foreground">overdue</p>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Reminder stage guide */}
+          <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[12px] text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              <strong>30–60 days:</strong> Holded sends automatic reminders — no action needed.{" "}
+              <strong>60–90 days:</strong> Manual email available.{" "}
+              <strong>90+ days:</strong> Consider calling the customer.
+            </span>
           </div>
 
           {overdue.length === 0 ? (
@@ -669,21 +681,46 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                              disabled={!inv.customerEmail || actionLoading === `reminder-${inv.id}`}
-                              onClick={() => handleSendReminder(inv)}
-                              title={inv.customerEmail ? `Send reminder to ${inv.customerEmail}` : "No email on file"}
-                            >
-                              {actionLoading === `reminder-${inv.id}` ? (
-                                <span className="animate-spin">⏳</span>
-                              ) : (
-                                <Send className="h-3 w-3" />
-                              )}
-                              Remind
-                            </Button>
+                            {actionLoading === `reminder-${inv.id}` ? (
+                              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" disabled>
+                                <span className="animate-spin">⏳</span> Sending…
+                              </Button>
+                            ) : confirmReminder === inv.id ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-[11px] text-amber-600 font-medium">Send?</span>
+                                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-green-600 hover:text-green-700" onClick={() => handleSendReminder(inv)}>✓</Button>
+                                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground" onClick={() => setConfirmReminder(null)}>✕</Button>
+                              </div>
+                            ) : inv.daysOverdue < 60 ? (
+                              <span className="text-[11px] text-muted-foreground flex items-center gap-1" title="Holded sends automatic reminders during the first 60 days">
+                                <Clock className="h-3 w-3" /> Auto reminders
+                              </span>
+                            ) : inv.daysOverdue >= 90 ? (
+                              <>
+                                <Badge variant="outline" className="text-[10px] gap-1 border-orange-300 text-orange-700 dark:border-orange-800 dark:text-orange-400">
+                                  <Phone className="h-2.5 w-2.5" /> Call
+                                </Badge>
+                                <Button
+                                  variant="ghost" size="sm"
+                                  className="h-7 text-xs gap-1 text-muted-foreground"
+                                  disabled={!inv.customerEmail}
+                                  onClick={() => setConfirmReminder(inv.id)}
+                                  title={inv.customerEmail ? `Fallback: email ${inv.customerEmail}` : "No email on file"}
+                                >
+                                  <Send className="h-3 w-3" /> Email
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="ghost" size="sm"
+                                className="h-7 text-xs gap-1"
+                                disabled={!inv.customerEmail}
+                                onClick={() => setConfirmReminder(inv.id)}
+                                title={inv.customerEmail ? `Send reminder to ${inv.customerEmail}` : "No email on file"}
+                              >
+                                <Send className="h-3 w-3" /> Remind
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"

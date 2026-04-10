@@ -334,25 +334,27 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <Badge className={`${PRIORITY_COLORS[priority as Priority]} rounded-full text-[11px] px-2 py-0`}>
                 {PRIORITY_LABELS[priority as Priority]}
               </Badge>
-              {/* Past Repairs — right of title, big */}
+              {/* Past Repairs — big card icons */}
               {job.customer && customerRepairs.length > 0 && (
                 <>
                   <span className="text-muted-foreground mx-1 hidden sm:inline">|</span>
-                  {customerRepairs.slice(0, 5).map((r) => (
+                  {customerRepairs.slice(0, 4).map((r) => (
                     <Link
                       key={r.id}
                       href={`/repairs/${r.id}`}
-                      className={`hidden sm:inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold transition-colors hover:ring-2 ring-primary/30 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
-                      title={r.title ?? 'Repair'}
+                      className={`hidden sm:flex flex-col items-center rounded-xl px-4 py-2 min-w-[80px] transition-all hover:ring-2 ring-primary/30 hover:scale-105 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
                     >
-                      {r.publicCode ?? 'R'}
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
-                      </Badge>
+                      <span className="text-lg font-black leading-none">{r.publicCode ?? 'R'}</span>
+                      <span className="text-[10px] font-medium opacity-80 mt-0.5 truncate max-w-[100px]">
+                        {r.title ? r.title.slice(0, 18) + (r.title.length > 18 ? '…' : '') : STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                      </span>
+                      <span className="text-[9px] opacity-60 mt-0.5">
+                        {format(new Date(r.createdAt), "dd MMM yy")}
+                      </span>
                     </Link>
                   ))}
-                  {customerRepairs.length > 5 && (
-                    <span className="hidden sm:inline text-xs text-muted-foreground font-medium">+{customerRepairs.length - 5}</span>
+                  {customerRepairs.length > 4 && (
+                    <span className="hidden sm:inline text-xs text-muted-foreground font-medium">+{customerRepairs.length - 4}</span>
                   )}
                 </>
               )}
@@ -624,40 +626,36 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Garage Tasks */}
-          <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
-
-          {/* Parts Used — inside garage workflow area */}
-          <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/10">
-            <CardHeader className="pb-1">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Package className="h-4 w-4 text-blue-500" />
-                  Parts Used
-                  {partRequests.length > 0 && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      partRequests.every(p => p.status === "received" || p.status === "cancelled")
-                        ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-                        : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
-                    }`}>
-                      {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
-                    </span>
-                  )}
-                </CardTitle>
-                {!showAddPart && (
-                  <button
-                    onClick={() => setShowAddPart(true)}
-                    className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
-                  >
-                    <Plus className="h-3 w-3" /> Add
-                  </button>
-                )}
+              {/* Garage Tasks */}
+              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
               </div>
-            </CardHeader>
-            <CardContent className="pt-2">
+
+              {/* Parts Used */}
+              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="flex items-center gap-2 text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium">
+                    <Package className="h-3.5 w-3.5" />
+                      Parts Used
+                    {partRequests.length > 0 && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        partRequests.every(p => p.status === "received" || p.status === "cancelled")
+                          ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                          : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
+                      }`}>
+                        {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
+                      </span>
+                    )}
+                  </p>
+                  {!showAddPart && (
+                    <button
+                      onClick={() => setShowAddPart(true)}
+                      className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
+                    >
+                      <Plus className="h-3 w-3" /> Add
+                    </button>
+                  )}
+                </div>
               {/* Inline add form */}
               {showAddPart && (
                 <div className="flex items-center gap-1.5 mb-3">
@@ -756,6 +754,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               ) : !showAddPart && costLines.filter(l => l.type === "part").length === 0 ? (
                 <p className="text-xs text-muted-foreground">No parts used yet. Add from quote or manually.</p>
               ) : null}
+              </div>
             </CardContent>
           </Card>
 

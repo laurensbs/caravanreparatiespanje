@@ -432,8 +432,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-semibold">
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <Receipt className="h-4 w-4 text-emerald-500" />
                   Cost Estimate
+                  <span className="text-[10px] font-normal text-muted-foreground">→ client</span>
                 </span>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addLabourLine}>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { addRepairTask, deleteRepairTask, approveGarageTask, getRepairTasks } from "@/actions/garage";
 import { TASK_STATUS_LABELS, TASK_STATUS_COLORS } from "@/types";
 import type { RepairTask, RepairTaskStatus } from "@/types";
-import { Plus, Trash2, CheckCircle, ClipboardList } from "lucide-react";
+import { Plus, Trash2, CheckCircle, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -65,8 +65,8 @@ export function RepairTaskList({ repairJobId, initialTasks }: Props) {
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            Tasks
+            <Wrench className="h-4 w-4 text-blue-500" />
+            Garage Tasks
             {tasks.length > 0 && (
               <Badge variant="secondary" className="text-xs ml-1">
                 {doneCount}/{tasks.length}
@@ -149,7 +149,7 @@ export function RepairTaskList({ repairJobId, initialTasks }: Props) {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">No tasks yet. Add tasks for the garage to work on.</p>
+          <p className="text-xs text-muted-foreground">No garage tasks yet. Add tasks for the technicians to work on.</p>
         )}
       </CardContent>
     </Card>

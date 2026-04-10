@@ -323,7 +323,7 @@ export const repairJobs = pgTable(
     extraNotesRaw: text("extra_notes_raw"),
     internalComments: text("internal_comments"),
 
-    status: repairStatusEnum("status").notNull().default("new"),
+    status: repairStatusEnum("status").notNull().default("todo"),
     statusReason: text("status_reason"),
     statusConfidence: statusConfidenceEnum("status_confidence"),
     priority: priorityEnum("priority").notNull().default("normal"),

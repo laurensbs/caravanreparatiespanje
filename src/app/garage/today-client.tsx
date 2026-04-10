@@ -37,18 +37,20 @@ export function GarageTodayClient({ repairs, userName }: Props) {
   });
 
   // Group repairs by status
+  const todo = repairs.filter((r) => ["new", "todo", "in_inspection", "quote_needed", "waiting_approval"].includes(r.status));
   const scheduled = repairs.filter((r) => r.status === "scheduled");
   const inProgress = repairs.filter((r) => r.status === "in_progress");
-  const waiting = repairs.filter((r) => ["waiting_parts", "blocked"].includes(r.status));
+  const waiting = repairs.filter((r) => ["waiting_customer", "waiting_parts", "blocked"].includes(r.status));
   const finalCheck = repairs.filter(
     (r) => r.status === "completed" && r.finalCheckStatus === "pending"
   );
   const done = repairs.filter(
-    (r) => r.status === "completed" && r.finalCheckStatus !== "pending"
+    (r) => (r.status === "completed" && r.finalCheckStatus !== "pending") || r.status === "invoiced"
   );
 
   const groups = [
     { key: "in_progress", label: t("In Progress", "En Progreso", "Bezig"), items: inProgress, color: "text-blue-600" },
+    { key: "todo", label: t("To Do", "Por Hacer", "Te Doen"), items: todo, color: "text-purple-600" },
     { key: "scheduled", label: t("Scheduled", "Programado", "Gepland"), items: scheduled, color: "text-indigo-600" },
     { key: "final_check", label: t("Final Check", "Control Final", "Natest"), items: finalCheck, color: "text-amber-600" },
     { key: "waiting", label: t("Waiting / Blocked", "Esperando", "Wacht / Geblokkeerd"), items: waiting, color: "text-orange-600" },

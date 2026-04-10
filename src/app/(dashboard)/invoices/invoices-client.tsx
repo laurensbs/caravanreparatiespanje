@@ -32,6 +32,7 @@ interface Invoice {
   repairPublicCode?: string;
   customerName?: string;
   customerEmail?: string;
+  lastPaymentReminderAt?: Date | null;
 }
 
 interface Quote {
@@ -182,6 +183,7 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
     try {
       await sendPaymentReminder(inv.id, [email]);
       toast.success(`Reminder sent to ${email}`);
+      router.refresh();
     } catch (e: any) {
       toast.error(e.message ?? "Failed to send reminder");
     } finally {
@@ -636,6 +638,7 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                       <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
                       <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
                       <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Reminded</TableHead>
                       <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -678,6 +681,11 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                             <Clock className="h-2.5 w-2.5 mr-0.5" />
                             {inv.daysOverdue}d
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">
+                          {inv.lastPaymentReminderAt
+                            ? new Date(inv.lastPaymentReminderAt).toLocaleDateString("nl-NL")
+                            : <span className="text-muted-foreground/50">—</span>}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">

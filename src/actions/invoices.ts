@@ -14,6 +14,7 @@ export interface InvoiceWithRepair extends HoldedInvoice {
   repairPublicCode?: string;
   customerName?: string;
   customerEmail?: string;
+  lastPaymentReminderAt?: Date | null;
 }
 
 export async function getAllInvoices(): Promise<InvoiceWithRepair[]> {
@@ -35,11 +36,12 @@ export async function getAllInvoices(): Promise<InvoiceWithRepair[]> {
       publicCode: repairJobs.publicCode,
       holdedInvoiceId: repairJobs.holdedInvoiceId,
       customerId: repairJobs.customerId,
+      lastPaymentReminderAt: repairJobs.lastPaymentReminderAt,
     })
     .from(repairJobs)
     .where(and(isNotNull(repairJobs.holdedInvoiceId), isNull(repairJobs.deletedAt)));
 
-  const repairByInvoice = new Map<string, { id: string; publicCode: string | null; customerId: string | null }>();
+  const repairByInvoice = new Map<string, { id: string; publicCode: string | null; customerId: string | null; lastPaymentReminderAt: Date | null }>();
   for (const r of linkedRepairs) {
     if (r.holdedInvoiceId) repairByInvoice.set(r.holdedInvoiceId, r);
   }
@@ -64,6 +66,7 @@ export async function getAllInvoices(): Promise<InvoiceWithRepair[]> {
       repairPublicCode: repair?.publicCode ?? undefined,
       customerName: customer?.name ?? inv.contactName,
       customerEmail: customer?.email ?? undefined,
+      lastPaymentReminderAt: repair?.lastPaymentReminderAt ?? undefined,
     };
   }).sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
 }
@@ -132,6 +135,13 @@ export async function sendPaymentReminder(invoiceId: string, emails: string[]) {
   if (!emails.length) throw new Error("No email addresses provided");
 
   await sendInvoice(invoiceId, emails);
+
+  // Track when the reminder was sent on the linked repair job
+  await db
+    .update(repairJobs)
+    .set({ lastPaymentReminderAt: new Date(), updatedAt: new Date() })
+    .where(eq(repairJobs.holdedInvoiceId, invoiceId));
+
   revalidatePath("/invoices");
   return { success: true };
 }

@@ -362,6 +362,7 @@ export const repairJobs = pgTable(
     holdedInvoiceNum: varchar("holded_invoice_num", { length: 100 }),
     holdedInvoiceDate: timestamp("holded_invoice_date", { withTimezone: true }),
     holdedInvoiceSentAt: timestamp("holded_invoice_sent_at", { withTimezone: true }),
+    lastPaymentReminderAt: timestamp("last_payment_reminder_at", { withTimezone: true }),
     holdedQuoteId: varchar("holded_quote_id", { length: 255 }),
     holdedQuoteNum: varchar("holded_quote_num", { length: 100 }),
     holdedQuoteDate: timestamp("holded_quote_date", { withTimezone: true }),

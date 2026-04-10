@@ -345,9 +345,11 @@ export const repairJobs = pgTable(
     holdedInvoiceId: varchar("holded_invoice_id", { length: 255 }),
     holdedInvoiceNum: varchar("holded_invoice_num", { length: 100 }),
     holdedInvoiceDate: timestamp("holded_invoice_date", { withTimezone: true }),
+    holdedInvoiceSentAt: timestamp("holded_invoice_sent_at", { withTimezone: true }),
     holdedQuoteId: varchar("holded_quote_id", { length: 255 }),
     holdedQuoteNum: varchar("holded_quote_num", { length: 100 }),
     holdedQuoteDate: timestamp("holded_quote_date", { withTimezone: true }),
+    holdedQuoteSentAt: timestamp("holded_quote_sent_at", { withTimezone: true }),
 
     bayReference: varchar("bay_reference", { length: 100 }),
     spreadsheetInternalId: varchar("spreadsheet_internal_id", { length: 100 }),

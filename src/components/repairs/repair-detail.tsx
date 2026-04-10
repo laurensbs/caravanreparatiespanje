@@ -17,14 +17,14 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
-import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments } from "@/actions/holded";
+import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
@@ -936,257 +936,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </Card>
 
           {/* Holded Documents */}
-          <Card className="rounded-xl">
-            <CardContent className="pt-5">
-              <p className="flex items-center gap-2 text-xs font-semibold mb-3">
-                <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                Holded Documents
-              </p>
-
-              {/* Quote section */}
-              <div className="space-y-2 mb-3">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Quote</p>
-                {job.holdedQuoteId ? (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <a
-                        href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline"
-                      >
-                        {job.holdedQuoteNum} ↗
-                      </a>
-                      <a
-                        href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
-                      >
-                        View in Holded ↗
-                      </a>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-xs"
-                        onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}
-                      >
-                        <FileDown className="h-3 w-3 mr-1" />
-                        View PDF
-                      </Button>
-                      {job.customer?.email && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-xs"
-                          onClick={async () => {
-                            try {
-                              await sendHoldedQuote(job.id);
-                              toast.success("Quote sent to " + job.customer.email);
-                            } catch (e: any) {
-                              toast.error(e.message ?? "Failed to send");
-                            }
-                          }}
-                        >
-                          <Send className="h-3 w-3 mr-1" />
-                          Email
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs"
-                      disabled={!job.customer || costLines.length === 0}
-                      onClick={async () => {
-                        try {
-                          const result = await createHoldedQuote(job.id, costLines.map(l => ({
-                            name: l.description || "Line item",
-                            units: l.quantity,
-                            subtotal: l.unitPrice * l.quantity,
-                            tax: settings.defaultTax,
-                            discount: 0,
-                          })), discountPercent);
-                          toast.success(`Quote ${result.quoteNum} created`);
-                          router.refresh();
-                        } catch (e: any) {
-                          toast.error(e.message ?? "Failed to create quote");
-                        }
-                      }}
-                    >
-                      <FileText className="h-3 w-3 mr-1" />
-                      Create Quote
-                    </Button>
-                    {job.customer?.email && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs"
-                        disabled={!job.customer || costLines.length === 0}
-                        onClick={async () => {
-                          try {
-                            const result = await createHoldedQuote(job.id, costLines.map(l => ({
-                              name: l.description || "Line item",
-                              units: l.quantity,
-                              subtotal: l.unitPrice * l.quantity,
-                              tax: settings.defaultTax,
-                              discount: 0,
-                            })), discountPercent);
-                            await sendHoldedQuote(job.id);
-                            toast.success(`Quote ${result.quoteNum} created & sent to ${job.customer.email}`);
-                            router.refresh();
-                          } catch (e: any) {
-                            toast.error(e.message ?? "Failed to create & send quote");
-                          }
-                        }}
-                      >
-                        <Send className="h-3 w-3 mr-1" />
-                        Create & Send Quote
-                      </Button>
-                    )}
-                    {!job.customer && (
-                      <p className="text-[11px] text-muted-foreground">Link a contact first</p>
-                    )}
-                    {job.customer && costLines.length === 0 && (
-                      <p className="text-[11px] text-muted-foreground">Add cost lines first</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t pt-3 space-y-2">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Invoice</p>
-                {job.holdedInvoiceId ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <a
-                      href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      {job.holdedInvoiceNum} ↗
-                    </a>
-                    <a
-                      href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
-                    >
-                      View in Holded ↗
-                    </a>
-                  </div>
-                  <HoldedHint variant="sync">
-                    Invoice exists in Holded. PDF &amp; email sent via Holded.
-                  </HoldedHint>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-xs"
-                      onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}
-                    >
-                      <FileDown className="h-3 w-3 mr-1" />
-                      View PDF
-                    </Button>
-                    {job.customer?.email && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-xs"
-                        onClick={async () => {
-                          try {
-                            await sendHoldedInvoice(job.id);
-                            toast.success("Invoice sent to " + job.customer.email);
-                          } catch (e: any) {
-                            toast.error(e.message ?? "Failed to send");
-                          }
-                        }}
-                      >
-                        <Send className="h-3 w-3 mr-1" />
-                        Email
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full text-xs"
-                    disabled={!job.customer || (costLines.length === 0 && !actualCost && !estimatedCost)}
-                    onClick={async () => {
-                      try {
-                        const items = costLines.length > 0
-                          ? costLines.map(l => ({
-                              name: l.description || "Line item",
-                              units: l.quantity,
-                              subtotal: l.unitPrice * l.quantity,
-                              tax: settings.defaultTax,
-                              discount: 0,
-                            }))
-                          : undefined;
-                        const result = await createHoldedInvoice(job.id, items, discountPercent);
-                        toast.success(`Invoice ${result.invoiceNum} created`);
-                        router.refresh();
-                      } catch (e: any) {
-                        toast.error(e.message ?? "Failed to create invoice");
-                      }
-                    }}
-                  >
-                    <Receipt className="h-3 w-3 mr-1" />
-                    Create Invoice
-                  </Button>
-                  {!job.customer && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5">Link a contact first</p>
-                  )}
-                  {job.customer && costLines.length === 0 && !actualCost && !estimatedCost && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5">Add lines or a cost estimate first</p>
-                  )}
-                  <HoldedHint variant="info" className="mt-2">
-                    {costLines.length > 0
-                      ? `Creates invoice with ${costLines.length} line items${discountPercent > 0 ? ` and ${discountPercent}% discount` : ""}`
-                      : "Creates invoice using actual or estimated cost"
-                    }
-                  </HoldedHint>
-                </div>
-              )}
-              </div>
-
-              {/* Verify Holded links */}
-              {(job.holdedInvoiceId || job.holdedQuoteId) && (
-                <div className="border-t pt-3 mt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs text-muted-foreground"
-                    onClick={async () => {
-                      try {
-                        const result = await verifyHoldedDocuments(job.id);
-                        if (result.fixed) {
-                          toast.success(result.issues.join(". "));
-                          router.refresh();
-                        } else {
-                          toast.success("All Holded links verified ✓");
-                        }
-                      } catch (e: any) {
-                        toast.error(e.message ?? "Verification failed");
-                      }
-                    }}
-                  >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Verify Holded Links
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <HoldedDocumentsCard
+            job={job}
+            costLines={costLines}
+            discountPercent={discountPercent}
+            settings={settings}
+            router={router}
+          />
 
           {/* Delete job */}
           <div className="pt-2">
@@ -1448,5 +1204,353 @@ function InlineUnitEdit({ unit, onDone }: { unit: any; onDone: () => void }) {
         <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={onDone}>Cancel</Button>
       </div>
     </div>
+  );
+}
+
+// ─── Holded Documents Card ───
+
+function HoldedDocumentsCard({
+  job, costLines, discountPercent, settings, router,
+}: {
+  job: any;
+  costLines: CostLineItem[];
+  discountPercent: number;
+  settings: PricingSettings;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
+  const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const quoteSent = !!job.holdedQuoteSentAt;
+  const invoiceSent = !!job.holdedInvoiceSentAt;
+
+  // Unsent document warning — uses beforeunload for browser navigation
+  const hasUnsentDoc = (job.holdedQuoteId && !quoteSent) || (job.holdedInvoiceId && !invoiceSent);
+
+  useEffect(() => {
+    if (!hasUnsentDoc) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasUnsentDoc]);
+
+  async function handleAction(key: string, fn: () => Promise<void>) {
+    setLoading(key);
+    try {
+      await fn();
+    } catch (e: any) {
+      toast.error(e.message ?? "Action failed");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  const actualCost = job.actualCost ? parseFloat(job.actualCost) : 0;
+  const estimatedCost = job.estimatedCost ? parseFloat(job.estimatedCost) : 0;
+
+  return (
+    <Card className="rounded-xl">
+      <CardContent className="pt-5">
+        <p className="flex items-center gap-2 text-xs font-semibold mb-3">
+          <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
+          Holded Documents
+        </p>
+
+        {/* Unsent warning banner */}
+        {hasUnsentDoc && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 mb-3 text-[11px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {job.holdedQuoteId && !quoteSent && job.holdedInvoiceId && !invoiceSent
+                ? "Quote and invoice not yet emailed to customer"
+                : job.holdedQuoteId && !quoteSent
+                ? "Quote not yet emailed to customer"
+                : "Invoice not yet emailed to customer"
+              }
+            </span>
+          </div>
+        )}
+
+        {/* ── Quote section ── */}
+        <div className="space-y-2 mb-3">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Quote</p>
+          {job.holdedQuoteId ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    {job.holdedQuoteNum} ↗
+                  </a>
+                  {quoteSent ? (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
+                      <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Sent
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">
+                      <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Not sent
+                    </Badge>
+                  )}
+                </div>
+                <a
+                  href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                >
+                  Holded ↗
+                </a>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline" size="sm" className="flex-1 text-xs"
+                  onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}
+                >
+                  <FileDown className="h-3 w-3 mr-1" /> View PDF
+                </Button>
+                {job.customer?.email && (
+                  <Button
+                    variant={quoteSent ? "outline" : "default"} size="sm" className="flex-1 text-xs"
+                    disabled={loading === "send-quote"}
+                    onClick={() => handleAction("send-quote", async () => {
+                      await sendHoldedQuote(job.id);
+                      toast.success("Quote sent to " + job.customer.email);
+                      router.refresh();
+                    })}
+                  >
+                    {loading === "send-quote" ? <Spinner className="mr-1" /> : <Send className="h-3 w-3 mr-1" />}
+                    {quoteSent ? "Resend" : "Email"}
+                  </Button>
+                )}
+              </div>
+              {/* Delete quote */}
+              {confirmDeleteQuote ? (
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                  <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">
+                    Delete quote {job.holdedQuoteNum} from Holded?
+                  </span>
+                  <Button
+                    variant="destructive" size="sm" className="h-6 text-[11px] px-2"
+                    disabled={loading === "delete-quote"}
+                    onClick={() => handleAction("delete-quote", async () => {
+                      await deleteHoldedQuote(job.id);
+                      toast.success("Quote deleted from Holded");
+                      setConfirmDeleteQuote(false);
+                      router.refresh();
+                    })}
+                  >
+                    {loading === "delete-quote" ? <Spinner /> : "Delete"}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteQuote(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setConfirmDeleteQuote(true)}
+                >
+                  <Trash2 className="h-3 w-3 mr-1" /> Delete Quote
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Button
+                variant="outline" size="sm" className="w-full text-xs"
+                disabled={!job.customer || costLines.length === 0 || !!loading}
+                onClick={() => handleAction("create-quote", async () => {
+                  const result = await createHoldedQuote(job.id, costLines.map(l => ({
+                    name: l.description || "Line item",
+                    units: l.quantity,
+                    subtotal: l.unitPrice * l.quantity,
+                    tax: settings.defaultTax,
+                    discount: 0,
+                  })), discountPercent);
+                  toast.success(`Quote ${result.quoteNum} created`);
+                  router.refresh();
+                })}
+              >
+                {loading === "create-quote" ? <Spinner className="mr-1" /> : <FileText className="h-3 w-3 mr-1" />}
+                Create Quote
+              </Button>
+              {job.customer?.email && (
+                <Button
+                  variant="outline" size="sm" className="w-full text-xs"
+                  disabled={!job.customer || costLines.length === 0 || !!loading}
+                  onClick={() => handleAction("create-send-quote", async () => {
+                    const result = await createHoldedQuote(job.id, costLines.map(l => ({
+                      name: l.description || "Line item",
+                      units: l.quantity,
+                      subtotal: l.unitPrice * l.quantity,
+                      tax: settings.defaultTax,
+                      discount: 0,
+                    })), discountPercent);
+                    await sendHoldedQuote(job.id);
+                    toast.success(`Quote ${result.quoteNum} created & sent to ${job.customer.email}`);
+                    router.refresh();
+                  })}
+                >
+                  {loading === "create-send-quote" ? <Spinner className="mr-1" /> : <Send className="h-3 w-3 mr-1" />}
+                  Create & Send Quote
+                </Button>
+              )}
+              {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
+              {job.customer && costLines.length === 0 && <p className="text-[11px] text-muted-foreground">Add cost lines first</p>}
+            </div>
+          )}
+        </div>
+
+        {/* ── Invoice section ── */}
+        <div className="border-t pt-3 space-y-2">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Invoice</p>
+          {job.holdedInvoiceId ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    {job.holdedInvoiceNum} ↗
+                  </a>
+                  {invoiceSent ? (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
+                      <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Sent
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">
+                      <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Not sent
+                    </Badge>
+                  )}
+                </div>
+                <a
+                  href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                >
+                  Holded ↗
+                </a>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline" size="sm" className="flex-1 text-xs"
+                  onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}
+                >
+                  <FileDown className="h-3 w-3 mr-1" /> View PDF
+                </Button>
+                {job.customer?.email && (
+                  <Button
+                    variant={invoiceSent ? "outline" : "default"} size="sm" className="flex-1 text-xs"
+                    disabled={loading === "send-invoice"}
+                    onClick={() => handleAction("send-invoice", async () => {
+                      await sendHoldedInvoice(job.id);
+                      toast.success("Invoice sent to " + job.customer.email);
+                      router.refresh();
+                    })}
+                  >
+                    {loading === "send-invoice" ? <Spinner className="mr-1" /> : <Send className="h-3 w-3 mr-1" />}
+                    {invoiceSent ? "Resend" : "Email"}
+                  </Button>
+                )}
+              </div>
+              {/* Delete invoice */}
+              {job.invoiceStatus !== "paid" && (
+                confirmDeleteInvoice ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                    <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">
+                      Delete invoice {job.holdedInvoiceNum} from Holded?
+                    </span>
+                    <Button
+                      variant="destructive" size="sm" className="h-6 text-[11px] px-2"
+                      disabled={loading === "delete-invoice"}
+                      onClick={() => handleAction("delete-invoice", async () => {
+                        await deleteHoldedInvoice(job.id);
+                        toast.success("Invoice deleted from Holded");
+                        setConfirmDeleteInvoice(false);
+                        router.refresh();
+                      })}
+                    >
+                      {loading === "delete-invoice" ? <Spinner /> : "Delete"}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteInvoice(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => setConfirmDeleteInvoice(true)}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" /> Delete Invoice
+                  </Button>
+                )
+              )}
+            </div>
+          ) : (
+            <div>
+              <Button
+                variant="default" size="sm" className="w-full text-xs"
+                disabled={!job.customer || (costLines.length === 0 && !actualCost && !estimatedCost) || !!loading}
+                onClick={() => handleAction("create-invoice", async () => {
+                  const items = costLines.length > 0
+                    ? costLines.map(l => ({
+                        name: l.description || "Line item",
+                        units: l.quantity,
+                        subtotal: l.unitPrice * l.quantity,
+                        tax: settings.defaultTax,
+                        discount: 0,
+                      }))
+                    : undefined;
+                  const result = await createHoldedInvoice(job.id, items, discountPercent);
+                  toast.success(`Invoice ${result.invoiceNum} created`);
+                  router.refresh();
+                })}
+              >
+                {loading === "create-invoice" ? <Spinner className="mr-1" /> : <Receipt className="h-3 w-3 mr-1" />}
+                Create Invoice
+              </Button>
+              {!job.customer && <p className="text-[11px] text-muted-foreground mt-1.5">Link a contact first</p>}
+              {job.customer && costLines.length === 0 && !actualCost && !estimatedCost && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">Add lines or a cost estimate first</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Verify Holded links */}
+        {(job.holdedInvoiceId || job.holdedQuoteId) && (
+          <div className="border-t pt-3 mt-3">
+            <Button
+              variant="ghost" size="sm" className="w-full text-xs text-muted-foreground"
+              onClick={() => handleAction("verify", async () => {
+                const result = await verifyHoldedDocuments(job.id);
+                if (result.fixed) {
+                  toast.success(result.issues.join(". "));
+                  router.refresh();
+                } else {
+                  toast.success("All Holded links verified ✓");
+                }
+              })}
+            >
+              {loading === "verify" ? <Spinner className="mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+              Verify Holded Links
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

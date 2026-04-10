@@ -419,3 +419,7 @@ export async function getProduct(productId: string): Promise<HoldedProduct> {
 export async function deleteContact(contactId: string): Promise<void> {
   await holdedFetch(`/contacts/${contactId}`, { method: "DELETE" });
 }
+
+export async function deleteDocument(docType: "invoice" | "estimate", documentId: string): Promise<void> {
+  await holdedFetch(`/documents/${docType}/${documentId}`, { method: "DELETE" });
+}

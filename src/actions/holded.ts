@@ -16,6 +16,7 @@ import {
   getQuotePdf,
   sendInvoice,
   sendQuote,
+  deleteDocument,
   listInvoicesByContact,
   listQuotesByContact,
   updateContact as updateHoldedContact,
@@ -189,7 +190,7 @@ export async function sendHoldedInvoice(repairJobId: string) {
 
   await db
     .update(repairJobs)
-    .set({ invoiceStatus: "sent", updatedAt: new Date() })
+    .set({ invoiceStatus: "sent", holdedInvoiceSentAt: new Date(), updatedAt: new Date() })
     .where(eq(repairJobs.id, repairJobId));
 
   await db.insert(repairJobEvents).values({
@@ -249,7 +250,7 @@ export async function sendHoldedQuote(repairJobId: string) {
 
   await db
     .update(repairJobs)
-    .set({ customerResponseStatus: "waiting_response", updatedAt: new Date() })
+    .set({ customerResponseStatus: "waiting_response", holdedQuoteSentAt: new Date(), updatedAt: new Date() })
     .where(eq(repairJobs.id, repairJobId));
 
   await db.insert(repairJobEvents).values({
@@ -593,4 +594,89 @@ export async function verifyHoldedDocuments(repairJobId: string) {
   revalidatePath(`/repairs/${repairJobId}`);
   revalidatePath("/repairs");
   return { fixed: Object.keys(updates).length > 0, issues };
+}
+
+// ─── Delete Holded quote ───
+
+export async function deleteHoldedQuote(repairJobId: string) {
+  const session = await requireRole("admin");
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const [job] = await db
+    .select()
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job?.holdedQuoteId) throw new Error("No Holded quote linked");
+
+  // Delete from Holded
+  await deleteDocument("estimate", job.holdedQuoteId);
+
+  // Clear local fields
+  await db
+    .update(repairJobs)
+    .set({
+      holdedQuoteId: null,
+      holdedQuoteNum: null,
+      holdedQuoteDate: null,
+      holdedQuoteSentAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "holded_quote_deleted",
+    comment: `Deleted quote ${job.holdedQuoteNum} from Holded`,
+  });
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { deleted: true };
+}
+
+// ─── Delete Holded invoice ───
+
+export async function deleteHoldedInvoice(repairJobId: string) {
+  const session = await requireRole("admin");
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const [job] = await db
+    .select()
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job?.holdedInvoiceId) throw new Error("No Holded invoice linked");
+
+  // Safety: don't delete paid invoices
+  if (job.invoiceStatus === "paid") throw new Error("Cannot delete a paid invoice");
+
+  // Delete from Holded
+  await deleteDocument("invoice", job.holdedInvoiceId);
+
+  // Clear local fields
+  await db
+    .update(repairJobs)
+    .set({
+      holdedInvoiceId: null,
+      holdedInvoiceNum: null,
+      holdedInvoiceDate: null,
+      holdedInvoiceSentAt: null,
+      invoiceStatus: "not_invoiced",
+      status: job.status === "invoiced" ? "completed" : job.status,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "holded_invoice_deleted",
+    comment: `Deleted invoice ${job.holdedInvoiceNum} from Holded`,
+  });
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { deleted: true };
 }

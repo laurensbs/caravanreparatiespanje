@@ -368,31 +368,31 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
               </button>
             )}
+            {/* Past Repairs — left-aligned, big */}
+            {job.customer && customerRepairs.length > 0 && (
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Past:</span>
+                {customerRepairs.slice(0, 5).map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/repairs/${r.id}`}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors hover:ring-2 ring-primary/30 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
+                    title={r.title ?? 'Repair'}
+                  >
+                    {r.publicCode ?? 'R'}
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                    </Badge>
+                  </Link>
+                ))}
+                {customerRepairs.length > 5 && (
+                  <span className="text-xs text-muted-foreground font-medium">+{customerRepairs.length - 5} more</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* Past Repairs — prominent in header */}
-          {job.customer && customerRepairs.length > 0 && (
-            <div className="hidden sm:flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground font-medium">Past:</span>
-              {customerRepairs.slice(0, 3).map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/repairs/${r.id}`}
-                  className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:ring-2 ring-primary/30 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
-                  title={r.title ?? 'Repair'}
-                >
-                  {r.publicCode ?? 'R'}
-                  <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-0.5">
-                    {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
-                  </Badge>
-                </Link>
-              ))}
-              {customerRepairs.length > 3 && (
-                <span className="text-[10px] text-muted-foreground">+{customerRepairs.length - 3}</span>
-              )}
-            </div>
-          )}
           <Button
             variant="ghost"
             size="icon"
@@ -503,7 +503,134 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </Card>
           )}
 
-          {/* Garage Tasks — moved UP */}
+          {/* ── 🔧 GARAGE ZONE — workers, planning, flags, tasks, parts ── */}
+          <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
+            <CardContent className="space-y-4 pt-4">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                <Wrench className="h-3.5 w-3.5" />
+                Garage
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Assigned workers */}
+                <div>
+                  <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Assigned</Label>
+                  {repairWorkers.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {repairWorkers.map((w) => (
+                        <span key={w.id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-xs font-medium group">
+                          <span className="flex items-center justify-center h-4 w-4 rounded-full bg-blue-500 text-[9px] font-bold text-white">
+                            {w.userName.charAt(0).toUpperCase()}
+                          </span>
+                          {w.userName}
+                          <button
+                            onClick={() => {
+                              startPartTransition(async () => {
+                                await removeRepairWorker(job.id, w.userId);
+                                router.refresh();
+                              });
+                            }}
+                            className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-red-500 transition-all ml-0.5"
+                            title="Remove"
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(() => {
+                    const availableUsers = activeUsers.filter(
+                      (u) => !repairWorkers.some((w) => w.userId === u.id)
+                    );
+                    if (availableUsers.length === 0) return null;
+                    return (
+                      <Select
+                        value=""
+                        onValueChange={(userId) => {
+                          startPartTransition(async () => {
+                            await addRepairWorker(job.id, userId);
+                            router.refresh();
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
+                        <SelectContent>
+                          {availableUsers.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>{u.name} <span className="text-muted-foreground ml-1 text-[10px]">({u.role})</span></SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
+                </div>
+
+                {/* Planning + Send to Garage */}
+                <div>
+                  <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Planning</Label>
+                  <div className="mt-1.5">
+                    <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={job.status} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Flags */}
+              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium">Inspection Flags</p>
+                  {!showAllFlags && (
+                    <button
+                      onClick={() => setShowAllFlags(true)}
+                      className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
+                    >
+                      <Plus className="h-3 w-3" /> Add
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {activeFlags.map((flag) => (
+                    <button
+                      key={flag.label}
+                      type="button"
+                      onClick={() => flag.set(!flag.value)}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
+                        flag.danger
+                          ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
+                          : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                      }`}
+                    >
+                      <span className="mr-1">✓</span>
+                      {flag.label}
+                    </button>
+                  ))}
+                  {showAllFlags && inactiveFlags.map((flag) => (
+                    <button
+                      key={flag.label}
+                      type="button"
+                      onClick={() => flag.set(true)}
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border bg-white/60 dark:bg-white/5 text-muted-foreground border-blue-100 dark:border-blue-800/40 hover:border-blue-300"
+                    >
+                      {flag.label}
+                    </button>
+                  ))}
+                  {showAllFlags && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllFlags(false)}
+                      className="inline-flex items-center rounded-full px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  )}
+                  {activeFlags.length === 0 && !showAllFlags && (
+                    <span className="text-[11px] text-muted-foreground">No flags set</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Garage Tasks */}
           <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
 
           {/* Parts Used — inside garage workflow area */}
@@ -1098,129 +1225,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </CardContent>
           </Card>
 
-          {/* ── �🔧 GARAGE card (blue tint) ── */}
-          <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
-            <CardContent className="space-y-3 pt-4">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                <Wrench className="h-3.5 w-3.5" />
-                Garage
-              </p>
-
-              {/* Assigned workers */}
-              <div>
-                <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Assigned</Label>
-                {repairWorkers.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {repairWorkers.map((w) => (
-                      <span key={w.id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-xs font-medium group">
-                        <span className="flex items-center justify-center h-4 w-4 rounded-full bg-blue-500 text-[9px] font-bold text-white">
-                          {w.userName.charAt(0).toUpperCase()}
-                        </span>
-                        {w.userName}
-                        <button
-                          onClick={() => {
-                            startPartTransition(async () => {
-                              await removeRepairWorker(job.id, w.userId);
-                              router.refresh();
-                            });
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-red-500 transition-all ml-0.5"
-                          title="Remove"
-                        >
-                          <XIcon className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {(() => {
-                  const availableUsers = activeUsers.filter(
-                    (u) => !repairWorkers.some((w) => w.userId === u.id)
-                  );
-                  if (availableUsers.length === 0) return null;
-                  return (
-                    <Select
-                      value=""
-                      onValueChange={(userId) => {
-                        startPartTransition(async () => {
-                          await addRepairWorker(job.id, userId);
-                          router.refresh();
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
-                      <SelectContent>
-                        {availableUsers.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>{u.name} <span className="text-muted-foreground ml-1 text-[10px]">({u.role})</span></SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                })()}
-              </div>
-
-              {/* Planning + Send to Garage */}
-              <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={job.status} />
-
-              {/* Flags */}
-              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium">Inspection Flags</p>
-                  {!showAllFlags && (
-                    <button
-                      onClick={() => setShowAllFlags(true)}
-                      className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
-                    >
-                      <Plus className="h-3 w-3" /> Add
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {/* Active flags always shown */}
-                  {activeFlags.map((flag) => (
-                    <button
-                      key={flag.label}
-                      type="button"
-                      onClick={() => flag.set(!flag.value)}
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
-                        flag.danger
-                          ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
-                          : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
-                      }`}
-                    >
-                      <span className="mr-1">✓</span>
-                      {flag.label}
-                    </button>
-                  ))}
-                  {/* Inactive flags shown only when expanded */}
-                  {showAllFlags && inactiveFlags.map((flag) => (
-                    <button
-                      key={flag.label}
-                      type="button"
-                      onClick={() => flag.set(true)}
-                      className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border bg-white/60 dark:bg-white/5 text-muted-foreground border-blue-100 dark:border-blue-800/40 hover:border-blue-300"
-                    >
-                      {flag.label}
-                    </button>
-                  ))}
-                  {showAllFlags && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllFlags(false)}
-                      className="inline-flex items-center rounded-full px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <XIcon className="h-3 w-3" />
-                    </button>
-                  )}
-                  {activeFlags.length === 0 && !showAllFlags && (
-                    <span className="text-[11px] text-muted-foreground">No flags set</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Parts moved to main content area */}
-            </CardContent>
-          </Card>
 
         </div>
       </div>

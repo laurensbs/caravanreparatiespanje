@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
+import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
 import { WorkflowGuide } from "@/components/workflow-guide";
@@ -794,6 +795,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <span className="text-right">{format(new Date(job.dueDate), "dd MMM yyyy")}</span>
                   </div>
                 )}
+                {/* Planning date — editable */}
+                <PlanningDateRow jobId={job.id} dueDate={job.dueDate} />
               </div>
 
               {/* Costs section — integrated */}
@@ -1180,6 +1183,113 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Planning Date Row ───
+
+function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | Date | null }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
+
+  async function handleSet(dateStr: string) {
+    if (!dateStr) return;
+    setSaving(true);
+    try {
+      const d = new Date(dateStr);
+      d.setHours(8, 0, 0, 0);
+      await scheduleRepair(jobId, d.toISOString());
+      toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
+      setEditing(false);
+      router.refresh();
+    } catch {
+      toast.error("Failed to set planning date");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemove() {
+    setSaving(true);
+    try {
+      await unscheduleRepair(jobId);
+      toast.success("Removed from planning");
+      setEditing(false);
+      router.refresh();
+    } catch {
+      toast.error("Failed to remove planning date");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!dueDate && !editing) {
+    return (
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5" />
+          Planning
+        </span>
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-primary hover:underline font-medium"
+        >
+          + Plan
+        </button>
+      </div>
+    );
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-1.5">
+        <span className="flex items-center gap-2 text-muted-foreground text-sm">
+          <CalendarDays className="h-3.5 w-3.5" />
+          Planning
+        </span>
+        <div className="flex items-center gap-1.5">
+          <Input
+            type="date"
+            defaultValue={current}
+            className="h-7 text-xs rounded-lg flex-1"
+            disabled={saving}
+            autoFocus
+            onChange={(e) => {
+              if (e.target.value) handleSet(e.target.value);
+            }}
+          />
+          {dueDate && (
+            <button onClick={handleRemove} disabled={saving} className="p-1 rounded hover:bg-muted" title="Remove from planning">
+              <XIcon className="h-3 w-3 text-muted-foreground" />
+            </button>
+          )}
+          <button onClick={() => setEditing(false)} className="p-1 rounded hover:bg-muted">
+            <XIcon className="h-3 w-3 text-muted-foreground" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Has date — show with edit option
+  return (
+    <div className="flex items-center justify-between group/plan">
+      <span className="flex items-center gap-2 text-muted-foreground">
+        <CalendarDays className="h-3.5 w-3.5" />
+        Planning
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="text-right font-medium text-sm">{format(new Date(dueDate!), "dd MMM yyyy")}</span>
+        <button
+          onClick={() => setEditing(true)}
+          className="opacity-0 group-hover/plan:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
+        >
+          <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+        </button>
+      </span>
     </div>
   );
 }

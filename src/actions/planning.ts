@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 
 // Statuses that indicate a repair is still "active" and can be planned
 const PLANNABLE_STATUSES = [
-  "new", "todo", "in_inspection", "quote_needed", "waiting_approval",
+  "new", "todo", "in_inspection", "no_damage", "quote_needed", "waiting_approval",
   "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked",
 ] as const;
 
@@ -105,7 +105,7 @@ export async function scheduleRepair(repairId: string, dueDate: string) {
   };
 
   // Auto-set status to "scheduled" if in an earlier workflow stage
-  const earlyStatuses = ["new", "todo"];
+  const earlyStatuses = ["new", "todo", "no_damage"];
   if (earlyStatuses.includes(job.status)) {
     updates.status = "scheduled";
   }

@@ -97,14 +97,14 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" asChild>
             <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <div className="flex items-center gap-2 group/name">
+            <div className="flex items-center gap-2.5 group/name">
               {editingField === "name" ? (
                 <div className="flex items-center gap-1.5">
                   <Input
@@ -123,7 +123,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 </div>
               ) : (
                 <>
-                  <h1 className="text-lg font-extrabold tracking-tight">{customer.name}</h1>
+                  <h1 className="text-xl font-extrabold tracking-tight">{customer.name}</h1>
                   <button onClick={() => startEditField("name")} className="opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted" title="Edit name">
                     <Pencil className="h-3 w-3 text-muted-foreground" />
                   </button>
@@ -179,11 +179,14 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
 
       {!editingField && <SmartSuggestions suggestions={getCustomerSuggestions(customer, holdedInvoices)} />}
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Left column: Contact + Address — all inline-editable */}
-        <Card className="rounded-xl lg:col-span-1">
-          <CardContent className="space-y-0 divide-y">
-            {/* Contact details */}
+        <div className="space-y-5 lg:col-span-1">
+        <Card className="rounded-xl">
+          <CardContent className="pt-5 space-y-0.5">
+            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <User className="h-3.5 w-3.5" /> Contact
+            </p>
             <InlineField icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={phone} field="phone"
               editingField={editingField} saving={saving}
               onChange={setPhone} onSave={saveField} onEdit={startEditField} onCancel={() => setEditingField(null)} />
@@ -197,13 +200,14 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             <InlineField icon={<Hash className="h-3.5 w-3.5" />} label="VAT / NIF" value={vatnumber} field="vatnumber"
               editingField={editingField} saving={saving}
               onChange={setVatnumber} onSave={saveField} onEdit={startEditField} onCancel={() => setEditingField(null)} />
+          </CardContent>
+        </Card>
 
-            {/* Address section */}
-            <div className="pt-3 pb-1">
-              <p className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                <MapPin className="h-3 w-3" /> Address
-              </p>
-            </div>
+        <Card className="rounded-xl">
+          <CardContent className="pt-5 space-y-0.5">
+            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <MapPin className="h-3.5 w-3.5" /> Address
+            </p>
             <InlineField icon={null} label="Street" value={address} field="address"
               editingField={editingField} saving={saving}
               onChange={setAddress} onSave={saveField} onEdit={startEditField} onCancel={() => setEditingField(null)} />
@@ -219,12 +223,15 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             <InlineField icon={null} label="Country" value={country} field="country"
               editingField={editingField} saving={saving}
               onChange={setCountry} onSave={saveField} onEdit={startEditField} onCancel={() => setEditingField(null)} />
+          </CardContent>
+        </Card>
 
-            {/* Notes */}
-            <div className="pt-3 group/notes">
-              <div className="flex items-center justify-between mb-1">
-                <p className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  <StickyNote className="h-3 w-3" /> Notes
+        <Card className="rounded-xl">
+          <CardContent className="pt-5">
+            <div className="group/notes">
+              <div className="flex items-center justify-between mb-2">
+                <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <StickyNote className="h-3.5 w-3.5" /> Notes
                 </p>
                 {editingField !== "notes" && (
                   <button onClick={() => startEditField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
@@ -246,32 +253,36 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 </p>
               )}
             </div>
-
-            {/* Holded link */}
-            {customer.holdedContactId && (
-              <div className="pt-3">
-                <a
-                  href={`https://app.holded.com/contacts/${customer.holdedContactId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  View in Holded
-                </a>
-              </div>
-            )}
           </CardContent>
         </Card>
 
+            {/* Holded link */}
+            {customer.holdedContactId && (
+              <a
+                href={`https://app.holded.com/contacts/${customer.holdedContactId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors rounded-xl border border-dashed py-2.5 hover:border-primary/30 hover:bg-muted/30"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                View in Holded
+              </a>
+            )}
+        </div>
+
         {/* Right column: Units + Repairs */}
-        <div className="space-y-5 lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2">
           <Card className="rounded-xl">
-            <CardContent>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs font-semibold">Units ({customer.units.length})</p>
+            <CardContent className="pt-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Units</p>
+                    <p className="text-[11px] text-muted-foreground">{customer.units.length} linked</p>
+                  </div>
                 </div>
                 {!addingUnit && (
                   <Button
@@ -439,15 +450,20 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
           </Card>
 
           <Card className="rounded-xl">
-            <CardContent>
-              <div className="flex items-center gap-2 mb-3">
-                <Wrench className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs font-semibold">Repairs ({customer.repairJobs.length})</p>
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                  <Wrench className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Repairs</p>
+                  <p className="text-[11px] text-muted-foreground">{customer.repairJobs.length} total</p>
+                </div>
               </div>
               {customer.repairJobs.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">No repair jobs linked</p>
               ) : (
-                <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                <div className="space-y-2 max-h-72 overflow-y-auto">
                   {customer.repairJobs.map((job: any) => (
                     <Link
                       key={job.id}
@@ -480,30 +496,41 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
       {/* Holded Documents — Invoices & Quotes */}
       {(holdedInvoices.length > 0 || holdedQuotes.length > 0) && (
         <Card className="rounded-xl">
-          <CardContent>
-            <div className="flex items-center gap-2 mb-3">
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs font-semibold">Holded Documents</p>
-              <div className="ml-auto flex gap-1">
-                <Button
-                  variant={holdedTab === "invoices" ? "default" : "ghost"}
-                  size="sm"
-                  className="h-6 text-[11px] px-2.5 rounded-lg"
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Holded Documents</p>
+                <p className="text-[11px] text-muted-foreground">{holdedInvoices.length + holdedQuotes.length} documents</p>
+              </div>
+              <div className="ml-auto flex gap-1 bg-muted/60 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  className={`px-3 py-1 text-[11px] font-medium rounded-md transition-all ${
+                    holdedTab === "invoices"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                   onClick={() => setHoldedTab("invoices")}
                 >
                   Invoices ({holdedInvoices.length})
-                </Button>
-                <Button
-                  variant={holdedTab === "quotes" ? "default" : "ghost"}
-                  size="sm"
-                  className="h-6 text-[11px] px-2.5 rounded-lg"
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1 text-[11px] font-medium rounded-md transition-all ${
+                    holdedTab === "quotes"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                   onClick={() => setHoldedTab("quotes")}
                 >
                   Quotes ({holdedQuotes.length})
-                </Button>
+                </button>
               </div>
             </div>
-            <HoldedHint variant="readonly" className="mb-3">
+            <HoldedHint variant="readonly" className="mb-4">
               Documents are synced from Holded. Click to view PDF.
             </HoldedHint>
 
@@ -702,7 +729,7 @@ function InlineField({
   }
 
   return (
-    <div className="flex items-center justify-between py-2 group/row text-sm cursor-pointer hover:bg-muted/30 -mx-3 px-3 rounded-lg transition-colors" onClick={() => onEdit(field)}>
+    <div className="flex items-center justify-between py-2.5 group/row text-sm cursor-pointer hover:bg-muted/40 -mx-3 px-3 rounded-lg transition-colors" onClick={() => onEdit(field)}>
       <span className="flex items-center gap-2 text-muted-foreground shrink-0">
         {icon}
         {label}

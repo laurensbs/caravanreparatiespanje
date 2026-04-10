@@ -32,10 +32,11 @@ import { updateUnit } from "@/actions/units";
 import { HoldedHint } from "@/components/holded-hint";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CustomerSearch } from "@/components/customers/customer-search";
-import { SmartSuggestions, getRepairSuggestions, type RepairSuggestionActions } from "@/components/smart-suggestions
+import { SmartSuggestions, getRepairSuggestions, type RepairSuggestionActions } from "@/components/smart-suggestions";
 import { RepairProgressTracker } from "@/components/repair-progress";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
+import { WorkflowGuide } from "@/components/workflow-guide";
 import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
 
 interface PartItem {

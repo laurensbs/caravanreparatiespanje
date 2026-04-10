@@ -1,10 +1,31 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, customers, locations, users, units } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, customers, locations, users, units, tags, repairJobTags } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { eq, and, gte, lte, isNull, isNotNull, or, ilike, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+const FUTURE_TAG_SLUG = "future-repair";
+const FUTURE_TAG_NAME = "Future Repair";
+const FUTURE_TAG_COLOR = "#f59e0b"; // amber
+
+async function ensureFutureTag(): Promise<string> {
+  const [existing] = await db.select({ id: tags.id }).from(tags).where(eq(tags.slug, FUTURE_TAG_SLUG));
+  if (existing) return existing.id;
+  const [created] = await db.insert(tags).values({ name: FUTURE_TAG_NAME, slug: FUTURE_TAG_SLUG, color: FUTURE_TAG_COLOR }).returning();
+  return created.id;
+}
+
+async function autoTagFutureRepair(repairId: string, dueDate: Date) {
+  const isFuture = dueDate.getFullYear() > new Date().getFullYear();
+  const tagId = await ensureFutureTag();
+  if (isFuture) {
+    await db.insert(repairJobTags).values({ repairJobId: repairId, tagId }).onConflictDoNothing();
+  } else {
+    await db.delete(repairJobTags).where(and(eq(repairJobTags.repairJobId, repairId), eq(repairJobTags.tagId, tagId)));
+  }
+}
 
 // Statuses that indicate a repair is still "active" and can be planned
 const PLANNABLE_STATUSES = [
@@ -121,6 +142,9 @@ export async function scheduleRepair(repairId: string, dueDate: string) {
     userId: session.user.id,
     comment: `Scheduled for ${newDueDate.toISOString().slice(0, 16).replace("T", " ")}`,
   });
+
+  // Auto-tag/untag as "Future Repair" based on year
+  await autoTagFutureRepair(repairId, newDueDate);
 
   revalidatePath("/planning");
   revalidatePath(`/repairs/${repairId}`);

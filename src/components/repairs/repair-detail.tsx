@@ -822,201 +822,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 Cost Estimate
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
-            <div className="px-6 pb-1 pt-0">
-              <div className="flex items-center justify-end gap-1">
-                  <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
-                    <Clock className="h-3 w-3 mr-1" />
-                    Labour
-                  </button>
-                  <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>
-                    <Plus className="h-3 w-3 mr-1" />
-                    Custom
-                  </button>
-                  <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
-                    <Package className="h-3 w-3 mr-1" />
-                    Part
-                  </button>
-              </div>
-            </div>
-            <div className="px-6 pb-6 pt-2">
-              {showPartPicker && (
-                <div className="mb-3 border rounded-lg p-2 bg-muted/30">
-                  <Input
-                    placeholder="Search parts..."
-                    value={partSearch}
-                    onChange={(e) => setPartSearch(e.target.value)}
-                    className="h-7 text-xs rounded-lg mb-2"
-                    autoFocus
-                  />
-                  <div className="max-h-40 overflow-y-auto space-y-0.5">
-                    {filteredParts.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground py-2 text-center">No parts found</p>
-                    ) : (
-                      filteredParts.map((p) => {
-                        const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
-                        const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
-                        const sellPrice = baseCost * (1 + markup / 100);
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => addPartLine(p)}
-                            className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center"
-                          >
-                            <span className="truncate">
-                              {p.name}
-                              {p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}
-                            </span>
-                            <span className="text-muted-foreground shrink-0 ml-2">
-                              €{sellPrice.toFixed(2)}
-                              {baseCost > 0 && <span className="text-[10px] ml-1 opacity-60">+{markup}%</span>}
-                            </span>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
 
-              {costLines.length > 0 ? (
-                <div className="space-y-1.5">
-                  {/* Column headers */}
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider pb-1 border-b">
-                    <span className="w-10 shrink-0">Type</span>
-                    <span className="flex-1">Description</span>
-                    <span className="w-14 text-center">Qty</span>
-                    <span className="w-20 text-right">Our cost</span>
-                    <span className="w-20 text-right">Sell</span>
-                    <span className="w-16 text-right">Total</span>
-                    <span className="w-6" />
-                  </div>
-
-                  {costLines.map((line) => (
-                    <div key={line.id} className="flex items-center gap-2">
-                      <span className={`text-[10px] font-medium uppercase tracking-wider w-10 shrink-0 ${
-                        line.type === "labour" ? "text-blue-500" : line.type === "part" ? "text-green-600" : "text-muted-foreground"
-                      }`}>
-                        {line.type === "labour" ? "HRS" : line.type === "part" ? "PART" : "ITEM"}
-                      </span>
-                      <Input
-                        value={line.description}
-                        onChange={(e) => updateCostLine(line.id, "description", e.target.value)}
-                        placeholder={line.type === "labour" ? "Labour description" : "Description"}
-                        className="h-7 text-xs rounded-lg flex-1"
-                      />
-                      <Input
-                        type="number"
-                        min="0.25"
-                        step={line.type === "labour" ? "0.25" : "1"}
-                        value={line.quantity}
-                        onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)}
-                        className="h-7 text-xs rounded-lg w-14 text-center"
-                        title={line.type === "labour" ? "Hours" : "Quantity"}
-                      />
-                      <div className="relative w-20">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={line.internalCost}
-                          onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)}
-                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
-                          title="Our cost (purchase/internal)"
-                        />
-                      </div>
-                      <div className="relative w-20">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={line.unitPrice}
-                          onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)}
-                          className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                          title="Sell price"
-                        />
-                      </div>
-                      <span className="text-xs font-medium w-16 text-right tabular-nums">
-                        €{(line.quantity * line.unitPrice).toFixed(2)}
-                      </span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeCostLine(line.id)}>
-                        <XIcon className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-
-                  {/* Discount row */}
-                  <div className="flex items-center justify-between pt-2 border-t gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Discount</span>
-                      <div className="relative w-16">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={discountPercent}
-                          onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                          className="h-6 text-xs pr-5 text-right rounded-lg"
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">%</span>
-                      </div>
-                    </div>
-                    {discountPercent > 0 && (
-                      <span className="text-xs text-destructive tabular-nums">-€{discountAmount.toFixed(2)}</span>
-                    )}
-                  </div>
-
-                  {/* Totals */}
-                  <div className="space-y-1 pt-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Our total cost</span>
-                      <span className="text-xs tabular-nums text-orange-600 dark:text-orange-400">€{costLinesInternalTotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
-                      <span className="text-xs font-medium tabular-nums">€{costLinesTotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
-                      <span className="text-xs tabular-nums">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-1 border-t">
-                      <span className="text-xs font-semibold">Total incl. VAT</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={applyLinesToEstimate}>
-                          → Estimated
-                        </Button>
-                      </div>
-                    </div>
-                    {costLinesInternalTotal > 0 && (
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-xs text-muted-foreground">Margin</span>
-                        <span className={`text-xs font-medium tabular-nums ${costLinesTotal - costLinesInternalTotal >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                          €{(costLinesTotal - costLinesInternalTotal).toFixed(2)} ({costLinesInternalTotal > 0 ? Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100) : 0}%)
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[11px] text-muted-foreground py-2">
-                  Add parts, labour hours, or custom lines to build a cost estimate.
-                </p>
-              )}
-              <HoldedHint variant="info" className="mt-3">
-                Prices are excl. VAT. Build lines → click <strong>"→ Estimated"</strong> → <strong>Create Quote</strong>. After work: adjust actual → <strong>Create Invoice</strong>.
-              </HoldedHint>
-
-              {/* Pricing summary */}
-              <div className="mt-4 pt-4 border-t space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground text-sm shrink-0">Estimated</span>
-                  <div className="relative w-32">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+            <div className="px-6 pb-6">
+              {/* ── Pricing summary: Estimated (primary), Actual, Our Cost ── */}
+              <div className="flex items-start gap-6 mb-5">
+                <div className="flex-1">
+                  <span className="text-xs text-muted-foreground block mb-1">Estimated</span>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -1024,14 +837,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       placeholder="0.00"
                       value={estimatedCost}
                       onChange={(e) => setEstimatedCost(e.target.value)}
-                      className="h-8 text-sm pl-5 pr-2 text-right rounded-lg"
+                      className="h-10 text-lg font-semibold pl-7 pr-2 text-right rounded-lg tabular-nums"
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground text-sm shrink-0">Actual</span>
-                  <div className="relative w-32">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                <div className="flex-1">
+                  <span className="text-xs text-muted-foreground block mb-1">Actual</span>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm">€</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -1039,14 +852,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       placeholder="0.00"
                       value={actualCost}
                       onChange={(e) => setActualCost(e.target.value)}
-                      className="h-8 text-sm pl-5 pr-2 text-right rounded-lg"
+                      className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-orange-600 dark:text-orange-400 text-sm shrink-0">Our Cost</span>
-                  <div className="relative w-32">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                <div className="flex-1">
+                  <span className="text-xs text-muted-foreground/60 block mb-1">Our Cost</span>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-sm">€</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -1054,28 +867,242 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       placeholder="0.00"
                       value={internalCost}
                       onChange={(e) => setInternalCost(e.target.value)}
-                      className="h-8 text-sm pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                      className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground"
                     />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer py-0.5">
-                  <Checkbox
-                    checked={warrantyFlag}
-                    onCheckedChange={(checked) => {
-                      const val = checked === true;
-                      setWarrantyFlag(val);
-                      if (val) {
-                        setInvoiceStatus("warranty");
-                        if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                          setStatus("completed");
-                        }
-                      } else if (!val && invoiceStatus === "warranty") {
-                        setInvoiceStatus("not_invoiced");
+              </div>
+
+              {/* Warranty toggle */}
+              <label className="flex items-center gap-2 cursor-pointer mb-5">
+                <Checkbox
+                  checked={warrantyFlag}
+                  onCheckedChange={(checked) => {
+                    const val = checked === true;
+                    setWarrantyFlag(val);
+                    if (val) {
+                      setInvoiceStatus("warranty");
+                      if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                        setStatus("completed");
                       }
-                    }}
-                  />
-                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
-                </label>
+                    } else if (!val && invoiceStatus === "warranty") {
+                      setInvoiceStatus("not_invoiced");
+                    }
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">Warranty / internal cost</span>
+              </label>
+
+              {/* ── Line items ── */}
+              <div className="border-t border-border/30 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Line items</span>
+                    <details className="relative inline-block">
+                      <summary className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground cursor-pointer select-none transition-colors">
+                        How it works
+                      </summary>
+                      <div className="absolute left-0 top-full mt-1 z-50 w-64 rounded-lg border border-border bg-popover p-3 text-xs text-popover-foreground shadow-md">
+                        <p className="leading-relaxed">Build lines → click <strong>"→ Estimated"</strong> to set the price. Then <strong>Create Quote</strong> below. After work: adjust actual → <strong>Create Invoice</strong>.</p>
+                        <p className="text-muted-foreground mt-1.5">Prices are excl. VAT.</p>
+                      </div>
+                    </details>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
+                      Labour
+                    </button>
+                    <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>
+                      Custom
+                    </button>
+                    <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
+                      Part
+                    </button>
+                  </div>
+                </div>
+
+                {showPartPicker && (
+                  <div className="mb-3 border border-border/50 rounded-lg p-2 bg-background/50">
+                    <Input
+                      placeholder="Search parts..."
+                      value={partSearch}
+                      onChange={(e) => setPartSearch(e.target.value)}
+                      className="h-7 text-xs rounded-lg mb-2"
+                      autoFocus
+                    />
+                    <div className="max-h-40 overflow-y-auto space-y-0.5">
+                      {filteredParts.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2 text-center">No parts found</p>
+                      ) : (
+                        filteredParts.map((p) => {
+                          const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
+                          const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
+                          const sellPrice = baseCost * (1 + markup / 100);
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => addPartLine(p)}
+                              className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center"
+                            >
+                              <span className="truncate">
+                                {p.name}
+                                {p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}
+                              </span>
+                              <span className="text-muted-foreground shrink-0 ml-2">
+                                €{sellPrice.toFixed(2)}
+                                {baseCost > 0 && <span className="text-[10px] ml-1 opacity-60">+{markup}%</span>}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {costLines.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {/* Column headers */}
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider pb-1 border-b border-border/30">
+                      <span className="w-10 shrink-0">Type</span>
+                      <span className="flex-1">Description</span>
+                      <span className="w-14 text-center">Qty</span>
+                      <span className="w-20 text-right">Our cost</span>
+                      <span className="w-20 text-right">Sell</span>
+                      <span className="w-16 text-right">Total</span>
+                      <span className="w-6" />
+                    </div>
+
+                    {costLines.map((line) => (
+                      <div key={line.id} className="flex items-center gap-2">
+                        <span className={`text-[10px] font-medium uppercase tracking-wider w-10 shrink-0 ${
+                          line.type === "labour" ? "text-muted-foreground" : line.type === "part" ? "text-muted-foreground" : "text-muted-foreground"
+                        }`}>
+                          {line.type === "labour" ? "HRS" : line.type === "part" ? "PART" : "ITEM"}
+                        </span>
+                        <Input
+                          value={line.description}
+                          onChange={(e) => updateCostLine(line.id, "description", e.target.value)}
+                          placeholder={line.type === "labour" ? "Labour description" : "Description"}
+                          className="h-7 text-xs rounded-lg flex-1"
+                        />
+                        <Input
+                          type="number"
+                          min="0.25"
+                          step={line.type === "labour" ? "0.25" : "1"}
+                          value={line.quantity}
+                          onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)}
+                          className="h-7 text-xs rounded-lg w-14 text-center"
+                          title={line.type === "labour" ? "Hours" : "Quantity"}
+                        />
+                        <div className="relative w-20">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.internalCost}
+                            onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)}
+                            className="h-7 text-xs pl-5 pr-2 text-right rounded-lg text-muted-foreground"
+                            title="Our cost (purchase/internal)"
+                          />
+                        </div>
+                        <div className="relative w-20">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.unitPrice}
+                            onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)}
+                            className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                            title="Sell price"
+                          />
+                        </div>
+                        <span className="text-xs font-medium w-16 text-right tabular-nums">
+                          €{(line.quantity * line.unitPrice).toFixed(2)}
+                        </span>
+                        <button className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeCostLine(line.id)}>
+                          <XIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Discount row */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/30 gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Discount</span>
+                        <div className="relative w-16">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={discountPercent}
+                            onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                            className="h-6 text-xs pr-5 text-right rounded-lg"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">%</span>
+                        </div>
+                      </div>
+                      {discountPercent > 0 && (
+                        <span className="text-xs text-destructive tabular-nums">-€{discountAmount.toFixed(2)}</span>
+                      )}
+                    </div>
+
+                    {/* Totals */}
+                    <div className="space-y-1 pt-1">
+                      {costLinesInternalTotal > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground/60">Our total cost</span>
+                          <span className="text-xs tabular-nums text-muted-foreground/60">€{costLinesInternalTotal.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
+                        <span className="text-xs tabular-nums">€{costLinesTotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
+                        <span className="text-xs tabular-nums text-muted-foreground">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
+                        <span className="text-sm font-semibold">Total incl. VAT</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
+                          <button
+                            onClick={applyLinesToEstimate}
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                          >
+                            → Estimated
+                          </button>
+                        </div>
+                      </div>
+                      {costLinesInternalTotal > 0 && (
+                        <div className="flex items-center justify-between pt-0.5">
+                          <span className="text-xs text-muted-foreground/60">Margin</span>
+                          <span className={`text-xs tabular-nums text-muted-foreground/60`}>
+                            €{(costLinesTotal - costLinesInternalTotal).toFixed(2)} ({costLinesInternalTotal > 0 ? Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100) : 0}%)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center">
+                    <p className="text-sm text-muted-foreground">No cost lines yet</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Add labour, parts, or custom items to build a quote</p>
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
+                        + Labour
+                      </button>
+                      <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
+                        + Part
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             </details>
@@ -1741,31 +1768,32 @@ function HoldedDocumentsCard({
   const estimatedCost = job.estimatedCost ? parseFloat(job.estimatedCost) : 0;
 
   return (
-    <Card className="rounded-xl">
-      <CardContent className="pt-5">
-        <p className="flex items-center gap-2 text-xs font-semibold mb-3">
-          <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-          Holded Documents
-        </p>
+    <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
+      <details open>
+        <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+          Documents
+          <ChevronDown className="h-3.5 w-3.5 opacity-40" />
+        </summary>
+      <div className="px-6 pb-6">
 
         {/* Unsent warning banner */}
         {hasUnsentDoc && (
-          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 mb-3 text-[11px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
+          <div className="flex items-center gap-2 rounded-lg border border-amber-200/60 bg-amber-50/50 px-3 py-2 mb-4 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             <span>
               {job.holdedQuoteId && !quoteSent && job.holdedInvoiceId && !invoiceSent
-                ? "Quote and invoice not yet emailed to customer"
+                ? "Quote and invoice not yet emailed"
                 : job.holdedQuoteId && !quoteSent
-                ? "Quote not yet emailed to customer"
-                : "Invoice not yet emailed to customer"
+                ? "Quote not yet emailed"
+                : "Invoice not yet emailed"
               }
             </span>
           </div>
         )}
 
         {/* ── Quote section ── */}
-        <div className="space-y-2 mb-3">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Quote</p>
+        <div className="space-y-2 mb-4">
+          <p className="text-xs font-medium text-muted-foreground">Quote</p>
           {job.holdedQuoteId ? (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -1854,7 +1882,7 @@ function HoldedDocumentsCard({
           ) : (
             <div className="space-y-1.5">
               <Button
-                variant="outline" size="sm" className="w-full text-xs"
+                variant="default" size="sm" className="w-full text-xs"
                 disabled={!job.customer || costLines.length === 0 || !!loading}
                 onClick={() => handleAction("create-quote", async () => {
                   const result = await createHoldedQuote(job.id, costLines.map(l => ({
@@ -1868,7 +1896,7 @@ function HoldedDocumentsCard({
                   router.refresh();
                 })}
               >
-                {loading === "create-quote" ? <Spinner className="mr-1" /> : <FileText className="h-3 w-3 mr-1" />}
+                {loading === "create-quote" ? <Spinner className="mr-1" /> : null}
                 Create Quote
               </Button>
               {job.customer?.email && (
@@ -1888,19 +1916,19 @@ function HoldedDocumentsCard({
                     router.refresh();
                   })}
                 >
-                  {loading === "create-send-quote" ? <Spinner className="mr-1" /> : <Send className="h-3 w-3 mr-1" />}
+                  {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}
                   Create & Send Quote
                 </Button>
               )}
-              {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
-              {job.customer && costLines.length === 0 && <p className="text-[11px] text-muted-foreground">Add cost lines first</p>}
+              {!job.customer && <p className="text-xs text-muted-foreground">Link a contact first</p>}
+              {job.customer && costLines.length === 0 && <p className="text-xs text-muted-foreground">Add cost lines first</p>}
             </div>
           )}
         </div>
 
         {/* ── Invoice section ── */}
-        <div className="border-t pt-3 space-y-2">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Invoice</p>
+        <div className="border-t border-border/30 pt-4 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Invoice</p>
           {job.holdedInvoiceId ? (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -2008,12 +2036,12 @@ function HoldedDocumentsCard({
                   router.refresh();
                 })}
               >
-                {loading === "create-invoice" ? <Spinner className="mr-1" /> : <Receipt className="h-3 w-3 mr-1" />}
+                {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}
                 Create Invoice
               </Button>
-              {!job.customer && <p className="text-[11px] text-muted-foreground mt-1.5">Link a contact first</p>}
+              {!job.customer && <p className="text-xs text-muted-foreground mt-1.5">Link a contact first</p>}
               {job.customer && costLines.length === 0 && !actualCost && !estimatedCost && (
-                <p className="text-[11px] text-muted-foreground mt-1.5">Add lines or a cost estimate first</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Add lines or a cost estimate first</p>
               )}
             </div>
           )}
@@ -2021,9 +2049,9 @@ function HoldedDocumentsCard({
 
         {/* Verify Holded links */}
         {(job.holdedInvoiceId || job.holdedQuoteId) && (
-          <div className="border-t pt-3 mt-3">
-            <Button
-              variant="ghost" size="sm" className="w-full text-xs text-muted-foreground"
+          <div className="border-t border-border/30 pt-3 mt-3">
+            <button
+              className="w-full text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1"
               onClick={() => handleAction("verify", async () => {
                 const result = await verifyHoldedDocuments(job.id);
                 if (result.fixed) {
@@ -2034,13 +2062,14 @@ function HoldedDocumentsCard({
                 }
               })}
             >
-              {loading === "verify" ? <Spinner className="mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-              Verify Holded Links
-            </Button>
+              {loading === "verify" ? <Spinner className="mr-1" /> : null}
+              Verify links
+            </button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      </details>
+    </div>
   );
 }
 

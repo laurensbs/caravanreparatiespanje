@@ -34,7 +34,7 @@ export const repairJobSchema = z.object({
   estimatedHours: z.string().nullable().optional(),
   actualHours: z.string().nullable().optional(),
   invoiceStatus: z.enum([
-    "not_invoiced", "draft", "sent", "paid", "warranty", "rejected",
+    "not_invoiced", "draft", "sent", "paid", "warranty", "rejected", "no_damage",
   ]).optional(),
   customerResponseStatus: z.enum([
     "not_contacted", "contacted", "waiting_response",

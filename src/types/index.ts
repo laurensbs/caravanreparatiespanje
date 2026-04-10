@@ -54,7 +54,8 @@ export type InvoiceStatus =
   | "sent"
   | "paid"
   | "warranty"
-  | "rejected";
+  | "rejected"
+  | "no_damage";
 
 export type BusinessProcessType =
   | "repair"
@@ -210,6 +211,7 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   paid: "Paid",
   warranty: "Warranty / Internal",
   rejected: "Rejected by Client",
+  no_damage: "No Damage",
 };
 
 export const BUSINESS_PROCESS_LABELS: Record<BusinessProcessType, string> = {

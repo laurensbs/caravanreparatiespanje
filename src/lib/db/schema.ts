@@ -68,6 +68,7 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "paid",
   "warranty",
   "rejected",
+  "no_damage",
 ]);
 
 export const businessProcessTypeEnum = pgEnum("business_process_type", [

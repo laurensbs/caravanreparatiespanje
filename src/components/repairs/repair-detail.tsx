@@ -516,13 +516,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </Card>
           )}
 
-          {/* ── 🔧 GARAGE ZONE — workers, planning, flags, tasks, parts ── */}
+          {/* ── GARAGE ZONE — workers, planning, flags, tasks, parts ── */}
           <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
-            <CardContent className="space-y-4 pt-4">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+            <details open>
+              <summary className="px-6 pt-4 pb-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
                 <Wrench className="h-3.5 w-3.5" />
                 Garage
-              </p>
+                <ChevronDown className="h-3.5 w-3.5 ml-auto opacity-50" />
+              </summary>
+            <CardContent className="space-y-4 pt-0">
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Assigned workers */}
@@ -810,18 +812,24 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               ) : null}
               </div>
             </CardContent>
+            </details>
           </Card>
 
           {/* Cost Estimate Builder */}
           <Card className="rounded-xl" ref={costRef}>
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center justify-between">
+            <details open>
+              <summary className="px-6 pt-4 pb-1 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-semibold">
                   <Receipt className="h-4 w-4 text-emerald-500" />
                   Cost Estimate
                   <span className="text-[10px] font-normal text-muted-foreground">→ client</span>
                 </span>
-                <div className="flex gap-1">
+                <div className="flex items-center gap-1">
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </div>
+              </summary>
+            <CardHeader className="pb-1 pt-0">
+              <div className="flex items-center justify-end gap-1">
                   <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addLabourLine}>
                     <Clock className="h-3 w-3 mr-1" />
                     Labour
@@ -834,8 +842,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <Package className="h-3 w-3 mr-1" />
                     Part
                   </Button>
-                </div>
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="pt-2">
               {showPartPicker && (
@@ -1009,7 +1016,75 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <HoldedHint variant="info" className="mt-3">
                 Prices are excl. VAT. Build lines → click <strong>"→ Estimated"</strong> → <strong>Create Quote</strong>. After work: adjust actual → <strong>Create Invoice</strong>.
               </HoldedHint>
+
+              {/* Pricing summary */}
+              <div className="mt-4 pt-4 border-t space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground text-sm shrink-0">Estimated</span>
+                  <div className="relative w-32">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={estimatedCost}
+                      onChange={(e) => setEstimatedCost(e.target.value)}
+                      className="h-8 text-sm pl-5 pr-2 text-right rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground text-sm shrink-0">Actual</span>
+                  <div className="relative w-32">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={actualCost}
+                      onChange={(e) => setActualCost(e.target.value)}
+                      className="h-8 text-sm pl-5 pr-2 text-right rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-orange-600 dark:text-orange-400 text-sm shrink-0">Our Cost</span>
+                  <div className="relative w-32">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={internalCost}
+                      onChange={(e) => setInternalCost(e.target.value)}
+                      className="h-8 text-sm pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                  <Checkbox
+                    checked={warrantyFlag}
+                    onCheckedChange={(checked) => {
+                      const val = checked === true;
+                      setWarrantyFlag(val);
+                      if (val) {
+                        setInvoiceStatus("warranty");
+                        if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                          setStatus("completed");
+                        }
+                      } else if (!val && invoiceStatus === "warranty") {
+                        setInvoiceStatus("not_invoiced");
+                      }
+                    }}
+                  />
+                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
+                </label>
+              </div>
             </CardContent>
+            </details>
           </Card>
 
           {/* Holded Documents — directly under Cost Estimate */}
@@ -1205,72 +1280,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 )}
 
-                {/* Costs */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-sm shrink-0">Estimated</span>
-                    <div className="relative w-28">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={estimatedCost}
-                        onChange={(e) => setEstimatedCost(e.target.value)}
-                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-sm shrink-0">Actual</span>
-                    <div className="relative w-28">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={actualCost}
-                        onChange={(e) => setActualCost(e.target.value)}
-                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-orange-600 dark:text-orange-400 text-sm shrink-0">Our Cost</span>
-                    <div className="relative w-28">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={internalCost}
-                        onChange={(e) => setInternalCost(e.target.value)}
-                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer py-0.5">
-                  <Checkbox
-                    checked={warrantyFlag}
-                    onCheckedChange={(checked) => {
-                      const val = checked === true;
-                      setWarrantyFlag(val);
-                      if (val) {
-                        setInvoiceStatus("warranty");
-                        if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                          setStatus("completed");
-                        }
-                      } else if (!val && invoiceStatus === "warranty") {
-                        setInvoiceStatus("not_invoiced");
-                      }
-                    }}
-                  />
-                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
-                </label>
+                {/* Costs moved to Cost Estimate card */}
               </div>
             </CardContent>
           </Card>
@@ -1435,6 +1445,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const futureRef = useRef<HTMLInputElement>(null);
   const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
 
   const isToday = dueDate && format(new Date(dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -1506,9 +1517,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             </button>
           </span>
         ) : !editing ? (
-          <button onClick={() => setEditing(true)} className="text-xs text-primary hover:underline font-medium">
-            + Plan
-          </button>
+          <span className="text-xs text-muted-foreground">Not planned</span>
         ) : null}
       </div>
 
@@ -1560,21 +1569,28 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             <Wrench className="h-3.5 w-3.5" />
             {saving ? "..." : "Garage Now"}
           </button>
-          <label
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-medium py-2 px-3 transition-colors cursor-pointer relative"
+          <button
+            onClick={() => {
+              if (futureRef.current) {
+                futureRef.current.showPicker();
+              }
+            }}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-medium py-2 px-3 transition-colors disabled:opacity-50 relative overflow-hidden"
           >
             <CalendarDays className="h-3.5 w-3.5" />
             Plan Future
             <input
+              ref={futureRef}
               type="date"
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute inset-0 opacity-0 pointer-events-none"
               disabled={saving}
               min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
               onChange={(e) => {
                 if (e.target.value) handleSet(e.target.value);
               }}
             />
-          </label>
+          </button>
         </div>
       )}
     </div>

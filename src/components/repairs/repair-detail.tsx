@@ -319,103 +319,113 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   }
 
   return (
-    <div className="space-y-3 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-2.5 min-w-0 flex-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0 mt-0.5" onClick={handleSave} disabled={saving}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-extrabold tracking-tight truncate max-w-[400px]">{job.publicCode ?? title ?? "Repair Job"}</h1>
-              <Badge className={`${STATUS_COLORS[status as RepairStatus]} rounded-full text-[11px] px-2 py-0`}>
-                {STATUS_LABELS[status as RepairStatus]}
-              </Badge>
-              <Badge className={`${PRIORITY_COLORS[priority as Priority]} rounded-full text-[11px] px-2 py-0`}>
-                {PRIORITY_LABELS[priority as Priority]}
-              </Badge>
+    <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
+      {/* ── Header ── */}
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="mt-1.5 p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <div className="min-w-0 flex-1">
+              {editingTitle ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="text-lg font-semibold h-10 rounded-lg border-0 bg-muted/50 px-3"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setEditingTitle(false); }}
+                  />
+                  <button onClick={() => setEditingTitle(false)} className="p-1 rounded hover:bg-muted">
+                    <XIcon className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditingTitle(true)}
+                  className="group text-left w-full"
+                >
+                  <h1 className="text-xl font-semibold tracking-tight text-foreground leading-snug line-clamp-2">
+                    {title || job.publicCode || "Untitled repair"}
+                  </h1>
+                </button>
+              )}
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {job.publicCode && title ? job.publicCode : ''}
+                {job.customer ? `${job.publicCode && title ? ' · ' : ''}${job.customer.name}` : ''}
+                {job.unit ? ` · ${[job.unit.brand, job.unit.model].filter(Boolean).join(' ')}` : ''}
+              </p>
             </div>
-            {allTags.length > 0 && (
-              <div className="mt-1">
-                <TagPicker
-                  allTags={allTags}
-                  activeTags={repairTags}
-                  onAdd={(tagId) => addTagToRepair(job.id, tagId)}
-                  onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
-                />
-              </div>
-            )}
-            {editingTitle ? (
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="text-sm h-7 rounded-lg"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Escape") setEditingTitle(false); if (e.key === "Enter") setEditingTitle(false); }}
-                />
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTitle(false)}>
-                  <XIcon className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setEditingTitle(true)}
-                className="group flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors text-left mt-0.5"
-              >
-                <span className="truncate">{title || "No title — click to add"}</span>
-                <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-              </button>
-            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0 mt-1">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Delete"
+            >
+              {deleting ? <Spinner /> : <Trash2 className="h-4 w-4" />}
+            </button>
+            <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-lg h-9 px-5 font-medium">
+              {saving ? <Spinner className="mr-2" /> : null}
+              Save
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={handleDelete}
-            disabled={deleting}
-            title="Delete"
-          >
-            {deleting ? <Spinner /> : <Trash2 className="h-3.5 w-3.5" />}
-          </Button>
-          <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-xl h-9 px-4">
-            {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
-            Save
-          </Button>
+
+        {/* Status chips + tags */}
+        <div className="flex items-center gap-2 flex-wrap pl-10">
+          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status as RepairStatus] ?? 'bg-muted text-muted-foreground'}`}>
+            {STATUS_LABELS[status as RepairStatus]}
+          </span>
+          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[priority as Priority] ?? 'bg-muted text-muted-foreground'}`}>
+            {PRIORITY_LABELS[priority as Priority]}
+          </span>
+          {allTags.length > 0 && (
+            <TagPicker
+              allTags={allTags}
+              activeTags={repairTags}
+              onAdd={(tagId) => addTagToRepair(job.id, tagId)}
+              onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
+            />
+          )}
         </div>
       </div>
 
-      {/* Past Repairs — big cards below header */}
+      {/* ── Past Repairs ── */}
       {job.customer && customerRepairs.length > 0 && (
-        <div className="mt-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Past Repairs</p>
-          <div className="flex gap-3 flex-wrap">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Past Repairs</p>
+          <div className="flex gap-3 overflow-x-auto pb-1">
             {customerRepairs.slice(0, 6).map((r) => (
               <Link
                 key={r.id}
                 href={`/repairs/${r.id}`}
-                className={`flex flex-col items-start rounded-xl px-5 py-3 min-w-[140px] max-w-[200px] transition-all hover:ring-2 ring-primary/30 hover:scale-[1.03] ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
+                className="flex items-start gap-3 rounded-xl bg-muted/40 hover:bg-muted/70 px-4 py-3 min-w-[220px] transition-colors group"
               >
-                <div className="flex items-center gap-2 w-full">
-                  <span className="text-2xl font-black leading-none">{r.publicCode ?? 'R'}</span>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">
-                    {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
-                  </Badge>
+                <div className="flex items-center justify-center h-9 w-9 rounded-full bg-muted text-sm font-bold text-muted-foreground shrink-0 mt-0.5">
+                  {(r.publicCode ?? 'R').slice(0, 2)}
                 </div>
-                <span className="text-xs font-medium opacity-80 mt-1.5 truncate w-full">
-                  {r.title ? r.title.slice(0, 30) + (r.title.length > 30 ? '…' : '') : 'No title'}
-                </span>
-                <span className="text-[10px] opacity-60 mt-0.5">
-                  {format(new Date(r.createdAt), "dd MMM yyyy")}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {r.title ? r.title.slice(0, 35) + (r.title.length > 35 ? '…' : '') : r.publicCode ?? 'Repair'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {format(new Date(r.createdAt), "dd MMM yyyy")}
+                    <span className="mx-1.5">·</span>
+                    {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                  </p>
+                </div>
               </Link>
             ))}
             {customerRepairs.length > 6 && (
-              <div className="flex items-center text-sm text-muted-foreground font-medium px-3">
+              <div className="flex items-center text-xs text-muted-foreground font-medium px-4 shrink-0">
                 +{customerRepairs.length - 6} more
               </div>
             )}
@@ -438,103 +448,88 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
       <SmartSuggestions suggestions={getRepairSuggestions(job, suggestionActions)} />
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
-        <div className="space-y-5 lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2">
           {/* Issue description + notes merged */}
-          <Card className="rounded-xl" ref={descriptionRef}>
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-sm font-semibold">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  Description
-                </span>
-                {!editingDescription && (
-                  <button type="button" onClick={() => setEditingDescription(true)} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-                    <Pencil className="h-3 w-3" />
-                    Edit
-                  </button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-2">
-              {editingDescription ? (
-                <div className="space-y-2">
-                  <Textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={5}
-                    autoFocus
-                    className="rounded-lg text-sm"
-                  />
-                  <Button variant="ghost" size="sm" onClick={() => setEditingDescription(false)} className="h-7 text-xs">
-                    Done
-                  </Button>
-                </div>
-              ) : (
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {description || <span className="text-muted-foreground italic">No description</span>}
-                </div>
+          <div className="rounded-xl bg-muted/30 border border-border/50 p-5" ref={descriptionRef}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</h3>
+              {!editingDescription && (
+                <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Edit
+                </button>
               )}
-              {job.descriptionNormalized && (
-                <div className="mt-3 pt-3 border-t">
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
-                  <p className="text-sm text-muted-foreground">{job.descriptionNormalized}</p>
-                </div>
-              )}
-              {/* Internal notes */}
-              <div className="mt-3 pt-3 border-t">
-                <details className="group" open={!!internalComments}>
-                  <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none flex items-center gap-1.5">
-                    Internal only ▸
-                    {internalComments && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" title="Has internal notes" />}
-                  </summary>
-                  <Textarea
-                    value={internalComments}
-                    onChange={(e) => setInternalComments(e.target.value)}
-                    rows={2}
-                    placeholder="Private staff notes..."
-                    className="rounded-lg text-sm resize-none mt-1.5"
-                  />
-                </details>
+            </div>
+            {editingDescription ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={5}
+                  autoFocus
+                  className="rounded-lg text-sm border-0 bg-background/60"
+                />
+                <button onClick={() => setEditingDescription(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Done
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                {description || <span className="text-muted-foreground italic">No description</span>}
+              </div>
+            )}
+            {job.descriptionNormalized && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
+                <p className="text-sm text-muted-foreground">{job.descriptionNormalized}</p>
+              </div>
+            )}
+            {/* Internal notes */}
+            <div className="mt-4 pt-4 border-t border-border/50">
+              <details className="group" open={!!internalComments}>
+                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none flex items-center gap-1.5">
+                  Internal notes
+                  {internalComments && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                </summary>
+                <Textarea
+                  value={internalComments}
+                  onChange={(e) => setInternalComments(e.target.value)}
+                  rows={2}
+                  placeholder="Private staff notes..."
+                  className="rounded-lg text-sm resize-none mt-2 border-0 bg-background/60"
+                />
+              </details>
+            </div>
+          </div>
 
           {/* Parts needed */}
           {job.partsNeededRaw && (
-            <Card className="rounded-xl">
-              <CardHeader className="pb-1">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Wrench className="h-4 w-4 text-muted-foreground" />
-                  Parts Needed
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
-              </CardContent>
-            </Card>
+            <div className="rounded-xl bg-muted/30 border border-border/50 p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Parts Needed</h3>
+              <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
+            </div>
           )}
 
           {/* ── GARAGE ZONE — workers, planning, flags, tasks, parts ── */}
-          <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
             <details open>
-              <summary className="px-6 pt-4 pb-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+              <summary className="px-5 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
                 <Wrench className="h-3.5 w-3.5" />
                 Garage
                 <ChevronDown className="h-3.5 w-3.5 ml-auto opacity-50" />
               </summary>
-            <CardContent className="space-y-4 pt-0">
+            <div className="px-5 pb-5 space-y-4">
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Assigned workers */}
                 <div>
-                  <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Assigned</Label>
+                  <Label className="text-xs text-muted-foreground">Assigned</Label>
                   {repairWorkers.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {repairWorkers.map((w) => (
-                        <span key={w.id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-xs font-medium group">
-                          <span className="flex items-center justify-center h-4 w-4 rounded-full bg-blue-500 text-[9px] font-bold text-white">
+                        <span key={w.id} className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-xs font-medium group">
+                          <span className="flex items-center justify-center h-5 w-5 rounded-full bg-foreground/10 text-[10px] font-bold text-foreground/70">
                             {w.userName.charAt(0).toUpperCase()}
                           </span>
                           {w.userName}
@@ -545,7 +540,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                                 router.refresh();
                               });
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-red-500 transition-all ml-0.5"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all ml-0.5"
                             title="Remove"
                           >
                             <XIcon className="h-3 w-3" />
@@ -569,7 +564,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           });
                         }}
                       >
-                        <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
+                        <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg border-border/50"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
                         <SelectContent>
                           {availableUsers.map((u) => (
                             <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
@@ -587,13 +582,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
 
               {/* Flags */}
-              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+              <div className="border-t border-border/40 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium">Inspection Flags</p>
+                  <p className="text-xs text-muted-foreground font-medium">Inspection Flags</p>
                   {!showAllFlags && (
                     <button
                       onClick={() => setShowAllFlags(true)}
-                      className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
+                      className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-0.5"
                     >
                       <Plus className="h-3 w-3" /> Add
                     </button>
@@ -605,10 +600,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       key={flag.label}
                       type="button"
                       onClick={() => flag.set(!flag.value)}
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer border ${
                         flag.danger
-                          ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
-                          : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                          ? "bg-red-50 text-red-600 border-red-200/60 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/60"
+                          : "bg-muted text-foreground/80 border-border/60"
                       }`}
                     >
                       <span className="mr-1">✓</span>
@@ -620,7 +615,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       key={flag.label}
                       type="button"
                       onClick={() => flag.set(true)}
-                      className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border bg-white/60 dark:bg-white/5 text-muted-foreground border-blue-100 dark:border-blue-800/40 hover:border-blue-300"
+                      className="inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer border bg-transparent text-muted-foreground border-border/40 hover:border-border"
                     >
                       {flag.label}
                     </button>
@@ -640,14 +635,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
               </div>
               {/* Garage Tasks */}
-              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+              <div className="border-t border-border/40 pt-3">
                 <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
               </div>
 
               {/* Parts Used */}
-              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+              <div className="border-t border-border/40 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="flex items-center gap-2 text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium">
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                     <Package className="h-3.5 w-3.5" />
                       Parts Used
                     {partRequests.length > 0 && (
@@ -663,7 +658,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   {!showAddPart && (
                     <button
                       onClick={() => setShowAddPart(true)}
-                      className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
+                      className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-0.5"
                     >
                       <Plus className="h-3 w-3" /> Add
                     </button>
@@ -811,40 +806,39 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <p className="text-xs text-muted-foreground">No parts used yet. Add from quote or manually.</p>
               ) : null}
               </div>
-            </CardContent>
+            </div>
             </details>
-          </Card>
+          </div>
 
           {/* Cost Estimate Builder */}
-          <Card className="rounded-xl" ref={costRef}>
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden" ref={costRef}>
             <details open>
-              <summary className="px-6 pt-4 pb-1 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between">
-                <span className="flex items-center gap-2 text-sm font-semibold">
-                  <Receipt className="h-4 w-4 text-emerald-500" />
+              <summary className="px-5 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between">
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Cost Estimate
-                  <span className="text-[10px] font-normal text-muted-foreground">→ client</span>
+                  <span className="text-xs font-normal text-muted-foreground/60">→ client</span>
                 </span>
                 <div className="flex items-center gap-1">
                   <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                 </div>
               </summary>
-            <CardHeader className="pb-1 pt-0">
+            <div className="px-5 pb-1 pt-0">
               <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addLabourLine}>
+                  <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
                     <Clock className="h-3 w-3 mr-1" />
                     Labour
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addCustomLine}>
+                  </button>
+                  <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>
                     <Plus className="h-3 w-3 mr-1" />
                     Custom
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowPartPicker(!showPartPicker)}>
+                  </button>
+                  <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
                     <Package className="h-3 w-3 mr-1" />
                     Part
-                  </Button>
+                  </button>
               </div>
-            </CardHeader>
-            <CardContent className="pt-2">
+            </div>
+            <div className="px-5 pb-5 pt-2">
               {showPartPicker && (
                 <div className="mb-3 border rounded-lg p-2 bg-muted/30">
                   <Input
@@ -1083,9 +1077,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
                 </label>
               </div>
-            </CardContent>
+            </div>
             </details>
-          </Card>
+          </div>
 
           {/* Holded Documents — directly under Cost Estimate */}
           <div ref={holdedRef}>
@@ -1111,114 +1105,87 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
 
         {/* ═══ SIDEBAR ═══ */}
-        <div className="space-y-4">
+        <div className="space-y-6">
 
-          {/* ── 📋 OFFICE card (neutral) ── */}
-          <Card className="rounded-xl">
-            <CardContent className="space-y-3 pt-4">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <FileText className="h-3.5 w-3.5" />
-                Office
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                        <SelectItem key={val} value={val}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Priority</Label>
-                  <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1 h-8 text-xs rounded-lg" />
-                </div>
+          {/* ── Office ── */}
+          <div className="rounded-xl bg-muted/30 border border-border/50 p-5 space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Office</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Priority</Label>
+                <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1 h-8 text-xs rounded-lg border-border/50" />
+              </div>
+            </div>
 
-              {/* Info rows */}
-              <div className="border-t pt-2.5 space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" />
-                    Location
-                  </span>
-                  <span className="font-medium text-right">{job.location?.name ?? "—"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" />
-                    Position
-                  </span>
-                  <span className="font-mono text-xs font-medium text-right">{job.unit?.currentPosition ?? "—"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5" />
-                    Storage
-                  </span>
-                  <span className="text-xs font-medium text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
-                </div>
-                {job.unit && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Hash className="h-3.5 w-3.5" />
-                      Unit
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right text-xs">
-                        {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
-                      </Link>
-                      <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit unit">
-                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                      </button>
-                    </span>
-                  </div>
-                )}
-                {expandUnit && job.unit && (
-                  <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
-                )}
-                {!job.unit && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Hash className="h-3.5 w-3.5" />
-                      Unit
-                    </span>
-                    <span className="text-muted-foreground">—</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Created
-                  </span>
-                  <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
-                </div>
+            {/* Info rows */}
+            <div className="border-t border-border/40 pt-3 space-y-2.5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Location</span>
+                <span className="font-medium text-right">{job.location?.name ?? "—"}</span>
               </div>
-              {job.sourceSheet && (
-                <div className="border-t pt-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Source</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">Jake&apos;s beautiful excel sheet</span>
-                  </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Position</span>
+                <span className="font-mono text-xs font-medium text-right">{job.unit?.currentPosition ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Storage</span>
+                <span className="text-xs font-medium text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
+              </div>
+              {job.unit && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Unit</span>
+                  <span className="flex items-center gap-1.5">
+                    <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right text-xs">
+                      {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
+                    </Link>
+                    <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit unit">
+                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                    </button>
+                  </span>
                 </div>
               )}
-            </CardContent>
-          </Card>
+              {expandUnit && job.unit && (
+                <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
+              )}
+              {!job.unit && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Unit</span>
+                  <span className="text-muted-foreground">—</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Created</span>
+                <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
+              </div>
+            </div>
+            {job.sourceSheet && (
+              <div className="border-t border-border/40 pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Source</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-[160px]">Jake&apos;s beautiful excel sheet</span>
+                </div>
+              </div>
+              )}
+          </div>
 
-          {/* ── � CUSTOMER card (green tint) ── */}
-          <Card className="rounded-xl border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20">
-            <CardContent className="space-y-3 pt-4">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                <User className="h-3.5 w-3.5" />
-                Customer
-              </p>
+          {/* ── Customer ── */}
+          <div className="rounded-xl bg-muted/30 border border-border/50 p-5 space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</h3>
 
-              {/* Customer name + edit */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Contact</span>
+            {/* Customer name + edit */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Contact</span>
                 {job.customer ? (
                   <span className="flex items-center gap-1.5">
                     <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
@@ -1238,9 +1205,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* Customer response */}
               <div>
-                <Label className="text-[11px] text-muted-foreground">Response</Label>
+                <Label className="text-xs text-muted-foreground">Response</Label>
                 <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
-                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
                       <SelectItem key={val} value={val}>{label}</SelectItem>
@@ -1252,9 +1219,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           {/* Remove past repairs from customer card — now in header */}
 
               {/* Invoice + pricing */}
-              <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3 space-y-2.5">
+              <div className="border-t border-border/40 pt-3 space-y-3">
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Invoice</Label>
+                  <Label className="text-xs text-muted-foreground">Invoice</Label>
                   <Select value={invoiceStatus} onValueChange={(val) => {
                     setInvoiceStatus(val);
                     if (val === "rejected") {
@@ -1262,7 +1229,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       setCustomerResponseStatus("declined");
                     }
                   }}>
-                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
                         <SelectItem key={val} value={val}>{label}</SelectItem>
@@ -1282,8 +1249,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
                 {/* Costs moved to Cost Estimate card */}
               </div>
-            </CardContent>
-          </Card>
+          </div>
 
 
         </div>

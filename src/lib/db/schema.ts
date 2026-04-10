@@ -1300,3 +1300,42 @@ export const appSettings = pgTable("app_settings", {
     .notNull()
     .defaultNow(),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPAIR WORKERS (who worked on a repair)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const repairWorkers = pgTable(
+  "repair_workers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    note: text("note"),
+    addedByUserId: uuid("added_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("repair_workers_job_idx").on(table.repairJobId),
+    index("repair_workers_user_idx").on(table.userId),
+  ]
+);
+
+export const repairWorkersRelations = relations(repairWorkers, ({ one }) => ({
+  repairJob: one(repairJobs, {
+    fields: [repairWorkers.repairJobId],
+    references: [repairJobs.id],
+  }),
+  user: one(users, {
+    fields: [repairWorkers.userId],
+    references: [users.id],
+  }),
+}));

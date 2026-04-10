@@ -22,6 +22,7 @@ type RepairItem = {
   finalCheckStatus: string | null;
   tasks: { total: number; done: number; problem: number };
   parts: { total: number; received: number; pending: number };
+  workers: string[];
 };
 
 interface Props {

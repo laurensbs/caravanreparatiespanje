@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers } from "@/lib/db/schema";
+import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
-import { eq, and, isNull, gte, lte, desc, asc, count, sql } from "drizzle-orm";
+import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,10 +251,28 @@ export async function getGarageRepairsToday() {
     ])
   );
 
+  // Get workers per job
+  const workers = await db
+    .select({
+      repairJobId: repairWorkers.repairJobId,
+      userName: users.name,
+    })
+    .from(repairWorkers)
+    .innerJoin(users, eq(repairWorkers.userId, users.id))
+    .where(inArray(repairWorkers.repairJobId, jobIds));
+
+  const workersMap = new Map<string, string[]>();
+  for (const w of workers) {
+    const list = workersMap.get(w.repairJobId) ?? [];
+    list.push(w.userName);
+    workersMap.set(w.repairJobId, list);
+  }
+
   return jobs.map((job) => ({
     ...job,
     tasks: countsMap.get(job.id) ?? { total: 0, done: 0, problem: 0 },
     parts: partsMap.get(job.id) ?? { total: 0, received: 0, pending: 0 },
+    workers: workersMap.get(job.id) ?? [],
   }));
 }
 
@@ -343,7 +361,21 @@ export async function getGarageRepairDetail(id: string) {
     .where(eq(partRequests.repairJobId, id))
     .orderBy(desc(partRequests.createdAt));
 
-  return { ...job, tasks, photos, partRequests: jobPartRequests };
+  // Fetch workers for this repair
+  const jobWorkers = await db
+    .select({
+      id: repairWorkers.id,
+      userId: repairWorkers.userId,
+      userName: users.name,
+      note: repairWorkers.note,
+      createdAt: repairWorkers.createdAt,
+    })
+    .from(repairWorkers)
+    .innerJoin(users, eq(repairWorkers.userId, users.id))
+    .where(eq(repairWorkers.repairJobId, id))
+    .orderBy(asc(repairWorkers.createdAt));
+
+  return { ...job, tasks, photos, partRequests: jobPartRequests, workers: jobWorkers };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -743,4 +775,92 @@ export async function getRepairTasks(repairJobId: string) {
     .from(repairTasks)
     .where(eq(repairTasks.repairJobId, repairJobId))
     .orderBy(asc(repairTasks.sortOrder), asc(repairTasks.createdAt));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPAIR WORKERS (who worked on a repair)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getRepairWorkers(repairJobId: string) {
+  return db
+    .select({
+      id: repairWorkers.id,
+      userId: repairWorkers.userId,
+      userName: users.name,
+      note: repairWorkers.note,
+      createdAt: repairWorkers.createdAt,
+    })
+    .from(repairWorkers)
+    .innerJoin(users, eq(repairWorkers.userId, users.id))
+    .where(eq(repairWorkers.repairJobId, repairJobId))
+    .orderBy(asc(repairWorkers.createdAt));
+}
+
+/** Toggle "I worked on this" — adds or removes the current user */
+export async function toggleMyWorker(repairJobId: string) {
+  const session = await requireAuth();
+  const userId = session.user.id;
+
+  const existing = await db
+    .select({ id: repairWorkers.id })
+    .from(repairWorkers)
+    .where(and(eq(repairWorkers.repairJobId, repairJobId), eq(repairWorkers.userId, userId)));
+
+  if (existing.length > 0) {
+    await db.delete(repairWorkers).where(eq(repairWorkers.id, existing[0].id));
+  } else {
+    await db.insert(repairWorkers).values({
+      repairJobId,
+      userId,
+      addedByUserId: userId,
+    });
+  }
+
+  revalidatePath(`/garage/repairs/${repairJobId}`);
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+/** Admin/staff: add a worker to a repair */
+export async function addRepairWorker(repairJobId: string, userId: string) {
+  const session = await requireAuth();
+
+  // Check not already added
+  const existing = await db
+    .select({ id: repairWorkers.id })
+    .from(repairWorkers)
+    .where(and(eq(repairWorkers.repairJobId, repairJobId), eq(repairWorkers.userId, userId)));
+
+  if (existing.length > 0) return;
+
+  await db.insert(repairWorkers).values({
+    repairJobId,
+    userId,
+    addedByUserId: session.user.id,
+  });
+
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+/** Admin/staff: remove a worker from a repair */
+export async function removeRepairWorker(repairJobId: string, userId: string) {
+  await requireAuth();
+  await db.delete(repairWorkers).where(
+    and(eq(repairWorkers.repairJobId, repairJobId), eq(repairWorkers.userId, userId))
+  );
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+/** Update a worker's note */
+export async function updateWorkerNote(workerId: string, note: string) {
+  await requireAuth();
+  await db.update(repairWorkers).set({ note: note || null }).where(eq(repairWorkers.id, workerId));
+}
+
+/** Get all active users (for worker assignment dropdown) */
+export async function getActiveUsers() {
+  return db
+    .select({ id: users.id, name: users.name, role: users.role })
+    .from(users)
+    .where(eq(users.active, true))
+    .orderBy(users.name);
 }

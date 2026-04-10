@@ -1,4 +1,5 @@
 import { getGarageRepairDetail, garageAutoStart } from "@/actions/garage";
+import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { GarageRepairDetailClient } from "./detail-client";
 
@@ -8,7 +9,10 @@ export default async function GarageRepairDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const repair = await getGarageRepairDetail(id);
+  const [repair, session] = await Promise.all([
+    getGarageRepairDetail(id),
+    auth(),
+  ]);
 
   if (!repair) {
     notFound();
@@ -17,5 +21,11 @@ export default async function GarageRepairDetailPage({
   // Auto-start: move to in_progress when opened
   await garageAutoStart(id);
 
-  return <GarageRepairDetailClient repair={repair} />;
+  return (
+    <GarageRepairDetailClient
+      repair={repair}
+      currentUserId={session?.user?.id ?? ""}
+      currentUserName={session?.user?.name ?? ""}
+    />
+  );
 }

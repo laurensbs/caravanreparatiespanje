@@ -17,6 +17,7 @@ interface RepairCardProps {
   assignedUserName: string | null;
   tasks: { total: number; done: number; problem: number };
   parts: { total: number; received: number; pending: number };
+  workers: string[];
   finalCheckStatus: string | null;
 }
 
@@ -101,16 +102,35 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
           </div>
         )}
 
-        {/* Assigned tech + Parts status */}
-        {(repair.assignedUserName || repair.parts.total > 0) && (
+        {/* Assigned tech + Workers + Parts status */}
+        {(repair.assignedUserName || repair.workers.length > 0 || repair.parts.total > 0) && (
           <div className="flex items-center justify-between mt-2">
-            {repair.assignedUserName && (
-              <p className="text-xs text-muted-foreground">
-                👤 {repair.assignedUserName}
-              </p>
-            )}
+            <div className="flex items-center gap-1.5 min-w-0">
+              {repair.workers.length > 0 ? (
+                <div className="flex items-center -space-x-1.5">
+                  {repair.workers.slice(0, 4).map((name, i) => (
+                    <span
+                      key={i}
+                      className="flex items-center justify-center h-5 w-5 rounded-full bg-blue-500 text-[10px] font-bold text-white ring-2 ring-card"
+                      title={name}
+                    >
+                      {name.charAt(0).toUpperCase()}
+                    </span>
+                  ))}
+                  {repair.workers.length > 4 && (
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-400 text-[10px] font-bold text-white ring-2 ring-card">
+                      +{repair.workers.length - 4}
+                    </span>
+                  )}
+                </div>
+              ) : repair.assignedUserName ? (
+                <p className="text-xs text-muted-foreground truncate">
+                  👤 {repair.assignedUserName}
+                </p>
+              ) : null}
+            </div>
             {repair.parts.total > 0 && (
-              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0 ${
                 repair.parts.pending === 0
                   ? "bg-green-100 text-green-700"
                   : "bg-orange-100 text-orange-700"

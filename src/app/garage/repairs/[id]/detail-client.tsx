@@ -8,7 +8,7 @@ import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
-import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, garageRequestPart } from "@/actions/garage";
+import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, garageRequestPart, toggleMyWorker } from "@/actions/garage";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority } from "@/types";
 import { toast } from "sonner";
@@ -62,13 +62,22 @@ type RepairDetail = {
     notes: string | null;
     supplierName: string | null;
   }[];
+  workers: {
+    id: string;
+    userId: string;
+    userName: string;
+    note: string | null;
+    createdAt: Date | string;
+  }[];
 };
 
 interface Props {
   repair: RepairDetail;
+  currentUserId: string;
+  currentUserName: string;
 }
 
-export function GarageRepairDetailClient({ repair }: Props) {
+export function GarageRepairDetailClient({ repair, currentUserId, currentUserName }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
   const [problemTaskId, setProblemTaskId] = useState<string | null>(null);
@@ -469,6 +478,47 @@ export function GarageRepairDetailClient({ repair }: Props) {
           ) : (
             <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
               <p>{t("No tasks assigned yet", "Sin tareas asignadas", "Nog geen taken toegewezen")}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Workers — "I worked on this" */}
+        <div className="rounded-xl border bg-card p-4">
+          <h3 className="text-sm font-bold text-muted-foreground mb-2">
+            👷 {t("Workers", "Trabajadores", "Medewerkers")}
+          </h3>
+          {/* Toggle button for current user */}
+          <button
+            onClick={() => {
+              startTransition(async () => {
+                await toggleMyWorker(repair.id);
+                router.refresh();
+              });
+            }}
+            disabled={isPending}
+            className={`w-full rounded-xl border-2 p-3 text-sm font-bold transition-all active:scale-[0.98] ${
+              repair.workers.some(w => w.userId === currentUserId)
+                ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+                : "border-dashed border-muted-foreground/30 text-muted-foreground"
+            }`}
+          >
+            {repair.workers.some(w => w.userId === currentUserId)
+              ? `✓ ${t("I worked on this", "Trabajé en esto", "Ik heb hieraan gewerkt")}`
+              : `+ ${t("I worked on this", "Trabajé en esto", "Ik heb hieraan gewerkt")}`}
+          </button>
+          {/* List of workers */}
+          {repair.workers.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {repair.workers.map((w) => (
+                <div key={w.id} className="flex items-center gap-2 text-sm">
+                  <span className={`flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-bold text-white ${
+                    w.userId === currentUserId ? "bg-green-500" : "bg-blue-500"
+                  }`}>
+                    {w.userName.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="font-medium">{w.userName}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

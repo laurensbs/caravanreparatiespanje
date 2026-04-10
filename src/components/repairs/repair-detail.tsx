@@ -27,6 +27,7 @@ import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
+import { addRepairWorker, removeRepairWorker } from "@/actions/garage";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
@@ -91,6 +92,20 @@ interface UserItem {
   name: string | null;
 }
 
+interface WorkerItem {
+  id: string;
+  userId: string;
+  userName: string;
+  note: string | null;
+  createdAt: Date | string;
+}
+
+interface ActiveUserItem {
+  id: string;
+  name: string;
+  role: string;
+}
+
 interface RepairDetailProps {
   job: any;
   communicationLogs?: any[];
@@ -104,9 +119,11 @@ interface RepairDetailProps {
   users?: UserItem[];
   tasks?: RepairTask[];
   partRequests?: PartRequestItem[];
+  repairWorkers?: WorkerItem[];
+  activeUsers?: ActiveUserItem[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -921,7 +938,81 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </CardContent>
           </Card>
 
-          {/* ── 👤 CUSTOMER card (green tint) ── */}
+          {/* ── � WORKERS card ── */}
+          <Card className="rounded-xl">
+            <CardContent className="space-y-3 pt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  👷 Workers
+                  {repairWorkers.length > 0 && (
+                    <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-bold">
+                      {repairWorkers.length}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              {/* Current workers */}
+              {repairWorkers.length > 0 && (
+                <div className="space-y-1.5">
+                  {repairWorkers.map((w) => (
+                    <div key={w.id} className="flex items-center justify-between text-sm group">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500 text-[11px] font-bold text-white">
+                          {w.userName.charAt(0).toUpperCase()}
+                        </span>
+                        <span className="font-medium">{w.userName}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          startPartTransition(async () => {
+                            await removeRepairWorker(job.id, w.userId);
+                            router.refresh();
+                          });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"
+                        title="Remove"
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add worker dropdown */}
+              {(() => {
+                const availableUsers = activeUsers.filter(
+                  (u) => !repairWorkers.some((w) => w.userId === u.id)
+                );
+                if (availableUsers.length === 0) return null;
+                return (
+                  <Select
+                    value=""
+                    onValueChange={(userId) => {
+                      startPartTransition(async () => {
+                        await addRepairWorker(job.id, userId);
+                        router.refresh();
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="+ Add worker..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* ── �👤 CUSTOMER card (green tint) ── */}
           <Card className="rounded-xl border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20">
             <CardContent className="space-y-3 pt-4">
               <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">

@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { LanguageProvider } from "@/components/garage/language-toggle";
 import { Toaster } from "sonner";
 
@@ -17,12 +15,6 @@ export default async function GarageLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
-
   return (
     <LanguageProvider>
       <div className="flex min-h-screen flex-col bg-background">

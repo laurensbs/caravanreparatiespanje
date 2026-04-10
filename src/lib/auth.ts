@@ -89,12 +89,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
-      const isOnLogin = request.nextUrl.pathname.startsWith("/login");
+      const { pathname } = request.nextUrl;
+      const isOnLogin = pathname.startsWith("/login");
+      const isGarage = pathname.startsWith("/garage");
 
       if (isOnLogin) {
         if (isLoggedIn) {
           return Response.redirect(new URL("/", request.nextUrl));
         }
+        return true;
+      }
+
+      if (isGarage) {
         return true;
       }
 

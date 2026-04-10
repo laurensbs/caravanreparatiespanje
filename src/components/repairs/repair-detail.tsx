@@ -305,8 +305,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-2.5 min-w-0">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0 mt-0.5" asChild>
-            <Link href={backTo ?? "/repairs"}><ArrowLeft className="h-4 w-4" /></Link>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0 mt-0.5" onClick={handleSave} disabled={saving}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -353,10 +353,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             )}
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-xl shrink-0 h-9 px-4">
-          {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
-          Save
-        </Button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={handleDelete}
+            disabled={deleting}
+            title="Delete"
+          >
+            {deleting ? <Spinner /> : <Trash2 className="h-3.5 w-3.5" />}
+          </Button>
+          <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-xl h-9 px-4">
+            {saving ? <Spinner className="mr-2" /> : <Save className="mr-2 h-3.5 w-3.5" />}
+            Save
+          </Button>
+        </div>
       </div>
 
       <RepairProgressTracker
@@ -418,18 +430,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <p className="text-sm text-muted-foreground">{job.descriptionNormalized}</p>
                 </div>
               )}
-              {/* Notes — collapsed into description card */}
-              <div className="mt-3 pt-3 border-t space-y-2">
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Team notes..."
-                  className="rounded-lg text-sm resize-none"
-                />
-                <details className="group">
-                  <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+              {/* Internal notes */}
+              <div className="mt-3 pt-3 border-t">
+                <details className="group" open={!!internalComments}>
+                  <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none flex items-center gap-1.5">
                     Internal only ▸
+                    {internalComments && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" title="Has internal notes" />}
                   </summary>
                   <Textarea
                     value={internalComments}
@@ -661,6 +667,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </CardContent>
           </Card>
 
+          {/* Holded Documents — directly under Cost Estimate */}
+          <div ref={holdedRef}>
+            <HoldedDocumentsCard
+              job={job}
+              costLines={costLines}
+              discountPercent={discountPercent}
+              settings={settings}
+              router={router}
+            />
+          </div>
+
           {/* Timeline + Communication — merged into tabs */}
           {(job.events.length > 0 || communicationLogs.length > 0) && (
             <TimelineCommunicationCard
@@ -764,14 +781,189 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <div className="border-t pt-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-sm">Source</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">{job.sourceSheet}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">Jake&apos;s beautiful excel sheet</span>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* ── 🔧 GARAGE card (blue tint) ── */}
+          {/* ── � CUSTOMER card (green tint) ── */}
+          <Card className="rounded-xl border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20">
+            <CardContent className="space-y-3 pt-4">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <User className="h-3.5 w-3.5" />
+                Customer
+              </p>
+
+              {/* Customer name + edit */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Contact</span>
+                {job.customer ? (
+                  <span className="flex items-center gap-1.5">
+                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
+                      {job.customer.name}
+                    </Link>
+                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit customer">
+                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                    </button>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </div>
+              {expandCustomer && job.customer && (
+                <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
+              )}
+
+              {/* Customer response */}
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Response</Label>
+                <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
+                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Past repairs inline */}
+              {job.customer && customerRepairs.length > 0 && (
+                <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3">
+                  <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 font-medium mb-2 flex items-center gap-1.5">
+                    <Wrench className="h-3 w-3" />
+                    Past Repairs
+                    <span className="text-muted-foreground font-normal">({customerRepairs.length})</span>
+                  </p>
+                  <div className="space-y-0.5">
+                    {customerRepairs.slice(0, 5).map((r) => (
+                      <Link
+                        key={r.id}
+                        href={`/repairs/${r.id}`}
+                        className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20 transition-colors group text-xs"
+                      >
+                        <span className="truncate font-medium group-hover:text-primary">
+                          {r.publicCode ? `${r.publicCode} — ` : ""}{r.title ?? "Untitled"}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[9px] px-1.5 py-0 shrink-0 ml-2 ${STATUS_COLORS[r.status as RepairStatus] ?? ""}`}
+                        >
+                          {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                        </Badge>
+                      </Link>
+                    ))}
+                    {customerRepairs.length > 5 && (
+                      <p className="text-[10px] text-muted-foreground pl-2 pt-1">
+                        +{customerRepairs.length - 5} more
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Invoice + pricing */}
+              <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3 space-y-2.5">
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Invoice</Label>
+                  <Select value={invoiceStatus} onValueChange={(val) => {
+                    setInvoiceStatus(val);
+                    if (val === "rejected") {
+                      setStatus("rejected");
+                      setCustomerResponseStatus("declined");
+                    }
+                  }}>
+                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {job.holdedInvoiceDate && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Receipt className="h-3.5 w-3.5" />
+                      Invoice Date
+                    </span>
+                    <span className="text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
+                  </div>
+                )}
+
+                {/* Costs */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground text-sm shrink-0">Estimated</span>
+                    <div className="relative w-28">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={estimatedCost}
+                        onChange={(e) => setEstimatedCost(e.target.value)}
+                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground text-sm shrink-0">Actual</span>
+                    <div className="relative w-28">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={actualCost}
+                        onChange={(e) => setActualCost(e.target.value)}
+                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-orange-600 dark:text-orange-400 text-sm shrink-0">Our Cost</span>
+                    <div className="relative w-28">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={internalCost}
+                        onChange={(e) => setInternalCost(e.target.value)}
+                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                  <Checkbox
+                    checked={warrantyFlag}
+                    onCheckedChange={(checked) => {
+                      const val = checked === true;
+                      setWarrantyFlag(val);
+                      if (val) {
+                        setInvoiceStatus("warranty");
+                        if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                          setStatus("completed");
+                        }
+                      } else if (!val && invoiceStatus === "warranty") {
+                        setInvoiceStatus("not_invoiced");
+                      }
+                    }}
+                  />
+                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── �🔧 GARAGE card (blue tint) ── */}
           <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
             <CardContent className="space-y-3 pt-4">
               <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
@@ -779,17 +971,31 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 Garage
               </p>
 
-              {/* Assigned tech */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Assigned</span>
-                <span className="font-medium">{job.assignedUser?.name ?? "Unassigned"}</span>
+              {/* Assigned tech — select from garage workers */}
+              <div>
+                <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Assigned</Label>
+                <Select
+                  value={job.assignedUserId ?? "unassigned"}
+                  onValueChange={(userId) => {
+                    startPartTransition(async () => {
+                      await updateRepairJob(job.id, { assignedUserId: userId === "unassigned" ? null : userId });
+                      toast.success(userId === "unassigned" ? "Unassigned" : "Assigned");
+                      router.refresh();
+                    });
+                  }}
+                >
+                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {activeUsers.filter(u => u.role === "technician").map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Planning */}
-              <PlanningDateRow jobId={job.id} dueDate={job.dueDate} />
-
-              {/* Send to Garage */}
-              <SendToGarageButton jobId={job.id} status={job.status} dueDate={job.dueDate} />
+              {/* Planning + Send to Garage */}
+              <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={job.status} />
 
               {/* Flags */}
               <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
@@ -1011,176 +1217,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               })()}
             </CardContent>
           </Card>
-
-          {/* ── �👤 CUSTOMER card (green tint) ── */}
-          <Card className="rounded-xl border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20">
-            <CardContent className="space-y-3 pt-4">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                <User className="h-3.5 w-3.5" />
-                Customer
-              </p>
-
-              {/* Customer name + edit */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Contact</span>
-                {job.customer ? (
-                  <span className="flex items-center gap-1.5">
-                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
-                      {job.customer.name}
-                    </Link>
-                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit customer">
-                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                    </button>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </div>
-              {expandCustomer && job.customer && (
-                <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
-              )}
-
-              {/* Customer response */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Response</Label>
-                <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
-                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Invoice + pricing */}
-              <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3 space-y-2.5">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Invoice</Label>
-                  <Select value={invoiceStatus} onValueChange={(val) => {
-                    setInvoiceStatus(val);
-                    if (val === "rejected") {
-                      setStatus("rejected");
-                      setCustomerResponseStatus("declined");
-                    }
-                  }}>
-                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
-                        <SelectItem key={val} value={val}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {job.holdedInvoiceDate && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Receipt className="h-3.5 w-3.5" />
-                      Invoice Date
-                    </span>
-                    <span className="text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
-                  </div>
-                )}
-
-                {/* Costs */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-sm shrink-0">Estimated</span>
-                    <div className="relative w-28">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={estimatedCost}
-                        onChange={(e) => setEstimatedCost(e.target.value)}
-                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-sm shrink-0">Actual</span>
-                    <div className="relative w-28">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={actualCost}
-                        onChange={(e) => setActualCost(e.target.value)}
-                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-orange-600 dark:text-orange-400 text-sm shrink-0">Our Cost</span>
-                    <div className="relative w-28">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={internalCost}
-                        onChange={(e) => setInternalCost(e.target.value)}
-                        className="h-7 text-xs pl-5 pr-2 text-right rounded-lg bg-orange-50 dark:bg-orange-950/20"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer py-0.5">
-                  <Checkbox
-                    checked={warrantyFlag}
-                    onCheckedChange={(checked) => {
-                      const val = checked === true;
-                      setWarrantyFlag(val);
-                      if (val) {
-                        setInvoiceStatus("warranty");
-                        if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                          setStatus("completed");
-                        }
-                      } else if (!val && invoiceStatus === "warranty") {
-                        setInvoiceStatus("not_invoiced");
-                      }
-                    }}
-                  />
-                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Holded Documents */}
-          <div ref={holdedRef}>
-          <HoldedDocumentsCard
-            job={job}
-            costLines={costLines}
-            discountPercent={discountPercent}
-            settings={settings}
-            router={router}
-          />
-          </div>
-
-          {/* Customer Repairs */}
-          {job.customer && customerRepairs.length > 0 && (
-            <CustomerRepairsCard repairs={customerRepairs} customerName={job.customer.name} />
-          )}
-
-          {/* Delete job */}
-          <div className="pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? <Spinner className="mr-2" /> : <Trash2 className="h-3 w-3 mr-1" />}
-              Delete Repair Job
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -1334,13 +1370,17 @@ function TimelineCommunicationCard({
   );
 }
 
-// ─── Planning Date Row ───
+// ─── Planning Date Row (with Send to Garage) ───
 
-function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | Date | null }) {
+function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: string | Date | null; status: string }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
+
+  const isToday = dueDate && format(new Date(dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+  const garageStatuses = ["scheduled", "in_progress", "blocked", "in_inspection"];
+  const inGarage = garageStatuses.includes(status) && isToday;
 
   async function handleSet(dateStr: string) {
     if (!dateStr) return;
@@ -1354,6 +1394,21 @@ function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | 
       router.refresh();
     } catch {
       toast.error("Failed to set planning date");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSendToday() {
+    setSaving(true);
+    try {
+      const today = new Date();
+      today.setHours(8, 0, 0, 0);
+      await scheduleRepair(jobId, today.toISOString());
+      toast.success("Sent to garage for today");
+      router.refresh();
+    } catch {
+      toast.error("Failed to send to garage");
     } finally {
       setSaving(false);
     }
@@ -1373,30 +1428,32 @@ function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | 
     }
   }
 
-  if (!dueDate && !editing) {
-    return (
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-muted-foreground">
-          <CalendarDays className="h-3.5 w-3.5" />
-          Planning
-        </span>
-        <button
-          onClick={() => setEditing(true)}
-          className="text-xs text-primary hover:underline font-medium"
-        >
-          + Plan
-        </button>
-      </div>
-    );
-  }
-
-  if (editing) {
-    return (
-      <div className="space-y-1.5">
+  return (
+    <div className="space-y-2">
+      {/* Planning date */}
+      <div className="flex items-center justify-between group/plan">
         <span className="flex items-center gap-2 text-muted-foreground text-sm">
           <CalendarDays className="h-3.5 w-3.5" />
           Planning
         </span>
+        {dueDate && !editing ? (
+          <span className="flex items-center gap-1.5">
+            <span className="text-right font-medium text-sm">{format(new Date(dueDate), "dd MMM yyyy")}</span>
+            <button
+              onClick={() => setEditing(true)}
+              className="opacity-0 group-hover/plan:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
+            >
+              <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+            </button>
+          </span>
+        ) : !editing ? (
+          <button onClick={() => setEditing(true)} className="text-xs text-primary hover:underline font-medium">
+            + Plan
+          </button>
+        ) : null}
+      </div>
+
+      {editing && (
         <div className="flex items-center gap-1.5">
           <Input
             type="date"
@@ -1417,98 +1474,34 @@ function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | 
             <XIcon className="h-3 w-3 text-muted-foreground" />
           </button>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  // Has date — show with edit option
-  return (
-    <div className="flex items-center justify-between group/plan">
-      <span className="flex items-center gap-2 text-muted-foreground">
-        <CalendarDays className="h-3.5 w-3.5" />
-        Planning
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="text-right font-medium text-sm">{format(new Date(dueDate!), "dd MMM yyyy")}</span>
+      {/* Send to Garage / In Garage status */}
+      {inGarage ? (
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2 text-green-600 text-sm font-medium">
+            <Wrench className="h-3.5 w-3.5" />
+            In Garage Today
+          </span>
+          <Link
+            href={`/garage/repairs/${jobId}`}
+            target="_blank"
+            className="text-xs text-primary hover:underline"
+          >
+            Open →
+          </Link>
+        </div>
+      ) : (
         <button
-          onClick={() => setEditing(true)}
-          className="opacity-0 group-hover/plan:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
+          onClick={handleSendToday}
+          disabled={saving}
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 transition-colors disabled:opacity-50"
         >
-          <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-        </button>
-      </span>
-    </div>
-  );
-}
-
-// ─── Send to Garage Button ───
-
-function SendToGarageButton({
-  jobId,
-  status,
-  dueDate,
-}: {
-  jobId: string;
-  status: string;
-  dueDate: string | Date | null;
-}) {
-  const router = useRouter();
-  const [sending, setSending] = useState(false);
-
-  // Already scheduled for today or in garage
-  const isToday =
-    dueDate &&
-    format(new Date(dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-  const garageStatuses = [
-    "scheduled",
-    "in_progress",
-    "blocked",
-    "in_inspection",
-  ];
-  const inGarage = garageStatuses.includes(status) && isToday;
-
-  async function handleSend() {
-    setSending(true);
-    try {
-      const today = new Date();
-      today.setHours(8, 0, 0, 0);
-      await scheduleRepair(jobId, today.toISOString());
-      toast.success("Sent to garage for today");
-      router.refresh();
-    } catch {
-      toast.error("Failed to send to garage");
-    } finally {
-      setSending(false);
-    }
-  }
-
-  if (inGarage) {
-    return (
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-green-600 text-sm font-medium">
           <Wrench className="h-3.5 w-3.5" />
-          In Garage Today
-        </span>
-        <Link
-          href={`/garage/repairs/${jobId}`}
-          target="_blank"
-          className="text-xs text-primary hover:underline"
-        >
-          Open →
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      onClick={handleSend}
-      disabled={sending}
-      className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 transition-colors disabled:opacity-50 mt-1"
-    >
-      <Wrench className="h-3.5 w-3.5" />
-      {sending ? "Sending..." : "Send to Garage (Today)"}
-    </button>
+          {saving ? "Sending..." : "Send to Garage (Today)"}
+        </button>
+      )}
+    </div>
   );
 }
 

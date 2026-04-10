@@ -321,11 +321,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     <div className="space-y-3 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-2.5 min-w-0">
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0 mt-0.5" onClick={handleSave} disabled={saving}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-extrabold tracking-tight truncate max-w-[400px]">{job.publicCode ?? title ?? "Repair Job"}</h1>
               <Badge className={`${STATUS_COLORS[status as RepairStatus]} rounded-full text-[11px] px-2 py-0`}>
@@ -334,6 +334,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <Badge className={`${PRIORITY_COLORS[priority as Priority]} rounded-full text-[11px] px-2 py-0`}>
                 {PRIORITY_LABELS[priority as Priority]}
               </Badge>
+              {/* Past Repairs — right of title, big */}
+              {job.customer && customerRepairs.length > 0 && (
+                <>
+                  <span className="text-muted-foreground mx-1 hidden sm:inline">|</span>
+                  {customerRepairs.slice(0, 5).map((r) => (
+                    <Link
+                      key={r.id}
+                      href={`/repairs/${r.id}`}
+                      className={`hidden sm:inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold transition-colors hover:ring-2 ring-primary/30 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
+                      title={r.title ?? 'Repair'}
+                    >
+                      {r.publicCode ?? 'R'}
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {customerRepairs.length > 5 && (
+                    <span className="hidden sm:inline text-xs text-muted-foreground font-medium">+{customerRepairs.length - 5}</span>
+                  )}
+                </>
+              )}
             </div>
             {allTags.length > 0 && (
               <div className="mt-1">
@@ -367,28 +389,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <span className="truncate">{title || "No title — click to add"}</span>
                 <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
               </button>
-            )}
-            {/* Past Repairs — left-aligned, big */}
-            {job.customer && customerRepairs.length > 0 && (
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Past:</span>
-                {customerRepairs.slice(0, 5).map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/repairs/${r.id}`}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors hover:ring-2 ring-primary/30 ${STATUS_COLORS[r.status as RepairStatus] ?? 'bg-muted'}`}
-                    title={r.title ?? 'Repair'}
-                  >
-                    {r.publicCode ?? 'R'}
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
-                    </Badge>
-                  </Link>
-                ))}
-                {customerRepairs.length > 5 && (
-                  <span className="text-xs text-muted-foreground font-medium">+{customerRepairs.length - 5} more</span>
-                )}
-              </div>
             )}
           </div>
         </div>
@@ -557,7 +557,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
                         <SelectContent>
                           {availableUsers.map((u) => (
-                            <SelectItem key={u.id} value={u.id}>{u.name} <span className="text-muted-foreground ml-1 text-[10px]">({u.role})</span></SelectItem>
+                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -567,10 +567,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
                 {/* Planning + Send to Garage */}
                 <div>
-                  <Label className="text-[11px] text-blue-600/70 dark:text-blue-400/70">Planning</Label>
-                  <div className="mt-1.5">
-                    <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={job.status} />
-                  </div>
+                  <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={job.status} />
                 </div>
               </div>
 

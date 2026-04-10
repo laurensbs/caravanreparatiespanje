@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/components/garage/language-toggle";
 import type { Priority } from "@/types";
 
@@ -35,26 +34,30 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
 
   return (
     <Link href={`/garage/repairs/${repair.id}`}>
-      <div className={`rounded-xl border border-l-4 ${PRIORITY_BORDER[repair.priority]} bg-card p-4 shadow-sm active:bg-muted/50 transition-colors`}>
-        {/* Top row: code + priority */}
+      <div className={`rounded-2xl border border-l-4 ${PRIORITY_BORDER[repair.priority]} bg-card p-4 shadow-sm active:scale-[0.99] transition-all`}>
+        {/* Top row: code + badges */}
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold text-muted-foreground">{repair.publicCode}</span>
-          <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-muted-foreground tracking-wide">{repair.publicCode}</span>
+          <div className="flex items-center gap-1.5">
             {repair.tasks.problem > 0 && (
-              <Badge variant="destructive" className="text-xs">
-                {repair.tasks.problem} {t("problem", "problema", "probleem")}
-              </Badge>
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-semibold">
+                ⚠ {repair.tasks.problem}
+              </span>
             )}
             {repair.finalCheckStatus === "pending" && (
-              <Badge className="bg-amber-100 text-amber-800 text-xs">
-                {t("Final check", "Control final", "Natest")}
-              </Badge>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-semibold">
+                🔍 {t("Check", "Control", "Natest")}
+              </span>
             )}
             {repair.priority === "urgent" && (
-              <Badge variant="destructive" className="text-xs">{t("Urgent", "Urgente", "Spoed")}</Badge>
+              <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-semibold">
+                🔴 {t("Urgent", "Urgente", "Spoed")}
+              </span>
             )}
             {repair.priority === "high" && (
-              <Badge className="bg-orange-100 text-orange-700 text-xs">{t("High", "Alto", "Hoog")}</Badge>
+              <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 text-xs font-semibold">
+                {t("High", "Alto", "Hoog")}
+              </span>
             )}
           </div>
         </div>
@@ -65,9 +68,12 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
           {[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ") || repair.title}
         </p>
 
-        {/* Customer */}
+        {/* Customer + title */}
         {repair.customerName && (
           <p className="text-sm text-muted-foreground truncate">{repair.customerName}</p>
+        )}
+        {repair.title && (repair.unitBrand || repair.unitModel) && (
+          <p className="text-xs text-muted-foreground/70 truncate mt-0.5 italic">{repair.title}</p>
         )}
 
         {/* Progress bar */}
@@ -77,11 +83,17 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
               <span className="text-xs text-muted-foreground">
                 {repair.tasks.done}/{repair.tasks.total} {t("tasks", "tareas", "taken")}
               </span>
-              <span className="text-xs font-medium">{progress}%</span>
+              <span className={`text-xs font-bold tabular-nums ${progress === 100 ? "text-green-600" : ""}`}>{progress}%</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+            <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-green-500 transition-all"
+                className={`h-full rounded-full transition-all duration-300 ${
+                  progress === 100
+                    ? "bg-green-500"
+                    : repair.tasks.problem > 0
+                    ? "bg-gradient-to-r from-blue-500 to-orange-400"
+                    : "bg-gradient-to-r from-blue-500 to-blue-400"
+                }`}
                 style={{ width: `${progress}%` }}
               />
             </div>

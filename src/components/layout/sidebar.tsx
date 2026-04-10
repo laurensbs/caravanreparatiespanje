@@ -17,6 +17,8 @@ import {
   Receipt,
   Trash2,
   CalendarDays,
+  Warehouse,
+  ExternalLink,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -28,6 +30,7 @@ interface NavItem {
   icon: React.ReactNode;
   minRole?: UserRole;
   bottom?: boolean;
+  external?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -39,6 +42,7 @@ const navItems: NavItem[] = [
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" /> },
   { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" /> },
+  { label: "Garage", href: "/garage", icon: <Warehouse className="h-[18px] w-[18px]" />, external: true },
   { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
   { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
@@ -107,10 +111,13 @@ export function Sidebar({ userRole }: SidebarProps) {
         ? pathname === "/"
         : pathname.startsWith(item.href);
 
+    const linkProps = item.external ? { target: "_blank", rel: "noopener" } : {};
+
     return (
       <Link
         href={item.href}
         title={item.label}
+        {...linkProps}
         className={cn(
           "group relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
           collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
@@ -120,7 +127,12 @@ export function Sidebar({ userRole }: SidebarProps) {
         )}
       >
         <span className={cn("shrink-0 transition-colors", isActive ? "text-white" : "text-white/50 group-hover:text-white/80")}>{item.icon}</span>
-        {!collapsed && <span>{item.label}</span>}
+        {!collapsed && (
+          <span className="flex items-center gap-1.5">
+            {item.label}
+            {item.external && <ExternalLink className="h-3 w-3 opacity-50" />}
+          </span>
+        )}
         {collapsed && (
           <span className="pointer-events-none absolute left-full ml-3 rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-lg z-50 whitespace-nowrap opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 delay-75">
             {item.label}

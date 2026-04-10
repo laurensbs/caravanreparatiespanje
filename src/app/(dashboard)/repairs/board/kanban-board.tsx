@@ -21,6 +21,7 @@ interface Job {
 const BOARD_COLUMNS: RepairStatus[] = [
   "new",
   "in_inspection",
+  "no_damage",
   "quote_needed",
   "waiting_customer",
   "scheduled",

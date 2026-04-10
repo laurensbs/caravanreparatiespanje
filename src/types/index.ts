@@ -25,6 +25,7 @@ export type RepairStatus =
   | "new"
   | "todo"
   | "in_inspection"
+  | "no_damage"
   | "quote_needed"
   | "waiting_approval"
   | "waiting_customer"
@@ -147,6 +148,7 @@ export const STATUS_LABELS: Record<RepairStatus, string> = {
   new: "New",
   todo: "To Do",
   in_inspection: "In Inspection",
+  no_damage: "No Damage",
   quote_needed: "Quote Needed",
   waiting_approval: "Waiting for Approval",
   waiting_customer: "Waiting for Contact",
@@ -164,6 +166,7 @@ export const STATUS_COLORS: Record<RepairStatus, string> = {
   new: "bg-blue-100 text-blue-800",
   todo: "bg-slate-100 text-slate-800",
   in_inspection: "bg-cyan-100 text-cyan-800",
+  no_damage: "bg-lime-100 text-lime-800",
   quote_needed: "bg-amber-100 text-amber-800",
   waiting_approval: "bg-yellow-100 text-yellow-800",
   waiting_customer: "bg-orange-100 text-orange-800",

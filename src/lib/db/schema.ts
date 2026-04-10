@@ -31,6 +31,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
   "new",
   "todo",
   "in_inspection",
+  "no_damage",
   "quote_needed",
   "waiting_approval",
   "waiting_customer",

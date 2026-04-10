@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { updateRepairJob } from "@/actions/repairs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,8 +30,9 @@ import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
 import { HoldedHint } from "@/components/holded-hint";
-import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
-import { WorkflowGuide } from "@/components/workflow-guide";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CustomerSearch } from "@/components/customers/customer-search";
+import { SmartSuggestions, getRepairSuggestions, type RepairSuggestionActions } from "@/components/smart-suggestions
 import { RepairProgressTracker } from "@/components/repair-progress";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
@@ -71,6 +72,11 @@ interface CustomerRepairItem {
   completedAt: Date | null;
 }
 
+interface UserItem {
+  id: string;
+  name: string | null;
+}
+
 interface RepairDetailProps {
   job: any;
   communicationLogs?: any[];
@@ -78,11 +84,13 @@ interface RepairDetailProps {
   backTo?: string;
   settings?: PricingSettings;
   allTags?: TagItem[];
+  allCustomers?: { id: string; name: string }[];
   repairTags?: TagItem[];
   customerRepairs?: CustomerRepairItem[];
+  users?: UserItem[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -191,6 +199,31 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       setDeleting(false);
     }
   }
+
+  // ── Smart suggestion action states ──
+  const [showCustomerLinker, setShowCustomerLinker] = useState(false);
+  const [showUserAssigner, setShowUserAssigner] = useState(false);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+  const communicationRef = useRef<HTMLDivElement>(null);
+  const costRef = useRef<HTMLDivElement>(null);
+  const holdedRef = useRef<HTMLDivElement>(null);
+
+  const suggestionActions: RepairSuggestionActions = {
+    onLinkCustomer: () => setShowCustomerLinker(true),
+    onAssignUser: () => setShowUserAssigner(true),
+    onCreateInvoice: () => holdedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    onCreateQuote: () => holdedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    onEditDescription: () => {
+      setEditingDescription(true);
+      setTimeout(() => descriptionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    },
+    onEditEstimate: () => costRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    onOpenCommunication: () => communicationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    onClearFollowUp: () => {
+      setFollowUpRequiredFlag(false);
+      toast.info("Follow-up flag cleared — save to apply");
+    },
+  };
 
   async function handleSave() {
     setSaving(true);
@@ -301,13 +334,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
       <WorkflowGuide page="repair-detail" context={{ job, settings }} />
 
-      <SmartSuggestions suggestions={getRepairSuggestions(job)} />
+      <SmartSuggestions suggestions={getRepairSuggestions(job, suggestionActions)} />
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-5 lg:col-span-2">
           {/* Issue description */}
-          <Card className="rounded-xl">
+          <Card className="rounded-xl" ref={descriptionRef}>
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -366,7 +399,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
 
           {/* Cost Estimate Builder */}
-          <Card className="rounded-xl">
+          <Card className="rounded-xl" ref={costRef}>
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -633,7 +666,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
 
           {/* Communication Log */}
-          <Card className="rounded-xl">
+          <Card className="rounded-xl" ref={communicationRef}>
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -952,6 +985,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
 
           {/* Holded Documents */}
+          <div ref={holdedRef}>
           <HoldedDocumentsCard
             job={job}
             costLines={costLines}
@@ -959,6 +993,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             settings={settings}
             router={router}
           />
+          </div>
 
           {/* Delete job */}
           <div className="pt-2">
@@ -972,6 +1007,63 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {deleting ? <Spinner className="mr-2" /> : <Trash2 className="h-3 w-3 mr-1" />}
               Delete Repair Job
             </Button>
+
+      {/* ── Customer Linker Dialog ── */}
+      <Dialog open={showCustomerLinker} onOpenChange={setShowCustomerLinker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link a customer</DialogTitle>
+          </DialogHeader>
+          <CustomerSearch
+            customers={allCustomers}
+            onSelect={async (customerId) => {
+              if (!customerId) return;
+              try {
+                await updateRepairJob(job.id, { customerId });
+                toast.success("Customer linked");
+                setShowCustomerLinker(false);
+                router.refresh();
+              } catch {
+                toast.error("Failed to link customer");
+              }
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* ── User Assignment Dialog ── */}
+      <Dialog open={showUserAssigner} onOpenChange={setShowUserAssigner}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Assign to</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1">
+            {users.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors"
+                onClick={async () => {
+                  try {
+                    await updateRepairJob(job.id, { assignedUserId: u.id });
+                    toast.success(`Assigned to ${u.name}`);
+                    setShowUserAssigner(false);
+                    router.refresh();
+                  } catch {
+                    toast.error("Failed to assign");
+                  }
+                }}
+              >
+                <User className="h-4 w-4 text-muted-foreground" />
+                {u.name}
+              </button>
+            ))}
+            {users.length === 0 && (
+              <p className="text-sm text-muted-foreground py-2">No users available</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
           </div>
         </div>
       </div>

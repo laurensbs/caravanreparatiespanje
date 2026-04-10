@@ -173,7 +173,18 @@ export function SmartSuggestions({
 
 // ─── Suggestion generators ─────────────────────────────────────
 
-export function getRepairSuggestions(job: any): Suggestion[] {
+export interface RepairSuggestionActions {
+  onLinkCustomer?: () => void;
+  onAssignUser?: () => void;
+  onCreateInvoice?: () => void;
+  onCreateQuote?: () => void;
+  onEditDescription?: () => void;
+  onEditEstimate?: () => void;
+  onOpenCommunication?: () => void;
+  onClearFollowUp?: () => void;
+}
+
+export function getRepairSuggestions(job: any, actions?: RepairSuggestionActions): Suggestion[] {
   const suggestions: Suggestion[] = [];
   const daysSinceCreated = Math.floor(
     (Date.now() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24)
@@ -206,6 +217,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "warning",
       title: "No customer linked",
       description: "Link a customer to enable communication and invoicing.",
+      onClick: actions?.onLinkCustomer,
     });
   }
 
@@ -216,6 +228,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "info",
       title: "Add a description",
       description: "Describe the issue to help track this repair.",
+      onClick: actions?.onEditDescription,
     });
   }
 
@@ -228,6 +241,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       description: hasEstimate || hasActualCost
         ? `Create invoice for €${(parseFloat(job.actualCost || job.estimatedCost)).toFixed(2)}`
         : "Add a cost estimate first, then create the invoice.",
+      onClick: actions?.onCreateInvoice,
     });
   }
 
@@ -246,6 +260,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       id: "needs-quote",
       level: "action",
       title: "Create and send a quote",
+      onClick: actions?.onCreateQuote,
     });
   }
 
@@ -275,6 +290,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "action",
       title: "Customer not contacted yet",
       description: "Reach out to inform them about the repair status.",
+      onClick: actions?.onOpenCommunication,
     });
   }
 
@@ -285,6 +301,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "warning",
       title: "No response from customer",
       description: "Follow up — the customer hasn't responded.",
+      onClick: actions?.onOpenCommunication,
     });
   }
 
@@ -295,6 +312,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "warning",
       title: `${job.priority === "urgent" ? "Urgent" : "High priority"} repair is unassigned`,
       description: "Assign someone to start work on this.",
+      onClick: actions?.onAssignUser,
     });
   }
 
@@ -363,6 +381,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "action",
       title: "No cost estimate",
       description: "Add parts or a manual estimate for this repair.",
+      onClick: actions?.onEditEstimate,
     });
   }
 
@@ -373,6 +392,7 @@ export function getRepairSuggestions(job: any): Suggestion[] {
       level: "action",
       title: "Follow-up required",
       description: "This repair is flagged for follow-up — schedule or complete it.",
+      onClick: actions?.onClearFollowUp,
     });
   }
 

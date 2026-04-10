@@ -644,6 +644,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <CommunicationLogPanel
                 repairJobId={job.id}
                 logs={communicationLogs}
+                customerName={job.customer?.name}
               />
             </CardContent>
           </Card>

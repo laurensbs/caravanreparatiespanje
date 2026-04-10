@@ -63,15 +63,22 @@ interface CommunicationLog {
 interface Props {
   repairJobId: string;
   logs: CommunicationLog[];
+  customerName?: string;
 }
 
-export function CommunicationLogPanel({ repairJobId, logs }: Props) {
+function toLocalDatetime(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const [method, setMethod] = useState("phone");
   const [direction, setDirection] = useState("outbound");
-  const [contactPerson, setContactPerson] = useState("");
+  const [contactPerson, setContactPerson] = useState(customerName ?? "");
+  const [contactedAt, setContactedAt] = useState(toLocalDatetime(new Date()));
   const [summary, setSummary] = useState("");
   const [outcome, setOutcome] = useState("");
 
@@ -86,18 +93,23 @@ export function CommunicationLogPanel({ repairJobId, logs }: Props) {
         contactPerson: contactPerson.trim() || undefined,
         summary: summary.trim(),
         outcome: outcome.trim() || undefined,
+        contactedAt: new Date(contactedAt),
       });
       setDialogOpen(false);
       setSummary("");
       setOutcome("");
-      setContactPerson("");
+      setContactPerson(customerName ?? "");
+      setContactedAt(toLocalDatetime(new Date()));
     });
   }
 
   return (
     <div>
       <div className="flex items-center justify-end mb-3">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (open) setContactedAt(toLocalDatetime(new Date()));
+        }}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <Plus className="mr-1 h-3.5 w-3.5" />
@@ -156,15 +168,27 @@ export function CommunicationLogPanel({ repairJobId, logs }: Props) {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Contact Person
-                </label>
-                <Input
-                  placeholder="Name of person contacted"
-                  value={contactPerson}
-                  onChange={(e) => setContactPerson(e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Contact Person
+                  </label>
+                  <Input
+                    placeholder="Name of person contacted"
+                    value={contactPerson}
+                    onChange={(e) => setContactPerson(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Date & Time
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={contactedAt}
+                    onChange={(e) => setContactedAt(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">

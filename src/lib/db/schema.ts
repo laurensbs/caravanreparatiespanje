@@ -568,9 +568,12 @@ export const parts = pgTable(
     name: varchar("name", { length: 500 }).notNull(),
     partNumber: varchar("part_number", { length: 255 }),
     description: text("description"),
+    category: varchar("category", { length: 50 }),
     defaultCost: numeric("default_cost", { precision: 10, scale: 2 }),
     orderUrl: varchar("order_url", { length: 1000 }),
     markupPercent: numeric("markup_percent", { precision: 5, scale: 2 }),
+    stockQuantity: integer("stock_quantity").notNull().default(0),
+    minStockLevel: integer("min_stock_level").notNull().default(0),
     holdedProductId: varchar("holded_product_id", { length: 255 }),
     supplierId: uuid("supplier_id").references(() => suppliers.id, {
       onDelete: "set null",
@@ -582,7 +585,10 @@ export const parts = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("parts_supplier_idx").on(table.supplierId)]
+  (table) => [
+    index("parts_supplier_idx").on(table.supplierId),
+    index("parts_category_idx").on(table.category),
+  ]
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

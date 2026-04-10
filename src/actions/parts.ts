@@ -85,12 +85,15 @@ export async function getParts() {
       id: parts.id,
       name: parts.name,
       partNumber: parts.partNumber,
+      category: parts.category,
       supplierName: suppliers.name,
       supplierId: parts.supplierId,
       defaultCost: parts.defaultCost,
       markupPercent: parts.markupPercent,
       description: parts.description,
       orderUrl: parts.orderUrl,
+      stockQuantity: parts.stockQuantity,
+      minStockLevel: parts.minStockLevel,
       createdAt: parts.createdAt,
     })
     .from(parts)
@@ -101,11 +104,14 @@ export async function getParts() {
 export async function createPart(data: {
   name: string;
   partNumber?: string;
+  category?: string;
   supplierId?: string;
   defaultCost?: string;
   markupPercent?: string;
   description?: string;
   orderUrl?: string;
+  stockQuantity?: number;
+  minStockLevel?: number;
 }) {
   await requireRole("staff");
   const [part] = await db
@@ -113,11 +119,14 @@ export async function createPart(data: {
     .values({
       name: data.name,
       partNumber: data.partNumber ?? null,
+      category: data.category ?? null,
       supplierId: data.supplierId ?? null,
       defaultCost: data.defaultCost ?? null,
       markupPercent: data.markupPercent ?? null,
       description: data.description ?? null,
       orderUrl: data.orderUrl ?? null,
+      stockQuantity: data.stockQuantity ?? 0,
+      minStockLevel: data.minStockLevel ?? 0,
     })
     .returning();
 
@@ -130,11 +139,14 @@ export async function updatePart(
   data: {
     name?: string;
     partNumber?: string | null;
+    category?: string | null;
     supplierId?: string | null;
     defaultCost?: string | null;
     markupPercent?: string | null;
     description?: string | null;
     orderUrl?: string | null;
+    stockQuantity?: number;
+    minStockLevel?: number;
   }
 ) {
   await requireRole("staff");
@@ -142,6 +154,15 @@ export async function updatePart(
     .update(parts)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(parts.id, id));
+  revalidatePath("/parts");
+}
+
+export async function adjustPartStock(partId: string, delta: number, reason?: string) {
+  await requireAuth();
+  const [part] = await db.select({ stockQuantity: parts.stockQuantity }).from(parts).where(eq(parts.id, partId)).limit(1);
+  if (!part) return;
+  const newQty = Math.max(0, (part.stockQuantity ?? 0) + delta);
+  await db.update(parts).set({ stockQuantity: newQty, updatedAt: new Date() }).where(eq(parts.id, partId));
   revalidatePath("/parts");
 }
 

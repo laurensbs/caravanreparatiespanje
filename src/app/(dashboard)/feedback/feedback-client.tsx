@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   createFeedback,
   updateFeedbackStatus,
+  updateFeedbackAdminNotes,
   deleteFeedback,
 } from "@/actions/feedback";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ import {
   XCircle,
   Trash2,
   Loader2,
+  MessageSquare,
+  Pencil,
 } from "lucide-react";
 
 type FeedbackItem = {
@@ -236,6 +239,16 @@ function FeedbackCard({
 }) {
   const config = statusConfig[item.status];
   const StatusIcon = config.icon;
+  const [commenting, setCommenting] = useState(false);
+  const [comment, setComment] = useState(item.adminNotes ?? "");
+  const [savingComment, startCommentTransition] = useTransition();
+
+  function handleSaveComment() {
+    startCommentTransition(async () => {
+      await updateFeedbackAdminNotes(item.id, comment);
+      setCommenting(false);
+    });
+  }
 
   return (
     <Card className="transition-all duration-150 hover:shadow-sm">
@@ -265,13 +278,49 @@ function FeedbackCard({
                 })}
               </span>
             </div>
-            {item.adminNotes && (
-              <div className="mt-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
-                <span className="font-medium text-xs text-muted-foreground">
-                  Admin:
-                </span>{" "}
-                {item.adminNotes}
+
+            {/* Admin comment display / edit */}
+            {commenting ? (
+              <div className="mt-2 space-y-1.5">
+                <Textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  rows={2}
+                  className="text-sm"
+                  autoFocus
+                />
+                <div className="flex gap-1.5">
+                  <Button size="sm" className="h-7 text-xs rounded-lg" onClick={handleSaveComment} disabled={savingComment}>
+                    {savingComment && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setComment(item.adminNotes ?? ""); setCommenting(false); }}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
+            ) : item.adminNotes ? (
+              <div
+                className="group/comment mt-2 rounded-md bg-muted/50 px-3 py-2 text-sm cursor-pointer hover:bg-muted/70 transition-colors"
+                onClick={() => setCommenting(true)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-xs text-muted-foreground flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3" /> Response
+                  </span>
+                  <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/comment:opacity-100 transition-opacity" />
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap">{item.adminNotes}</p>
+              </div>
+            ) : (
+              <button
+                onClick={() => setCommenting(true)}
+                className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <MessageSquare className="h-3 w-3" />
+                Add comment
+              </button>
             )}
           </div>
 

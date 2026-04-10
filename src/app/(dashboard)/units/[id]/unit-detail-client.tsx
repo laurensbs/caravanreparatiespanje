@@ -7,12 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
 import {
   ArrowLeft, Hash, Truck, Calendar, User, Wrench, StickyNote,
-  MapPin, Ruler, Warehouse, Navigation, Tag, Pencil, Save, X,
+  MapPin, Ruler, Warehouse, Navigation, Tag, Pencil, Check, X,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -27,11 +25,11 @@ interface Props {
 
 export function UnitDetailClient({ unit: initialUnit }: Props) {
   const router = useRouter();
-  const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
   const unit = initialUnit;
 
-  // Edit state
+  // Edit state per field
+  const [editingField, setEditingField] = useState<string | null>(null);
   const [registration, setRegistration] = useState(unit.registration ?? "");
   const [brand, setBrand] = useState(unit.brand ?? "");
   const [model, setModel] = useState(unit.model ?? "");
@@ -44,47 +42,30 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
   const [nfcTag, setNfcTag] = useState(unit.nfcTag ?? "");
   const [notes, setNotes] = useState(unit.notes ?? "");
 
-  function resetFields() {
-    setRegistration(unit.registration ?? "");
-    setBrand(unit.brand ?? "");
-    setModel(unit.model ?? "");
-    setYear(unit.year?.toString() ?? "");
-    setChassisId(unit.chassisId ?? "");
-    setLength(unit.length ?? "");
-    setStorageLocation(unit.storageLocation ?? "");
-    setStorageType(unit.storageType ?? "");
-    setCurrentPosition(unit.currentPosition ?? "");
-    setNfcTag(unit.nfcTag ?? "");
-    setNotes(unit.notes ?? "");
-  }
-
-  function handleSave() {
+  function saveField(field: string, value: string) {
     startTransition(async () => {
       try {
-        await updateUnit(unit.id, {
-          registration: registration || undefined,
-          brand: brand || undefined,
-          model: model || undefined,
-          year: year ? parseInt(year) : undefined,
-          chassisId: chassisId || undefined,
-          length: length || undefined,
-          storageLocation: storageLocation || undefined,
-          storageType: storageType || undefined,
-          currentPosition: currentPosition || undefined,
-          nfcTag: nfcTag || undefined,
-          notes: notes || undefined,
-          customerId: unit.customerId,
-        });
-        toast.success("Unit updated");
-        setEditing(false);
+        const data: Record<string, any> = { customerId: unit.customerId };
+        // Send current values for all fields, overriding the one being saved
+        const fields: Record<string, string> = {
+          registration, brand, model, chassisId, length,
+          storageLocation, storageType, currentPosition, nfcTag, notes,
+        };
+        fields[field] = value;
+        for (const [k, v] of Object.entries(fields)) {
+          data[k] = v || undefined;
+        }
+        data.year = (field === "year" ? value : year) ? parseInt(field === "year" ? value : year) : undefined;
+
+        await updateUnit(unit.id, data);
+        toast.success("Saved");
+        setEditingField(null);
         router.refresh();
       } catch (err: any) {
         toast.error(err?.message ?? "Failed to save");
       }
     });
   }
-
-  const hasStorage = unit.storageLocation || unit.storageType || unit.currentPosition || unit.nfcTag;
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -109,145 +90,82 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
             </div>
           </div>
         </div>
-        {!editing ? (
-          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { resetFields(); setEditing(true); }}>
-            <Pencil className="h-3 w-3 mr-1.5" /> Edit
-          </Button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { resetFields(); setEditing(false); }}>
-              <X className="h-3 w-3 mr-1" /> Cancel
-            </Button>
-            <Button size="sm" className="h-8 text-xs rounded-lg" disabled={isPending} onClick={handleSave}>
-              {isPending ? <Spinner className="mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-              Save
-            </Button>
-          </div>
-        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Left column — Details + Storage */}
+        {/* Left column — Details + Storage + Notes */}
         <div className="space-y-4">
           <Card>
-            <CardContent>
-              {editing ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Registration</Label>
-                      <Input value={registration} onChange={(e) => setRegistration(e.target.value)} className="mt-1 h-8 text-sm rounded-lg font-mono" />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Year</Label>
-                      <Input value={year} onChange={(e) => setYear(e.target.value)} type="number" className="mt-1 h-8 text-sm rounded-lg" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Brand</Label>
-                      <Input value={brand} onChange={(e) => setBrand(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Model</Label>
-                      <Input value={model} onChange={(e) => setModel(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Chassis</Label>
-                      <Input value={chassisId} onChange={(e) => setChassisId(e.target.value)} className="mt-1 h-8 text-sm rounded-lg font-mono" />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Length</Label>
-                      <Input value={length} onChange={(e) => setLength(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" placeholder="e.g. 7.5m" />
-                    </div>
-                  </div>
-
-                  {/* Storage fields in edit mode */}
-                  <div className="border-t pt-3">
-                    <p className="text-[11px] font-semibold mb-2 flex items-center gap-1.5">
-                      <Warehouse className="h-3 w-3 text-muted-foreground" /> Storage & Location
-                    </p>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Location</Label>
-                          <Input value={storageLocation} onChange={(e) => setStorageLocation(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                        </div>
-                        <div>
-                          <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Type</Label>
-                          <Input value={storageType} onChange={(e) => setStorageType(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Position</Label>
-                          <Input value={currentPosition} onChange={(e) => setCurrentPosition(e.target.value)} className="mt-1 h-8 text-sm rounded-lg" />
-                        </div>
-                        <div>
-                          <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">NFC Tag</Label>
-                          <Input value={nfcTag} onChange={(e) => setNfcTag(e.target.value)} className="mt-1 h-8 text-sm rounded-lg font-mono" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notes in edit mode */}
-                  <div className="border-t pt-3">
-                    <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Notes</Label>
-                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1 text-sm rounded-lg min-h-[80px]" />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2 text-sm">
-                  <Row icon={Hash} label="Registration" value={unit.registration} mono />
-                  <Row icon={Truck} label="Brand" value={unit.brand} />
-                  <Row icon={Truck} label="Model" value={unit.model} />
-                  <Row icon={Calendar} label="Year" value={unit.year?.toString()} />
-                  <Row icon={Hash} label="Chassis" value={unit.chassisId} mono small />
-                  {unit.length && <Row icon={Ruler} label="Length" value={`${unit.length}m`} />}
-                  {unit.customer && (
-                    <div className="flex items-center justify-between border-t pt-2 mt-2">
-                      <span className="flex items-center gap-2 text-muted-foreground"><User className="h-3.5 w-3.5" /> Owner</span>
-                      <Link href={`/customers/${unit.customer.id}`} className="font-medium text-primary hover:underline text-xs">{unit.customer.name}</Link>
-                    </div>
-                  )}
+            <CardContent className="space-y-0 divide-y">
+              <InlineRow icon={Hash} label="Registration" value={registration} field="registration" mono
+                editingField={editingField} saving={isPending} onChange={setRegistration} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Truck} label="Brand" value={brand} field="brand"
+                editingField={editingField} saving={isPending} onChange={setBrand} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Truck} label="Model" value={model} field="model"
+                editingField={editingField} saving={isPending} onChange={setModel} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Calendar} label="Year" value={year} field="year" type="number"
+                editingField={editingField} saving={isPending} onChange={setYear} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Hash} label="Chassis" value={chassisId} field="chassisId" mono
+                editingField={editingField} saving={isPending} onChange={setChassisId} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Ruler} label="Length" value={length} field="length"
+                editingField={editingField} saving={isPending} onChange={setLength} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              {unit.customer && (
+                <div className="flex items-center justify-between py-2 text-sm">
+                  <span className="flex items-center gap-2 text-muted-foreground"><User className="h-3.5 w-3.5" /> Owner</span>
+                  <Link href={`/customers/${unit.customer.id}`} className="font-medium text-primary hover:underline text-xs">{unit.customer.name}</Link>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Storage card (view mode only — edit is inline above) */}
-          {!editing && hasStorage && (
-            <Card>
-              <CardContent>
-                <div className="flex items-center gap-2 mb-2">
-                  <Warehouse className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Storage & Location</p>
-                </div>
-                <div className="space-y-2 text-sm">
-                  {unit.storageLocation && <Row icon={MapPin} label="Storage" value={unit.storageLocation} />}
-                  {unit.storageType && <Row icon={Warehouse} label="Type" value={unit.storageType} />}
-                  {unit.currentPosition && <Row icon={Navigation} label="Position" value={unit.currentPosition} />}
-                  {unit.nfcTag && <Row icon={Tag} label="NFC Tag" value={unit.nfcTag} mono small />}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardContent className="space-y-0 divide-y">
+              <div className="pb-1 pt-0.5">
+                <p className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <Warehouse className="h-3 w-3" /> Storage & Location
+                </p>
+              </div>
+              <InlineRow icon={MapPin} label="Location" value={storageLocation} field="storageLocation"
+                editingField={editingField} saving={isPending} onChange={setStorageLocation} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Warehouse} label="Type" value={storageType} field="storageType"
+                editingField={editingField} saving={isPending} onChange={setStorageType} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Navigation} label="Position" value={currentPosition} field="currentPosition"
+                editingField={editingField} saving={isPending} onChange={setCurrentPosition} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+              <InlineRow icon={Tag} label="NFC Tag" value={nfcTag} field="nfcTag" mono
+                editingField={editingField} saving={isPending} onChange={setNfcTag} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+            </CardContent>
+          </Card>
 
-          {/* Notes card (view mode only) */}
-          {!editing && unit.notes && (
-            <Card>
-              <CardContent>
-                <div className="flex items-center gap-2 mb-2">
-                  <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Notes</p>
+          {/* Notes */}
+          <Card>
+            <CardContent>
+              <div className="group/notes">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <StickyNote className="h-3 w-3" /> Notes
+                  </p>
+                  {editingField !== "notes" && (
+                    <button onClick={() => setEditingField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{unit.notes}</p>
-              </CardContent>
-            </Card>
-          )}
+                {editingField === "notes" ? (
+                  <div className="space-y-1.5">
+                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="text-sm rounded-lg" autoFocus />
+                    <div className="flex gap-1">
+                      <Button size="sm" className="h-6 text-[11px] rounded-lg" onClick={() => saveField("notes", notes)} disabled={isPending}>Save</Button>
+                      <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={() => { setNotes(unit.notes ?? ""); setEditingField(null); }}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors" onClick={() => setEditingField("notes")}>
+                    {notes || <span className="italic text-xs">Click to add notes</span>}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right column — Repairs */}
@@ -285,13 +203,29 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
   );
 }
 
-function Row({ icon: Icon, label, value, mono, small }: {
-  icon: any; label: string; value?: string | null; mono?: boolean; small?: boolean;
+function InlineRow({ icon: Icon, label, value, field, mono, type, editingField, saving, onChange, onSave, onEdit, onCancel }: {
+  icon: any; label: string; value: string; field: string; mono?: boolean; type?: string;
+  editingField: string | null; saving: boolean;
+  onChange: (v: string) => void; onSave: (field: string, value: string) => void;
+  onEdit: (f: string) => void; onCancel: () => void;
 }) {
+  const isEditing = editingField === field;
   return (
-    <div className="flex items-center justify-between">
-      <span className="flex items-center gap-2 text-muted-foreground"><Icon className="h-3.5 w-3.5" /> {label}</span>
-      <span className={`font-medium ${mono ? "font-mono" : ""} ${small ? "text-xs" : ""}`}>{value ?? "—"}</span>
+    <div className="group/row flex items-center justify-between py-2 text-sm">
+      <span className="flex items-center gap-2 text-muted-foreground shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
+      {isEditing ? (
+        <div className="flex items-center gap-1">
+          <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} className={`h-6 w-36 text-xs rounded-md ${mono ? "font-mono" : ""}`} autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter") onSave(field, value); if (e.key === "Escape") onCancel(); }} />
+          <button onClick={() => onSave(field, value)} disabled={saving} className="p-0.5 rounded hover:bg-muted"><Check className="h-3 w-3 text-green-600" /></button>
+          <button onClick={onCancel} className="p-0.5 rounded hover:bg-muted"><X className="h-3 w-3 text-muted-foreground" /></button>
+        </div>
+      ) : (
+        <span className={`flex items-center gap-1 font-medium cursor-pointer hover:text-primary transition-colors ${mono ? "font-mono text-xs" : ""}`} onClick={() => onEdit(field)}>
+          {value || "—"}
+          <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
+        </span>
+      )}
     </div>
   );
 }

@@ -206,6 +206,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       });
       router.refresh();
       toast.success("Changes saved");
+      router.push(backTo ?? "/repairs");
     } catch {
       toast.error("Failed to save. Please try again.");
     } finally {
@@ -658,7 +659,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[11px] text-muted-foreground">Invoice</Label>
-                  <Select value={invoiceStatus} onValueChange={setInvoiceStatus}>
+                  <Select value={invoiceStatus} onValueChange={(val) => {
+                    setInvoiceStatus(val);
+                    // Auto-set repair status + contact to rejected/declined when invoice is rejected
+                    if (val === "rejected") {
+                      setStatus("rejected");
+                      setCustomerResponseStatus("declined");
+                    }
+                  }}>
                     <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
@@ -709,6 +717,20 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Position
+                  </span>
+                  <span className="font-mono text-xs font-medium text-right">{job.unit?.currentPosition ?? "—"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Storage
+                  </span>
+                  <span className="text-xs font-medium text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-3.5 w-3.5" />
                     Contact
                   </span>
@@ -726,9 +748,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       <Hash className="h-3.5 w-3.5" />
                       Unit
                     </span>
-                    <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right truncate max-w-[160px]">
-                      {[job.unit.brand, job.unit.model, job.unit.registration].filter(Boolean).join(" · ") || "—"}
+                    <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right text-xs">
+                      {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
                     </Link>
+                  </div>
+                )}
+                {!job.unit && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Hash className="h-3.5 w-3.5" />
+                      Unit
+                    </span>
+                    <span className="text-muted-foreground">—</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">

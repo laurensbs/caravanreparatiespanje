@@ -19,7 +19,7 @@ function capitalizeWords(name: string): string {
 import { customerSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { syncCustomerToHolded } from "./holded";
-import { eq, desc, ilike, or, and, count, sql, inArray, gte, lte } from "drizzle-orm";
+import { eq, desc, ilike, or, and, count, sql, inArray, gte, lte, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type CustomerFilters = {
@@ -148,7 +148,7 @@ export async function getCustomerById(id: string) {
         holdedInvoiceNum: repairJobs.holdedInvoiceNum,
       })
       .from(repairJobs)
-      .where(eq(repairJobs.customerId, id))
+      .where(and(eq(repairJobs.customerId, id), isNull(repairJobs.deletedAt)))
       .orderBy(desc(repairJobs.updatedAt)),
     db
       .select({ id: units.id, registration: units.registration, brand: units.brand, model: units.model })

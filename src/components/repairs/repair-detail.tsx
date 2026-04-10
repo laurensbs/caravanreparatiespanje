@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateRepairJob } from "@/actions/repairs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send, Plus, Trash2, Package, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -27,6 +27,8 @@ import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
+import { updateCustomer } from "@/actions/customers";
+import { updateUnit } from "@/actions/units";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getRepairSuggestions } from "@/components/smart-suggestions";
 import { WorkflowGuide } from "@/components/workflow-guide";
@@ -94,6 +96,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [internalComments, setInternalComments] = useState(job.internalComments ?? "");
   const [title, setTitle] = useState(job.title ?? "");
   const [editingTitle, setEditingTitle] = useState(false);
+  const [expandCustomer, setExpandCustomer] = useState(false);
+  const [expandUnit, setExpandUnit] = useState(false);
   const [description, setDescription] = useState(job.descriptionRaw ?? "");
   const [editingDescription, setEditingDescription] = useState(false);
   const [estimatedCost, setEstimatedCost] = useState(job.estimatedCost ?? "");
@@ -736,23 +740,39 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     Contact
                   </span>
                   {job.customer ? (
-                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
-                      {job.customer.name}
-                    </Link>
+                    <span className="flex items-center gap-1.5">
+                      <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
+                        {job.customer.name}
+                      </Link>
+                      <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit customer">
+                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                      </button>
+                    </span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </div>
+                {expandCustomer && job.customer && (
+                  <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
+                )}
                 {job.unit && (
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <Hash className="h-3.5 w-3.5" />
                       Unit
                     </span>
-                    <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right text-xs">
-                      {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
-                    </Link>
+                    <span className="flex items-center gap-1.5">
+                      <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right text-xs">
+                        {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
+                      </Link>
+                      <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit unit">
+                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                      </button>
+                    </span>
                   </div>
+                )}
+                {expandUnit && job.unit && (
+                  <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
                 )}
                 {!job.unit && (
                   <div className="flex items-center justify-between">
@@ -1290,6 +1310,143 @@ function PlanningDateRow({ jobId, dueDate }: { jobId: string; dueDate: string | 
           <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
         </button>
       </span>
+    </div>
+  );
+}
+
+// ─── Inline Customer Edit ───
+
+function InlineCustomerEdit({ customer, onDone }: { customer: any; onDone: () => void }) {
+  const router = useRouter();
+  const [saving, startTransition] = useTransition();
+  const [name, setName] = useState(customer.name ?? "");
+  const [email, setEmail] = useState(customer.email ?? "");
+  const [phone, setPhone] = useState(customer.phone ?? "");
+  const [mobile, setMobile] = useState(customer.mobile ?? "");
+  const [address, setAddress] = useState(customer.address ?? "");
+  const [city, setCity] = useState(customer.city ?? "");
+  const [postalCode, setPostalCode] = useState(customer.postalCode ?? "");
+  const [country, setCountry] = useState(customer.country ?? "");
+  const [notes, setNotes] = useState(customer.notes ?? "");
+
+  function handleSave() {
+    startTransition(async () => {
+      try {
+        await updateCustomer(customer.id, {
+          name, email: email || undefined, phone: phone || undefined,
+          mobile: mobile || undefined, address: address || undefined,
+          city: city || undefined, postalCode: postalCode || undefined,
+          country: country || undefined, notes: notes || undefined,
+          contactType: customer.contactType ?? "person",
+        });
+        toast.success("Customer updated");
+        router.refresh();
+        onDone();
+      } catch {
+        toast.error("Failed to update customer");
+      }
+    });
+  }
+
+  const fields: [string, string, (v: string) => void][] = [
+    ["Name", name, setName], ["Email", email, setEmail], ["Phone", phone, setPhone],
+    ["Mobile", mobile, setMobile], ["Address", address, setAddress],
+    ["City", city, setCity], ["Postal Code", postalCode, setPostalCode],
+    ["Country", country, setCountry],
+  ];
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-2.5 space-y-2 animate-slide-up">
+      <div className="grid grid-cols-2 gap-2">
+        {fields.map(([label, value, setter]) => (
+          <div key={label}>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</label>
+            <Input value={value} onChange={(e) => setter(e.target.value)} className="h-7 text-xs rounded-md mt-0.5" />
+          </div>
+        ))}
+      </div>
+      <div>
+        <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Notes</label>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="text-xs rounded-md mt-0.5" />
+      </div>
+      <div className="flex gap-1.5">
+        <Button size="sm" className="h-6 text-[11px] rounded-lg" onClick={handleSave} disabled={saving}>
+          {saving ? <Spinner className="mr-1" /> : <Save className="h-3 w-3 mr-1" />} Save
+        </Button>
+        <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={onDone}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Inline Unit Edit ───
+
+function InlineUnitEdit({ unit, onDone }: { unit: any; onDone: () => void }) {
+  const router = useRouter();
+  const [saving, startTransition] = useTransition();
+  const [registration, setRegistration] = useState(unit.registration ?? "");
+  const [brand, setBrand] = useState(unit.brand ?? "");
+  const [model, setModel] = useState(unit.model ?? "");
+  const [year, setYear] = useState(unit.year?.toString() ?? "");
+  const [chassisId, setChassisId] = useState(unit.chassisId ?? "");
+  const [length, setLength] = useState(unit.length ?? "");
+  const [storageLocation, setStorageLocation] = useState(unit.storageLocation ?? "");
+  const [storageType, setStorageType] = useState(unit.storageType ?? "");
+  const [currentPosition, setCurrentPosition] = useState(unit.currentPosition ?? "");
+  const [nfcTag, setNfcTag] = useState(unit.nfcTag ?? "");
+  const [notes, setNotes] = useState(unit.notes ?? "");
+
+  function handleSave() {
+    startTransition(async () => {
+      try {
+        await updateUnit(unit.id, {
+          registration: registration || undefined, brand: brand || undefined,
+          model: model || undefined, year: year ? Number(year) : undefined,
+          chassisId: chassisId || undefined, length: length || undefined,
+          storageLocation: storageLocation || undefined, storageType: storageType || undefined,
+          currentPosition: currentPosition || undefined, nfcTag: nfcTag || undefined,
+          notes: notes || undefined, customerId: unit.customerId,
+        });
+        toast.success("Unit updated");
+        router.refresh();
+        onDone();
+      } catch {
+        toast.error("Failed to update unit");
+      }
+    });
+  }
+
+  const fields: [string, string, (v: string) => void, string?][] = [
+    ["Registration", registration, setRegistration, "font-mono"],
+    ["Brand", brand, setBrand], ["Model", model, setModel],
+    ["Year", year, setYear], ["Chassis", chassisId, setChassisId, "font-mono"],
+    ["Length", length, setLength],
+    ["Storage Loc.", storageLocation, setStorageLocation],
+    ["Storage Type", storageType, setStorageType],
+    ["Position", currentPosition, setCurrentPosition],
+    ["NFC Tag", nfcTag, setNfcTag, "font-mono"],
+  ];
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-2.5 space-y-2 animate-slide-up">
+      <div className="grid grid-cols-2 gap-2">
+        {fields.map(([label, value, setter, extra]) => (
+          <div key={label}>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</label>
+            <Input value={value} onChange={(e) => setter(e.target.value)} className={`h-7 text-xs rounded-md mt-0.5 ${extra ?? ""}`} />
+          </div>
+        ))}
+      </div>
+      <div>
+        <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Notes</label>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="text-xs rounded-md mt-0.5" />
+      </div>
+      <div className="flex gap-1.5">
+        <Button size="sm" className="h-6 text-[11px] rounded-lg" onClick={handleSave} disabled={saving}>
+          {saving ? <Spinner className="mr-1" /> : <Save className="h-3 w-3 mr-1" />} Save
+        </Button>
+        <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={onDone}>Cancel</Button>
+      </div>
     </div>
   );
 }

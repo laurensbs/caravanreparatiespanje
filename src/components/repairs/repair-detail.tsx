@@ -183,6 +183,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const costLinesTotal = costLinesSubtotal - discountAmount;
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
 
+  // Auto-sync Actual + Our Cost from line items
+  useEffect(() => {
+    if (costLines.length > 0) {
+      setActualCost(costLinesTotalInclTax.toFixed(2));
+      setInternalCost(costLinesInternalTotal.toFixed(2));
+    }
+  }, [costLines, costLinesTotalInclTax, costLinesInternalTotal]);
+
   // Part requests state
   const [addingPartName, setAddingPartName] = useState("");
   const [showAddPart, setShowAddPart] = useState(false);
@@ -824,7 +832,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </summary>
 
             <div className="px-6 pb-6">
-              {/* ── Pricing summary: Estimated (primary), Actual, Our Cost ── */}
+              {/* ── Pricing: Estimated (primary), Actual (auto from lines), Our Cost (subtle) ── */}
               <div className="flex items-start gap-6 mb-5">
                 <div className="flex-1">
                   <span className="text-xs text-muted-foreground block mb-1">Estimated</span>
@@ -842,34 +850,52 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 </div>
                 <div className="flex-1">
-                  <span className="text-xs text-muted-foreground block mb-1">Actual</span>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm">€</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={actualCost}
-                      onChange={(e) => setActualCost(e.target.value)}
-                      className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
-                    />
-                  </div>
+                  <span className="text-xs text-muted-foreground block mb-1">
+                    Actual
+                    {costLines.length > 0 && <span className="text-muted-foreground/50 ml-1">· auto</span>}
+                  </span>
+                  {costLines.length > 0 ? (
+                    <div className="h-10 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-2">
+                      €{parseFloat(actualCost || "0").toFixed(2)}
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={actualCost}
+                        onChange={(e) => setActualCost(e.target.value)}
+                        className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
-                  <span className="text-xs text-muted-foreground/60 block mb-1">Our Cost</span>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-sm">€</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={internalCost}
-                      onChange={(e) => setInternalCost(e.target.value)}
-                      className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground"
-                    />
-                  </div>
+                  <span className="text-xs text-muted-foreground/60 block mb-1">
+                    Our Cost
+                    {costLines.length > 0 && <span className="text-muted-foreground/40 ml-1">· auto</span>}
+                  </span>
+                  {costLines.length > 0 ? (
+                    <div className="h-10 flex items-center justify-end text-sm tabular-nums text-muted-foreground/50 px-2">
+                      €{parseFloat(internalCost || "0").toFixed(2)}
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-sm">€</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={internalCost}
+                        onChange={(e) => setInternalCost(e.target.value)}
+                        className="h-10 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

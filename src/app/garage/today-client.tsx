@@ -71,12 +71,12 @@ export function GarageTodayClient({ repairs, userName }: Props) {
   );
 
   const groups = [
-    { key: "in_progress", label: t("In Progress", "En Progreso", "Bezig"), items: inProgress, color: "text-blue-600", bg: "bg-blue-500", emoji: "🔧" },
-    { key: "todo", label: t("To Do", "Por Hacer", "Te Doen"), items: todo, color: "text-purple-600", bg: "bg-purple-500", emoji: "📋" },
-    { key: "scheduled", label: t("Scheduled", "Programado", "Gepland"), items: scheduled, color: "text-indigo-600", bg: "bg-indigo-500", emoji: "📅" },
-    { key: "final_check", label: t("Final Check", "Control Final", "Natest"), items: finalCheck, color: "text-amber-600", bg: "bg-amber-500", emoji: "🔍" },
-    { key: "waiting", label: t("Waiting / Blocked", "Esperando", "Wacht / Geblokkeerd"), items: waiting, color: "text-orange-600", bg: "bg-orange-500", emoji: "⏳" },
-    { key: "done", label: t("Done", "Completado", "Klaar"), items: done, color: "text-green-600", bg: "bg-green-500", emoji: "✅" },
+    { key: "in_progress", label: t("In Progress", "En Progreso", "Bezig"), items: inProgress, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500", lightBg: "bg-blue-50 dark:bg-blue-950/30", emoji: "🔧" },
+    { key: "todo", label: t("To Do", "Por Hacer", "Te Doen"), items: todo, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-500", lightBg: "bg-purple-50 dark:bg-purple-950/30", emoji: "📋" },
+    { key: "scheduled", label: t("Scheduled", "Programado", "Gepland"), items: scheduled, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500", lightBg: "bg-indigo-50 dark:bg-indigo-950/30", emoji: "📅" },
+    { key: "final_check", label: t("Final Check", "Control Final", "Natest"), items: finalCheck, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500", lightBg: "bg-amber-50 dark:bg-amber-950/30", emoji: "🔍" },
+    { key: "waiting", label: t("Waiting / Blocked", "Esperando", "Wacht / Geblokkeerd"), items: waiting, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500", lightBg: "bg-orange-50 dark:bg-orange-950/30", emoji: "⏳" },
+    { key: "done", label: t("Done", "Completado", "Klaar"), items: done, color: "text-green-600 dark:text-green-400", bg: "bg-green-500", lightBg: "bg-green-50 dark:bg-green-950/30", emoji: "✅" },
   ];
 
   // Overall stats
@@ -87,99 +87,133 @@ export function GarageTodayClient({ repairs, userName }: Props) {
   const activeRepairs = repairs.length - done.length;
   const urgentCount = repairs.filter((r) => r.priority === "urgent" || r.priority === "high").length;
 
+  const firstName = userName.split(" ")[0];
+  const greeting = (() => {
+    const h = time.getHours();
+    if (h < 12) return t("Good morning", "Buenos días", "Goedemorgen");
+    if (h < 18) return t("Good afternoon", "Buenas tardes", "Goedemiddag");
+    return t("Good evening", "Buenas noches", "Goedenavond");
+  })();
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-slate-50 to-background dark:from-slate-950 dark:to-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-xl">
-        <div className="flex items-center justify-between px-4 py-3">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-background to-blue-50/30 dark:from-slate-950 dark:via-background dark:to-blue-950/10">
+      {/* Header — compact, modern */}
+      <header className="sticky top-0 z-30 bg-white/70 dark:bg-slate-950/70 backdrop-blur-2xl border-b border-border/50">
+        <div className="flex items-center justify-between px-5 py-3.5">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold">{t("Today", "Hoy", "Vandaag")}</h1>
-              <span className="text-lg tabular-nums text-muted-foreground font-medium">{clock}</span>
+            <p className="text-sm text-muted-foreground">{greeting}, <span className="font-semibold text-foreground">{firstName}</span></p>
+            <div className="flex items-baseline gap-2.5 mt-0.5">
+              <h1 className="text-2xl font-extrabold tracking-tight">{today}</h1>
+              <span className="text-lg tabular-nums text-muted-foreground/60 font-medium">{clock}</span>
             </div>
-            <p className="text-sm text-muted-foreground">{today}</p>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <LanguageToggle />
             <button
               onClick={() => router.refresh()}
-              className="h-10 w-10 flex items-center justify-center rounded-lg text-lg active:bg-muted transition-colors"
+              className="h-10 w-10 flex items-center justify-center rounded-xl text-lg active:bg-muted/80 transition-all hover:bg-muted/50"
               title={t("Refresh", "Actualizar", "Vernieuwen")}
             >
               ↻
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="h-10 px-3 flex items-center justify-center rounded-lg text-sm text-muted-foreground active:bg-muted transition-colors"
+              className="h-10 w-10 flex items-center justify-center rounded-xl text-sm font-bold bg-primary/10 text-primary active:bg-primary/20 transition-all"
+              title={t("Sign out", "Cerrar sesión", "Uitloggen")}
             >
-              {userName.split(" ")[0]} ↗
+              {firstName.charAt(0).toUpperCase()}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Dashboard area */}
-      <div className="px-4 py-4 space-y-4">
-        {/* Progress + Stats row */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Overall progress */}
-          <div className="rounded-2xl border bg-card p-4 col-span-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
+      {/* Stats + Weather hero */}
+      <div className="px-5 pt-5 pb-2 space-y-4">
+        {/* Stats grid */}
+        {repairs.length > 0 ? (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
+              <p className="text-2xl font-extrabold tabular-nums">{activeRepairs}</p>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                {t("Active", "Activas", "Actief")}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
+              <p className="text-2xl font-extrabold tabular-nums text-green-600">{done.length}</p>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                {t("Done", "Hechas", "Klaar")}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl font-extrabold tabular-nums">{doneTasks}</p>
+                <p className="text-sm text-muted-foreground">/{totalTasks}</p>
+              </div>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                {t("Tasks", "Tareas", "Taken")}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Progress bar (only when there's work) */}
+        {totalTasks > 0 && (
+          <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {t("Day Progress", "Progreso del Día", "Dagvoortgang")}
               </span>
-              <span className="text-sm font-bold tabular-nums">{doneTasks}/{totalTasks} {t("tasks", "tareas", "taken")}</span>
+              <span className="text-sm font-bold tabular-nums">{overallProgress}%</span>
             </div>
-            <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+            <div className="h-3 w-full rounded-full bg-muted/60 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                className="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-green-500 transition-all duration-700 ease-out"
                 style={{ width: `${overallProgress}%` }}
               />
             </div>
-            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-              <span>{activeRepairs} {t("active", "activas", "actief")}</span>
-              <span>{done.length} {t("done", "hechas", "klaar")}</span>
-              {problemTasks > 0 && (
-                <span className="text-red-500 font-medium">⚠ {problemTasks} {t("problems", "problemas", "problemen")}</span>
-              )}
-              {urgentCount > 0 && (
-                <span className="text-orange-500 font-medium">🔴 {urgentCount} {t("urgent", "urgente", "spoed")}</span>
-              )}
-            </div>
+            {(problemTasks > 0 || urgentCount > 0) && (
+              <div className="flex gap-3 mt-2">
+                {problemTasks > 0 && (
+                  <span className="text-xs text-red-500 font-semibold">⚠ {problemTasks} {t("problems", "problemas", "problemen")}</span>
+                )}
+                {urgentCount > 0 && (
+                  <span className="text-xs text-orange-500 font-semibold">🔴 {urgentCount} {t("urgent", "urgente", "spoed")}</span>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* Status pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-          {groups.filter(g => g.items.length > 0).map((g) => (
-            <div key={g.key} className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap ${g.color} bg-card`}>
-              <span>{g.emoji}</span>
-              <span className="font-bold">{g.items.length}</span>
-              <span className="hidden sm:inline">{g.label}</span>
-            </div>
-          ))}
-          <div className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-sm font-medium whitespace-nowrap">
-            <span className="font-bold">{repairs.length}</span>
-            <span>{t("total", "total", "totaal")}</span>
+        {/* Status pills — scrollable */}
+        {repairs.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-none">
+            {groups.filter(g => g.items.length > 0).map((g) => (
+              <div key={g.key} className={`flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap ${g.color} ${g.lightBg} border border-transparent`}>
+                <span className="text-base">{g.emoji}</span>
+                <span className="font-extrabold">{g.items.length}</span>
+                <span className="font-medium opacity-70">{g.label}</span>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
 
-        {/* Weather Widget */}
+        {/* Weather */}
         <WeatherWidget />
       </div>
 
       {/* Repair groups */}
-      <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-6">
+      <div className="flex-1 px-5 pb-8 space-y-6 mt-2">
         {groups
           .filter((g) => g.items.length > 0)
           .map((g) => (
             <section key={g.key}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{g.emoji}</span>
-                <h2 className={`text-sm font-bold uppercase tracking-wide ${g.color}`}>
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="text-xl">{g.emoji}</span>
+                <h2 className={`text-xs font-extrabold uppercase tracking-widest ${g.color}`}>
                   {g.label}
                 </h2>
-                <span className={`ml-auto flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold text-white ${g.bg}`}>
+                <div className="flex-1 h-px bg-border/50" />
+                <span className={`flex items-center justify-center h-6 min-w-6 px-1 rounded-full text-xs font-bold text-white ${g.bg}`}>
                   {g.items.length}
                 </span>
               </div>
@@ -192,10 +226,12 @@ export function GarageTodayClient({ repairs, userName }: Props) {
           ))}
 
         {repairs.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
-            <span className="text-5xl mb-4">🎉</span>
-            <p className="text-xl font-semibold">{t("No repairs today!", "¡Sin reparaciones hoy!", "Geen reparaties vandaag!")}</p>
-            <p className="text-sm mt-1">{t("Enjoy your day", "Disfruta el día", "Geniet van je dag")}</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-950/40 dark:to-emerald-950/40 flex items-center justify-center mb-5">
+              <span className="text-4xl">🎉</span>
+            </div>
+            <p className="text-xl font-bold">{t("No repairs today!", "¡Sin reparaciones hoy!", "Geen reparaties vandaag!")}</p>
+            <p className="text-sm text-muted-foreground mt-1.5">{t("Enjoy your day", "Disfruta el día", "Geniet van je dag")}</p>
           </div>
         )}
       </div>

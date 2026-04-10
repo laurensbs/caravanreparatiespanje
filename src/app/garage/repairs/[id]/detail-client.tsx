@@ -192,29 +192,29 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-muted/30">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-xl px-4 py-3">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-border/40 bg-white/80 dark:bg-card/80 backdrop-blur-2xl px-5 pt-3 pb-4">
+        <div className="flex items-center justify-between mb-3">
           <button
             onClick={() => router.push("/garage")}
-            className="flex items-center gap-1 text-sm text-muted-foreground active:opacity-70"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground active:opacity-70 -ml-1"
           >
-            ← {t("Back", "Atrás", "Terug")}
+            <span className="text-lg">‹</span> {t("Back", "Atrás", "Terug")}
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <LanguageToggle />
             <button
               onClick={handleRefresh}
-              className="h-10 w-10 flex items-center justify-center rounded-lg text-lg active:bg-muted"
+              className="h-9 w-9 flex items-center justify-center rounded-xl text-base active:bg-muted/60 transition-colors"
             >
               ↻
             </button>
           </div>
         </div>
-        <div className="mt-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-lg">{repair.publicCode}</span>
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-xs font-bold text-muted-foreground/70 tracking-widest uppercase">{repair.publicCode}</span>
             <Badge className={STATUS_COLORS[repair.status as RepairStatus]}>
               {STATUS_LABELS[repair.status as RepairStatus]}
             </Badge>
@@ -224,11 +224,11 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           </div>
           {/* Editable title */}
           {editingTitle ? (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-2">
               <input
                 value={titleValue}
                 onChange={(e) => setTitleValue(e.target.value)}
-                className="flex-1 rounded-lg border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex-1 rounded-xl border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSaveTitle();
@@ -240,30 +240,32 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             </div>
           ) : (
             <p
-              className="text-sm text-muted-foreground mt-1 active:opacity-70 cursor-pointer"
+              className="text-sm text-muted-foreground mt-1.5 active:opacity-70 cursor-pointer"
               onClick={() => setEditingTitle(true)}
               title={t("Tap to edit title", "Toca para editar", "Tik om titel te wijzigen")}
             >
               {repair.title || <span className="italic">{t("No title — tap to add", "Sin título", "Geen titel — tik om toe te voegen")}</span>}
-              <span className="ml-1 text-xs opacity-50">✎</span>
+              <span className="ml-1 text-xs opacity-40">✎</span>
             </p>
           )}
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {repair.unitRegistration && <span className="font-medium mr-2">{repair.unitRegistration}</span>}
+          <p className="text-[15px] font-bold mt-1.5 leading-tight">
+            {repair.unitRegistration && <span className="mr-2">{repair.unitRegistration}</span>}
             {[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ")}
-            {repair.customerName && <span> — {repair.customerName}</span>}
           </p>
+          {repair.customerName && (
+            <p className="text-sm text-muted-foreground mt-0.5">{repair.customerName}</p>
+          )}
         </div>
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-4">
+      <div className="flex-1 overflow-y-auto px-5 py-5 pb-28 space-y-4">
 
         {/* Flags (prominent warnings) */}
         {flags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {flags.map((f) => (
-              <span key={f.key} className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-bold ${f.color}`}>
+              <span key={f.key} className={`inline-flex items-center rounded-xl border px-3 py-1.5 text-[13px] font-bold ${f.color}`}>
                 ⚠ {f.label}
               </span>
             ))}
@@ -274,8 +276,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         <div className="grid grid-cols-1 gap-3">
           {/* Vehicle card */}
           {repair.unitId && (
-            <div className="rounded-xl border bg-card p-3">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+            <div className="rounded-2xl border border-border/50 bg-white dark:bg-card p-4 shadow-sm">
+              <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60 mb-2">
                 🚐 {t("Vehicle", "Vehículo", "Voertuig")}
               </h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -306,8 +308,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Customer card */}
           {repair.customerId && (repair.customerPhone || repair.customerEmail || repair.customerMobile) && (
-            <div className="rounded-xl border bg-card p-3">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+            <div className="rounded-2xl border border-border/50 bg-white dark:bg-card p-4 shadow-sm">
+              <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60 mb-2">
                 👤 {repair.customerName ?? t("Customer", "Cliente", "Klant")}
               </h3>
               <div className="space-y-1 text-sm">
@@ -333,8 +335,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
         {/* Office notes (read-only) */}
         {(repair.descriptionRaw || repair.notesRaw || repair.internalComments) && (
-          <div className="rounded-xl border bg-amber-50/50 p-4">
-            <h3 className="text-sm font-bold text-amber-700 mb-1">
+          <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/20 p-4">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80 mb-2">
               📋 {t("Office Notes", "Notas de Oficina", "Kantoor Notities")}
             </h3>
             {repair.descriptionRaw && (
@@ -351,16 +353,16 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
         {/* Parts status */}
         {(repair.partRequests.length > 0 || repair.partsRequiredFlag) && (
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-orange-700 dark:text-orange-400">
+          <div className="rounded-2xl border border-border/50 bg-white dark:bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60">
                 📦 {t("Parts", "Piezas", "Onderdelen")}
               </h3>
               {repair.partRequests.length > 0 && (
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg ${
                   repair.partRequests.every(p => p.status === "received")
-                    ? "bg-green-100 text-green-700"
-                    : "bg-orange-100 text-orange-700"
+                    ? "bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400"
+                    : "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
                 }`}>
                   {repair.partRequests.filter(p => p.status === "received").length}/{repair.partRequests.length} {t("received", "recibidas", "ontvangen")}
                 </span>
@@ -375,12 +377,12 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                       {pr.quantity > 1 && <span className="text-muted-foreground ml-1">×{pr.quantity}</span>}
                       {pr.supplierName && <span className="text-xs text-muted-foreground ml-2">{pr.supplierName}</span>}
                     </div>
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ml-2 ${
-                      pr.status === "received" ? "bg-green-100 text-green-700" :
-                      pr.status === "shipped" ? "bg-indigo-100 text-indigo-700" :
-                      pr.status === "ordered" ? "bg-blue-100 text-blue-700" :
-                      pr.status === "cancelled" ? "bg-gray-100 text-gray-500" :
-                      "bg-yellow-100 text-yellow-700"
+                    <span className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-bold whitespace-nowrap ml-2 ${
+                      pr.status === "received" ? "bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400" :
+                      pr.status === "shipped" ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400" :
+                      pr.status === "ordered" ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400" :
+                      pr.status === "cancelled" ? "bg-gray-50 dark:bg-gray-950/40 text-gray-500" :
+                      "bg-yellow-50 dark:bg-yellow-950/40 text-yellow-600 dark:text-yellow-400"
                     }`}>
                       {pr.status === "received" ? "✓" :
                        pr.status === "shipped" ? "🚚" :
@@ -410,7 +412,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {isActive && !showRequestPart && (
               <button
                 onClick={() => setShowRequestPart(true)}
-                className="mt-3 w-full rounded-xl border border-dashed border-orange-300 p-2.5 text-sm text-orange-600 font-medium active:bg-orange-50 transition-colors"
+                className="mt-3 w-full rounded-xl border border-dashed border-orange-300/60 p-3 text-sm text-orange-500 font-bold active:bg-orange-50/60 transition-colors"
               >
                 + {t("Request Part", "Solicitar Pieza", "Onderdeel Aanvragen")}
               </button>
@@ -429,10 +431,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   }}
                 />
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setShowRequestPart(false)} className="flex-1 h-10 rounded-xl">
+                  <Button variant="outline" onClick={() => setShowRequestPart(false)} className="flex-1 h-11 rounded-xl">
                     {t("Cancel", "Cancelar", "Annuleren")}
                   </Button>
-                  <Button onClick={handleRequestPart} disabled={!requestPartName.trim() || isPending} className="flex-1 h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
+                  <Button onClick={handleRequestPart} disabled={!requestPartName.trim() || isPending} className="flex-1 h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
                     {t("Request", "Solicitar", "Aanvragen")}
                   </Button>
                 </div>
@@ -443,8 +445,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
         {/* Final check banner */}
         {repair.finalCheckStatus === "failed" && repair.finalCheckNotes && (
-          <div className="rounded-xl border border-red-300 bg-red-50 p-4">
-            <h3 className="text-sm font-bold text-red-700 mb-1">
+          <div className="rounded-2xl border border-red-300/60 bg-red-50/60 dark:bg-red-950/20 p-4">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-red-600/80 mb-1.5">
               ✗ {t("Final Check Failed", "Control Final Fallido", "Natest Afgekeurd")}
             </h3>
             <p className="text-sm text-red-800">{repair.finalCheckNotes}</p>
@@ -453,15 +455,17 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
         {/* Task list */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              {t("Tasks", "Tareas", "Taken")}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60">
+                {t("Tasks", "Tareas", "Taken")}
+              </h3>
               {hasTasks && (
-                <span className="ml-2 font-normal">
+                <span className="text-[11px] font-bold text-muted-foreground tabular-nums">
                   {doneCount}/{repair.tasks.length}
                 </span>
               )}
-            </h3>
+            </div>
           </div>
 
           {hasTasks ? (
@@ -483,8 +487,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         </div>
 
         {/* Workers — "I worked on this" */}
-        <div className="rounded-xl border bg-card p-4">
-          <h3 className="text-sm font-bold text-muted-foreground mb-2">
+        <div className="rounded-2xl border border-border/50 bg-white dark:bg-card p-4 shadow-sm">
+          <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60 mb-3">
             👷 {t("Workers", "Trabajadores", "Medewerkers")}
           </h3>
           {/* Toggle button for current user */}
@@ -496,10 +500,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               });
             }}
             disabled={isPending}
-            className={`w-full rounded-xl border-2 p-3 text-sm font-bold transition-all active:scale-[0.98] ${
+            className={`w-full rounded-xl border-2 p-3.5 text-sm font-bold transition-all active:scale-[0.98] ${
               repair.workers.some(w => w.userId === currentUserId)
-                ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                : "border-dashed border-muted-foreground/30 text-muted-foreground"
+                ? "border-green-500/70 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+                : "border-dashed border-muted-foreground/20 text-muted-foreground"
             }`}
           >
             {repair.workers.some(w => w.userId === currentUserId)
@@ -526,12 +530,12 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         {/* Photos */}
         {repair.photos.length > 0 && (
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-2">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60 mb-3">
               {t("Photos", "Fotos", "Foto's")} ({repair.photos.length})
             </h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {repair.photos.map((photo) => (
-                <div key={photo.id} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-muted shadow-sm">
                   <img
                     src={photo.thumbnailUrl ?? photo.url}
                     alt={photo.caption ?? ""}
@@ -627,20 +631,20 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </div>
 
       {/* Bottom action bar (fixed) */}
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-card/95 backdrop-blur-xl px-4 py-3 safe-area-pb space-y-2">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border/40 bg-white/95 dark:bg-card/95 backdrop-blur-2xl px-5 py-3 safe-area-pb space-y-2">
         {/* Done / Not Done buttons (when repair is active) */}
         {isActive && !showComment && !showSuggest && !showNotDone && (
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <button
               onClick={handleMarkDone}
               disabled={isPending}
-              className="flex-1 rounded-xl bg-green-500 text-white p-3 text-sm font-bold active:bg-green-600 transition-colors disabled:opacity-50"
+              className="flex-1 rounded-2xl bg-gradient-to-b from-green-500 to-green-600 text-white p-3.5 text-sm font-extrabold active:from-green-600 active:to-green-700 transition-all disabled:opacity-50 shadow-sm"
             >
               ✓ {t("Done", "Listo", "Klaar")}
             </button>
             <button
               onClick={() => setShowNotDone(true)}
-              className="flex-1 rounded-xl bg-orange-500 text-white p-3 text-sm font-bold active:bg-orange-600 transition-colors"
+              className="flex-1 rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 text-white p-3.5 text-sm font-extrabold active:from-orange-600 active:to-orange-700 transition-all shadow-sm"
             >
               ✗ {t("Not Done", "No Listo", "Niet Klaar")}
             </button>
@@ -648,23 +652,23 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         )}
         {/* Secondary actions */}
         {!showComment && !showSuggest && !showNotDone && (
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <button
               onClick={() => setShowComment(true)}
-              className="flex-1 rounded-xl border p-3 text-sm font-medium active:bg-muted transition-colors"
+              className="flex-1 rounded-2xl border border-border/50 bg-white dark:bg-card p-3 text-sm font-bold active:bg-muted/60 transition-colors shadow-sm"
             >
               💬 {t("Comment", "Comentario", "Opmerking")}
             </button>
             <button
               onClick={() => setShowSuggest(true)}
-              className="flex-1 rounded-xl border p-3 text-sm font-medium active:bg-muted transition-colors"
+              className="flex-1 rounded-2xl border border-border/50 bg-white dark:bg-card p-3 text-sm font-bold active:bg-muted/60 transition-colors shadow-sm"
             >
               ➕ {t("Extra Task", "Tarea Extra", "Extra Taak")}
             </button>
             {allDone && repair.finalCheckStatus !== "passed" && (
               <button
                 onClick={() => setShowFinalCheck(true)}
-                className="flex-1 rounded-xl bg-amber-500 text-white p-3 text-sm font-bold active:bg-amber-600 transition-colors"
+                className="flex-1 rounded-2xl bg-gradient-to-b from-amber-500 to-amber-600 text-white p-3 text-sm font-extrabold active:from-amber-600 active:to-amber-700 transition-all shadow-sm"
               >
                 🔍 {t("Final Check", "Control", "Natest")}
               </button>

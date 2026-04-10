@@ -6,6 +6,125 @@ import { requireAuth } from "@/lib/auth-utils";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql } from "drizzle-orm";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AUTO START: move to in_progress when a technician opens the repair
+// ─────────────────────────────────────────────────────────────────────────────
+
+const autoStartStatuses = ["new", "todo", "scheduled"];
+
+export async function garageAutoStart(repairJobId: string) {
+  const session = await requireAuth();
+
+  const [job] = await db
+    .select({ status: repairJobs.status })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId));
+
+  if (!job || !autoStartStatuses.includes(job.status)) return { changed: false };
+
+  await db
+    .update(repairJobs)
+    .set({ status: "in_progress", updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "status_changed",
+    fieldChanged: "status",
+    oldValue: job.status,
+    newValue: "in_progress",
+    comment: "Auto-started when opened in garage",
+  });
+
+  return { changed: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UPDATE TITLE (from garage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function updateRepairTitle(repairJobId: string, title: string) {
+  const session = await requireAuth();
+  const trimmed = title.trim();
+  if (!trimmed) throw new Error("Title cannot be empty");
+
+  await db
+    .update(repairJobs)
+    .set({ title: trimmed, updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MARK DONE / NOT DONE (from garage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function garageMarkDone(repairJobId: string) {
+  const session = await requireAuth();
+
+  await db
+    .update(repairJobs)
+    .set({
+      status: "completed",
+      completedAt: new Date(),
+      finalCheckStatus: "pending",
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "status_changed",
+    fieldChanged: "status",
+    newValue: "completed",
+    comment: "Marked as done by garage",
+  });
+
+  return { success: true };
+}
+
+export async function garageMarkNotDone(repairJobId: string, reason: string) {
+  const session = await requireAuth();
+  const trimmed = reason.trim();
+  if (!trimmed) throw new Error("Reason is required");
+
+  // Set status to blocked
+  await db
+    .update(repairJobs)
+    .set({ status: "blocked", updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+
+  // Log as event (visible in office timeline)
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "status_changed",
+    fieldChanged: "status",
+    newValue: "blocked",
+    comment: `Garage: niet klaar — ${trimmed}`,
+  });
+
+  // Also add as communication log (visible in office)
+  await db.insert(communicationLogs).values({
+    repairJobId,
+    userId: session.user.id,
+    contactMethod: "in_person",
+    direction: "inbound",
+    contactPerson: session.user.name ?? "Garage",
+    summary: `⚠️ Niet klaar: ${trimmed}`,
+  });
+
+  await db
+    .update(repairJobs)
+    .set({ lastContactAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TODAY's REPAIRS
 // ─────────────────────────────────────────────────────────────────────────────
 

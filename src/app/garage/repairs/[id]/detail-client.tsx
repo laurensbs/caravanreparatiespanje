@@ -8,7 +8,7 @@ import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
-import { addGarageComment, suggestExtraTask } from "@/actions/garage";
+import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone } from "@/actions/garage";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority } from "@/types";
 import { toast } from "sonner";
@@ -53,12 +53,50 @@ export function GarageRepairDetailClient({ repair }: Props) {
   const [suggestDesc, setSuggestDesc] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // Editable title
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState(repair.title ?? "");
+
+  // Not done reason
+  const [showNotDone, setShowNotDone] = useState(false);
+  const [notDoneReason, setNotDoneReason] = useState("");
+
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
   const doneCount = repair.tasks.filter((t) => t.status === "done").length;
+  const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
 
   function handleRefresh() {
     router.refresh();
+  }
+
+  function handleSaveTitle() {
+    if (!titleValue.trim()) return;
+    startTransition(async () => {
+      await updateRepairTitle(repair.id, titleValue);
+      setEditingTitle(false);
+      toast.success(t("Title updated", "Título actualizado", "Titel bijgewerkt"));
+      router.refresh();
+    });
+  }
+
+  function handleMarkDone() {
+    startTransition(async () => {
+      await garageMarkDone(repair.id);
+      toast.success(t("Marked as done", "Marcado como hecho", "Klaar gemeld"));
+      router.refresh();
+    });
+  }
+
+  function handleMarkNotDone() {
+    if (!notDoneReason.trim()) return;
+    startTransition(async () => {
+      await garageMarkNotDone(repair.id, notDoneReason);
+      setNotDoneReason("");
+      setShowNotDone(false);
+      toast.success(t("Status updated", "Estado actualizado", "Status bijgewerkt"));
+      router.refresh();
+    });
   }
 
   function handleAddComment() {
@@ -115,7 +153,33 @@ export function GarageRepairDetailClient({ repair }: Props) {
               {PRIORITY_LABELS[repair.priority as Priority]}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
+          {/* Editable title */}
+          {editingTitle ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                className="flex-1 rounded-lg border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveTitle();
+                  if (e.key === "Escape") setEditingTitle(false);
+                }}
+              />
+              <button onClick={handleSaveTitle} disabled={isPending} className="text-sm font-medium text-green-600 active:opacity-70">✓</button>
+              <button onClick={() => setEditingTitle(false)} className="text-sm text-muted-foreground active:opacity-70">✕</button>
+            </div>
+          ) : (
+            <p
+              className="text-sm text-muted-foreground mt-1 active:opacity-70 cursor-pointer"
+              onClick={() => setEditingTitle(true)}
+              title={t("Tap to edit title", "Toca para editar", "Tik om titel te wijzigen")}
+            >
+              {repair.title || <span className="italic">{t("No title — tap to add", "Sin título", "Geen titel — tik om toe te voegen")}</span>}
+              <span className="ml-1 text-xs opacity-50">✎</span>
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground mt-0.5">
             {repair.unitRegistration && <span className="font-medium mr-2">{repair.unitRegistration}</span>}
             {[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ")}
             {repair.customerName && <span> — {repair.customerName}</span>}
@@ -229,6 +293,34 @@ export function GarageRepairDetailClient({ repair }: Props) {
           </div>
         )}
 
+        {/* Not done reason form (expandable) */}
+        {showNotDone && (
+          <div className="rounded-xl border border-orange-300 bg-orange-50/50 p-4 space-y-3">
+            <h3 className="text-sm font-bold text-orange-700">
+              ⚠️ {t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}
+            </h3>
+            <textarea
+              value={notDoneReason}
+              onChange={(e) => setNotDoneReason(e.target.value)}
+              placeholder={t("Describe the problem...", "Describe el problema...", "Beschrijf het probleem...")}
+              className="w-full rounded-xl border p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowNotDone(false)} className="flex-1 h-11 rounded-xl">
+                {t("Cancel", "Cancelar", "Annuleren")}
+              </Button>
+              <Button
+                onClick={handleMarkNotDone}
+                disabled={!notDoneReason.trim() || isPending}
+                className="flex-1 h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                {t("Submit", "Enviar", "Verstuur")}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Suggest task form (expandable) */}
         {showSuggest && (
           <div className="rounded-xl border p-4 space-y-3">
@@ -261,9 +353,28 @@ export function GarageRepairDetailClient({ repair }: Props) {
       </div>
 
       {/* Bottom action bar (fixed) */}
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-card/95 backdrop-blur-xl px-4 py-3 flex gap-2 safe-area-pb">
-        {!showComment && !showSuggest && (
-          <>
+      <div className="fixed bottom-0 left-0 right-0 border-t bg-card/95 backdrop-blur-xl px-4 py-3 safe-area-pb space-y-2">
+        {/* Done / Not Done buttons (when repair is active) */}
+        {isActive && !showComment && !showSuggest && !showNotDone && (
+          <div className="flex gap-2">
+            <button
+              onClick={handleMarkDone}
+              disabled={isPending}
+              className="flex-1 rounded-xl bg-green-500 text-white p-3 text-sm font-bold active:bg-green-600 transition-colors disabled:opacity-50"
+            >
+              ✓ {t("Done", "Listo", "Klaar")}
+            </button>
+            <button
+              onClick={() => setShowNotDone(true)}
+              className="flex-1 rounded-xl bg-orange-500 text-white p-3 text-sm font-bold active:bg-orange-600 transition-colors"
+            >
+              ✗ {t("Not Done", "No Listo", "Niet Klaar")}
+            </button>
+          </div>
+        )}
+        {/* Secondary actions */}
+        {!showComment && !showSuggest && !showNotDone && (
+          <div className="flex gap-2">
             <button
               onClick={() => setShowComment(true)}
               className="flex-1 rounded-xl border p-3 text-sm font-medium active:bg-muted transition-colors"
@@ -284,7 +395,7 @@ export function GarageRepairDetailClient({ repair }: Props) {
                 🔍 {t("Final Check", "Control", "Natest")}
               </button>
             )}
-          </>
+          </div>
         )}
       </div>
 

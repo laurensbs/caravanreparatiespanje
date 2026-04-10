@@ -1,4 +1,4 @@
-import { getRepairJobById } from "@/actions/repairs";
+import { getRepairJobById, getCustomerRepairs } from "@/actions/repairs";
 import { getCommunicationLogs } from "@/actions/communications";
 import { getParts } from "@/actions/parts";
 import { getAppSettings } from "@/actions/settings";
@@ -32,6 +32,10 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
   ]);
   if (!job) notFound();
 
+  const customerRepairs = job.customerId
+    ? await getCustomerRepairs(job.customerId, job.id)
+    : [];
+
   return (
     <RepairDetail
       job={job}
@@ -40,6 +44,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       backTo={sp.backTo}
       allTags={allTags}
       repairTags={repairTags}
+      customerRepairs={customerRepairs}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

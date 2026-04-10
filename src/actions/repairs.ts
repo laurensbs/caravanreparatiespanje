@@ -200,6 +200,29 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
   };
 }
 
+export async function getCustomerRepairs(customerId: string, excludeRepairId: string) {
+  await requireAuth();
+  return db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      status: repairJobs.status,
+      createdAt: repairJobs.createdAt,
+      completedAt: repairJobs.completedAt,
+    })
+    .from(repairJobs)
+    .where(
+      and(
+        eq(repairJobs.customerId, customerId),
+        isNull(repairJobs.deletedAt),
+        sql`${repairJobs.id} != ${excludeRepairId}`
+      )
+    )
+    .orderBy(desc(repairJobs.updatedAt))
+    .limit(20);
+}
+
 export async function getRepairJobById(id: string) {
   await requireAuth();
 

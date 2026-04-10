@@ -62,6 +62,15 @@ interface PricingSettings {
   defaultTax: number;
 }
 
+interface CustomerRepairItem {
+  id: string;
+  publicCode: string | null;
+  title: string | null;
+  status: string;
+  createdAt: Date;
+  completedAt: Date | null;
+}
+
 interface RepairDetailProps {
   job: any;
   communicationLogs?: any[];
@@ -70,9 +79,10 @@ interface RepairDetailProps {
   settings?: PricingSettings;
   allTags?: TagItem[];
   repairTags?: TagItem[];
+  customerRepairs?: CustomerRepairItem[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -935,6 +945,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </CardContent>
           </Card>
 
+          {/* Customer Repairs */}
+          {job.customer && customerRepairs.length > 0 && (
+            <CustomerRepairsCard repairs={customerRepairs} customerName={job.customer.name} />
+          )}
+
           {/* Holded Documents */}
           <HoldedDocumentsCard
             job={job}
@@ -1549,6 +1564,64 @@ function HoldedDocumentsCard({
               Verify Holded Links
             </Button>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Customer Repairs Card ───
+
+function CustomerRepairsCard({ repairs, customerName }: { repairs: CustomerRepairItem[]; customerName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? repairs : repairs.slice(0, 5);
+
+  return (
+    <Card className="rounded-xl">
+      <CardContent className="pt-5">
+        <p className="flex items-center gap-2 text-xs font-semibold mb-3">
+          <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+          {customerName}&apos;s Repairs
+          <span className="text-muted-foreground font-normal">({repairs.length})</span>
+        </p>
+        <div className="space-y-1">
+          {shown.map((r) => (
+            <Link
+              key={r.id}
+              href={`/repairs/${r.id}`}
+              className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors group"
+            >
+              <div className="min-w-0 flex-1">
+                <span className="text-xs font-medium group-hover:text-primary truncate block">
+                  {r.publicCode ? `${r.publicCode} — ` : ""}{r.title ?? "Untitled"}
+                </span>
+                {r.completedAt && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {format(new Date(r.completedAt), "dd MMM yyyy")}
+                  </span>
+                )}
+              </div>
+              <Badge
+                variant="secondary"
+                className={`text-[9px] px-1.5 py-0 shrink-0 ml-2 ${STATUS_COLORS[r.status as RepairStatus] ?? ""}`}
+              >
+                {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+        {repairs.length > 5 && (
+          <Button
+            variant="ghost" size="sm"
+            className="w-full text-xs text-muted-foreground mt-1"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? (
+              <><ChevronUp className="h-3 w-3 mr-1" /> Show less</>
+            ) : (
+              <><ChevronDown className="h-3 w-3 mr-1" /> Show all {repairs.length}</>
+            )}
+          </Button>
         )}
       </CardContent>
     </Card>

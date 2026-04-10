@@ -343,7 +343,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-5 lg:col-span-2">
-          {/* Issue description */}
+          {/* Issue description + notes merged */}
           <Card className="rounded-xl" ref={descriptionRef}>
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center justify-between">
@@ -384,6 +384,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <p className="text-sm text-muted-foreground">{job.descriptionNormalized}</p>
                 </div>
               )}
+              {/* Notes — collapsed into description card */}
+              <div className="mt-3 pt-3 border-t space-y-2">
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Team notes..."
+                  className="rounded-lg text-sm resize-none"
+                />
+                <details className="group">
+                  <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+                    Internal only ▸
+                  </summary>
+                  <Textarea
+                    value={internalComments}
+                    onChange={(e) => setInternalComments(e.target.value)}
+                    rows={2}
+                    placeholder="Private staff notes..."
+                    className="rounded-lg text-sm resize-none mt-1.5"
+                  />
+                </details>
+              </div>
             </CardContent>
           </Card>
 
@@ -401,6 +423,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </CardContent>
             </Card>
           )}
+
+          {/* Garage Tasks — moved UP */}
+          <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
 
           {/* Cost Estimate Builder */}
           <Card className="rounded-xl" ref={costRef}>
@@ -600,101 +625,29 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </HoldedHint>
             </CardContent>
           </Card>
-          <Card className="rounded-xl">
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <StickyNote className="h-4 w-4 text-muted-foreground" />
-                Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3 space-y-3">
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                placeholder="Add notes visible to all team members..."
-                className="rounded-lg text-sm resize-none"
-              />
-              <div>
-                <p className="text-[11px] text-muted-foreground mb-1">Internal only</p>
-                <Textarea
-                  value={internalComments}
-                  onChange={(e) => setInternalComments(e.target.value)}
-                  rows={2}
-                  placeholder="Private staff notes..."
-                  className="rounded-lg text-sm resize-none"
-                />
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Garage Tasks */}
-          <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
-
-          {/* Timeline */}
-          {job.events.length > 0 && (
-            <Card className="rounded-xl">
-              <CardHeader className="pb-1">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-3">
-                <div className="space-y-0">
-                  {job.events.map((event: any, idx: number) => (
-                    <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
-                      {idx < job.events.length - 1 && (
-                        <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-border" />
-                      )}
-                      <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-primary/30 bg-background" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-1.5 text-xs">
-                          <span className="font-medium">{event.userName ?? "System"}</span>
-                          <span className="text-muted-foreground">{event.eventType.replace(/_/g, " ")}</span>
-                          <span className="ml-auto text-[11px] text-muted-foreground/70 whitespace-nowrap">
-                            <SmartDate date={event.createdAt} />
-                          </span>
-                        </div>
-                        {event.fieldChanged && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {event.fieldChanged}: {event.oldValue} → {event.newValue}
-                          </p>
-                        )}
-                        {event.comment && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{event.comment}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Timeline + Communication — merged into tabs */}
+          {(job.events.length > 0 || communicationLogs.length > 0) && (
+            <TimelineCommunicationCard
+              events={job.events}
+              repairJobId={job.id}
+              communicationLogs={communicationLogs}
+              customerName={job.customer?.name}
+              communicationRef={communicationRef}
+            />
           )}
-
-          {/* Communication Log */}
-          <Card className="rounded-xl" ref={communicationRef}>
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                Communication Log
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3">
-              <CommunicationLogPanel
-                repairJobId={job.id}
-                logs={communicationLogs}
-                customerName={job.customer?.name}
-              />
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-5">
-          {/* Status + Info — merged card */}
+        {/* ═══ SIDEBAR ═══ */}
+        <div className="space-y-4">
+
+          {/* ── 📋 OFFICE card (neutral) ── */}
           <Card className="rounded-xl">
-            <CardContent className="space-y-3 pt-5">
+            <CardContent className="space-y-3 pt-4">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <FileText className="h-3.5 w-3.5" />
+                Office
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[11px] text-muted-foreground">Status</Label>
@@ -712,58 +665,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1 h-8 text-xs rounded-lg" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Invoice</Label>
-                  <Select value={invoiceStatus} onValueChange={(val) => {
-                    setInvoiceStatus(val);
-                    // Auto-set repair status + contact to rejected/declined when invoice is rejected
-                    if (val === "rejected") {
-                      setStatus("rejected");
-                      setCustomerResponseStatus("declined");
-                    }
-                  }}>
-                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
-                        <SelectItem key={val} value={val}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Contact</Label>
-                  <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
-                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
-                        <SelectItem key={val} value={val}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer py-1">
-                <Checkbox
-                  checked={warrantyFlag}
-                  onCheckedChange={(checked) => {
-                    const val = checked === true;
-                    setWarrantyFlag(val);
-                    if (val) {
-                      setInvoiceStatus("warranty");
-                      if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                        setStatus("completed");
-                      }
-                    } else if (!val && invoiceStatus === "warranty") {
-                      setInvoiceStatus("not_invoiced");
-                    }
-                  }}
-                />
-                <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
-              </label>
 
-              {/* Info section — integrated */}
-              <div className="border-t pt-3 space-y-2.5 text-sm">
+              {/* Info rows */}
+              <div className="border-t pt-2.5 space-y-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" />
@@ -785,27 +689,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </span>
                   <span className="text-xs font-medium text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    <User className="h-3.5 w-3.5" />
-                    Contact
-                  </span>
-                  {job.customer ? (
-                    <span className="flex items-center gap-1.5">
-                      <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
-                        {job.customer.name}
-                      </Link>
-                      <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit customer">
-                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                      </button>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </div>
-                {expandCustomer && job.customer && (
-                  <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
-                )}
                 {job.unit && (
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground">
@@ -836,20 +719,142 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 )}
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-muted-foreground">
-                    <User className="h-3.5 w-3.5" />
-                    Assigned
-                  </span>
-                  <span className="font-medium text-right">{job.assignedUser?.name ?? "Unassigned"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground">
                     <CalendarDays className="h-3.5 w-3.5" />
                     Created
                   </span>
                   <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
                 </div>
-                {job.holdedInvoiceDate && (
+              </div>
+              {job.sourceSheet && (
+                <div className="border-t pt-2.5">
                   <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Source</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">{job.sourceSheet}</span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── 🔧 GARAGE card (blue tint) ── */}
+          <Card className="rounded-xl border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
+            <CardContent className="space-y-3 pt-4">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                <Wrench className="h-3.5 w-3.5" />
+                Garage
+              </p>
+
+              {/* Assigned tech */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Assigned</span>
+                <span className="font-medium">{job.assignedUser?.name ?? "Unassigned"}</span>
+              </div>
+
+              {/* Planning */}
+              <PlanningDateRow jobId={job.id} dueDate={job.dueDate} />
+
+              {/* Send to Garage */}
+              <SendToGarageButton jobId={job.id} status={job.status} dueDate={job.dueDate} />
+
+              {/* Flags */}
+              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium mb-2">Inspection Flags</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {([
+                    { label: "Water Damage", value: waterDamageFlag, set: setWaterDamageFlag, danger: true },
+                    { label: "Safety", value: safetyFlag, set: setSafetyFlag, danger: true },
+                    { label: "Tyres", value: tyresFlag, set: setTyresFlag, danger: false },
+                    { label: "Lighting", value: lightsFlag, set: setLightsFlag, danger: false },
+                    { label: "Brakes", value: brakesFlag, set: setBrakesFlag, danger: true },
+                    { label: "Windows", value: windowsFlag, set: setWindowsFlag, danger: false },
+                    { label: "Seals", value: sealsFlag, set: setSealsFlag, danger: false },
+                    { label: "Parts Req.", value: partsRequiredFlag, set: setPartsRequiredFlag, danger: false },
+                    { label: "Follow-up", value: followUpRequiredFlag, set: setFollowUpRequiredFlag, danger: false },
+                    { label: "Prepaid", value: prepaidFlag, set: setPrepaidFlag, danger: false },
+                  ] as const).map((flag) => (
+                    <button
+                      key={flag.label}
+                      type="button"
+                      onClick={() => flag.set(!flag.value)}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
+                        flag.value
+                          ? flag.danger
+                            ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
+                            : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                          : "bg-white/60 dark:bg-white/5 text-muted-foreground border-blue-100 dark:border-blue-800/40 hover:border-blue-300"
+                      }`}
+                    >
+                      {flag.value && <span className="mr-1">✓</span>}
+                      {flag.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── 👤 CUSTOMER card (green tint) ── */}
+          <Card className="rounded-xl border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20">
+            <CardContent className="space-y-3 pt-4">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <User className="h-3.5 w-3.5" />
+                Customer
+              </p>
+
+              {/* Customer name + edit */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Contact</span>
+                {job.customer ? (
+                  <span className="flex items-center gap-1.5">
+                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
+                      {job.customer.name}
+                    </Link>
+                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit customer">
+                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                    </button>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </div>
+              {expandCustomer && job.customer && (
+                <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
+              )}
+
+              {/* Customer response */}
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Response</Label>
+                <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
+                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Invoice + pricing */}
+              <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 pt-3 space-y-2.5">
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Invoice</Label>
+                  <Select value={invoiceStatus} onValueChange={(val) => {
+                    setInvoiceStatus(val);
+                    if (val === "rejected") {
+                      setStatus("rejected");
+                      setCustomerResponseStatus("declined");
+                    }
+                  }}>
+                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {job.holdedInvoiceDate && (
+                  <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <Receipt className="h-3.5 w-3.5" />
                       Invoice Date
@@ -857,32 +862,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <span className="text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
                   </div>
                 )}
-                {job.dueDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      Due Date
-                    </span>
-                    <span className="text-right">{format(new Date(job.dueDate), "dd MMM yyyy")}</span>
-                  </div>
-                )}
-                {/* Planning date — editable */}
-                <PlanningDateRow jobId={job.id} dueDate={job.dueDate} />
-                {/* Send to Garage (today) */}
-                <SendToGarageButton jobId={job.id} status={job.status} dueDate={job.dueDate} />
-              </div>
 
-              {/* Costs section — integrated */}
-              {(job.estimatedCost || job.actualCost || true) && (
-                <div className="border-t pt-2.5 mt-2.5 space-y-2.5">
+                {/* Costs */}
+                <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="shrink-0">
-                      <span className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        Estimated
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/60 ml-5.5 leading-none">→ for quote</span>
-                    </div>
+                    <span className="text-muted-foreground text-sm shrink-0">Estimated</span>
                     <div className="relative w-28">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                       <Input
@@ -897,13 +881,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <div className="shrink-0">
-                      <span className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        Actual
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/60 ml-5.5 leading-none">→ for invoice</span>
-                    </div>
+                    <span className="text-muted-foreground text-sm shrink-0">Actual</span>
                     <div className="relative w-28">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                       <Input
@@ -918,10 +896,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-orange-600 dark:text-orange-400 shrink-0">
-                      <DollarSign className="h-3.5 w-3.5" />
-                      Our Cost
-                    </span>
+                    <span className="text-orange-600 dark:text-orange-400 text-sm shrink-0">Our Cost</span>
                     <div className="relative w-28">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                       <Input
@@ -936,62 +911,27 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </div>
                   </div>
                 </div>
-              )}
-              {job.sourceSheet && (
-                <div className="border-t pt-2.5 mt-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Source</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">{job.sourceSheet}</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Flags — compact toggleable pills */}
-          <Card className="rounded-xl">
-            <CardContent className="pt-5">
-              <p className="flex items-center gap-2 text-xs font-semibold mb-3">
-                <Flag className="h-3.5 w-3.5 text-muted-foreground" />
-                Flags
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {([
-                  { label: "Water Damage", value: waterDamageFlag, set: setWaterDamageFlag, danger: true },
-                  { label: "Safety", value: safetyFlag, set: setSafetyFlag, danger: true },
-                  { label: "Tyres", value: tyresFlag, set: setTyresFlag, danger: false },
-                  { label: "Lighting", value: lightsFlag, set: setLightsFlag, danger: false },
-                  { label: "Brakes", value: brakesFlag, set: setBrakesFlag, danger: false },
-                  { label: "Windows", value: windowsFlag, set: setWindowsFlag, danger: false },
-                  { label: "Seals", value: sealsFlag, set: setSealsFlag, danger: false },
-                  { label: "Parts Required", value: partsRequiredFlag, set: setPartsRequiredFlag, danger: false },
-                  { label: "Follow-up", value: followUpRequiredFlag, set: setFollowUpRequiredFlag, danger: false },
-                  { label: "Prepaid", value: prepaidFlag, set: setPrepaidFlag, danger: false },
-                ] as const).map((flag) => (
-                  <button
-                    key={flag.label}
-                    type="button"
-                    onClick={() => flag.set(!flag.value)}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer border ${
-                      flag.value
-                        ? flag.danger
-                          ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
-                          : "bg-primary/10 text-primary border-primary/20"
-                        : "bg-muted/50 text-muted-foreground border-transparent hover:border-border"
-                    }`}
-                  >
-                    {flag.value && <span className="mr-1">✓</span>}
-                    {flag.label}
-                  </button>
-                ))}
+                <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                  <Checkbox
+                    checked={warrantyFlag}
+                    onCheckedChange={(checked) => {
+                      const val = checked === true;
+                      setWarrantyFlag(val);
+                      if (val) {
+                        setInvoiceStatus("warranty");
+                        if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                          setStatus("completed");
+                        }
+                      } else if (!val && invoiceStatus === "warranty") {
+                        setInvoiceStatus("not_invoiced");
+                      }
+                    }}
+                  />
+                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Our Cost (warranty / internal)</span>
+                </label>
               </div>
             </CardContent>
           </Card>
-
-          {/* Customer Repairs */}
-          {job.customer && customerRepairs.length > 0 && (
-            <CustomerRepairsCard repairs={customerRepairs} customerName={job.customer.name} />
-          )}
 
           {/* Holded Documents */}
           <div ref={holdedRef}>
@@ -1003,6 +943,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             router={router}
           />
           </div>
+
+          {/* Customer Repairs */}
+          {job.customer && customerRepairs.length > 0 && (
+            <CustomerRepairsCard repairs={customerRepairs} customerName={job.customer.name} />
+          )}
 
           {/* Delete job */}
           <div className="pt-2">
@@ -1016,6 +961,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {deleting ? <Spinner className="mr-2" /> : <Trash2 className="h-3 w-3 mr-1" />}
               Delete Repair Job
             </Button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Customer Linker Dialog ── */}
       <Dialog open={showCustomerLinker} onOpenChange={setShowCustomerLinker}>
@@ -1073,10 +1021,97 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
         </DialogContent>
       </Dialog>
-          </div>
-        </div>
-      </div>
     </div>
+  );
+}
+
+// ─── Timeline + Communication (tabbed) ───
+
+function TimelineCommunicationCard({
+  events,
+  repairJobId,
+  communicationLogs,
+  customerName,
+  communicationRef,
+}: {
+  events: any[];
+  repairJobId: string;
+  communicationLogs: any[];
+  customerName?: string;
+  communicationRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [tab, setTab] = useState<"timeline" | "comms">("comms");
+  return (
+    <Card className="rounded-xl" ref={communicationRef}>
+      <CardHeader className="pb-1">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setTab("comms")}
+            className={`flex items-center gap-1.5 text-sm font-semibold pb-0.5 border-b-2 transition-colors ${
+              tab === "comms" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Comms
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("timeline")}
+            className={`flex items-center gap-1.5 text-sm font-semibold pb-0.5 border-b-2 transition-colors ${
+              tab === "timeline" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Clock className="h-4 w-4" />
+            Timeline
+            {events.length > 0 && (
+              <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-1.5">{events.length}</span>
+            )}
+          </button>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-3">
+        {tab === "comms" ? (
+          <CommunicationLogPanel
+            repairJobId={repairJobId}
+            logs={communicationLogs}
+            customerName={customerName}
+          />
+        ) : (
+          <div className="space-y-0">
+            {events.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground py-2">No timeline events yet.</p>
+            ) : (
+              events.map((event: any, idx: number) => (
+                <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
+                  {idx < events.length - 1 && (
+                    <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-border" />
+                  )}
+                  <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-primary/30 bg-background" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5 text-xs">
+                      <span className="font-medium">{event.userName ?? "System"}</span>
+                      <span className="text-muted-foreground">{event.eventType.replace(/_/g, " ")}</span>
+                      <span className="ml-auto text-[11px] text-muted-foreground/70 whitespace-nowrap">
+                        <SmartDate date={event.createdAt} />
+                      </span>
+                    </div>
+                    {event.fieldChanged && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {event.fieldChanged}: {event.oldValue} → {event.newValue}
+                      </p>
+                    )}
+                    {event.comment && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{event.comment}</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

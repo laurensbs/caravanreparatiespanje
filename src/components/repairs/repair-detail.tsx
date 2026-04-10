@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
+import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
@@ -75,6 +76,16 @@ interface CustomerRepairItem {
   completedAt: Date | null;
 }
 
+interface PartRequestItem {
+  id: string;
+  partName: string;
+  quantity: number;
+  status: string;
+  expectedDelivery: Date | string | null;
+  supplierName: string | null;
+  notes: string | null;
+}
+
 interface UserItem {
   id: string;
   name: string | null;
@@ -92,9 +103,10 @@ interface RepairDetailProps {
   customerRepairs?: CustomerRepairItem[];
   users?: UserItem[];
   tasks?: RepairTask[];
+  partRequests?: PartRequestItem[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -135,6 +147,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const discountAmount = costLinesSubtotal * (discountPercent / 100);
   const costLinesTotal = costLinesSubtotal - discountAmount;
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
+
+  // Part requests state
+  const [addingPartName, setAddingPartName] = useState("");
+  const [showAddPart, setShowAddPart] = useState(false);
+  const [partRequestsPending, startPartTransition] = useTransition();
 
   // Push repair context to the global assistant
   useEffect(() => {
@@ -790,6 +807,116 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Part Requests */}
+              <div className="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 font-medium flex items-center gap-1.5">
+                    <Package className="h-3 w-3" />
+                    Parts
+                    {partRequests.length > 0 && (
+                      <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        partRequests.every(p => p.status === "received" || p.status === "cancelled")
+                          ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                          : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
+                      }`}>
+                        {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
+                      </span>
+                    )}
+                  </p>
+                  {!showAddPart && (
+                    <button
+                      onClick={() => setShowAddPart(true)}
+                      className="text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-0.5"
+                    >
+                      <Plus className="h-3 w-3" /> Add
+                    </button>
+                  )}
+                </div>
+
+                {/* Inline add form */}
+                {showAddPart && (
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Input
+                      value={addingPartName}
+                      onChange={(e) => setAddingPartName(e.target.value)}
+                      placeholder="Part name..."
+                      className="h-7 text-xs flex-1"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && addingPartName.trim()) {
+                          startPartTransition(async () => {
+                            await createPartRequest({ repairJobId: job.id, partName: addingPartName });
+                            setAddingPartName("");
+                            setShowAddPart(false);
+                            router.refresh();
+                          });
+                        }
+                        if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        if (!addingPartName.trim()) return;
+                        startPartTransition(async () => {
+                          await createPartRequest({ repairJobId: job.id, partName: addingPartName });
+                          setAddingPartName("");
+                          setShowAddPart(false);
+                          router.refresh();
+                        });
+                      }}
+                      disabled={!addingPartName.trim() || partRequestsPending}
+                      className="text-green-600 hover:text-green-700 disabled:opacity-50"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground">
+                      <XIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {partRequests.length > 0 ? (
+                  <div className="space-y-1">
+                    {partRequests.map((pr) => (
+                      <div key={pr.id} className="flex items-center justify-between text-xs py-1 group">
+                        <span className="truncate mr-2">
+                          {pr.partName}
+                          {pr.quantity > 1 && <span className="text-muted-foreground"> ×{pr.quantity}</span>}
+                        </span>
+                        <Select
+                          value={pr.status}
+                          onValueChange={(newStatus) => {
+                            startPartTransition(async () => {
+                              await updatePartRequestStatus(pr.id, newStatus as any);
+                              router.refresh();
+                            });
+                          }}
+                        >
+                          <SelectTrigger className={`h-6 w-[100px] text-[10px] font-semibold rounded-full border-0 ${
+                            pr.status === "received" ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" :
+                            pr.status === "shipped" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400" :
+                            pr.status === "ordered" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400" :
+                            pr.status === "cancelled" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" :
+                            "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400"
+                          }`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="requested">⏳ Requested</SelectItem>
+                            <SelectItem value="ordered">📋 Ordered</SelectItem>
+                            <SelectItem value="shipped">🚚 Shipped</SelectItem>
+                            <SelectItem value="received">✓ Received</SelectItem>
+                            <SelectItem value="cancelled">✗ Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                ) : !showAddPart ? (
+                  <p className="text-[11px] text-muted-foreground">No parts requested</p>
+                ) : null}
               </div>
             </CardContent>
           </Card>

@@ -8,7 +8,7 @@ import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
-import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone } from "@/actions/garage";
+import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, garageRequestPart } from "@/actions/garage";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority } from "@/types";
 import { toast } from "sonner";
@@ -52,6 +52,16 @@ type RepairDetail = {
   followUpRequiredFlag: boolean;
   tasks: RepairTask[];
   photos: RepairPhoto[];
+  partRequests: {
+    id: string;
+    partName: string;
+    quantity: number;
+    status: string;
+    expectedDelivery: Date | string | null;
+    receivedDate: Date | string | null;
+    notes: string | null;
+    supplierName: string | null;
+  }[];
 };
 
 interface Props {
@@ -77,6 +87,10 @@ export function GarageRepairDetailClient({ repair }: Props) {
   // Not done reason
   const [showNotDone, setShowNotDone] = useState(false);
   const [notDoneReason, setNotDoneReason] = useState("");
+
+  // Request part
+  const [showRequestPart, setShowRequestPart] = useState(false);
+  const [requestPartName, setRequestPartName] = useState("");
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -153,6 +167,17 @@ export function GarageRepairDetailClient({ repair }: Props) {
       setSuggestDesc("");
       setShowSuggest(false);
       toast.success(t("Task suggested", "Tarea sugerida", "Taak voorgesteld"));
+      router.refresh();
+    });
+  }
+
+  function handleRequestPart() {
+    if (!requestPartName.trim()) return;
+    startTransition(async () => {
+      await garageRequestPart(repair.id, requestPartName);
+      setRequestPartName("");
+      setShowRequestPart(false);
+      toast.success(t("Part requested", "Pieza solicitada", "Onderdeel aangevraagd"));
       router.refresh();
     });
   }
@@ -311,6 +336,98 @@ export function GarageRepairDetailClient({ repair }: Props) {
             )}
             {repair.internalComments && (
               <p className="text-sm whitespace-pre-wrap mt-2 text-muted-foreground italic">{repair.internalComments}</p>
+            )}
+          </div>
+        )}
+
+        {/* Parts status */}
+        {(repair.partRequests.length > 0 || repair.partsRequiredFlag) && (
+          <div className="rounded-xl border bg-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-orange-700 dark:text-orange-400">
+                📦 {t("Parts", "Piezas", "Onderdelen")}
+              </h3>
+              {repair.partRequests.length > 0 && (
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  repair.partRequests.every(p => p.status === "received")
+                    ? "bg-green-100 text-green-700"
+                    : "bg-orange-100 text-orange-700"
+                }`}>
+                  {repair.partRequests.filter(p => p.status === "received").length}/{repair.partRequests.length} {t("received", "recibidas", "ontvangen")}
+                </span>
+              )}
+            </div>
+            {repair.partRequests.length > 0 ? (
+              <div className="space-y-2">
+                {repair.partRequests.map((pr) => (
+                  <div key={pr.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
+                    <div className="min-w-0">
+                      <span className="font-medium">{pr.partName}</span>
+                      {pr.quantity > 1 && <span className="text-muted-foreground ml-1">×{pr.quantity}</span>}
+                      {pr.supplierName && <span className="text-xs text-muted-foreground ml-2">{pr.supplierName}</span>}
+                    </div>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ml-2 ${
+                      pr.status === "received" ? "bg-green-100 text-green-700" :
+                      pr.status === "shipped" ? "bg-indigo-100 text-indigo-700" :
+                      pr.status === "ordered" ? "bg-blue-100 text-blue-700" :
+                      pr.status === "cancelled" ? "bg-gray-100 text-gray-500" :
+                      "bg-yellow-100 text-yellow-700"
+                    }`}>
+                      {pr.status === "received" ? "✓" :
+                       pr.status === "shipped" ? "🚚" :
+                       pr.status === "ordered" ? "📋" :
+                       pr.status === "cancelled" ? "✗" : "⏳"}{" "}
+                      {t(
+                        pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
+                        pr.status === "received" ? "Recibida" :
+                        pr.status === "shipped" ? "Enviada" :
+                        pr.status === "ordered" ? "Pedida" :
+                        pr.status === "cancelled" ? "Cancelada" : "Solicitada",
+                        pr.status === "received" ? "Ontvangen" :
+                        pr.status === "shipped" ? "Onderweg" :
+                        pr.status === "ordered" ? "Besteld" :
+                        pr.status === "cancelled" ? "Geannuleerd" : "Aangevraagd"
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("Parts required — none ordered yet", "Se necesitan piezas — ninguna pedida", "Onderdelen nodig — nog niet besteld")}
+              </p>
+            )}
+            {/* Technician can request a part */}
+            {isActive && !showRequestPart && (
+              <button
+                onClick={() => setShowRequestPart(true)}
+                className="mt-3 w-full rounded-xl border border-dashed border-orange-300 p-2.5 text-sm text-orange-600 font-medium active:bg-orange-50 transition-colors"
+              >
+                + {t("Request Part", "Solicitar Pieza", "Onderdeel Aanvragen")}
+              </button>
+            )}
+            {showRequestPart && (
+              <div className="mt-3 space-y-2">
+                <input
+                  value={requestPartName}
+                  onChange={(e) => setRequestPartName(e.target.value)}
+                  placeholder={t("Part name...", "Nombre de pieza...", "Naam onderdeel...")}
+                  className="w-full rounded-xl border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRequestPart();
+                    if (e.key === "Escape") setShowRequestPart(false);
+                  }}
+                />
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowRequestPart(false)} className="flex-1 h-10 rounded-xl">
+                    {t("Cancel", "Cancelar", "Annuleren")}
+                  </Button>
+                  <Button onClick={handleRequestPart} disabled={!requestPartName.trim() || isPending} className="flex-1 h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
+                    {t("Request", "Solicitar", "Aanvragen")}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         )}

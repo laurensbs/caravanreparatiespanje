@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders } from "@/lib/db/schema";
+import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -233,9 +233,28 @@ export async function getGarageRepairsToday() {
     ])
   );
 
+  // Get part request counts per job
+  const partCounts = await db
+    .select({
+      repairJobId: partRequests.repairJobId,
+      total: count(),
+      received: sql<number>`count(*) filter (where ${partRequests.status} = 'received')`,
+      pending: sql<number>`count(*) filter (where ${partRequests.status} in ('requested', 'ordered', 'shipped'))`,
+    })
+    .from(partRequests)
+    .groupBy(partRequests.repairJobId);
+
+  const partsMap = new Map(
+    partCounts.map((c) => [
+      c.repairJobId,
+      { total: Number(c.total), received: Number(c.received), pending: Number(c.pending) },
+    ])
+  );
+
   return jobs.map((job) => ({
     ...job,
     tasks: countsMap.get(job.id) ?? { total: 0, done: 0, problem: 0 },
+    parts: partsMap.get(job.id) ?? { total: 0, received: 0, pending: 0 },
   }));
 }
 
@@ -306,7 +325,25 @@ export async function getGarageRepairDetail(id: string) {
     .where(eq(repairPhotos.repairJobId, id))
     .orderBy(desc(repairPhotos.createdAt));
 
-  return { ...job, tasks, photos };
+  // Fetch part requests for this repair
+  const jobPartRequests = await db
+    .select({
+      id: partRequests.id,
+      partName: partRequests.partName,
+      quantity: partRequests.quantity,
+      status: partRequests.status,
+      expectedDelivery: partRequests.expectedDelivery,
+      receivedDate: partRequests.receivedDate,
+      notes: partRequests.notes,
+      supplierName: suppliers.name,
+    })
+    .from(partRequests)
+    .leftJoin(parts, eq(partRequests.partId, parts.id))
+    .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
+    .where(eq(partRequests.repairJobId, id))
+    .orderBy(desc(partRequests.createdAt));
+
+  return { ...job, tasks, photos, partRequests: jobPartRequests };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -514,6 +551,51 @@ export async function suggestExtraTask(
   );
 
   return task;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REQUEST PART (from garage — creates a part request + notifies office)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function garageRequestPart(repairJobId: string, partName: string) {
+  const session = await requireAuth();
+
+  const [request] = await db
+    .insert(partRequests)
+    .values({
+      repairJobId,
+      partName,
+      quantity: 1,
+      status: "requested",
+      notes: `Requested by garage (${session.user.name ?? "technician"})`,
+    })
+    .returning();
+
+  // Log event
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "part_requested",
+    comment: `Garage requested part: "${partName}"`,
+  });
+
+  // Notify office
+  const [jobInfo] = await db
+    .select({ publicCode: repairJobs.publicCode })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId));
+  await notifyOffice(
+    repairJobId,
+    `📦 Onderdeel aangevraagd — ${jobInfo?.publicCode ?? ""}`,
+    `"${partName}"`,
+    "garage_part_request"
+  );
+
+  revalidatePath(`/garage/repairs/${repairJobId}`);
+  revalidatePath(`/repairs/${repairJobId}`);
+  revalidatePath("/parts");
+
+  return request;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

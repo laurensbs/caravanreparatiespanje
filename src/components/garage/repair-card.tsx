@@ -16,6 +16,7 @@ interface RepairCardProps {
   unitModel: string | null;
   assignedUserName: string | null;
   tasks: { total: number; done: number; problem: number };
+  parts: { total: number; received: number; pending: number };
   finalCheckStatus: string | null;
 }
 
@@ -100,11 +101,24 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
           </div>
         )}
 
-        {/* Assigned tech */}
-        {repair.assignedUserName && (
-          <p className="text-xs text-muted-foreground mt-2">
-            👤 {repair.assignedUserName}
-          </p>
+        {/* Assigned tech + Parts status */}
+        {(repair.assignedUserName || repair.parts.total > 0) && (
+          <div className="flex items-center justify-between mt-2">
+            {repair.assignedUserName && (
+              <p className="text-xs text-muted-foreground">
+                👤 {repair.assignedUserName}
+              </p>
+            )}
+            {repair.parts.total > 0 && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                repair.parts.pending === 0
+                  ? "bg-green-100 text-green-700"
+                  : "bg-orange-100 text-orange-700"
+              }`}>
+                📦 {repair.parts.received}/{repair.parts.total}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </Link>

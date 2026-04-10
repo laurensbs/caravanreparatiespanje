@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
 import { repairJobs, customers, locations } from "@/lib/db/schema";
-import { eq, and, like, sql } from "drizzle-orm";
+import { eq, and, like, sql, isNull } from "drizzle-orm";
 import { createAuditLog } from "@/actions/audit";
 import type { RepairStatus } from "@/types";
 
@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
   const locationId = searchParams.get("locationId");
   const search = searchParams.get("q");
 
-  const conditions = [];
+  const conditions = [isNull(repairJobs.deletedAt)];
   if (status) conditions.push(eq(repairJobs.status, status));
   if (locationId) conditions.push(eq(repairJobs.locationId, locationId));
   if (search) conditions.push(like(repairJobs.title, `%${search}%`));
 
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
+  const where = and(...conditions);
 
   const jobs = await db
     .select({

@@ -6,7 +6,7 @@ import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, listAllQuotes, payInvoice, sendInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
 import { filterRepairInvoices, filterRepairQuotes } from "@/lib/holded/filter";
-import { eq, isNotNull } from "drizzle-orm";
+import { eq, isNotNull, isNull, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export interface InvoiceWithRepair extends HoldedInvoice {
@@ -37,7 +37,7 @@ export async function getAllInvoices(): Promise<InvoiceWithRepair[]> {
       customerId: repairJobs.customerId,
     })
     .from(repairJobs)
-    .where(isNotNull(repairJobs.holdedInvoiceId));
+    .where(and(isNotNull(repairJobs.holdedInvoiceId), isNull(repairJobs.deletedAt)));
 
   const repairByInvoice = new Map<string, { id: string; publicCode: string | null; customerId: string | null }>();
   for (const r of linkedRepairs) {
@@ -164,7 +164,7 @@ export async function getAllQuotes(): Promise<QuoteWithRepair[]> {
       holdedInvoiceId: repairJobs.holdedInvoiceId,
     })
     .from(repairJobs)
-    .where(isNotNull(repairJobs.holdedQuoteId));
+    .where(and(isNotNull(repairJobs.holdedQuoteId), isNull(repairJobs.deletedAt)));
 
   const repairByQuote = new Map<string, { id: string; publicCode: string | null; hasInvoice: boolean }>();
   for (const r of linkedRepairs) {

@@ -641,6 +641,7 @@ export async function getFollowUpItems() {
     .where(
       and(
         isNull(repairJobs.archivedAt),
+        isNull(repairJobs.deletedAt),
         or(
           // Waiting for customer with no contact or old contact
           and(

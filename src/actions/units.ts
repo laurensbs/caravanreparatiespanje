@@ -5,7 +5,7 @@ import { units, customers, repairJobs, unitTags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
-import { eq, desc, asc, ilike, or, and, count, inArray, gte, lte } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, count, inArray, gte, lte, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncCustomerToHolded } from "./holded";
 
@@ -94,7 +94,7 @@ export async function getUnitById(id: string) {
     db
       .select({ id: repairJobs.id, publicCode: repairJobs.publicCode, title: repairJobs.title, status: repairJobs.status })
       .from(repairJobs)
-      .where(eq(repairJobs.unitId, id))
+      .where(and(eq(repairJobs.unitId, id), isNull(repairJobs.deletedAt)))
       .orderBy(desc(repairJobs.updatedAt)),
   ]);
 

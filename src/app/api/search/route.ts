@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       .where(
         and(
           isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
           or(
             ilike(repairJobs.publicCode, pattern),
             ilike(repairJobs.title, pattern),

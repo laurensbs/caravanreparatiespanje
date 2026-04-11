@@ -17,7 +17,7 @@ import {
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, FileDown, Send, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -34,7 +34,6 @@ import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CustomerSearch } from "@/components/customers/customer-search";
-import { type RepairSuggestionActions } from "@/components/smart-suggestions";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 
@@ -268,31 +267,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const descriptionRef = useRef<HTMLDivElement>(null);
   const communicationRef = useRef<HTMLDivElement>(null);
   const costRef = useRef<HTMLDivElement>(null);
-  const holdedRef = useRef<HTMLDivElement>(null);
-
-  const suggestionActions: RepairSuggestionActions = {
-    onLinkCustomer: () => setShowCustomerLinker(true),
-    onAssignUser: () => setShowUserAssigner(true),
-    onCreateInvoice: () => costRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    onCreateQuote: () => costRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    onEditDescription: () => {
-      setEditingDescription(true);
-      setTimeout(() => descriptionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-    },
-    onEditEstimate: () => costRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    onOpenCommunication: () => communicationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    onClearFollowUp: () => {
-      setFollowUpRequiredFlag(false);
-      toast.info("Follow-up flag cleared — save to apply");
-    },
-  };
-
-  // Workflow step computation for Estimate → Quote → Invoice stepper
-  const hasEstimate = parseFloat(estimatedCost || "0") > 0;
-  const hasQuote = !!job.holdedQuoteId;
-  const hasInvoice = !!job.holdedInvoiceId;
-  const isPaid = job.invoiceStatus === "paid";
-  const workflowStep = isPaid ? 4 : hasInvoice ? 3 : hasQuote ? 2 : hasEstimate ? 1 : 0;
 
   async function handleSave() {
     setSaving(true);
@@ -810,401 +784,45 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </details>
           </div>
 
-          {/* ═══ FINANCIAL CLUSTER ═══ */}
+          {/* ═══ FINANCIAL ═══ */}
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mt-2">Financial</p>
 
-          {/* Cost Estimate Builder */}
+          {/* Unified Financial Workflow */}
           <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden" ref={costRef}>
-            <details open>
-              <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <span>Cost Estimate</span>
-                <div className="flex items-center gap-0">
-                  {[
-                    { label: "Estimate", done: hasEstimate, active: workflowStep === 0 },
-                    { label: "Quote", done: hasQuote, active: workflowStep === 1 },
-                    { label: "Invoice", done: hasInvoice, active: workflowStep === 2 || workflowStep === 3 },
-                    { label: "Paid", done: isPaid, active: workflowStep === 3 && !isPaid },
-                  ].map((s, i, arr) => (
-                    <div key={s.label} className="flex items-center">
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors ${
-                        s.done ? "text-emerald-600 dark:text-emerald-400" :
-                        s.active ? "text-foreground" :
-                        "text-muted-foreground/30"
-                      }`}>{s.label}</span>
-                      {i < arr.length - 1 && <span className={`text-[10px] ${s.done ? "text-emerald-400" : "text-muted-foreground/20"}`}>→</span>}
-                    </div>
-                  ))}
-                </div>
-              </summary>
-
-            <div className="px-6 pb-6">
-              {/* ── Pricing: Estimated (primary), Actual (auto from lines), Our Cost (subtle) ── */}
-              <div className="flex items-start gap-6 mb-5">
-                <div className="flex-[1.2]">
-                  <span className="text-xs font-medium text-foreground/70 block mb-1">Estimated</span>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 text-base">€</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={estimatedCost}
-                      onChange={(e) => setEstimatedCost(e.target.value)}
-                      className="h-12 text-xl font-bold pl-8 pr-2 text-right rounded-lg tabular-nums border-border"
-                    />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <span className="text-xs text-muted-foreground block mb-1">
-                    Actual
-                    {costLines.length > 0 && <span className="text-muted-foreground/40 ml-1">· auto</span>}
-                  </span>
-                  {costLines.length > 0 ? (
-                    <div className="h-12 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-2">
-                      €{parseFloat(actualCost || "0").toFixed(2)}
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={actualCost}
-                        onChange={(e) => setActualCost(e.target.value)}
-                        className="h-12 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <span className="text-[11px] text-muted-foreground/50 block mb-1">
-                    Our Cost
-                    {costLines.length > 0 && <span className="text-muted-foreground/30 ml-1">· auto</span>}
-                  </span>
-                  {costLines.length > 0 ? (
-                    <div className="h-12 flex items-center justify-end text-xs tabular-nums text-muted-foreground/40 px-2">
-                      €{parseFloat(internalCost || "0").toFixed(2)}
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/30 text-sm">€</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={internalCost}
-                        onChange={(e) => setInternalCost(e.target.value)}
-                        className="h-12 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground/60"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Warranty toggle */}
-              <label className="flex items-center gap-2 cursor-pointer mb-5">
-                <Checkbox
-                  checked={warrantyFlag}
-                  onCheckedChange={(checked) => {
-                    const val = checked === true;
-                    setWarrantyFlag(val);
-                    if (val) {
-                      setInvoiceStatus("warranty");
-                      if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                        setStatus("completed");
-                      }
-                    } else if (!val && invoiceStatus === "warranty") {
-                      setInvoiceStatus("not_invoiced");
-                    }
-                  }}
-                />
-                <span className="text-xs text-muted-foreground">Warranty / internal cost</span>
-              </label>
-
-              {/* ── Line items ── */}
-              <div className="border-t border-border/30 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">Line items</span>
-                    <details className="relative inline-block group/hint">
-                      <summary className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground cursor-pointer select-none transition-colors">
-                        ?
-                      </summary>
-                      <div className="absolute left-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-popover p-2.5 text-[11px] text-popover-foreground shadow-md">
-                        <p className="leading-relaxed">Add lines → <strong>→ Estimated</strong> → <strong>Create Quote</strong>. After work, create invoice.</p>
-                      </div>
-                    </details>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>
-                      Labour
-                    </button>
-                    <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>
-                      Custom
-                    </button>
-                    <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
-                      Part
-                    </button>
-                  </div>
-                </div>
-
-                {showPartPicker && (
-                  <div className="mb-3 border border-border/50 rounded-lg p-2 bg-background/50">
-                    <Input
-                      placeholder="Search parts..."
-                      value={partSearch}
-                      onChange={(e) => setPartSearch(e.target.value)}
-                      className="h-7 text-xs rounded-lg mb-2"
-                      autoFocus
-                    />
-                    <div className="max-h-40 overflow-y-auto space-y-0.5">
-                      {filteredParts.length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-2 text-center">No parts found</p>
-                      ) : (
-                        filteredParts.map((p) => {
-                          const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
-                          const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
-                          const sellPrice = baseCost * (1 + markup / 100);
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => addPartLine(p)}
-                              className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center"
-                            >
-                              <span className="truncate">
-                                {p.name}
-                                {p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}
-                              </span>
-                              <span className="text-muted-foreground shrink-0 ml-2">
-                                €{sellPrice.toFixed(2)}
-                                {baseCost > 0 && <span className="text-[10px] ml-1 opacity-60">+{markup}%</span>}
-                              </span>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {costLines.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {/* Column headers */}
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider pb-1 border-b border-border/30">
-                      <span className="w-10 shrink-0">Type</span>
-                      <span className="flex-1">Description</span>
-                      <span className="w-14 text-center">Qty</span>
-                      <span className="w-20 text-right">Our cost</span>
-                      <span className="w-20 text-right">Sell</span>
-                      <span className="w-16 text-right">Total</span>
-                      <span className="w-6" />
-                    </div>
-
-                    {costLines.map((line) => (
-                      <div key={line.id} className="flex items-center gap-2">
-                        <span className={`text-[10px] font-medium uppercase tracking-wider w-10 shrink-0 ${
-                          line.type === "labour" ? "text-muted-foreground" : line.type === "part" ? "text-muted-foreground" : "text-muted-foreground"
-                        }`}>
-                          {line.type === "labour" ? "HRS" : line.type === "part" ? "PART" : "ITEM"}
-                        </span>
-                        <Input
-                          value={line.description}
-                          onChange={(e) => updateCostLine(line.id, "description", e.target.value)}
-                          placeholder={line.type === "labour" ? "Labour description" : "Description"}
-                          className="h-7 text-xs rounded-lg flex-1"
-                        />
-                        <Input
-                          type="number"
-                          min="0.25"
-                          step={line.type === "labour" ? "0.25" : "1"}
-                          value={line.quantity}
-                          onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)}
-                          className="h-7 text-xs rounded-lg w-14 text-center"
-                          title={line.type === "labour" ? "Hours" : "Quantity"}
-                        />
-                        <div className="relative w-20">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={line.internalCost}
-                            onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)}
-                            className="h-7 text-xs pl-5 pr-2 text-right rounded-lg text-muted-foreground"
-                            title="Our cost (purchase/internal)"
-                          />
-                        </div>
-                        <div className="relative w-20">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={line.unitPrice}
-                            onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)}
-                            className="h-7 text-xs pl-5 pr-2 text-right rounded-lg"
-                            title="Sell price"
-                          />
-                        </div>
-                        <span className="text-xs font-medium w-16 text-right tabular-nums">
-                          €{(line.quantity * line.unitPrice).toFixed(2)}
-                        </span>
-                        <button className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeCostLine(line.id)}>
-                          <XIcon className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Discount row */}
-                    <div className="flex items-center justify-between pt-2 border-t border-border/30 gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Discount</span>
-                        <div className="relative w-16">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value={discountPercent}
-                            onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                            className="h-6 text-xs pr-5 text-right rounded-lg"
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">%</span>
-                        </div>
-                      </div>
-                      {discountPercent > 0 && (
-                        <span className="text-xs text-destructive tabular-nums">-€{discountAmount.toFixed(2)}</span>
-                      )}
-                    </div>
-
-                    {/* Totals */}
-                    <div className="space-y-1 pt-1">
-                      {costLinesInternalTotal > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground/60">Our total cost</span>
-                          <span className="text-xs tabular-nums text-muted-foreground/60">€{costLinesInternalTotal.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
-                        <span className="text-xs tabular-nums">€{costLinesTotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
-                        <span className="text-xs tabular-nums text-muted-foreground">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
-                        <span className="text-sm font-semibold">Total incl. VAT</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
-                          <button
-                            onClick={applyLinesToEstimate}
-                            className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                          >
-                            → Estimated
-                          </button>
-                        </div>
-                      </div>
-                      {costLinesInternalTotal > 0 && (
-                        <div className="flex items-center justify-between pt-0.5">
-                          <span className="text-xs text-muted-foreground/60">Margin</span>
-                          <span className={`text-xs tabular-nums text-muted-foreground/60`}>
-                            €{(costLinesTotal - costLinesInternalTotal).toFixed(2)} ({costLinesInternalTotal > 0 ? Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100) : 0}%)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-8 text-center">
-                    <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted mb-3">
-                      <Receipt className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">No cost lines yet</p>
-                    <p className="text-xs text-muted-foreground/50 mt-1 max-w-[240px] mx-auto">Add labour or parts to build a quote, then send it to the customer</p>
-                    <div className="flex items-center justify-center gap-2 mt-4">
-                      <button className="inline-flex items-center h-8 text-xs font-medium px-3 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors" onClick={addLabourLine}>
-                        + Labour
-                      </button>
-                      <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>
-                        + Part
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── Next action: contextual CTA ── */}
-              <div className="border-t border-border/30 pt-4 mt-4">
-                {!hasQuote && !hasInvoice && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="default" size="sm" className="flex-1 text-xs"
-                      disabled={!job.customer || costLines.length === 0}
-                      onClick={() => {
-                        const el = holdedRef.current;
-                        if (el) {
-                          const details = el.querySelector('details');
-                          if (details) details.open = true;
-                          setTimeout(() => el.querySelector<HTMLElement>('[data-action="create-quote"]')?.click(), 50);
-                        }
-                      }}
-                    >
-                      Create Quote
-                    </Button>
-                    {!job.customer && <span className="text-[11px] text-muted-foreground">Link a contact first</span>}
-                    {job.customer && costLines.length === 0 && <span className="text-[11px] text-muted-foreground">Add lines first</span>}
-                  </div>
-                )}
-                {hasQuote && !hasInvoice && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Quote {job.holdedQuoteNum}</span>
-                    <span className="text-muted-foreground/30">→</span>
-                    <Button
-                      variant="default" size="sm" className="text-xs"
-                      disabled={!job.customer}
-                      onClick={() => {
-                        const el = holdedRef.current;
-                        if (el) {
-                          const details = el.querySelector('details');
-                          if (details) details.open = true;
-                          setTimeout(() => el.querySelector<HTMLElement>('[data-action="create-invoice"]')?.click(), 50);
-                        }
-                      }}
-                    >
-                      Create Invoice
-                    </Button>
-                  </div>
-                )}
-                {hasInvoice && !isPaid && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">✓ Invoice {job.holdedInvoiceNum}</span>
-                    <span className="text-muted-foreground/30">→</span>
-                    <span className="text-muted-foreground">Awaiting payment</span>
-                  </div>
-                )}
-                {isPaid && (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                    <CheckCircle className="h-3.5 w-3.5" /> Paid
-                  </div>
-                )}
-              </div>
-            </div>
-            </details>
-          </div>
-
-          {/* Holded Documents — collapsible details */}
-          <div ref={holdedRef}>
-            <HoldedDocumentsCard
+            <FinancialWorkflow
               job={job}
+              estimatedCost={estimatedCost}
+              setEstimatedCost={setEstimatedCost}
+              actualCost={actualCost}
+              setActualCost={setActualCost}
+              internalCost={internalCost}
+              setInternalCost={setInternalCost}
               costLines={costLines}
+              costLinesSubtotal={costLinesSubtotal}
+              costLinesInternalTotal={costLinesInternalTotal}
+              costLinesTotal={costLinesTotal}
+              costLinesTotalInclTax={costLinesTotalInclTax}
               discountPercent={discountPercent}
+              setDiscountPercent={setDiscountPercent}
+              discountAmount={discountAmount}
+              warrantyFlag={warrantyFlag}
+              setWarrantyFlag={setWarrantyFlag}
+              invoiceStatus={invoiceStatus}
+              setInvoiceStatus={setInvoiceStatus}
+              status={status}
+              setStatus={setStatus}
               settings={settings}
+              showPartPicker={showPartPicker}
+              setShowPartPicker={setShowPartPicker}
+              partSearch={partSearch}
+              setPartSearch={setPartSearch}
+              filteredParts={filteredParts}
+              addLabourLine={addLabourLine}
+              addCustomLine={addCustomLine}
+              addPartLine={addPartLine}
+              removeCostLine={removeCostLine}
+              updateCostLine={updateCostLine}
+              applyLinesToEstimate={applyLinesToEstimate}
               router={router}
             />
           </div>
@@ -1813,354 +1431,485 @@ function InlineUnitEdit({ unit, onDone }: { unit: any; onDone: () => void }) {
   );
 }
 
-// ─── Holded Documents Card ───
+// ─── Unified Financial Workflow ───
 
-function HoldedDocumentsCard({
-  job, costLines, discountPercent, settings, router,
+function FinancialWorkflow({
+  job, estimatedCost, setEstimatedCost, actualCost, setActualCost,
+  internalCost, setInternalCost, costLines, costLinesSubtotal,
+  costLinesInternalTotal, costLinesTotal, costLinesTotalInclTax,
+  discountPercent, setDiscountPercent, discountAmount,
+  warrantyFlag, setWarrantyFlag, invoiceStatus, setInvoiceStatus,
+  status, setStatus, settings, showPartPicker, setShowPartPicker,
+  partSearch, setPartSearch, filteredParts, addLabourLine, addCustomLine,
+  addPartLine, removeCostLine, updateCostLine, applyLinesToEstimate, router,
 }: {
   job: any;
+  estimatedCost: string;
+  setEstimatedCost: (v: string) => void;
+  actualCost: string;
+  setActualCost: (v: string) => void;
+  internalCost: string;
+  setInternalCost: (v: string) => void;
   costLines: CostLineItem[];
+  costLinesSubtotal: number;
+  costLinesInternalTotal: number;
+  costLinesTotal: number;
+  costLinesTotalInclTax: number;
   discountPercent: number;
+  setDiscountPercent: (v: number) => void;
+  discountAmount: number;
+  warrantyFlag: boolean;
+  setWarrantyFlag: (v: boolean) => void;
+  invoiceStatus: string;
+  setInvoiceStatus: (v: string) => void;
+  status: string;
+  setStatus: (v: string) => void;
   settings: PricingSettings;
+  showPartPicker: boolean;
+  setShowPartPicker: (v: boolean) => void;
+  partSearch: string;
+  setPartSearch: (v: string) => void;
+  filteredParts: PartItem[];
+  addLabourLine: () => void;
+  addCustomLine: () => void;
+  addPartLine: (p: PartItem) => void;
+  removeCostLine: (id: string) => void;
+  updateCostLine: (id: string, field: keyof CostLineItem, value: string | number) => void;
+  applyLinesToEstimate: () => void;
   router: ReturnType<typeof useRouter>;
 }) {
+  const [loading, setLoading] = useState<string | null>(null);
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
-  const [loading, setLoading] = useState<string | null>(null);
 
+  const hasEstimate = parseFloat(estimatedCost || "0") > 0;
+  const hasQuote = !!job.holdedQuoteId;
+  const hasInvoice = !!job.holdedInvoiceId;
+  const isPaid = job.invoiceStatus === "paid";
   const quoteSent = !!job.holdedQuoteSentAt;
   const invoiceSent = !!job.holdedInvoiceSentAt;
-
-  // Unsent document warning — uses beforeunload for browser navigation
   const hasUnsentDoc = (job.holdedQuoteId && !quoteSent) || (job.holdedInvoiceId && !invoiceSent);
 
+  // Unsent document warning — beforeunload
   useEffect(() => {
     if (!hasUnsentDoc) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [hasUnsentDoc]);
 
   async function handleAction(key: string, fn: () => Promise<void>) {
     setLoading(key);
-    try {
-      await fn();
-    } catch (e: any) {
-      toast.error(e.message ?? "Action failed");
-    } finally {
-      setLoading(null);
-    }
+    try { await fn(); } catch (e: any) { toast.error(e.message ?? "Action failed"); } finally { setLoading(null); }
   }
 
-  const actualCost = job.actualCost ? parseFloat(job.actualCost) : 0;
-  const estimatedCost = job.estimatedCost ? parseFloat(job.estimatedCost) : 0;
+  // Determine active workflow step: 0=estimate, 1=quote, 2=invoice, 3=paid
+  const activeStep = isPaid ? 3 : hasInvoice ? 2 : hasQuote ? 1 : 0;
 
   return (
-    <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
-      <details open={!!(job.holdedQuoteId || job.holdedInvoiceId)}>
-        <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-          <span className="flex items-center gap-2">Documents{(job.holdedQuoteId || job.holdedInvoiceId) && <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />}</span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-40" />
-        </summary>
-      <div className="px-6 pb-6">
+    <div className="divide-y divide-border/30">
 
-        {/* Unsent warning banner */}
-        {hasUnsentDoc && (
-          <div className="flex items-center gap-2 rounded-lg border border-amber-200/60 bg-amber-50/50 px-3 py-2 mb-4 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              {job.holdedQuoteId && !quoteSent && job.holdedInvoiceId && !invoiceSent
-                ? "Quote and invoice not yet emailed"
-                : job.holdedQuoteId && !quoteSent
-                ? "Quote not yet emailed"
-                : "Invoice not yet emailed"
-              }
-            </span>
+      {/* ─── Step indicator ─── */}
+      <div className="px-6 py-3 flex items-center gap-0">
+        {[
+          { label: "Estimate", step: 0 },
+          { label: "Quote", step: 1 },
+          { label: "Invoice", step: 2 },
+          { label: "Paid", step: 3 },
+        ].map((s, i, arr) => (
+          <div key={s.label} className="flex items-center">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              activeStep > s.step ? "text-emerald-600 dark:text-emerald-400" :
+              activeStep === s.step ? "text-foreground bg-muted" :
+              "text-muted-foreground/30"
+            }`}>
+              {activeStep > s.step && <CheckCircle className="h-3 w-3" />}
+              {s.label}
+            </div>
+            {i < arr.length - 1 && (
+              <div className={`w-6 h-px mx-0.5 ${activeStep > s.step ? "bg-emerald-300 dark:bg-emerald-700" : "bg-border/40"}`} />
+            )}
           </div>
-        )}
+        ))}
+      </div>
 
-        {/* ── Quote section ── */}
-        <div className="space-y-2 mb-4">
-          <p className="text-xs font-medium text-muted-foreground">Quote</p>
-          {job.holdedQuoteId ? (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    {job.holdedQuoteNum} ↗
-                  </a>
-                  {quoteSent ? (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
-                      <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Sent
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">
-                      <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Not sent
-                    </Badge>
-                  )}
-                </div>
-                <a
-                  href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
-                >
-                  Holded ↗
-                </a>
+      {/* ─── STEP 1: Estimate ─── */}
+      <div className="px-6 py-5 space-y-5">
+        {/* Pricing row */}
+        <div className="flex items-start gap-6">
+          <div className="flex-[1.2]">
+            <span className="text-xs font-medium text-foreground/70 block mb-1">Estimated</span>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 text-base">€</span>
+              <Input
+                type="number" step="0.01" min="0" placeholder="0.00"
+                value={estimatedCost}
+                onChange={(e) => setEstimatedCost(e.target.value)}
+                className="h-12 text-xl font-bold pl-8 pr-2 text-right rounded-lg tabular-nums border-border"
+              />
+            </div>
+          </div>
+          <div className="flex-1">
+            <span className="text-xs text-muted-foreground block mb-1">
+              Actual{costLines.length > 0 && <span className="text-muted-foreground/40 ml-1">· auto</span>}
+            </span>
+            {costLines.length > 0 ? (
+              <div className="h-12 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-2">
+                €{parseFloat(actualCost || "0").toFixed(2)}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline" size="sm" className="flex-1 text-xs"
-                  onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}
-                >
-                  <FileDown className="h-3 w-3 mr-1" /> View PDF
-                </Button>
-                {job.customer?.email && (
-                  <Button
-                    variant={quoteSent ? "outline" : "default"} size="sm" className="flex-1 text-xs"
-                    disabled={loading === "send-quote"}
-                    onClick={() => handleAction("send-quote", async () => {
-                      await sendHoldedQuote(job.id);
-                      toast.success("Quote sent to " + job.customer.email);
-                      router.refresh();
-                    })}
-                  >
-                    {loading === "send-quote" ? <Spinner className="mr-1" /> : <Send className="h-3 w-3 mr-1" />}
-                    {quoteSent ? "Resend" : "Email"}
-                  </Button>
+            ) : (
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm">€</span>
+                <Input
+                  type="number" step="0.01" min="0" placeholder="0.00"
+                  value={actualCost}
+                  onChange={(e) => setActualCost(e.target.value)}
+                  className="h-12 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums"
+                />
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <span className="text-[11px] text-muted-foreground/50 block mb-1">
+              Our Cost{costLines.length > 0 && <span className="text-muted-foreground/30 ml-1">· auto</span>}
+            </span>
+            {costLines.length > 0 ? (
+              <div className="h-12 flex items-center justify-end text-xs tabular-nums text-muted-foreground/40 px-2">
+                €{parseFloat(internalCost || "0").toFixed(2)}
+              </div>
+            ) : (
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/30 text-sm">€</span>
+                <Input
+                  type="number" step="0.01" min="0" placeholder="0.00"
+                  value={internalCost}
+                  onChange={(e) => setInternalCost(e.target.value)}
+                  className="h-12 text-sm pl-7 pr-2 text-right rounded-lg tabular-nums text-muted-foreground/60"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Warranty toggle */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Checkbox
+            checked={warrantyFlag}
+            onCheckedChange={(checked) => {
+              const val = checked === true;
+              setWarrantyFlag(val);
+              if (val) {
+                setInvoiceStatus("warranty");
+                if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                  setStatus("completed");
+                }
+              } else if (!val && invoiceStatus === "warranty") {
+                setInvoiceStatus("not_invoiced");
+              }
+            }}
+          />
+          <span className="text-xs text-muted-foreground">Warranty / internal cost</span>
+        </label>
+
+        {/* Line items */}
+        <div className="border-t border-border/30 pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-muted-foreground">Line items</span>
+            <div className="flex items-center gap-1">
+              <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>Labour</button>
+              <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>Custom</button>
+              <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>Part</button>
+            </div>
+          </div>
+
+          {showPartPicker && (
+            <div className="mb-3 border border-border/50 rounded-lg p-2 bg-background/50">
+              <Input placeholder="Search parts..." value={partSearch} onChange={(e) => setPartSearch(e.target.value)} className="h-7 text-xs rounded-lg mb-2" autoFocus />
+              <div className="max-h-40 overflow-y-auto space-y-0.5">
+                {filteredParts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2 text-center">No parts found</p>
+                ) : (
+                  filteredParts.map((p) => {
+                    const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
+                    const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
+                    const sellPrice = baseCost * (1 + markup / 100);
+                    return (
+                      <button key={p.id} type="button" onClick={() => addPartLine(p)} className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center">
+                        <span className="truncate">{p.name}{p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}</span>
+                        <span className="text-muted-foreground shrink-0 ml-2">€{sellPrice.toFixed(2)}{baseCost > 0 && <span className="text-[10px] ml-1 opacity-60">+{markup}%</span>}</span>
+                      </button>
+                    );
+                  })
                 )}
               </div>
-              {/* Delete quote */}
-              {confirmDeleteQuote ? (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
-                  <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
-                  <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">
-                    Delete quote {job.holdedQuoteNum} from Holded?
+            </div>
+          )}
+
+          {costLines.length > 0 ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider pb-1 border-b border-border/30">
+                <span className="w-10 shrink-0">Type</span>
+                <span className="flex-1">Description</span>
+                <span className="w-14 text-center">Qty</span>
+                <span className="w-20 text-right">Our cost</span>
+                <span className="w-20 text-right">Sell</span>
+                <span className="w-16 text-right">Total</span>
+                <span className="w-6" />
+              </div>
+              {costLines.map((line) => (
+                <div key={line.id} className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium uppercase tracking-wider w-10 shrink-0 text-muted-foreground">
+                    {line.type === "labour" ? "HRS" : line.type === "part" ? "PART" : "ITEM"}
                   </span>
-                  <Button
-                    variant="destructive" size="sm" className="h-6 text-[11px] px-2"
-                    disabled={loading === "delete-quote"}
-                    onClick={() => handleAction("delete-quote", async () => {
-                      await deleteHoldedQuote(job.id);
-                      toast.success("Quote deleted from Holded");
-                      setConfirmDeleteQuote(false);
-                      router.refresh();
-                    })}
-                  >
-                    {loading === "delete-quote" ? <Spinner /> : "Delete"}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteQuote(false)}>
-                    Cancel
-                  </Button>
+                  <Input value={line.description} onChange={(e) => updateCostLine(line.id, "description", e.target.value)} placeholder={line.type === "labour" ? "Labour description" : "Description"} className="h-7 text-xs rounded-lg flex-1" />
+                  <Input type="number" min="0.25" step={line.type === "labour" ? "0.25" : "1"} value={line.quantity} onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)} className="h-7 text-xs rounded-lg w-14 text-center" />
+                  <div className="relative w-20">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                    <Input type="number" step="0.01" min="0" value={line.internalCost} onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg text-muted-foreground" />
+                  </div>
+                  <div className="relative w-20">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                    <Input type="number" step="0.01" min="0" value={line.unitPrice} onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg" />
+                  </div>
+                  <span className="text-xs font-medium w-16 text-right tabular-nums">€{(line.quantity * line.unitPrice).toFixed(2)}</span>
+                  <button className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeCostLine(line.id)}><XIcon className="h-3 w-3" /></button>
                 </div>
-              ) : (
-                <Button
-                  variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-destructive"
-                  onClick={() => setConfirmDeleteQuote(true)}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" /> Delete Quote
-                </Button>
-              )}
+              ))}
+
+              {/* Discount */}
+              <div className="flex items-center justify-between pt-2 border-t border-border/30 gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Discount</span>
+                  <div className="relative w-16">
+                    <Input type="number" min="0" max="100" step="1" value={discountPercent} onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-6 text-xs pr-5 text-right rounded-lg" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">%</span>
+                  </div>
+                </div>
+                {discountPercent > 0 && <span className="text-xs text-destructive tabular-nums">-€{discountAmount.toFixed(2)}</span>}
+              </div>
+
+              {/* Totals */}
+              <div className="space-y-1 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
+                  <span className="text-xs tabular-nums">€{costLinesTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
+                  <span className="text-sm font-semibold">Total incl. VAT</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
+                    <button onClick={applyLinesToEstimate} className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2">→ Estimated</button>
+                  </div>
+                </div>
+                {costLinesInternalTotal > 0 && (
+                  <div className="flex items-center justify-between pt-0.5">
+                    <span className="text-xs text-muted-foreground/60">Margin</span>
+                    <span className="text-xs tabular-nums text-muted-foreground/60">
+                      €{(costLinesTotal - costLinesInternalTotal).toFixed(2)} ({costLinesInternalTotal > 0 ? Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100) : 0}%)
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="space-y-1.5">
-              <Button
-                data-action="create-quote"
-                variant="default" size="sm" className="w-full text-xs"
-                disabled={!job.customer || costLines.length === 0 || !!loading}
-                onClick={() => handleAction("create-quote", async () => {
-                  const result = await createHoldedQuote(job.id, costLines.map(l => ({
-                    name: l.description || "Line item",
-                    units: l.quantity,
-                    subtotal: l.unitPrice * l.quantity,
-                    tax: settings.defaultTax,
-                    discount: 0,
-                  })), discountPercent);
-                  toast.success(`Quote ${result.quoteNum} created`);
-                  router.refresh();
-                })}
-              >
-                {loading === "create-quote" ? <Spinner className="mr-1" /> : null}
-                Create Quote
+            <div className="py-6 text-center">
+              <p className="text-sm text-muted-foreground">No cost lines yet</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">Add labour or parts to build a detailed quote</p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button className="inline-flex items-center h-8 text-xs font-medium px-3 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors" onClick={addLabourLine}>+ Labour</button>
+                <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── STEP 2: Quote ─── */}
+      <div className="px-6 py-4 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-foreground">Quote</p>
+            <p className="text-[11px] text-muted-foreground/60">Based on estimate</p>
+          </div>
+          {hasQuote && (
+            <div className="flex items-center gap-2">
+              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                {job.holdedQuoteNum} ↗
+              </a>
+              {quoteSent ? (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">Sent</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">Not sent</Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {hasQuote ? (
+          <div className="space-y-1.5">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}>
+                View PDF
               </Button>
               {job.customer?.email && (
-                <Button
-                  variant="outline" size="sm" className="w-full text-xs"
-                  disabled={!job.customer || costLines.length === 0 || !!loading}
-                  onClick={() => handleAction("create-send-quote", async () => {
-                    const result = await createHoldedQuote(job.id, costLines.map(l => ({
-                      name: l.description || "Line item",
-                      units: l.quantity,
-                      subtotal: l.unitPrice * l.quantity,
-                      tax: settings.defaultTax,
-                      discount: 0,
-                    })), discountPercent);
-                    await sendHoldedQuote(job.id);
-                    toast.success(`Quote ${result.quoteNum} created & sent to ${job.customer.email}`);
-                    router.refresh();
-                  })}
-                >
-                  {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}
-                  Create & Send Quote
+                <Button variant={quoteSent ? "outline" : "default"} size="sm" className="flex-1 text-xs" disabled={loading === "send-quote"}
+                  onClick={() => handleAction("send-quote", async () => { await sendHoldedQuote(job.id); toast.success("Quote sent to " + job.customer.email); router.refresh(); })}>
+                  {loading === "send-quote" ? <Spinner className="mr-1" /> : null}{quoteSent ? "Resend" : "Email Quote"}
                 </Button>
               )}
-              {!job.customer && <p className="text-xs text-muted-foreground">Link a contact first</p>}
-              {job.customer && costLines.length === 0 && <p className="text-xs text-muted-foreground">Add cost lines first</p>}
+              <a href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                Holded ↗
+              </a>
             </div>
-          )}
-        </div>
-
-        {/* ── Invoice section ── */}
-        <div className="border-t border-border/30 pt-4 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Invoice</p>
-          {job.holdedInvoiceId ? (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    {job.holdedInvoiceNum} ↗
-                  </a>
-                  {invoiceSent ? (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
-                      <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Sent
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">
-                      <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Not sent
-                    </Badge>
-                  )}
-                </div>
-                <a
-                  href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-muted-foreground hover:text-primary hover:underline"
-                >
-                  Holded ↗
-                </a>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline" size="sm" className="flex-1 text-xs"
-                  onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}
-                >
-                  <FileDown className="h-3 w-3 mr-1" /> View PDF
+            {confirmDeleteQuote ? (
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
+                <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">Delete quote {job.holdedQuoteNum}?</span>
+                <Button variant="destructive" size="sm" className="h-6 text-[11px] px-2" disabled={loading === "delete-quote"}
+                  onClick={() => handleAction("delete-quote", async () => { await deleteHoldedQuote(job.id); toast.success("Quote deleted"); setConfirmDeleteQuote(false); router.refresh(); })}>
+                  {loading === "delete-quote" ? <Spinner /> : "Delete"}
                 </Button>
-                {job.customer?.email && (
-                  <Button
-                    variant={invoiceSent ? "outline" : "default"} size="sm" className="flex-1 text-xs"
-                    disabled={loading === "send-invoice"}
-                    onClick={() => handleAction("send-invoice", async () => {
-                      await sendHoldedInvoice(job.id);
-                      toast.success("Invoice sent to " + job.customer.email);
-                      router.refresh();
-                    })}
-                  >
-                    {loading === "send-invoice" ? <Spinner className="mr-1" /> : <Send className="h-3 w-3 mr-1" />}
-                    {invoiceSent ? "Resend" : "Email"}
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteQuote(false)}>Cancel</Button>
               </div>
-              {/* Delete invoice */}
-              {job.invoiceStatus !== "paid" && (
-                confirmDeleteInvoice ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
-                    <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
-                    <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">
-                      Delete invoice {job.holdedInvoiceNum} from Holded?
-                    </span>
-                    <Button
-                      variant="destructive" size="sm" className="h-6 text-[11px] px-2"
-                      disabled={loading === "delete-invoice"}
-                      onClick={() => handleAction("delete-invoice", async () => {
-                        await deleteHoldedInvoice(job.id);
-                        toast.success("Invoice deleted from Holded");
-                        setConfirmDeleteInvoice(false);
-                        router.refresh();
-                      })}
-                    >
-                      {loading === "delete-invoice" ? <Spinner /> : "Delete"}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteInvoice(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-destructive"
-                    onClick={() => setConfirmDeleteInvoice(true)}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" /> Delete Invoice
-                  </Button>
-                )
-              )}
-            </div>
-          ) : (
-            <div>
-              <Button
-                data-action="create-invoice"
-                variant="default" size="sm" className="w-full text-xs"
-                disabled={!job.customer || (costLines.length === 0 && !actualCost && !estimatedCost) || !!loading}
-                onClick={() => handleAction("create-invoice", async () => {
-                  const items = costLines.length > 0
-                    ? costLines.map(l => ({
-                        name: l.description || "Line item",
-                        units: l.quantity,
-                        subtotal: l.unitPrice * l.quantity,
-                        tax: settings.defaultTax,
-                        discount: 0,
-                      }))
-                    : undefined;
-                  const result = await createHoldedInvoice(job.id, items, discountPercent);
-                  toast.success(`Invoice ${result.invoiceNum} created`);
+            ) : (
+              <button className="text-[11px] text-muted-foreground/50 hover:text-destructive transition-colors" onClick={() => setConfirmDeleteQuote(true)}>Delete quote</button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <div className="flex gap-2">
+              <Button variant="default" size="sm" className="flex-1 text-xs"
+                disabled={!job.customer || costLines.length === 0 || !hasEstimate || !!loading}
+                onClick={() => handleAction("create-quote", async () => {
+                  const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: l.quantity, subtotal: l.unitPrice * l.quantity, tax: settings.defaultTax, discount: 0 })), discountPercent);
+                  toast.success(`Quote ${result.quoteNum} created`);
                   router.refresh();
-                })}
-              >
-                {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}
-                Create Invoice
+                })}>
+                {loading === "create-quote" ? <Spinner className="mr-1" /> : null}Create Quote
               </Button>
-              {!job.customer && <p className="text-xs text-muted-foreground mt-1.5">Link a contact first</p>}
-              {job.customer && costLines.length === 0 && !actualCost && !estimatedCost && (
-                <p className="text-xs text-muted-foreground mt-1.5">Add lines or a cost estimate first</p>
+              {job.customer?.email && (
+                <Button variant="outline" size="sm" className="flex-1 text-xs"
+                  disabled={!job.customer || costLines.length === 0 || !hasEstimate || !!loading}
+                  onClick={() => handleAction("create-send-quote", async () => {
+                    const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: l.quantity, subtotal: l.unitPrice * l.quantity, tax: settings.defaultTax, discount: 0 })), discountPercent);
+                    await sendHoldedQuote(job.id);
+                    toast.success(`Quote ${result.quoteNum} created & sent`);
+                    router.refresh();
+                  })}>
+                  {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}Create & Send
+                </Button>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Verify Holded links */}
-        {(job.holdedInvoiceId || job.holdedQuoteId) && (
-          <div className="border-t border-border/30 pt-3 mt-3">
-            <button
-              className="w-full text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1"
-              onClick={() => handleAction("verify", async () => {
-                const result = await verifyHoldedDocuments(job.id);
-                if (result.fixed) {
-                  toast.success(result.issues.join(". "));
-                  router.refresh();
-                } else {
-                  toast.success("All Holded links verified ✓");
-                }
-              })}
-            >
-              {loading === "verify" ? <Spinner className="mr-1" /> : null}
-              Verify links
-            </button>
+            {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
+            {job.customer && !hasEstimate && <p className="text-[11px] text-muted-foreground">Add an estimate first</p>}
+            {job.customer && hasEstimate && costLines.length === 0 && <p className="text-[11px] text-muted-foreground">Add cost lines first</p>}
           </div>
         )}
       </div>
-      </details>
+
+      {/* ─── STEP 3: Invoice ─── */}
+      <div className="px-6 py-4 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-foreground">Invoice</p>
+            <p className="text-[11px] text-muted-foreground/60">Based on actual work</p>
+          </div>
+          {hasInvoice && (
+            <div className="flex items-center gap-2">
+              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                {job.holdedInvoiceNum} ↗
+              </a>
+              {invoiceSent ? (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">Sent</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">Not sent</Badge>
+              )}
+              {isPaid && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800">Paid</Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {hasInvoice ? (
+          <div className="space-y-1.5">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}>
+                View PDF
+              </Button>
+              {job.customer?.email && (
+                <Button variant={invoiceSent ? "outline" : "default"} size="sm" className="flex-1 text-xs" disabled={loading === "send-invoice"}
+                  onClick={() => handleAction("send-invoice", async () => { await sendHoldedInvoice(job.id); toast.success("Invoice sent to " + job.customer.email); router.refresh(); })}>
+                  {loading === "send-invoice" ? <Spinner className="mr-1" /> : null}{invoiceSent ? "Resend" : "Email Invoice"}
+                </Button>
+              )}
+              <a href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                Holded ↗
+              </a>
+            </div>
+            {job.invoiceStatus !== "paid" && (
+              confirmDeleteInvoice ? (
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
+                  <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">Delete invoice {job.holdedInvoiceNum}?</span>
+                  <Button variant="destructive" size="sm" className="h-6 text-[11px] px-2" disabled={loading === "delete-invoice"}
+                    onClick={() => handleAction("delete-invoice", async () => { await deleteHoldedInvoice(job.id); toast.success("Invoice deleted"); setConfirmDeleteInvoice(false); router.refresh(); })}>
+                    {loading === "delete-invoice" ? <Spinner /> : "Delete"}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteInvoice(false)}>Cancel</Button>
+                </div>
+              ) : (
+                <button className="text-[11px] text-muted-foreground/50 hover:text-destructive transition-colors" onClick={() => setConfirmDeleteInvoice(true)}>Delete invoice</button>
+              )
+            )}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <Button variant="default" size="sm" className="w-full text-xs"
+              disabled={!job.customer || (costLines.length === 0 && !parseFloat(actualCost || "0") && !parseFloat(estimatedCost || "0")) || !!loading}
+              onClick={() => handleAction("create-invoice", async () => {
+                const items = costLines.length > 0
+                  ? costLines.map(l => ({ name: l.description || "Line item", units: l.quantity, subtotal: l.unitPrice * l.quantity, tax: settings.defaultTax, discount: 0 }))
+                  : undefined;
+                const result = await createHoldedInvoice(job.id, items, discountPercent);
+                toast.success(`Invoice ${result.invoiceNum} created`);
+                router.refresh();
+              })}>
+              {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}Create Invoice
+            </Button>
+            {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Unsent warning */}
+      {hasUnsentDoc && (
+        <div className="px-6 py-3">
+          <div className="flex items-center gap-2 rounded-lg border border-amber-200/60 bg-amber-50/50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {job.holdedQuoteId && !quoteSent && job.holdedInvoiceId && !invoiceSent ? "Quote and invoice not yet emailed" :
+               job.holdedQuoteId && !quoteSent ? "Quote not yet emailed" : "Invoice not yet emailed"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Verify links */}
+      {(job.holdedInvoiceId || job.holdedQuoteId) && (
+        <div className="px-6 py-2">
+          <button className="w-full text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors py-1"
+            onClick={() => handleAction("verify", async () => {
+              const result = await verifyHoldedDocuments(job.id);
+              if (result.fixed) { toast.success(result.issues.join(". ")); router.refresh(); }
+              else { toast.success("All links verified ✓"); }
+            })}>
+            {loading === "verify" ? <Spinner className="mr-1" /> : null}Verify Holded links
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -41,7 +41,7 @@ import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
 import { cn } from "@/lib/utils";
 
-import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
+import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/actions/tags";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import type { RepairTask } from "@/types";
@@ -533,14 +533,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </>
           )}
 
-          {allTags.length > 0 && (
-            <TagPicker
-              allTags={allTags}
-              activeTags={repairTags}
-              onAdd={(tagId) => addTagToRepair(job.id, tagId)}
-              onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
-            />
-          )}
+          <TagPicker
+            allTags={allTags}
+            activeTags={repairTags}
+            onAdd={(tagId) => addTagToRepair(job.id, tagId)}
+            onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
+            onCreate={async (data) => { await createTag(data); }}
+            onDelete={async (tagId) => { await deleteTag(tagId); }}
+          />
         </div>
 
         {/* Inline edit panels — expand below the chips */}

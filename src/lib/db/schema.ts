@@ -86,6 +86,13 @@ export const businessProcessTypeEnum = pgEnum("business_process_type", [
   "unknown",
 ]);
 
+export const jobTypeEnum = pgEnum("job_type", [
+  "repair",
+  "wax",
+  "maintenance",
+  "inspection",
+]);
+
 export const contactTypeEnum = pgEnum("contact_type", [
   "person",
   "business",
@@ -373,6 +380,7 @@ export const repairJobs = pgTable(
     businessProcessType: businessProcessTypeEnum("business_process_type")
       .notNull()
       .default("repair"),
+    jobType: jobTypeEnum("job_type").notNull().default("repair"),
     customerResponseStatus: customerResponseEnum("customer_response_status")
       .notNull()
       .default("not_contacted"),
@@ -399,6 +407,7 @@ export const repairJobs = pgTable(
     followUpRequiredFlag: boolean("follow_up_required_flag")
       .notNull()
       .default(false),
+    customFlags: jsonb("custom_flags").$type<string[]>().default([]),
 
     nextAction: text("next_action"),
     currentBlocker: text("current_blocker"),
@@ -460,6 +469,7 @@ export const repairJobs = pgTable(
     index("repair_jobs_created_idx").on(table.createdAt),
     index("repair_jobs_bay_reference_idx").on(table.bayReference),
     index("repair_jobs_business_type_idx").on(table.businessProcessType),
+    index("repair_jobs_job_type_idx").on(table.jobType),
     index("repair_jobs_archived_idx").on(table.archivedAt),
     index("repair_jobs_deleted_idx").on(table.deletedAt),
   ]

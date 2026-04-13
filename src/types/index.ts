@@ -75,6 +75,8 @@ export type BusinessProcessType =
   | "service"
   | "unknown";
 
+export type JobType = "repair" | "wax" | "maintenance" | "inspection";
+
 export type UnitType = "caravan" | "trailer" | "camper" | "unknown";
 
 export type StatusConfidence = "high" | "medium" | "low" | "manual";
@@ -318,6 +320,20 @@ export const BUSINESS_PROCESS_LABELS: Record<BusinessProcessType, string> = {
   relocation: "Relocation",
   service: "Service",
   unknown: "Unknown",
+};
+
+export const JOB_TYPE_LABELS: Record<JobType, string> = {
+  repair: "Repair",
+  wax: "Wax",
+  maintenance: "Maintenance",
+  inspection: "Inspection",
+};
+
+export const JOB_TYPE_COLORS: Record<JobType, string> = {
+  repair: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
+  wax: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  maintenance: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  inspection: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
 };
 
 export const UNIT_TYPE_LABELS: Record<UnitType, string> = {

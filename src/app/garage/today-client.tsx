@@ -23,6 +23,7 @@ type RepairItem = {
   unitCurrentPosition: string | null;
   assignedUserName: string | null;
   finalCheckStatus: string | null;
+  jobType: string;
   tasks: { total: number; done: number; problem: number };
   parts: { total: number; received: number; pending: number };
   workers: string[];

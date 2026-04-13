@@ -22,7 +22,7 @@ import { LocationSelect } from "@/components/repairs/location-select";
 import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
 import { UnitSearch } from "@/components/units/unit-search";
 import { createPartRequest } from "@/actions/parts";
-import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
+import { STATUS_LABELS, PRIORITY_LABELS, JOB_TYPE_LABELS } from "@/types";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
@@ -99,7 +99,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], partC
       setCustomerId(null);
       setUnitId(null);
       setSelectedParts([]);
-      toast.success("Repair job created");
+      toast.success("Work order created");
       router.push(`/repairs/${job.id}`);
       router.refresh();
     } catch (err: any) {
@@ -112,12 +112,12 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], partC
     <Dialog open={open} onOpenChange={setOpen}>
       <Button onClick={() => setOpen(true)} size="sm" className="h-8 rounded-lg gap-1.5 text-xs font-medium">
         <Plus className="h-3.5 w-3.5" />
-        New Repair
+        New Work Order
       </Button>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle>New Repair Job</DialogTitle>
-          <DialogDescription>Create a new repair job entry</DialogDescription>
+          <DialogTitle>New Work Order</DialogTitle>
+          <DialogDescription>Create a new work order entry</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[calc(90vh-8rem)]">
           <form onSubmit={handleSubmit} className="space-y-6 px-6 pb-6 pt-4">
@@ -129,6 +129,17 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], partC
               <div className="sm:col-span-2">
                 <Label htmlFor="dlg-title">Title</Label>
                 <Input id="dlg-title" name="title" placeholder="Brief summary of the repair" className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="dlg-jobType">Work Type</Label>
+                <Select name="jobType" defaultValue="repair">
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(JOB_TYPE_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="dlg-status">Status</Label>
@@ -222,7 +233,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], partC
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={saving}>
                 {saving ? <Spinner className="mr-2" /> : null}
-                Create Repair Job
+                Create Work Order
               </Button>
             </div>
           </form>

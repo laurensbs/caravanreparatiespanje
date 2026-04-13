@@ -5,8 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { STATUS_LABELS, INVOICE_STATUS_LABELS } from "@/types";
-import type { RepairStatus, InvoiceStatus } from "@/types";
+import { STATUS_LABELS, INVOICE_STATUS_LABELS, JOB_TYPE_LABELS, JOB_TYPE_COLORS } from "@/types";
+import type { RepairStatus, InvoiceStatus, JobType } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
 import { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import { BulkActions } from "./bulk-actions";
@@ -39,6 +39,7 @@ interface Job {
   notesRaw: string | null;
   warrantyInternalCostFlag: boolean;
   internalCost: string | null;
+  jobType: string;
   tags: { id: string; name: string; color: string }[];
 }
 
@@ -153,39 +154,39 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   }
 
   const STATUS_ACCENT: Record<string, string> = {
-    new: "bg-gray-300",
-    todo: "bg-gray-300",
-    in_inspection: "bg-sky-300",
-    no_damage: "bg-emerald-300",
-    quote_needed: "bg-amber-300",
-    waiting_approval: "bg-amber-300",
-    waiting_customer: "bg-orange-400",
-    waiting_parts: "bg-amber-400",
-    scheduled: "bg-sky-300",
-    in_progress: "bg-sky-400",
-    blocked: "bg-red-400",
-    completed: "bg-emerald-400",
-    invoiced: "bg-emerald-300",
-    rejected: "bg-red-300",
-    archived: "bg-gray-300",
+    new: "bg-gray-300 dark:bg-slate-500",
+    todo: "bg-gray-300 dark:bg-slate-500",
+    in_inspection: "bg-sky-300 dark:bg-sky-400",
+    no_damage: "bg-emerald-300 dark:bg-emerald-400",
+    quote_needed: "bg-amber-300 dark:bg-amber-400",
+    waiting_approval: "bg-amber-300 dark:bg-amber-400",
+    waiting_customer: "bg-orange-400 dark:bg-orange-400",
+    waiting_parts: "bg-amber-400 dark:bg-amber-400",
+    scheduled: "bg-sky-300 dark:bg-sky-400",
+    in_progress: "bg-sky-400 dark:bg-sky-400",
+    blocked: "bg-red-400 dark:bg-red-400",
+    completed: "bg-emerald-400 dark:bg-emerald-400",
+    invoiced: "bg-emerald-300 dark:bg-emerald-400",
+    rejected: "bg-red-300 dark:bg-rose-400",
+    archived: "bg-gray-300 dark:bg-slate-600",
   };
 
   const STATUS_PILL: Record<string, string> = {
-    new: "bg-gray-100 text-gray-600 dark:bg-muted dark:text-muted-foreground",
-    todo: "bg-gray-100 text-gray-600 dark:bg-muted dark:text-muted-foreground",
-    in_inspection: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-    no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-    quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-    waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-    waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
-    waiting_parts: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-    scheduled: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-    in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-    blocked: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-    completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-    invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-    rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
-    archived: "bg-gray-100 text-gray-400 dark:bg-muted dark:text-muted-foreground",
+    new: "bg-gray-100 text-gray-600 dark:bg-slate-700/60 dark:text-slate-200",
+    todo: "bg-gray-100 text-gray-600 dark:bg-slate-700/60 dark:text-slate-200",
+    in_inspection: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+    no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
+    waiting_parts: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    scheduled: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+    in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+    blocked: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
+    completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
+    archived: "bg-gray-100 text-gray-400 dark:bg-slate-700/40 dark:text-slate-400",
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
@@ -210,12 +211,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {/* Column headers */}
-      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-gray-400 select-none">
+      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-slate-500 select-none">
         <div className="w-8 shrink-0" />
         <div className="flex-[2] min-w-0 cursor-pointer" onClick={() => handleSort("title")}>
           <span className="inline-flex items-center">Title<SortIcon column="title" /></span>
         </div>
-        <div className="w-28 shrink-0 cursor-pointer" onClick={() => handleSort("status")}>
+        <div className="w-32 shrink-0 cursor-pointer" onClick={() => handleSort("status")}>
           <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
         </div>
         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleSort("customerName")}>
@@ -235,10 +236,10 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       {/* Repair rows */}
       <div className="space-y-0">
         {allJobs.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-20 text-gray-400">
+          <div className="flex flex-col items-center gap-2 py-20 text-gray-400 dark:text-slate-500">
             <ArrowUpDown className="h-8 w-8 opacity-20" />
-            <p className="font-medium text-sm text-gray-500">No repair jobs found</p>
-            <p className="text-xs text-gray-400">Try adjusting your filters</p>
+            <p className="font-medium text-sm text-gray-500 dark:text-slate-400">No repair jobs found</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500">Try adjusting your filters</p>
           </div>
         ) : (
           allJobs.map((job, idx) => {
@@ -248,9 +249,9 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
             return (
               <div
                 key={job.id}
-                className={`group relative flex items-center gap-5 rounded-xl px-5 py-[18px] transition-all duration-150 cursor-pointer
-                  hover:bg-gray-50 dark:hover:bg-accent active:scale-[0.998] border-b border-gray-100/60 dark:border-border/60 last:border-b-0
-                  ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100" : ""}
+                className={`group relative flex items-center gap-5 rounded-xl px-5 py-5 transition-all duration-150 cursor-pointer
+                  hover:bg-gray-50 dark:hover:bg-white/[0.03] active:scale-[0.998] border-b border-gray-100/60 dark:border-white/[0.05] last:border-b-0
+                  ${selected.has(job.id) ? "bg-sky-50/40 dark:bg-sky-500/[0.06] ring-1 ring-sky-100 dark:ring-sky-500/20" : ""}
                   ${isUrgent ? "" : ""}
                   animate-slide-up`}
                 style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
@@ -260,7 +261,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 }}
               >
                 {/* Left status accent bar */}
-                <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full ${STATUS_ACCENT[job.status] ?? "bg-gray-300"}`} />
+                <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-90 ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-600"}`} />
 
                 {/* Checkbox */}
                 <div className="w-6 shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
@@ -274,19 +275,24 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 {/* Title + description */}
                 <div className="flex-[2] min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-[15px] font-medium text-gray-900 group-hover:text-[#0CC0DF] transition-colors">
+                    <p className="truncate text-[15px] font-medium text-gray-900 dark:text-slate-100 group-hover:text-[#0CC0DF] transition-colors">
                       {job.title || "Unnamed repair"}
                     </p>
+                    {job.jobType && job.jobType !== "repair" && (
+                      <span className={`shrink-0 inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300"}`}>
+                        {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
+                      </span>
+                    )}
                     {isUrgent && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
                     {isHigh && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-orange-400" />}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {job.publicCode && (
-                      <span className="text-[11px] text-gray-400 font-mono">{job.publicCode}</span>
+                      <span className="text-[11px] text-gray-400 dark:text-slate-500 font-mono">{job.publicCode}</span>
                     )}
-                    {job.publicCode && job.descriptionRaw && <span className="text-gray-300">·</span>}
+                    {job.publicCode && job.descriptionRaw && <span className="text-gray-300 dark:text-slate-600">·</span>}
                     {job.descriptionRaw && (
-                      <span className="text-[11px] text-gray-400 truncate">{job.descriptionRaw.slice(0, 60)}</span>
+                      <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{job.descriptionRaw.slice(0, 60)}</span>
                     )}
                   </div>
                   {/* Tags inline */}
@@ -306,13 +312,13 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 </div>
 
                 {/* Status */}
-                <div className="w-28 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="w-32 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-shadow hover:ring-1 hover:ring-gray-200 dark:hover:ring-border ${STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground"}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_ACCENT[job.status] ?? "bg-gray-300"}`} />
-                          {STATUS_LABELS[job.status as RepairStatus]}
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium max-w-[130px] transition-shadow hover:ring-1 hover:ring-gray-200 dark:hover:ring-white/10 ${STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-slate-700/60 text-gray-600 dark:text-slate-200"}`} title={STATUS_LABELS[job.status as RepairStatus]}>
+                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}`} />
+                          <span className="truncate">{STATUS_LABELS[job.status as RepairStatus]}</span>
                         </span>
                       </button>
                     </DropdownMenuTrigger>
@@ -323,7 +329,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                           className={val === job.status ? "font-semibold" : ""}
                           onClick={() => { if (val !== job.status) quickStatusChange(job.id, val); }}
                         >
-                          <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_ACCENT[val] ?? "bg-gray-300"}`} />
+                          <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_ACCENT[val] ?? "bg-gray-300 dark:bg-slate-500"}`} />
                           {label}
                         </DropdownMenuItem>
                       ))}
@@ -333,25 +339,25 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Contact */}
                 <div className="flex-1 min-w-0 hidden md:block">
-                  <span className="text-sm text-gray-800 truncate block">
-                    {job.customerName ?? <span className="text-gray-300">—</span>}
+                  <span className="text-sm text-gray-800 dark:text-slate-200 truncate block">
+                    {job.customerName ?? <span className="text-gray-300 dark:text-slate-600">—</span>}
                   </span>
                   {job.locationName && (
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300"}`} />
-                      <span className="text-[11px] text-gray-400 truncate">{job.locationName}</span>
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                      <span className="text-[11px] text-gray-400 dark:text-slate-400 truncate">{job.locationName}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Invoice */}
                 <div className="w-24 shrink-0 hidden md:block">
-                  <span className={`text-[11px] font-medium ${
-                    job.invoiceStatus === "paid" ? "text-emerald-600" :
-                    job.invoiceStatus === "sent" ? "text-blue-600" :
-                    job.invoiceStatus === "draft" ? "text-amber-600" :
-                    job.invoiceStatus === "warranty" ? "text-purple-600" :
-                    "text-gray-300"
+                  <span className={`text-[11px] font-medium truncate block ${
+                    job.invoiceStatus === "paid" ? "text-emerald-600 dark:text-emerald-400" :
+                    job.invoiceStatus === "sent" ? "text-blue-600 dark:text-blue-400" :
+                    job.invoiceStatus === "draft" ? "text-amber-600 dark:text-amber-400" :
+                    job.invoiceStatus === "warranty" ? "text-purple-600 dark:text-purple-400" :
+                    "text-gray-300 dark:text-slate-500"
                   }`}>
                     {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
                   </span>
@@ -360,15 +366,15 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 {/* Planned */}
                 <div className="w-24 shrink-0 hidden md:block">
                   {job.dueDate ? (
-                    <SmartDate date={job.dueDate} className="text-xs text-gray-500" />
+                    <SmartDate date={job.dueDate} className="text-xs text-gray-500 dark:text-slate-300" />
                   ) : (
-                    <span className="text-gray-300 text-[11px]">—</span>
+                    <span className="text-gray-300 dark:text-slate-600 text-[11px]">—</span>
                   )}
                 </div>
 
                 {/* Updated */}
                 <div className="w-20 shrink-0 text-right hidden md:block">
-                  <SmartDate date={job.updatedAt} className="text-[11px] text-gray-400" />
+                  <SmartDate date={job.updatedAt} className="text-[11px] text-gray-400 dark:text-slate-400" />
                 </div>
               </div>
             );
@@ -384,7 +390,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {!hasMore && allJobs.length > 0 && (
-        <p className="text-center text-[11px] text-gray-400 py-4">
+        <p className="text-center text-[11px] text-gray-400 dark:text-slate-500 py-4">
           {allJobs.length} repair{allJobs.length !== 1 ? "s" : ""}
         </p>
       )}

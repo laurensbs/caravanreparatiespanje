@@ -19,6 +19,7 @@ import {
   CalendarDays,
   Warehouse,
   ExternalLink,
+  ClipboardList,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -31,18 +32,23 @@ interface NavItem {
   minRole?: UserRole;
   bottom?: boolean;
   external?: boolean;
+  group?: string;
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" /> },
-  { label: "Repairs", href: "/repairs", icon: <Wrench className="h-[18px] w-[18px]" /> },
-  { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" /> },
-  { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" /> },
-  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" /> },
-  { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" /> },
-  { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" /> },
+  // OPERATIONS
+  { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" />, group: "Operations" },
+  { label: "Werkbonnen", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations" },
+  { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations" },
+  { label: "Garage", href: "/garage", icon: <Warehouse className="h-[18px] w-[18px]" />, external: true, group: "Operations" },
+  // DATA
+  { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data" },
+  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data" },
+  { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data" },
+  // FINANCE
+  { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
+  // OTHER
   { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" /> },
-  { label: "Garage", href: "/garage", icon: <Warehouse className="h-[18px] w-[18px]" />, external: true },
   { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
   { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
@@ -158,11 +164,11 @@ export function Sidebar({ userRole }: SidebarProps) {
         collapsed ? "h-12 justify-center px-2" : "h-12 gap-3 px-5"
       )}>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 shrink-0">
-          <Wrench className="h-4 w-4 text-white" />
+          <ClipboardList className="h-4 w-4 text-white" />
         </div>
         {!collapsed && (
           <div className="min-w-0 overflow-hidden">
-            <h1 className="text-sm font-semibold tracking-tight text-white whitespace-nowrap">Caravan Repairs</h1>
+            <h1 className="text-sm font-semibold tracking-tight text-white whitespace-nowrap">Caravan Admin</h1>
           </div>
         )}
       </div>
@@ -171,9 +177,26 @@ export function Sidebar({ userRole }: SidebarProps) {
         "flex-1 space-y-0.5 overflow-y-auto py-3 transition-all duration-300",
         collapsed ? "px-1.5" : "px-3"
       )}>
-        {mainItems.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
+        {(() => {
+          let lastGroup: string | undefined;
+          return mainItems.map((item) => {
+            const showGroup = !collapsed && item.group && item.group !== lastGroup;
+            lastGroup = item.group;
+            return (
+              <div key={item.href}>
+                {showGroup && (
+                  <p className={cn(
+                    "text-[10px] font-semibold uppercase tracking-widest text-white/30 mt-4 mb-1.5",
+                    collapsed ? "hidden" : "px-3"
+                  )}>
+                    {item.group}
+                  </p>
+                )}
+                <NavLink item={item} />
+              </div>
+            );
+          });
+        })()}
       </nav>
 
       {/* Bottom items (Bin) + collapse toggle */}

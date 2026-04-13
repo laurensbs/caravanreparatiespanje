@@ -13,11 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS,
+  STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS,
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
   FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS,
+  JOB_TYPE_LABELS, JOB_TYPE_COLORS,
 } from "@/types";
-import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem } from "@/types";
+import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, JobType } from "@/types";
 import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -163,6 +164,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [sealsFlag, setSealsFlag] = useState(job.sealsFlag ?? false);
   const [partsRequiredFlag, setPartsRequiredFlag] = useState(job.partsRequiredFlag ?? false);
   const [followUpRequiredFlag, setFollowUpRequiredFlag] = useState(job.followUpRequiredFlag ?? false);
+  const [customFlags, setCustomFlags] = useState<string[]>((job.customFlags as string[]) ?? []);
+  const [newFlagName, setNewFlagName] = useState("");
   const [customerResponseStatus, setCustomerResponseStatus] = useState(job.customerResponseStatus);
   const [notes, setNotes] = useState(job.notesRaw && job.notesRaw !== "true" && job.notesRaw !== "false" ? job.notesRaw : "");
   const [internalComments, setInternalComments] = useState(job.internalComments ?? "");
@@ -241,14 +244,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const displayBlocker = currentBlocker || computedBlocker;
 
   // Financial stage for summary bar
-  const financialStage = (() => {
-    if (job.invoiceStatus === "paid") return { label: "Paid", color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/30" };
-    if (job.holdedInvoiceId) return { label: "Invoiced", color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30" };
-    if (job.holdedQuoteId) return { label: "Quoted", color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30" };
-    if (parseFloat(estimatedCost || "0") > 0) return { label: "Estimated", color: "text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-800" };
-    return { label: "No estimate", color: "text-muted-foreground bg-muted/50" };
-  })();
-
   // Keep local estimateLines in sync with prop
   useEffect(() => {
     setCostLines(estimateLines);
@@ -399,6 +394,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         sealsFlag,
         partsRequiredFlag,
         followUpRequiredFlag,
+        customFlags,
         nextAction: nextAction || null,
         currentBlocker: currentBlocker || null,
       });
@@ -412,31 +408,74 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     }
   }
 
+  // Financial stage for badge display
+  const financialStage = (() => {
+    if (job.invoiceStatus === "paid") return { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" };
+    if (job.holdedInvoiceId) return { label: "Invoiced", color: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800" };
+    if (job.holdedQuoteId) return { label: "Quoted", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800" };
+    return null;
+  })();
+
+  const statusBadgeColor = (() => {
+    const m: Record<string, string> = {
+      new: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+      todo: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+      in_inspection: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+      quote_needed: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+      waiting_approval: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+      waiting_customer: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+      waiting_parts: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+      scheduled: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+      in_progress: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+      blocked: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+      completed: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+      invoiced: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+      rejected: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+      archived: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+    };
+    return m[status] ?? "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+  })();
+
+  const priorityBadgeColor = (() => {
+    const m: Record<string, string> = {
+      low: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+      normal: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+      high: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+      urgent: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+    };
+    return m[priority] ?? "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+  })();
+
   return (
-    <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
-      {/* ── Header ── */}
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-background animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          HEADER
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="space-y-5">
+        <div className="flex items-start justify-between gap-8">
+          {/* Left side */}
+          <div className="flex items-start gap-4 min-w-0 flex-1">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="mt-1.5 p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0"
+              className="mt-2 p-2 rounded-xl hover:bg-white dark:hover:bg-white/10 transition-all duration-150 shrink-0"
             >
-              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+              <ArrowLeft className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </button>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 space-y-2">
               {editingTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="text-lg font-semibold h-10 rounded-lg border-0 bg-muted/50 px-3"
+                    className="text-2xl font-semibold h-12 rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-4"
                     autoFocus
                     onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setEditingTitle(false); }}
                   />
-                  <button onClick={() => setEditingTitle(false)} className="p-1 rounded hover:bg-muted">
-                    <XIcon className="h-4 w-4 text-muted-foreground" />
+                  <button onClick={() => setEditingTitle(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10">
+                    <XIcon className="h-4 w-4 text-gray-400" />
                   </button>
                 </div>
               ) : (
@@ -445,200 +484,204 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   onClick={() => setEditingTitle(true)}
                   className="group text-left w-full"
                 >
-                  <h1 className="text-xl font-semibold tracking-tight text-foreground leading-snug line-clamp-2">
+                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
                     {title || job.publicCode || "Untitled repair"}
                   </h1>
                 </button>
               )}
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {job.publicCode && title ? job.publicCode : ''}
-              </p>
+
+              {/* Metadata row */}
+              <div className="flex items-center gap-3 flex-wrap text-sm">
+                {job.publicCode && title && (
+                  <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">{job.publicCode}</span>
+                )}
+                {job.customer ? (
+                  <button
+                    onClick={() => setExpandCustomer((v) => !v)}
+                    className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-150"
+                  >
+                    {job.customer.name}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowCustomerLinker(true)}
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 italic transition-all duration-150"
+                  >
+                    No customer
+                  </button>
+                )}
+                {job.unit && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                    <button
+                      onClick={() => setExpandUnit((v) => !v)}
+                      className="font-mono text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150"
+                    >
+                      {job.unit.registration || 'No plate'}
+                    </button>
+                  </>
+                )}
+                {job.location && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">{job.location.slug ? job.location.slug.toUpperCase() : job.location.name}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {job.jobType && job.jobType !== "repair" && (
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300"}`}>
+                    {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
+                  </span>
+                )}
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${statusBadgeColor}`}>
+                  {STATUS_LABELS[status as RepairStatus]}
+                </span>
+                {priority !== "normal" && (
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${priorityBadgeColor}`}>
+                    {PRIORITY_LABELS[priority as Priority]}
+                  </span>
+                )}
+                {financialStage && (
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${financialStage.color}`}>
+                    {financialStage.label}
+                  </span>
+                )}
+                {repairWorkers.length > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    <User className="h-3 w-3" />
+                    {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
+                  </span>
+                )}
+                <TagPicker
+                  allTags={allTags}
+                  activeTags={repairTags}
+                  onAdd={(tagId) => addTagToRepair(job.id, tagId)}
+                  onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
+                  onCreate={async (data) => { await createTag(data); }}
+                  onDelete={async (tagId) => { await deleteTag(tagId); }}
+                />
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 mt-1">
+
+          {/* Right side */}
+          <div className="flex items-center gap-2 shrink-0 mt-2">
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              className="p-2.5 rounded-xl text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150"
               title="Delete"
             >
               {deleting ? <Spinner /> : <Trash2 className="h-4 w-4" />}
             </button>
-            <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-lg h-9 px-5 font-medium">
+            <Button onClick={handleSave} disabled={saving} className="rounded-xl h-10 px-6 font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 shadow-sm transition-all duration-150">
               {saving ? <Spinner className="mr-2" /> : null}
               Save
             </Button>
           </div>
         </div>
 
-        {/* Status chips + tags — all in one line */}
-        <div className="flex items-center gap-2 flex-wrap pl-10">
-          {/* Clickable customer name */}
-          {job.customer ? (
-            <button
-              onClick={() => setExpandCustomer((v) => !v)}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors underline decoration-dotted underline-offset-2 ${expandCustomer ? 'bg-primary/10 text-primary decoration-primary' : 'text-foreground decoration-muted-foreground/40 hover:decoration-foreground hover:bg-muted'}`}
-              title="Click to view / edit customer"
-            >
-              {job.customer.name}
-              <Pencil className="h-2.5 w-2.5 opacity-40" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowCustomerLinker(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors italic underline decoration-dotted underline-offset-2"
-            >
-              No customer
-            </button>
-          )}
-
-          <span className="text-muted-foreground/30">·</span>
-
-          {/* Clickable license plate / unit + location */}
-          {job.unit ? (
-            <button
-              onClick={() => setExpandUnit((v) => !v)}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs transition-colors underline decoration-dotted underline-offset-2 ${expandUnit ? 'bg-primary/10 text-primary decoration-primary' : 'text-muted-foreground decoration-muted-foreground/40 hover:text-foreground hover:decoration-foreground hover:bg-muted'}`}
-              title="Click to view / edit unit"
-            >
-              <span className="font-mono">{job.unit.registration || 'No license plate'}</span>
-              <Pencil className="h-2.5 w-2.5 opacity-40" />
-            </button>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground/50 italic">
-              No unit
-              {job.location && <span className="text-muted-foreground/60 not-italic">· {job.location.slug ? job.location.slug.toUpperCase() : job.location.name}</span>}
-            </span>
-          )}
-
-          <span className="text-muted-foreground/30">·</span>
-
-          <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ${STATUS_COLORS[status as RepairStatus] ?? 'bg-muted text-muted-foreground'}`}>
-            {STATUS_LABELS[status as RepairStatus]}
-          </span>
-          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[priority as Priority] ?? 'bg-muted text-muted-foreground'}`}>
-            {PRIORITY_LABELS[priority as Priority]}
-          </span>
-          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${financialStage.color}`}>
-            {financialStage.label}
-          </span>
-
-          {repairWorkers.length > 0 && (
-            <>
-              <span className="text-muted-foreground/30">·</span>
-              <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
-                <User className="h-3 w-3" />
-                {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
-              </span>
-            </>
-          )}
-
-          <TagPicker
-            allTags={allTags}
-            activeTags={repairTags}
-            onAdd={(tagId) => addTagToRepair(job.id, tagId)}
-            onRemove={(tagId) => removeTagFromRepair(job.id, tagId)}
-            onCreate={async (data) => { await createTag(data); }}
-            onDelete={async (tagId) => { await deleteTag(tagId); }}
-          />
-        </div>
-
-        {/* Inline edit panels — expand below the chips */}
+        {/* Inline edit panels */}
         {expandCustomer && job.customer && (
-          <div className="pl-10">
+          <div className="ml-14">
             <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
           </div>
         )}
         {expandUnit && job.unit && (
-          <div className="pl-10">
+          <div className="ml-14">
             <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
           </div>
         )}
       </div>
 
-      {/* ── Summary Bar — next action, blocker ── */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          NEXT ACTION BLOCK
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {(displayNextAction || displayBlocker) && (
-        <div className="rounded-xl border border-border/50 bg-muted/20 px-6 py-4 space-y-3">
+        <div className="space-y-3">
           {displayNextAction && (
-            <div className="flex items-start gap-3">
-              <div className="flex items-center gap-2 shrink-0 w-28">
-                <div className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
-                <span className="text-xs font-medium text-muted-foreground">Next action</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                {nextAction ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{nextAction}</span>
-                    <button onClick={() => setNextAction("")} className="text-muted-foreground hover:text-foreground p-0.5 rounded">
-                      <XIcon className="h-3 w-3" />
+            <div className="rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/60 px-6 py-5 transition-all duration-150">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-sky-700/70 dark:text-sky-400/70 font-semibold">Next action</p>
+                  {nextAction ? (
+                    <div className="flex items-center gap-3">
+                      <p className="text-lg font-semibold text-sky-950 dark:text-sky-100">{nextAction}</p>
+                      <button onClick={() => setNextAction("")} className="text-sky-400 dark:text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 p-1 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-all duration-150">
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const val = prompt("Next action:", computedNextAction);
+                        if (val !== null) setNextAction(val);
+                      }}
+                      className="text-lg font-semibold text-sky-950 dark:text-sky-100 hover:text-sky-800 dark:hover:text-sky-200 transition-all duration-150"
+                    >
+                      {computedNextAction}
+                      <span className="text-xs text-sky-700/50 dark:text-sky-400/50 font-normal ml-2">auto</span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      const val = prompt("Next action:", computedNextAction);
-                      if (val !== null) setNextAction(val);
-                    }}
-                    className="text-sm text-foreground/80 hover:text-foreground transition-colors"
-                  >
-                    {computedNextAction}
-                    <span className="text-[10px] text-muted-foreground/40 ml-1.5">· auto</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}
           {displayBlocker && (
-            <div className="flex items-start gap-3">
-              <div className="flex items-center gap-2 shrink-0 w-28">
-                <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Blocker</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                {currentBlocker ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-amber-700 dark:text-amber-300">{currentBlocker}</span>
-                    <button onClick={() => setCurrentBlocker("")} className="text-muted-foreground hover:text-foreground p-0.5 rounded">
-                      <XIcon className="h-3 w-3" />
+            <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/60 px-6 py-4 transition-all duration-150">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-amber-700/70 dark:text-amber-400/70 font-semibold flex items-center gap-1.5">
+                    <AlertTriangle className="h-3 w-3" /> Blocker
+                  </p>
+                  {currentBlocker ? (
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{currentBlocker}</p>
+                      <button onClick={() => setCurrentBlocker("")} className="text-amber-400 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 p-1 rounded-lg transition-all duration-150">
+                        <XIcon className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const val = prompt("Current blocker:", computedBlocker);
+                        if (val !== null) setCurrentBlocker(val);
+                      }}
+                      className="text-sm font-medium text-amber-900/80 dark:text-amber-200/80 hover:text-amber-900 dark:hover:text-amber-200 transition-all duration-150"
+                    >
+                      {computedBlocker}
+                      <span className="text-xs text-amber-700/40 dark:text-amber-400/40 font-normal ml-2">auto</span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      const val = prompt("Current blocker:", computedBlocker);
-                      if (val !== null) setCurrentBlocker(val);
-                    }}
-                    className="text-sm text-amber-700/80 dark:text-amber-300/80 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
-                  >
-                    {computedBlocker}
-                    <span className="text-[10px] text-muted-foreground/40 ml-1.5">· auto</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* ── Past Repairs ── */}
+      {/* Past Repairs — compact horizontal */}
       {job.customer && customerRepairs.length > 0 && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Past Repairs</p>
+          <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-3">Past Repairs</p>
           <div className="flex gap-3 overflow-x-auto pb-1">
             {customerRepairs.slice(0, 6).map((r) => (
               <Link
                 key={r.id}
                 href={`/repairs/${r.id}`}
-                className="flex items-start gap-3 rounded-xl bg-muted/40 hover:bg-muted/70 px-4 py-3 min-w-[220px] transition-colors group"
+                className="flex items-center gap-3 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 shadow-sm px-4 py-3 min-w-[220px] transition-all duration-150 group"
               >
-                <div className="flex items-center justify-center h-9 w-9 rounded-full bg-muted text-sm font-bold text-muted-foreground shrink-0 mt-0.5">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-500 dark:text-gray-400 shrink-0">
                   {(r.publicCode ?? 'R').slice(0, 2)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-sky-700 dark:group-hover:text-sky-400 transition-colors">
                     {r.title ? r.title.slice(0, 35) + (r.title.length > 35 ? '…' : '') : r.publicCode ?? 'Repair'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {format(new Date(r.createdAt), "dd MMM yyyy")}
                     <span className="mx-1.5">·</span>
                     {STATUS_LABELS[r.status as RepairStatus] ?? r.status}
@@ -647,7 +690,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </Link>
             ))}
             {customerRepairs.length > 6 && (
-              <div className="flex items-center text-xs text-muted-foreground font-medium px-4 shrink-0">
+              <div className="flex items-center text-xs text-gray-400 font-medium px-4 shrink-0">
                 +{customerRepairs.length - 6} more
               </div>
             )}
@@ -655,50 +698,52 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main content */}
-        <div className="space-y-6 lg:col-span-2">
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MAIN GRID — 8 / 4
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          {/* ═══ DESCRIPTION & NOTES ═══ */}
+        {/* ─── LEFT COLUMN ─── */}
+        <div className="space-y-6 lg:col-span-8">
 
-          {/* Issue description + notes merged */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 p-6" ref={descriptionRef}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</h3>
+          {/* DESCRIPTION CARD */}
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 transition-all duration-150" ref={descriptionRef}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Description</h3>
               {!editingDescription && (
-                <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150 font-medium">
                   Edit
                 </button>
               )}
             </div>
             {editingDescription ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
                   autoFocus
-                  className="rounded-lg text-sm border-0 bg-background/60"
+                  className="rounded-xl text-sm border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
                 />
-                <button onClick={() => setEditingDescription(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setEditingDescription(false)} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150 font-medium">
                   Done
                 </button>
               </div>
             ) : (
-              <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {description || <span className="text-muted-foreground italic">No description</span>}
+              <div className="whitespace-pre-wrap text-base text-gray-800 dark:text-gray-200 leading-7">
+                {description || <span className="text-gray-400 dark:text-gray-500 italic">No description</span>}
               </div>
             )}
             {job.descriptionNormalized && (
-              <div className="mt-4 pt-4 border-t border-border/50">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
-                <p className="text-sm text-muted-foreground">{job.descriptionNormalized}</p>
+              <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5">Summary</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{job.descriptionNormalized}</p>
               </div>
             )}
             {/* Internal notes */}
-            <div className="mt-4 pt-4 border-t border-border/50">
+            <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
               <details className="group" open={!!internalComments}>
-                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none flex items-center gap-1.5">
+                <summary className="text-xs text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150 select-none flex items-center gap-1.5 font-medium">
                   Internal notes
                   {internalComments && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />}
                 </summary>
@@ -707,7 +752,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   onChange={(e) => setInternalComments(e.target.value)}
                   rows={2}
                   placeholder="Private staff notes..."
-                  className="rounded-lg text-sm resize-none mt-2 border-0 bg-background/60"
+                  className="rounded-xl text-sm resize-none mt-3 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
                 />
               </details>
             </div>
@@ -715,21 +760,21 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* Parts needed */}
           {job.partsNeededRaw && (
-            <div className="rounded-xl bg-muted/30 border border-border/50 p-6">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Parts Needed</h3>
-              <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-4">Parts Needed</h3>
+              <div className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{job.partsNeededRaw}</div>
             </div>
           )}
 
-          {/* ── ACTIVE BLOCKERS — prominent red section ── */}
+          {/* ACTIVE BLOCKERS */}
           {blockers.filter(b => b.active).length > 0 && (
-            <div className="rounded-xl bg-red-50/80 dark:bg-red-950/20 border-2 border-red-300/60 p-6">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400 mb-3 flex items-center gap-1.5">
+            <div className="rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 p-6 transition-all duration-150">
+              <h3 className="text-xs uppercase tracking-wide text-red-600 dark:text-red-400 font-semibold mb-4 flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" /> Active Blockers
               </h3>
               <div className="space-y-3">
                 {blockers.filter(b => b.active).map((b) => (
-                  <div key={b.id} className="flex items-start justify-between gap-3">
+                  <div key={b.id} className="flex items-start justify-between gap-3 rounded-xl bg-white/60 dark:bg-white/5 p-4 border border-red-100 dark:border-red-800/40">
                     <div className="min-w-0">
                       <span className="text-sm font-semibold text-red-700 dark:text-red-300">
                         {BLOCKER_REASON_LABELS[b.reason as BlockerReason]}
@@ -737,14 +782,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       {b.description && (
                         <p className="text-sm text-red-600/70 dark:text-red-400/70 mt-0.5">{b.description}</p>
                       )}
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
                         {b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="shrink-0 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                      className="shrink-0 text-xs rounded-xl border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                       onClick={() => {
                         startPartTransition(async () => {
                           await resolveBlockerAction(b.id);
@@ -760,42 +805,42 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </div>
           )}
 
-          {/* ── WORKSHOP FINDINGS ── */}
+          {/* WORKSHOP FINDINGS */}
           {findings.length > 0 && (
-            <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
               <details open={findings.some(f => !f.resolvedAt)}>
-                <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
                   Workshop Findings ({findings.filter(f => !f.resolvedAt).length} open, {findings.filter(f => f.resolvedAt).length} resolved)
                   <ChevronDown className="h-3.5 w-3.5 opacity-40" />
                 </summary>
                 <div className="px-6 pb-6 space-y-3">
                   {findings.map((f) => (
-                    <div key={f.id} className={`flex items-start gap-3 rounded-lg p-3 ${f.resolvedAt ? "opacity-50" : "bg-background/60"}`}>
+                    <div key={f.id} className={`flex items-start gap-3 rounded-xl p-4 border transition-all duration-150 ${f.resolvedAt ? "opacity-50 border-gray-100 dark:border-gray-800" : "bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-gray-800"}`}>
                       <span className="text-lg mt-0.5 shrink-0">{FINDING_CATEGORY_EMOJI[f.category as FindingCategory]}</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
                           <Badge className={
                             f.severity === "critical"
-                              ? "bg-red-50 text-red-600 border-red-100"
+                              ? "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
                               : f.severity === "minor"
-                              ? "bg-slate-50 text-slate-600 border-slate-100"
-                              : "bg-amber-50 text-amber-600 border-amber-100"
+                              ? "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+                              : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
                           }>
                             {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
                           </Badge>
                           {f.requiresCustomerApproval && (
-                            <Badge className="bg-orange-50 text-orange-600 border-orange-100">Approval Needed</Badge>
+                            <Badge className="bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800">Approval Needed</Badge>
                           )}
                           {f.requiresFollowUp && (
-                            <Badge className="bg-purple-50 text-purple-600 border-purple-100">Follow-up</Badge>
+                            <Badge className="bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800">Follow-up</Badge>
                           )}
                           {f.resolvedAt && (
-                            <Badge className="bg-green-50 text-green-600 border-green-100">Resolved</Badge>
+                            <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">Resolved</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{f.description}</p>
-                        <p className="text-[11px] text-muted-foreground/60 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{f.description}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
                           {f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -804,7 +849,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-xs text-green-700 hover:bg-green-50"
+                            className="text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"
                             onClick={() => {
                               startPartTransition(async () => {
                                 await resolveFindingAction(f.id);
@@ -818,7 +863,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-xs text-red-600 hover:bg-red-50 h-7 w-7 p-0"
+                          className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 h-7 w-7 p-0 rounded-lg"
                           onClick={() => {
                             startPartTransition(async () => {
                               await deleteFindingAction(f.id);
@@ -837,25 +882,25 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </div>
           )}
 
-          {/* ── WORKSHOP — workers, planning, flags, tasks, parts ── */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
+          {/* ━━━ WORKSHOP CARD ━━━ */}
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             <details open>
-              <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+              <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
                 Workshop
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
-            <div className="px-6 pb-5 space-y-4">
+            <div className="px-6 pb-6 space-y-6">
 
-              {/* Assigned + Planning — side by side */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Assigned + Planning */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Assigned workers */}
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium mb-1.5">Assigned</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2">Assigned</p>
                   {repairWorkers.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-1.5">
+                    <div className="flex flex-wrap gap-1.5 mb-2">
                       {repairWorkers.map((w) => (
-                        <span key={w.id} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs group">
-                          <span className="flex items-center justify-center h-4 w-4 rounded-full bg-foreground/10 text-[9px] font-bold text-foreground/70">
+                        <span key={w.id} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 group transition-all duration-150">
+                          <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-400">
                             {w.userName.charAt(0).toUpperCase()}
                           </span>
                           {w.userName}
@@ -866,7 +911,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                                 router.refresh();
                               });
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all ml-0.5"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all duration-150 ml-0.5"
                             title="Remove"
                           >
                             <XIcon className="h-2.5 w-2.5" />
@@ -890,7 +935,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           });
                         }}
                       >
-                        <SelectTrigger className="h-7 text-xs rounded-lg border-border/50"><SelectValue placeholder="+ Assign technician..." /></SelectTrigger>
+                        <SelectTrigger className="h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue placeholder="+ Assign technician..." /></SelectTrigger>
                         <SelectContent>
                           {availableUsers.map((u) => (
                             <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
@@ -907,36 +952,51 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
               </div>
 
-              {/* Flags */}
-              <div className="border-t border-border/30 pt-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-xs text-muted-foreground font-medium">Inspection Flags</p>
+              {/* Inspection Flags */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Inspection Flags</p>
                   {!showAllFlags && (
                     <button
                       onClick={() => setShowAllFlags(true)}
-                      className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-0.5"
+                      className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
                     >
                       <Plus className="h-3 w-3" /> Add
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {activeFlags.map((flag) => (
                     <span
                       key={flag.label}
-                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all border ${
+                      className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 border ${
                         flag.danger
-                          ? "bg-red-50 text-red-600 border-red-200/60 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/60"
-                          : "bg-muted text-foreground/80 border-border/60"
+                          ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
+                          : "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800"
                       }`}
                     >
-                      <span className="mr-1">✓</span>
                       {flag.label}
                       <button
                         type="button"
                         onClick={() => flag.set(false)}
-                        className="ml-1.5 -mr-1 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                        className="ml-1.5 -mr-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-150"
                         title={`Remove ${flag.label}`}
+                      >
+                        <XIcon className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  {customFlags.map((flag) => (
+                    <span
+                      key={flag}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800"
+                    >
+                      {flag}
+                      <button
+                        type="button"
+                        onClick={() => setCustomFlags((prev) => prev.filter((f) => f !== flag))}
+                        className="ml-1.5 -mr-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-150"
+                        title={`Remove ${flag}`}
                       >
                         <XIcon className="h-2.5 w-2.5" />
                       </button>
@@ -947,41 +1007,63 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       key={flag.label}
                       type="button"
                       onClick={() => flag.set(true)}
-                      className="inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer border bg-transparent text-muted-foreground border-border/40 hover:border-border"
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer border bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                     >
                       {flag.label}
                     </button>
                   ))}
                   {showAllFlags && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const trimmed = newFlagName.trim();
+                        if (trimmed && !customFlags.includes(trimmed)) {
+                          setCustomFlags((prev) => [...prev, trimmed]);
+                          setNewFlagName("");
+                        }
+                      }}
+                      className="inline-flex items-center"
+                    >
+                      <input
+                        type="text"
+                        value={newFlagName}
+                        onChange={(e) => setNewFlagName(e.target.value)}
+                        placeholder="New flag..."
+                        className="h-8 w-28 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800 focus:border-sky-300 dark:focus:border-sky-700 transition-all duration-150"
+                        maxLength={50}
+                      />
+                    </form>
+                  )}
+                  {showAllFlags && (
                     <button
                       type="button"
                       onClick={() => setShowAllFlags(false)}
-                      className="inline-flex items-center rounded-full px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex items-center rounded-full px-2 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150"
                     >
                       <XIcon className="h-3 w-3" />
                     </button>
                   )}
-                  {activeFlags.length === 0 && !showAllFlags && (
-                    <span className="text-xs text-muted-foreground/60">None</span>
+                  {activeFlags.length === 0 && customFlags.length === 0 && !showAllFlags && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500">None</span>
                   )}
                 </div>
               </div>
 
               {/* Tasks */}
-              <div className="border-t border-border/30 pt-3">
+              <div className="pt-2">
                 <RepairTaskList repairJobId={job.id} initialTasks={tasks} defaultHourlyRate={settings.hourlyRate} />
               </div>
 
               {/* Parts Used */}
-              <div className="border-t border-border/30 pt-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-xs text-muted-foreground font-medium">
-                      Parts Used
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">
+                    Parts Used
                     {partRequests.length > 0 && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      <span className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                         partRequests.every(p => p.status === "received" || p.status === "cancelled")
-                          ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
-                          : "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
+                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                          : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
                       }`}>
                         {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
                       </span>
@@ -990,12 +1072,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   {!showAddPart && (
                     <button
                       onClick={() => setShowAddPart(true)}
-                      className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-0.5"
+                      className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
                     >
                       <Plus className="h-3 w-3" /> Add
                     </button>
                   )}
                 </div>
+
               {/* Inline add form — search catalog */}
               {showAddPart && (
                 <div className="mb-3 space-y-2">
@@ -1003,15 +1086,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     value={addingPartName}
                     onChange={(e) => setAddingPartName(e.target.value)}
                     placeholder="Search parts catalog..."
-                    className="h-8 text-sm rounded-lg"
+                    className="h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); }
                     }}
                   />
-                  {/* Matching parts from catalog */}
                   {addingPartName.trim().length >= 1 && (
-                    <div className="max-h-36 overflow-y-auto space-y-0.5 rounded-lg border bg-white/80 dark:bg-black/20 p-1">
+                    <div className="max-h-36 overflow-y-auto space-y-0.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 p-1">
                       {partsList
                         .filter((p) => p.name.toLowerCase().includes(addingPartName.toLowerCase()))
                         .slice(0, 8)
@@ -1027,19 +1109,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                                 router.refresh();
                               });
                             }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs hover:bg-muted transition-colors flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-150 flex items-center justify-between"
                           >
-                            <span className="font-medium truncate">{p.name}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{p.partNumber ?? ''}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{p.name}</span>
+                            <span className="text-[10px] text-gray-400 shrink-0 ml-2">{p.partNumber ?? ''}</span>
                           </button>
                         ))}
                       {partsList.filter((p) => p.name.toLowerCase().includes(addingPartName.toLowerCase())).length === 0 && (
-                        <p className="text-[11px] text-muted-foreground py-2 text-center">No matching parts in catalog</p>
+                        <p className="text-[11px] text-gray-400 py-2 text-center">No matching parts in catalog</p>
                       )}
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
-                    {/* Add as custom (not in catalog) */}
                     <button
                       onClick={() => {
                         if (!addingPartName.trim()) return;
@@ -1051,12 +1132,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         });
                       }}
                       disabled={!addingPartName.trim() || partRequestsPending}
-                      className="text-xs text-muted-foreground hover:text-foreground font-medium disabled:opacity-50 flex items-center gap-1"
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium disabled:opacity-50 flex items-center gap-1 transition-all duration-150"
                     >
                       <Plus className="h-3 w-3" /> Use &quot;{addingPartName || '...'}&quot; as-is
                     </button>
-                    <span className="text-muted-foreground text-xs">·</span>
-                    {/* Add New Part to catalog */}
+                    <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
                     <button
                       onClick={() => {
                         if (!addingPartName.trim()) return;
@@ -1070,11 +1150,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         });
                       }}
                       disabled={!addingPartName.trim() || partRequestsPending}
-                      className="text-xs text-muted-foreground hover:text-foreground font-medium disabled:opacity-50 flex items-center gap-1"
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium disabled:opacity-50 flex items-center gap-1 transition-all duration-150"
                     >
                       Add &quot;{addingPartName || '...'}&quot; to catalog
                     </button>
-                    <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-muted-foreground hover:text-foreground ml-auto">
+                    <button onClick={() => { setShowAddPart(false); setAddingPartName(""); }} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 ml-auto transition-all duration-150">
                       <XIcon className="h-4 w-4" />
                     </button>
                   </div>
@@ -1084,12 +1164,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {/* Parts from cost estimate */}
               {costLines.filter(l => l.type === "part").length > 0 && partRequests.length === 0 && (
                 <div className="mb-2">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">From Quote</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">From Quote</p>
                   <div className="space-y-1">
                     {costLines.filter(l => l.type === "part").map((l) => (
-                      <div key={l.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/60 dark:bg-white/5 border">
-                        <span className="truncate font-medium">{l.description}</span>
-                        <span className="text-muted-foreground shrink-0 ml-2">×{l.quantity}</span>
+                      <div key={l.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800">
+                        <span className="truncate font-medium text-gray-700 dark:text-gray-300">{l.description}</span>
+                        <span className="text-gray-400 shrink-0 ml-2">×{l.quantity}</span>
                       </div>
                     ))}
                   </div>
@@ -1098,12 +1178,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* Part requests */}
               {partRequests.length > 0 ? (
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {partRequests.map((pr) => (
-                    <div key={pr.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/60 dark:bg-white/5 border">
-                      <span className="truncate font-medium mr-2">
+                    <div key={pr.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800 transition-all duration-150 hover:bg-gray-100 dark:hover:bg-white/10">
+                      <span className="truncate font-medium text-gray-700 dark:text-gray-300 mr-2">
                         {pr.partName}
-                        {pr.quantity > 1 && <span className="text-muted-foreground"> ×{pr.quantity}</span>}
+                        {pr.quantity > 1 && <span className="text-gray-400 dark:text-gray-500"> ×{pr.quantity}</span>}
                       </span>
                       <Select
                         value={pr.status}
@@ -1115,11 +1195,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         }}
                       >
                         <SelectTrigger className={`h-6 w-[100px] text-[10px] font-semibold rounded-full border-0 ${
-                          pr.status === "received" ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400" :
+                          pr.status === "received" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" :
                           pr.status === "shipped" ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" :
                           pr.status === "ordered" ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" :
-                          pr.status === "cancelled" ? "bg-gray-50 text-gray-500 dark:bg-gray-500/10 dark:text-gray-500" :
-                          "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400"
+                          pr.status === "cancelled" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" :
+                          "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
                         }`}>
                           <SelectValue />
                         </SelectTrigger>
@@ -1135,18 +1215,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   ))}
                 </div>
               ) : !showAddPart && costLines.filter(l => l.type === "part").length === 0 ? (
-                <p className="text-xs text-muted-foreground">No parts used yet. Add from quote or manually.</p>
+                <div className="rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-dashed border-gray-200 dark:border-gray-700 px-4 py-4 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No parts used yet.</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Add from quote or manually.</p>
+                </div>
               ) : null}
               </div>
             </div>
             </details>
           </div>
 
-          {/* ═══ FINANCIAL ═══ */}
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mt-2">Financial</p>
-
-          {/* Unified Financial Workflow */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden" ref={costRef}>
+          {/* ━━━ FINANCIAL ━━━ */}
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden" ref={costRef}>
             <FinancialWorkflow
               job={job}
               estimatedCost={estimatedCost}
@@ -1185,17 +1265,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             />
           </div>
 
-          {/* ── Photos ── */}
+          {/* Photos */}
           {photos.length > 0 && (
-            <Card className="rounded-xl border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Photos
-                  <Badge variant="secondary" className="text-xs">{photos.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold flex items-center gap-2 mb-4">
+                <Camera className="h-4 w-4" />
+                Photos
+                <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
+              </h3>
+              <div className="space-y-4">
                 {(() => {
                   const taskPhotos = photos.filter(p => p.repairTaskId);
                   const generalPhotos = photos.filter(p => !p.repairTaskId);
@@ -1210,7 +1288,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <>
                       {Object.entries(grouped).map(([taskId, taskPics]) => (
                         <div key={taskId} className="space-y-2">
-                          <h4 className="text-xs font-medium text-muted-foreground">{taskName(taskId)}</h4>
+                          <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500">{taskName(taskId)}</h4>
                           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                             {taskPics.map(photo => (
                               <PhotoCard key={photo.id} photo={photo} />
@@ -1220,7 +1298,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       ))}
                       {generalPhotos.length > 0 && (
                         <div className="space-y-2">
-                          {taskPhotos.length > 0 && <h4 className="text-xs font-medium text-muted-foreground">General</h4>}
+                          {taskPhotos.length > 0 && <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500">General</h4>}
                           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                             {generalPhotos.map(photo => (
                               <PhotoCard key={photo.id} photo={photo} />
@@ -1231,11 +1309,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </>
                   );
                 })()}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {/* Timeline + Communication — merged into tabs */}
+          {/* Timeline + Communication */}
           {(job.events.length > 0 || communicationLogs.length > 0) && (
             <TimelineCommunicationCard
               events={job.events}
@@ -1247,17 +1325,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
         </div>
 
-        {/* ═══ SIDEBAR ═══ */}
-        <div className="space-y-6">
+        {/* ─── RIGHT COLUMN ─── */}
+        <div className="space-y-6 lg:col-span-4">
 
-          {/* ── Job Status ── */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Job Status</h3>
-            <div className="grid grid-cols-2 gap-3">
+          {/* Job Status */}
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-5">
+            <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Job Status</h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Status</Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABELS).map(([val, label]) => (
                       <SelectItem key={val} value={val}>{label}</SelectItem>
@@ -1266,34 +1344,34 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Priority</Label>
-                <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1 h-8 text-xs rounded-lg border-border/50" />
+                <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Priority</Label>
+                <PrioritySelect value={priority} onValueChange={setPriority} className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5" />
               </div>
             </div>
 
             {/* Info rows */}
-            <div className="border-t border-border/40 pt-3 space-y-2.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Location</span>
-                <span className="font-medium text-right">{job.location?.name ?? "—"}</span>
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3 text-sm">
+              <div className="flex items-start justify-between py-0.5">
+                <span className="text-gray-500 dark:text-gray-400">Location</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200 text-right">{job.location?.name ?? "—"}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Position</span>
-                <span className="font-mono text-xs font-medium text-right">{job.unit?.currentPosition ?? "—"}</span>
+              <div className="flex items-start justify-between py-0.5">
+                <span className="text-gray-500 dark:text-gray-400">Position</span>
+                <span className="font-mono text-xs font-medium text-gray-800 dark:text-gray-200 text-right">{job.unit?.currentPosition ?? "—"}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Storage</span>
-                <span className="text-xs font-medium text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
+              <div className="flex items-start justify-between py-0.5">
+                <span className="text-gray-500 dark:text-gray-400">Storage</span>
+                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
               </div>
               {job.unit && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Unit</span>
+                <div className="flex items-start justify-between py-0.5">
+                  <span className="text-gray-500 dark:text-gray-400">Unit</span>
                   <span className="flex items-center gap-1.5">
-                    <Link href={`/units/${job.unit.id}`} className="font-medium text-primary hover:underline text-right text-xs">
+                    <Link href={`/units/${job.unit.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right text-xs transition-all duration-150">
                       {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
                     </Link>
-                    <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit unit">
-                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                    <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150" title="Edit unit">
+                      <Pencil className="h-2.5 w-2.5 text-gray-400 dark:text-gray-500" />
                     </button>
                   </span>
                 </div>
@@ -1302,44 +1380,43 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
               )}
               {!job.unit && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Unit</span>
-                  <span className="text-muted-foreground">—</span>
+                <div className="flex items-start justify-between py-0.5">
+                  <span className="text-gray-500 dark:text-gray-400">Unit</span>
+                  <span className="text-gray-400 dark:text-gray-500">—</span>
                 </div>
               )}
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Created</span>
-                <span className="text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
+              <div className="flex items-start justify-between py-0.5">
+                <span className="text-gray-500 dark:text-gray-400">Created</span>
+                <span className="text-gray-800 dark:text-gray-200 text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
               </div>
             </div>
             {job.sourceSheet && (
-              <div className="border-t border-border/40 pt-3">
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Source</span>
-                  <span className="text-xs text-muted-foreground">Imported</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Source</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">Imported</span>
                 </div>
               </div>
-              )}
+            )}
           </div>
 
-          {/* ── Customer ── */}
-          <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</h3>
+          {/* Customer */}
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-5">
+            <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Customer</h3>
 
-            {/* Customer name + edit */}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Contact</span>
+              <span className="text-gray-500 dark:text-gray-400">Contact</span>
                 {job.customer ? (
                   <span className="flex items-center gap-1.5">
-                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-primary hover:underline text-right">
+                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right transition-all duration-150">
                       {job.customer.name}
                     </Link>
-                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted" title="Edit customer">
-                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150" title="Edit customer">
+                      <Pencil className="h-2.5 w-2.5 text-gray-400 dark:text-gray-500" />
                     </button>
                   </span>
                 ) : (
-                  <span className="text-muted-foreground">—</span>
+                  <span className="text-gray-400 dark:text-gray-500">—</span>
                 )}
               </div>
               {expandCustomer && job.customer && (
@@ -1348,9 +1425,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* Customer response */}
               <div>
-                <Label className="text-xs text-muted-foreground">Response</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Response</Label>
                 <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
-                  <SelectTrigger className="mt-1 h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
                       <SelectItem key={val} value={val}>{label}</SelectItem>
@@ -1359,12 +1436,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </Select>
               </div>
 
-          {/* Remove past repairs from customer card — now in header */}
-
               {/* Invoice + pricing */}
-              <div className="border-t border-border/40 pt-3 space-y-3">
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Invoice</Label>
+                  <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Invoice</Label>
                   <Select value={invoiceStatus} onValueChange={(val) => {
                     setInvoiceStatus(val);
                     if (val === "rejected") {
@@ -1372,7 +1447,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       setCustomerResponseStatus("declined");
                     }
                   }}>
-                    <SelectTrigger className="mt-1 h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(INVOICE_STATUS_LABELS).map(([val, label]) => (
                         <SelectItem key={val} value={val}>{label}</SelectItem>
@@ -1382,50 +1457,46 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
                 {job.holdedInvoiceDate && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Invoice Date
-                    </span>
-                    <span className="text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Invoice Date</span>
+                    <span className="text-gray-800 dark:text-gray-200 text-right">{format(new Date(job.holdedInvoiceDate), "dd MMM yyyy")}</span>
                   </div>
                 )}
-
-                {/* Costs moved to Cost Estimate card */}
               </div>
           </div>
 
-          {/* ── Source & Import ── */}
+          {/* Source & Import */}
           {(job.sourceSheet || job.sourceCategory || job.spreadsheetInternalId) && (
-            <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Source & Import</h3>
-              <div className="space-y-2 text-sm">
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-4">
+              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Source & Import</h3>
+              <div className="space-y-3 text-sm">
                 {job.sourceSheet && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Sheet</span>
-                    <span className="text-right text-xs font-medium truncate max-w-[160px]">{job.sourceSheet}</span>
+                  <div className="flex items-start justify-between py-0.5">
+                    <span className="text-gray-500 dark:text-gray-400">Sheet</span>
+                    <span className="text-right text-xs font-medium text-gray-800 dark:text-gray-200 truncate max-w-[160px]">{job.sourceSheet}</span>
                   </div>
                 )}
                 {job.sourceCategory && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="text-right text-xs">{job.sourceCategory}</span>
+                  <div className="flex items-start justify-between py-0.5">
+                    <span className="text-gray-500 dark:text-gray-400">Category</span>
+                    <span className="text-right text-xs text-gray-800 dark:text-gray-200">{job.sourceCategory}</span>
                   </div>
                 )}
                 {job.spreadsheetInternalId && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Ref ID</span>
-                    <span className="text-right font-mono text-xs">{job.spreadsheetInternalId}</span>
+                  <div className="flex items-start justify-between py-0.5">
+                    <span className="text-gray-500 dark:text-gray-400">Ref ID</span>
+                    <span className="text-right font-mono text-xs text-gray-800 dark:text-gray-200">{job.spreadsheetInternalId}</span>
                   </div>
                 )}
                 {job.bayReference && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Location</span>
-                    <span className="text-right font-mono text-xs">{job.bayReference}</span>
+                  <div className="flex items-start justify-between py-0.5">
+                    <span className="text-gray-500 dark:text-gray-400">Location</span>
+                    <span className="text-right font-mono text-xs text-gray-800 dark:text-gray-200">{job.bayReference}</span>
                   </div>
                 )}
                 {job.extraNotesRaw && (
-                  <div className="border-t border-border/40 pt-2">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Extra notes (from import)</p>
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{job.extraNotesRaw}</p>
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Extra notes (from import)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-pre-wrap">{job.extraNotesRaw}</p>
                   </div>
                 )}
               </div>
@@ -1435,7 +1506,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
       </div>
 
-      {/* ── Customer Linker Dialog ── */}
+      {/* Dialogs */}
       <Dialog open={showCustomerLinker} onOpenChange={setShowCustomerLinker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1458,7 +1529,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </DialogContent>
       </Dialog>
 
-      {/* ── User Assignment Dialog ── */}
       <Dialog open={showUserAssigner} onOpenChange={setShowUserAssigner}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -1469,7 +1539,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <button
                 key={u.id}
                 type="button"
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors"
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-150"
                 onClick={async () => {
                   try {
                     await updateRepairJob(job.id, { assignedUserId: u.id });
@@ -1481,16 +1551,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   }
                 }}
               >
-                <User className="h-4 w-4 text-muted-foreground" />
+                <User className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                 {u.name}
               </button>
             ))}
             {users.length === 0 && (
-              <p className="text-sm text-muted-foreground py-2">No users available</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 py-2">No users available</p>
             )}
           </div>
         </DialogContent>
       </Dialog>
+
+      </div>
     </div>
   );
 }

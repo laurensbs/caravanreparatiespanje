@@ -27,6 +27,7 @@ export const repairJobSchema = z.object({
     "repair", "follow_up", "quote", "parts_order", "trailer_sale",
     "trailer_disposal", "inspection", "planning", "relocation", "service", "unknown",
   ]).optional(),
+  jobType: z.enum(["repair", "wax", "maintenance", "inspection"]).optional(),
   assignedUserId: z.string().uuid().nullable().optional(),
   estimatedCost: z.string().nullable().optional(),
   actualCost: z.string().nullable().optional(),
@@ -53,6 +54,7 @@ export const repairJobSchema = z.object({
   sealsFlag: z.boolean().optional(),
   partsRequiredFlag: z.boolean().optional(),
   followUpRequiredFlag: z.boolean().optional(),
+  customFlags: z.array(z.string().max(50)).optional(),
   nextAction: z.string().nullable().optional(),
   currentBlocker: z.string().nullable().optional(),
 });

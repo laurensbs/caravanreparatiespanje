@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, repairJobTags, customers, units, locations, users, tags } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, repairJobTags, repairTasks, customers, units, locations, users, tags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
@@ -19,6 +19,7 @@ export type RepairFilters = {
   customerResponseStatus?: string;
   invoiceStatus?: string;
   tagId?: string;
+  jobType?: string;
   archived?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -110,6 +111,10 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     conditions.push(lte(repairJobs.createdAt, to));
   }
 
+  if (filters.jobType) {
+    conditions.push(eq(repairJobs.jobType, filters.jobType as any));
+  }
+
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const sortColumn: Record<string, any> = {
@@ -154,6 +159,7 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
         notesRaw: repairJobs.notesRaw,
         warrantyInternalCostFlag: repairJobs.warrantyInternalCostFlag,
         internalCost: repairJobs.internalCost,
+        jobType: repairJobs.jobType,
       })
       .from(repairJobs)
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
@@ -301,6 +307,26 @@ export async function createRepairJob(data: unknown) {
     eventType: "created",
     comment: "Repair job created",
   });
+
+  // Auto-create task checklist for wax jobs
+  if (parsed.jobType === "wax") {
+    const waxTasks = [
+      "Pre-clean / inspect",
+      "Wash caravan",
+      "Dry caravan",
+      "Apply wax",
+      "Buff / polish",
+      "Final inspection",
+    ];
+    await db.insert(repairTasks).values(
+      waxTasks.map((title, i) => ({
+        repairJobId: job.id,
+        title,
+        source: "office" as const,
+        sortOrder: i + 1,
+      }))
+    );
+  }
 
   await createAuditLog("create", "repair_job", job.id, { publicCode });
 

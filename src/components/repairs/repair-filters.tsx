@@ -3,12 +3,14 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, X, SlidersHorizontal } from "lucide-react";
-import { STATUS_LABELS, PRIORITY_LABELS, INVOICE_STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
+import { STATUS_LABELS, PRIORITY_LABELS, INVOICE_STATUS_LABELS, CUSTOMER_RESPONSE_LABELS, JOB_TYPE_LABELS } from "@/types";
+import type { RepairStatus, JobType } from "@/types";
 import type { RepairFilters } from "@/actions/repairs";
-import { useState, useRef } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useState, useRef, useMemo } from "react";
 
 interface Location {
   id: string;
@@ -33,6 +35,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentFilters.q ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   function updateFilter(key: string, value: string | undefined) {
     const params = new URLSearchParams(searchParams.toString());
@@ -43,6 +46,10 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
     }
     params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
+  }
+
+  function removeFilter(key: string) {
+    updateFilter(key, undefined);
   }
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -57,35 +64,87 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
     router.push(pathname);
   }
 
-  const hasActiveFilters = Object.entries(currentFilters).some(
-    ([key, val]) => key !== "page" && key !== "limit" && val
-  );
+  // Advanced filter keys (everything inside the panel)
+  const advancedFilterKeys = ["priority", "locationId", "invoiceStatus", "customerResponseStatus", "tagId", "dateFrom", "dateTo"] as const;
+  const advancedCount = advancedFilterKeys.filter(k => currentFilters[k]).length;
 
-  // Count how many secondary filters are active
-  const secondaryFilterKeys = ["locationId", "invoiceStatus", "customerResponseStatus", "tagId", "dateFrom", "dateTo"] as const;
-  const activeSecondaryCount = secondaryFilterKeys.filter(k => currentFilters[k]).length;
-  const [showMore, setShowMore] = useState(activeSecondaryCount > 0);
+  // Build active filter pills
+  const activePills = useMemo(() => {
+    const pills: { key: string; label: string; value: string }[] = [];
+
+    if (currentFilters.status) {
+      pills.push({ key: "status", label: "Status", value: STATUS_LABELS[currentFilters.status as RepairStatus] ?? currentFilters.status });
+    }
+    if (currentFilters.jobType) {
+      pills.push({ key: "jobType", label: "Type", value: JOB_TYPE_LABELS[currentFilters.jobType as JobType] ?? currentFilters.jobType });
+    }
+    if (currentFilters.priority) {
+      pills.push({ key: "priority", label: "Priority", value: PRIORITY_LABELS[currentFilters.priority as keyof typeof PRIORITY_LABELS] ?? currentFilters.priority });
+    }
+    if (currentFilters.locationId) {
+      const loc = locations.find(l => l.id === currentFilters.locationId);
+      pills.push({ key: "locationId", label: "Location", value: loc?.name ?? "Selected" });
+    }
+    if (currentFilters.invoiceStatus) {
+      pills.push({ key: "invoiceStatus", label: "Invoice", value: INVOICE_STATUS_LABELS[currentFilters.invoiceStatus as keyof typeof INVOICE_STATUS_LABELS] ?? currentFilters.invoiceStatus });
+    }
+    if (currentFilters.customerResponseStatus) {
+      pills.push({ key: "customerResponseStatus", label: "Response", value: CUSTOMER_RESPONSE_LABELS[currentFilters.customerResponseStatus as keyof typeof CUSTOMER_RESPONSE_LABELS] ?? currentFilters.customerResponseStatus });
+    }
+    if (currentFilters.tagId) {
+      const tag = allTags.find(t => t.id === currentFilters.tagId);
+      pills.push({ key: "tagId", label: "Tag", value: tag?.name ?? "Selected" });
+    }
+    if (currentFilters.dateFrom || currentFilters.dateTo) {
+      const from = currentFilters.dateFrom ? new Date(currentFilters.dateFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "";
+      const to = currentFilters.dateTo ? new Date(currentFilters.dateTo).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "";
+      const val = from && to ? `${from} – ${to}` : from ? `From ${from}` : `Until ${to}`;
+      // We'll use dateFrom as the key, clearing both
+      pills.push({ key: "dateRange", label: "Date", value: val });
+    }
+    if (currentFilters.q) {
+      pills.push({ key: "q", label: "Search", value: `"${currentFilters.q}"` });
+    }
+    return pills;
+  }, [currentFilters, locations, allTags]);
+
+  function removePill(key: string) {
+    if (key === "dateRange") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("dateFrom");
+      params.delete("dateTo");
+      params.delete("page");
+      router.push(`${pathname}?${params.toString()}`);
+    } else if (key === "q") {
+      setSearchInput("");
+      removeFilter("q");
+    } else {
+      removeFilter(key);
+    }
+  }
 
   return (
     <div className="space-y-3">
-      {/* Primary filters — always visible */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative flex-1 min-w-0 sm:max-w-72">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Search repairs..."
-              className="w-full pl-9 h-10 text-sm rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card focus:bg-white dark:focus:bg-card placeholder:text-gray-400 dark:placeholder:text-muted-foreground"
-              value={searchInput}
-              onChange={handleSearchChange}
-            />
-          </div>
+      {/* Layer 1: Quick filter bar */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+        {/* Search — visually dominant */}
+        <div className="relative flex-1 min-w-0 sm:max-w-80">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none" />
+          <Input
+            placeholder="Search work orders..."
+            className="w-full pl-10 pr-4 h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-[#0CC0DF]/40 focus:border-[#0CC0DF]/40 shadow-none"
+            value={searchInput}
+            onChange={handleSearchChange}
+          />
+        </div>
 
+        {/* Status */}
         <Select
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
-            <SelectValue placeholder="Status" />
+          <SelectTrigger className="w-[140px] h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
@@ -95,128 +154,212 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           </SelectContent>
         </Select>
 
+        {/* Type */}
         <Select
-          value={currentFilters.priority ?? "all"}
-          onValueChange={(val) => updateFilter("priority", val)}
+          value={currentFilters.jobType ?? "all"}
+          onValueChange={(val) => updateFilter("jobType", val)}
         >
-          <SelectTrigger className="w-28 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
-            <SelectValue placeholder="Priority" />
+          <SelectTrigger className="w-[130px] h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+            <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All priorities</SelectItem>
-            {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+            <SelectItem value="all">All types</SelectItem>
+            {Object.entries(JOB_TYPE_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Button
-          variant={showMore ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setShowMore(!showMore)}
-          className="h-10 text-xs rounded-xl gap-1.5"
-        >
-          <SlidersHorizontal className="h-3 w-3" />
-          Filters
-          {activeSecondaryCount > 0 && (
-            <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[10px] rounded-full bg-primary text-primary-foreground">
-              {activeSecondaryCount}
-            </Badge>
-          )}
-        </Button>
+        {/* Filters button → opens advanced panel */}
+        <Popover open={panelOpen} onOpenChange={setPanelOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className={`inline-flex items-center gap-2 h-11 px-4 text-sm font-medium rounded-xl border transition-all duration-150 whitespace-nowrap ${
+                advancedCount > 0
+                  ? "border-[#0CC0DF]/30 bg-[#0CC0DF]/5 text-gray-900 dark:text-slate-100 dark:border-[#0CC0DF]/20 dark:bg-[#0CC0DF]/10"
+                  : "border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
+              {advancedCount > 0 && (
+                <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-[11px] font-semibold rounded-full bg-[#0CC0DF] text-white">
+                  {advancedCount}
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className="w-[420px] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0F172A] shadow-lg dark:shadow-black/40 p-0"
+          >
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Advanced Filters</h3>
+              {advancedCount > 0 && (
+                <button
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams.toString());
+                    for (const key of advancedFilterKeys) params.delete(key);
+                    params.delete("page");
+                    router.push(`${pathname}?${params.toString()}`);
+                  }}
+                  className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
 
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-10 text-xs rounded-xl text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground">
-            <X className="mr-1 h-3 w-3" />
-            Clear all
-          </Button>
-        )}
+            {/* Panel body */}
+            <div className="px-5 pb-5 space-y-5">
+              {/* Row 1: Priority + Location */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Priority</Label>
+                  <Select
+                    value={currentFilters.priority ?? "all"}
+                    onValueChange={(val) => updateFilter("priority", val)}
+                  >
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                      <SelectValue placeholder="All priorities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All priorities</SelectItem>
+                      {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Location</Label>
+                  <Select
+                    value={currentFilters.locationId ?? "all"}
+                    onValueChange={(val) => updateFilter("locationId", val)}
+                  >
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                      <SelectValue placeholder="All locations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All locations</SelectItem>
+                      {locations.map((loc) => (
+                        <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 2: Invoice + Response */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Invoice</Label>
+                  <Select
+                    value={currentFilters.invoiceStatus ?? "all"}
+                    onValueChange={(val) => updateFilter("invoiceStatus", val)}
+                  >
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                      <SelectValue placeholder="All invoices" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All invoices</SelectItem>
+                      {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Response</Label>
+                  <Select
+                    value={currentFilters.customerResponseStatus ?? "all"}
+                    onValueChange={(val) => updateFilter("customerResponseStatus", val)}
+                  >
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                      <SelectValue placeholder="All responses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All responses</SelectItem>
+                      {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 3: Tags + Date range */}
+              <div className="grid grid-cols-2 gap-3">
+                {allTags.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Tag</Label>
+                    <Select
+                      value={currentFilters.tagId ?? "all"}
+                      onValueChange={(val) => updateFilter("tagId", val)}
+                    >
+                      <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                        <SelectValue placeholder="All tags" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All tags</SelectItem>
+                        {allTags.map((tag) => (
+                          <SelectItem key={tag.id} value={tag.id}>
+                            <span className="flex items-center gap-1.5">
+                              {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
+                              {tag.name}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className={allTags.length > 0 ? "space-y-1.5" : "col-span-2 space-y-1.5"}>
+                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Date range</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      className="flex-1 h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
+                      value={currentFilters.dateFrom ?? ""}
+                      onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+                    />
+                    <span className="text-gray-300 dark:text-slate-600 text-xs">–</span>
+                    <Input
+                      type="date"
+                      className="flex-1 h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
+                      value={currentFilters.dateTo ?? ""}
+                      onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* Secondary filters — collapsible */}
-      {showMore && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center pt-3 border-t border-gray-100 dark:border-border">
-          <Select
-            value={currentFilters.locationId ?? "all"}
-            onValueChange={(val) => updateFilter("locationId", val)}
-          >
-            <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
-              <SelectValue placeholder="Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All locations</SelectItem>
-              {locations.map((loc) => (
-                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={currentFilters.invoiceStatus ?? "all"}
-            onValueChange={(val) => updateFilter("invoiceStatus", val)}
-          >
-            <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
-              <SelectValue placeholder="Invoice" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All invoices</SelectItem>
-              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={currentFilters.customerResponseStatus ?? "all"}
-            onValueChange={(val) => updateFilter("customerResponseStatus", val)}
-          >
-            <SelectTrigger className="w-40 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
-              <SelectValue placeholder="Response" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All responses</SelectItem>
-              {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {allTags.length > 0 && (
-            <Select
-              value={currentFilters.tagId ?? "all"}
-              onValueChange={(val) => updateFilter("tagId", val)}
+      {/* Active filter pills */}
+      {activePills.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {activePills.map((pill) => (
+            <button
+              key={pill.key}
+              onClick={() => removePill(pill.key)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-700 dark:text-slate-300 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-200 dark:hover:bg-white/[0.12] group"
             >
-              <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
-                <SelectValue placeholder="Tag" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tags</SelectItem>
-                {allTags.map((tag) => (
-                  <SelectItem key={tag.id} value={tag.id}>
-                    <span className="flex items-center gap-1.5">
-                      {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
-                      {tag.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <Input
-            type="date"
-            className="w-[130px] h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card"
-            value={currentFilters.dateFrom ?? ""}
-            onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
-            placeholder="From"
-          />
-          <Input
-            type="date"
-            className="w-[130px] h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card"
-            value={currentFilters.dateTo ?? ""}
-            onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
-            placeholder="To"
-          />
+              <span className="text-gray-400 dark:text-slate-500">{pill.label}:</span>
+              {pill.value}
+              <X className="h-3 w-3 text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+            </button>
+          ))}
+          <button
+            onClick={clearFilters}
+            className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors px-1"
+          >
+            Clear all
+          </button>
         </div>
       )}
     </div>

@@ -199,6 +199,7 @@ export async function getGarageRepairsToday() {
       unitCurrentPosition: units.currentPosition,
       assignedUserName: users.name,
       finalCheckStatus: repairJobs.finalCheckStatus,
+      jobType: repairJobs.jobType,
     })
     .from(repairJobs)
     .leftJoin(customers, eq(repairJobs.customerId, customers.id))

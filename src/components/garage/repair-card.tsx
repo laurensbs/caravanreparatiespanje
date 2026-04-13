@@ -21,6 +21,7 @@ interface RepairCardProps {
   parts: { total: number; received: number; pending: number };
   workers: string[];
   finalCheckStatus: string | null;
+  jobType: string;
 }
 
 const PRIORITY_ACCENT: Record<Priority, { border: string; dot: string }> = {
@@ -33,6 +34,18 @@ const PRIORITY_ACCENT: Record<Priority, { border: string; dot: string }> = {
 const WORKER_COLORS = [
   "bg-blue-500", "bg-violet-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500",
 ];
+
+const JOB_TYPE_BADGE: Record<string, string> = {
+  wax: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  maintenance: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
+  inspection: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+};
+
+const JOB_TYPE_SHORT: Record<string, string> = {
+  wax: "Wax",
+  maintenance: "Maint.",
+  inspection: "Insp.",
+};
 
 export function RepairCard({ repair }: { repair: RepairCardProps }) {
   const { t } = useLanguage();
@@ -50,6 +63,11 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground/70 tracking-widest uppercase">{repair.publicCode}</span>
               {accent.dot && <span className={`h-2 w-2 rounded-full ${accent.dot}`} />}
+              {repair.jobType && repair.jobType !== "repair" && JOB_TYPE_BADGE[repair.jobType] && (
+                <span className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-bold ${JOB_TYPE_BADGE[repair.jobType]}`}>
+                  {JOB_TYPE_SHORT[repair.jobType] ?? repair.jobType}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1.5">
               {repair.tasks.problem > 0 && (

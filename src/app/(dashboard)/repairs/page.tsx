@@ -29,6 +29,7 @@ export default async function RepairsPage({ searchParams }: Props) {
     invoiceStatus: params.invoiceStatus,
     customerResponseStatus: params.customerResponseStatus,
     tagId: params.tagId,
+    jobType: params.jobType,
     archived: params.archived,
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,
@@ -68,13 +69,13 @@ export default async function RepairsPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-foreground">Repairs</h1>
-          <p className="text-sm text-gray-500 dark:text-muted-foreground mt-0.5">
-            {total} repair{total !== 1 ? "s" : ""}
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Werkbonnen</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+            {total} work order{total !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild className="h-8 rounded-lg text-xs text-gray-400 hover:text-gray-600">
+          <Button variant="ghost" size="sm" asChild className="h-8 rounded-lg text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
             <Link href="/repairs/bin">
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
               Bin
@@ -107,12 +108,12 @@ export default async function RepairsPage({ searchParams }: Props) {
             <Link key={btn.label} href={isActive ? "/repairs" : href}>
               <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all duration-150 cursor-pointer ${
                 isActive
-                  ? "bg-gray-900 dark:bg-foreground text-white dark:text-background font-medium shadow-sm"
-                  : "text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium shadow-sm"
+                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/[0.06]"
               }`}>
-                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-white" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-white dark:bg-gray-900" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
                 {btn.label}
-                <span className={`tabular-nums font-medium ${isActive ? "" : "text-gray-700"}`}>{btn.value}</span>
+                <span className={`tabular-nums font-medium ${isActive ? "" : "text-gray-700 dark:text-slate-300"}`}>{btn.value}</span>
               </span>
             </Link>
           );

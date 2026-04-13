@@ -129,6 +129,18 @@ export const repairTaskStatusEnum = pgEnum("repair_task_status", [
   "review",
 ]);
 
+export const estimateLineTypeEnum = pgEnum("estimate_line_type", [
+  "labour",
+  "part",
+  "custom",
+]);
+
+export const estimateLineSourceEnum = pgEnum("estimate_line_source", [
+  "task",
+  "part_request",
+  "manual",
+]);
+
 export const finalCheckStatusEnum = pgEnum("final_check_status", [
   "pending",
   "passed",
@@ -402,6 +414,7 @@ export const repairJobs = pgTable(
     holdedQuoteSentAt: timestamp("holded_quote_sent_at", { withTimezone: true }),
 
     bayReference: varchar("bay_reference", { length: 100 }),
+    discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).notNull().default("0"),
     spreadsheetInternalId: varchar("spreadsheet_internal_id", { length: 100 }),
 
     assignedUserId: uuid("assigned_user_id").references(() => users.id, {
@@ -647,6 +660,13 @@ export const partRequests = pgTable(
     expectedDelivery: timestamp("expected_delivery", { withTimezone: true }),
     receivedDate: timestamp("received_date", { withTimezone: true }),
     notes: text("notes"),
+    // Pricing fields
+    sellPrice: numeric("sell_price", { precision: 10, scale: 2 }),
+    markupPercent: numeric("markup_percent", { precision: 5, scale: 2 }),
+    includeInEstimate: boolean("include_in_estimate").notNull().default(true),
+    supplierId: uuid("supplier_id").references(() => suppliers.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -657,6 +677,7 @@ export const partRequests = pgTable(
   (table) => [
     index("part_requests_job_idx").on(table.repairJobId),
     index("part_requests_status_idx").on(table.status),
+    index("part_requests_supplier_idx").on(table.supplierId),
   ]
 );
 
@@ -1155,6 +1176,10 @@ export const partRequestsRelations = relations(partRequests, ({ one }) => ({
     fields: [partRequests.partId],
     references: [parts.id],
   }),
+  supplier: one(suppliers, {
+    fields: [partRequests.supplierId],
+    references: [suppliers.id],
+  }),
 }));
 
 export const candidateDuplicatesRelations = relations(
@@ -1256,6 +1281,13 @@ export const repairTasks = pgTable(
       () => users.id,
       { onDelete: "set null" }
     ),
+    // Pricing fields
+    estimatedHours: numeric("estimated_hours", { precision: 6, scale: 2 }),
+    actualHours: numeric("actual_hours", { precision: 6, scale: 2 }),
+    billable: boolean("billable").notNull().default(true),
+    hourlyRate: numeric("hourly_rate", { precision: 10, scale: 2 }),
+    includeInEstimate: boolean("include_in_estimate").notNull().default(true),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1474,6 +1506,48 @@ export const repairBlockersRelations = relations(
     resolvedBy: one(users, {
       fields: [repairBlockers.resolvedByUserId],
       references: [users.id],
+    }),
+  })
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ESTIMATE LINE ITEMS (persisted pricing lines linked to work sources)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const estimateLineItems = pgTable(
+  "estimate_line_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    type: estimateLineTypeEnum("type").notNull().default("custom"),
+    sourceType: estimateLineSourceEnum("source_type").notNull().default("manual"),
+    sourceId: uuid("source_id"),
+    description: text("description").notNull(),
+    quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
+    unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull().default("0"),
+    internalCost: numeric("internal_cost", { precision: 10, scale: 2 }).notNull().default("0"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("estimate_line_items_job_idx").on(table.repairJobId),
+    index("estimate_line_items_source_idx").on(table.sourceType, table.sourceId),
+  ]
+);
+
+export const estimateLineItemsRelations = relations(
+  estimateLineItems,
+  ({ one }) => ({
+    repairJob: one(repairJobs, {
+      fields: [estimateLineItems.repairJobId],
+      references: [repairJobs.id],
     }),
   })
 );

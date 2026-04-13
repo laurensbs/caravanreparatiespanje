@@ -706,6 +706,10 @@ export async function addRepairTask(
     titleEs?: string;
     titleNl?: string;
     description?: string;
+    estimatedHours?: number;
+    hourlyRate?: number;
+    billable?: boolean;
+    includeInEstimate?: boolean;
   }
 ) {
   const session = await requireAuth();
@@ -723,6 +727,10 @@ export async function addRepairTask(
       titleEs: data.titleEs ?? null,
       titleNl: data.titleNl ?? null,
       description: data.description ?? null,
+      estimatedHours: data.estimatedHours != null ? String(data.estimatedHours) : null,
+      hourlyRate: data.hourlyRate != null ? String(data.hourlyRate) : null,
+      billable: data.billable ?? true,
+      includeInEstimate: data.includeInEstimate ?? true,
       source: "office",
       sortOrder: (maxSort?.max ?? 0) + 1,
       approvedAt: new Date(),
@@ -775,6 +783,27 @@ export async function getRepairTasks(repairJobId: string) {
     .from(repairTasks)
     .where(eq(repairTasks.repairJobId, repairJobId))
     .orderBy(asc(repairTasks.sortOrder), asc(repairTasks.createdAt));
+}
+
+export async function updateRepairTaskPricing(
+  taskId: string,
+  data: {
+    estimatedHours?: number | null;
+    actualHours?: number | null;
+    hourlyRate?: number | null;
+    billable?: boolean;
+    includeInEstimate?: boolean;
+  }
+) {
+  await requireAuth();
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.estimatedHours !== undefined) updates.estimatedHours = data.estimatedHours != null ? String(data.estimatedHours) : null;
+  if (data.actualHours !== undefined) updates.actualHours = data.actualHours != null ? String(data.actualHours) : null;
+  if (data.hourlyRate !== undefined) updates.hourlyRate = data.hourlyRate != null ? String(data.hourlyRate) : null;
+  if (data.billable !== undefined) updates.billable = data.billable;
+  if (data.includeInEstimate !== undefined) updates.includeInEstimate = data.includeInEstimate;
+  await db.update(repairTasks).set(updates).where(eq(repairTasks.id, taskId));
+  revalidatePath("/");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

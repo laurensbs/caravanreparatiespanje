@@ -21,6 +21,7 @@ import type {
   repairPhotos,
   repairFindings,
   repairBlockers,
+  estimateLineItems,
 } from "@/lib/db/schema";
 
 export type UserRole = "admin" | "manager" | "staff" | "technician" | "viewer";
@@ -124,6 +125,10 @@ export type RepairTask = typeof repairTasks.$inferSelect;
 export type RepairPhoto = typeof repairPhotos.$inferSelect;
 export type RepairFinding = typeof repairFindings.$inferSelect;
 export type RepairBlocker = typeof repairBlockers.$inferSelect;
+export type EstimateLineItem = typeof estimateLineItems.$inferSelect;
+
+export type EstimateLineType = "labour" | "part" | "custom";
+export type EstimateLineSource = "task" | "part_request" | "manual";
 
 export type RepairTaskStatus = "pending" | "in_progress" | "done" | "problem" | "review";
 export type FinalCheckStatus = "pending" | "passed" | "failed";

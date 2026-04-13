@@ -37,7 +37,7 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total, page, limit }, locationsList, customersList, partsCatalog, allTags, unitsList, statusCounts] = await Promise.all([
+  const [{ jobs, total }, locationsList, customersList, partsCatalog, allTags, unitsList, statusCounts] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
     getAllCustomers(),
@@ -50,8 +50,6 @@ export default async function RepairsPage({ searchParams }: Props) {
   const filteredLocations = locationsList.filter(l =>
     MAIN_LOCATIONS.includes(l.name.toLowerCase())
   );
-
-  const totalPages = Math.ceil(total / limit);
 
   const { byStatus, urgent } = statusCounts;
 
@@ -115,31 +113,7 @@ export default async function RepairsPage({ searchParams }: Props) {
         allTags={allTags}
       />
 
-      <RepairTable jobs={jobs} />
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-1.5">
-            {page > 1 && (
-              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={`/repairs?${new URLSearchParams({ ...params, page: String(page - 1) }).toString()}`}>
-                  Previous
-                </Link>
-              </Button>
-            )}
-            {page < totalPages && (
-              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={`/repairs?${new URLSearchParams({ ...params, page: String(page + 1) }).toString()}`}>
-                  Next
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      <RepairTable jobs={jobs} total={total} filters={filters} />
     </div>
   );
 }

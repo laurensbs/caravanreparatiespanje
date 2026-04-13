@@ -8,10 +8,10 @@ import {
 import { STATUS_LABELS, STATUS_COLORS, INVOICE_STATUS_LABELS } from "@/types";
 import type { RepairStatus, InvoiceStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import { BulkActions } from "./bulk-actions";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
-import { updateRepairJob } from "@/actions/repairs";
+import { ArrowUp, ArrowDown, ArrowUpDown, Loader2 } from "lucide-react";
+import { updateRepairJob, getRepairJobs, type RepairFilters } from "@/actions/repairs";
 import { toast } from "sonner";
 
 interface Job {
@@ -44,13 +44,56 @@ interface Job {
 
 interface RepairTableProps {
   jobs: Job[];
+  total: number;
+  filters: RepairFilters;
 }
 
-export function RepairTable({ jobs }: RepairTableProps) {
+export function RepairTable({ jobs: initialJobs, total, filters }: RepairTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [allJobs, setAllJobs] = useState<Job[]>(initialJobs);
+  const [loading, startLoading] = useTransition();
+  const [hasMore, setHasMore] = useState(initialJobs.length < total);
+  const pageRef = useRef(1);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset when initialJobs change (filters/sort changed)
+  useEffect(() => {
+    setAllJobs(initialJobs);
+    pageRef.current = 1;
+    setHasMore(initialJobs.length < total);
+    setSelected(new Set());
+  }, [initialJobs, total]);
+
+  const loadMore = useCallback(() => {
+    if (loading || !hasMore) return;
+    startLoading(async () => {
+      const nextPage = pageRef.current + 1;
+      const { jobs: moreJobs } = await getRepairJobs({ ...filters, page: nextPage });
+      setAllJobs(prev => {
+        const existingIds = new Set(prev.map(j => j.id));
+        const newJobs = (moreJobs as Job[]).filter(j => !existingIds.has(j.id));
+        return [...prev, ...newJobs];
+      });
+      pageRef.current = nextPage;
+      const loaded = nextPage * (filters.limit ?? 50);
+      if (loaded >= total) setHasMore(false);
+    });
+  }, [loading, hasMore, filters, total]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const currentSort = searchParams.get("sort") ?? "updatedAt";
   const currentDir = searchParams.get("dir") ?? "desc";
@@ -75,10 +118,10 @@ export function RepairTable({ jobs }: RepairTableProps) {
   }
 
   const toggleAll = () => {
-    if (selected.size === jobs.length) {
+    if (selected.size === allJobs.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(jobs.map((j) => j.id)));
+      setSelected(new Set(allJobs.map((j) => j.id)));
     }
   };
 
@@ -155,14 +198,14 @@ export function RepairTable({ jobs }: RepairTableProps) {
 
       {/* Repair rows */}
       <div className="space-y-1">
-        {jobs.length === 0 ? (
+        {allJobs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground">
             <ArrowUpDown className="h-8 w-8 opacity-15" />
             <p className="font-medium text-sm">No repair jobs found</p>
             <p className="text-xs">Try adjusting your filters</p>
           </div>
         ) : (
-          jobs.map((job, idx) => {
+          allJobs.map((job, idx) => {
             const isUrgent = job.priority === "urgent";
             const isHigh = job.priority === "high";
 
@@ -296,6 +339,19 @@ export function RepairTable({ jobs }: RepairTableProps) {
           })
         )}
       </div>
+
+      {/* Infinite scroll sentinel */}
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-6">
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/40" />}
+        </div>
+      )}
+
+      {!hasMore && allJobs.length > 0 && (
+        <p className="text-center text-[11px] text-muted-foreground/30 py-4">
+          {allJobs.length} repair{allJobs.length !== 1 ? "s" : ""}
+        </p>
+      )}
     </div>
   );
 }

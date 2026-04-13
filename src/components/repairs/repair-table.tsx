@@ -174,30 +174,30 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {/* Column headers */}
-      <div className="hidden md:flex items-center gap-4 px-4 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+      <div className="hidden md:flex items-center gap-5 px-5 pb-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/40 select-none">
         <div className="w-6 shrink-0" />
-        <div className="flex-[2] min-w-0 cursor-pointer select-none" onClick={() => handleSort("title")}>
+        <div className="flex-[2] min-w-0 cursor-pointer" onClick={() => handleSort("title")}>
           <span className="inline-flex items-center">Title<SortIcon column="title" /></span>
         </div>
-        <div className="w-28 shrink-0 cursor-pointer select-none" onClick={() => handleSort("status")}>
+        <div className="w-24 shrink-0 cursor-pointer" onClick={() => handleSort("status")}>
           <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
         </div>
-        <div className="flex-1 min-w-0 cursor-pointer select-none" onClick={() => handleSort("customerName")}>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleSort("customerName")}>
           <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
         </div>
-        <div className="w-24 shrink-0 cursor-pointer select-none" onClick={() => handleSort("invoiceStatus")}>
+        <div className="w-24 shrink-0 cursor-pointer" onClick={() => handleSort("invoiceStatus")}>
           <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
         </div>
-        <div className="w-24 shrink-0 cursor-pointer select-none" onClick={() => handleSort("dueDate")}>
+        <div className="w-24 shrink-0 cursor-pointer" onClick={() => handleSort("dueDate")}>
           <span className="inline-flex items-center">Planned<SortIcon column="dueDate" /></span>
         </div>
-        <div className="w-20 shrink-0 cursor-pointer select-none text-right" onClick={() => handleSort("updatedAt")}>
+        <div className="w-20 shrink-0 cursor-pointer text-right" onClick={() => handleSort("updatedAt")}>
           <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
         </div>
       </div>
 
       {/* Repair rows */}
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {allJobs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground">
             <ArrowUpDown className="h-8 w-8 opacity-15" />
@@ -212,12 +212,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
             return (
               <div
                 key={job.id}
-                className={`group relative flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all duration-150 cursor-pointer
-                  hover:bg-muted/50 hover:shadow-sm active:scale-[0.998]
-                  ${selected.has(job.id) ? "bg-primary/[0.04] ring-1 ring-primary/20" : ""}
+                className={`group relative flex items-center gap-5 rounded-xl px-5 py-4 transition-all duration-150 cursor-pointer
+                  hover:bg-muted/40 active:scale-[0.998]
+                  ${selected.has(job.id) ? "bg-primary/[0.04] ring-1 ring-primary/15" : ""}
                   ${isUrgent ? "border-l-2 border-l-red-400" : ""}
                   animate-slide-up`}
-                style={{ animationDelay: `${idx * 25}ms` }}
+                style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                 onClick={() => {
                   const backTo = `/repairs?${searchParams.toString()}`;
                   router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
@@ -267,11 +267,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 </div>
 
                 {/* Status */}
-                <div className="w-28 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="w-24 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-shadow hover:ring-1 hover:ring-ring/20 ${STATUS_COLORS[job.status as RepairStatus]}`}>
+                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium tracking-wide transition-shadow hover:ring-1 hover:ring-ring/15 ${STATUS_COLORS[job.status as RepairStatus]}`}>
                           {STATUS_LABELS[job.status as RepairStatus]}
                         </span>
                       </button>
@@ -293,31 +293,27 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Contact */}
                 <div className="flex-1 min-w-0 hidden md:block">
-                  <div className="flex items-center gap-1.5">
-                    {job.locationName && (
-                      <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300"}`} title={job.locationName} />
-                    )}
-                    <span className="text-xs text-foreground/80 truncate">
-                      {job.customerName ?? <span className="text-muted-foreground/40">—</span>}
-                    </span>
-                  </div>
-                  {(job.unitRegistration || job.locationName) && (
-                    <p className="text-[11px] text-muted-foreground/50 mt-0.5 truncate">
-                      {[job.locationName, job.unitRegistration].filter(Boolean).join(" · ")}
-                    </p>
+                  <span className="text-[13px] text-foreground/80 truncate block">
+                    {job.customerName ?? <span className="text-muted-foreground/30">—</span>}
+                  </span>
+                  {job.locationName && (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300"}`} />
+                      <span className="text-[11px] text-muted-foreground/40 truncate">{job.locationName}</span>
+                    </div>
                   )}
                 </div>
 
                 {/* Invoice */}
                 <div className="w-24 shrink-0 hidden md:block">
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                    job.invoiceStatus === "paid" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" :
-                    job.invoiceStatus === "sent" ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" :
-                    job.invoiceStatus === "draft" ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
-                    job.invoiceStatus === "warranty" ? "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400" :
-                    "text-muted-foreground/40"
+                  <span className={`text-[11px] font-medium ${
+                    job.invoiceStatus === "paid" ? "text-emerald-600/70 dark:text-emerald-400/70" :
+                    job.invoiceStatus === "sent" ? "text-blue-600/70 dark:text-blue-400/70" :
+                    job.invoiceStatus === "draft" ? "text-amber-600/70 dark:text-amber-400/70" :
+                    job.invoiceStatus === "warranty" ? "text-purple-600/70 dark:text-purple-400/70" :
+                    "text-muted-foreground/30"
                   }`}>
-                    {job.invoiceStatus === "not_invoiced" ? "—" : (INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus)}
+                    {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
                   </span>
                 </div>
 
@@ -332,7 +328,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Updated */}
                 <div className="w-20 shrink-0 text-right hidden md:block">
-                  <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/40" />
+                  <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/60" />
                 </div>
               </div>
             );

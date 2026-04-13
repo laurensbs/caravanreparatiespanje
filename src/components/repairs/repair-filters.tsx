@@ -67,14 +67,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
   const [showMore, setShowMore] = useState(activeSecondaryCount > 0);
 
   return (
-    <div className="rounded-lg border bg-card p-3 space-y-2.5">
+    <div className="space-y-3">
       {/* Primary filters — always visible */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative flex-1 min-w-0 sm:max-w-56">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative flex-1 min-w-0 sm:max-w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
             <Input
-              placeholder="Search..."
-              className="w-full pl-8 h-8 text-xs rounded-lg"
+              placeholder="Search repairs..."
+              className="w-full pl-9 h-9 text-sm rounded-xl border-border/50 bg-muted/30 focus:bg-background placeholder:text-muted-foreground/40"
               value={searchInput}
               onChange={handleSearchChange}
             />
@@ -84,7 +84,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
+          <SelectTrigger className="w-36 h-9 text-xs rounded-xl border-border/50 bg-muted/30">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +99,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           value={currentFilters.priority ?? "all"}
           onValueChange={(val) => updateFilter("priority", val)}
         >
-          <SelectTrigger className="w-28 h-8 text-xs rounded-lg">
+          <SelectTrigger className="w-28 h-9 text-xs rounded-xl border-border/50 bg-muted/30">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -114,7 +114,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           variant={showMore ? "secondary" : "ghost"}
           size="sm"
           onClick={() => setShowMore(!showMore)}
-          className="h-8 text-xs rounded-lg gap-1.5"
+          className="h-9 text-xs rounded-xl gap-1.5"
         >
           <SlidersHorizontal className="h-3 w-3" />
           Filters
@@ -126,7 +126,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
         </Button>
 
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs rounded-lg text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs rounded-xl text-muted-foreground hover:text-foreground">
             <X className="mr-1 h-3 w-3" />
             Clear all
           </Button>
@@ -135,12 +135,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
 
       {/* Secondary filters — collapsible */}
       {showMore && (
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center pt-0.5 border-t">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center pt-3 border-t border-border/40">
           <Select
             value={currentFilters.locationId ?? "all"}
             onValueChange={(val) => updateFilter("locationId", val)}
           >
-            <SelectTrigger className="w-36 h-8 text-xs rounded-lg mt-2.5 sm:mt-0">
+            <SelectTrigger className="w-36 h-9 text-xs rounded-xl border-border/50 bg-muted/30">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
@@ -155,7 +155,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
             value={currentFilters.invoiceStatus ?? "all"}
             onValueChange={(val) => updateFilter("invoiceStatus", val)}
           >
-            <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
+            <SelectTrigger className="w-36 h-9 text-xs rounded-xl border-border/50 bg-muted/30">
               <SelectValue placeholder="Invoice" />
             </SelectTrigger>
             <SelectContent>
@@ -170,7 +170,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
             value={currentFilters.customerResponseStatus ?? "all"}
             onValueChange={(val) => updateFilter("customerResponseStatus", val)}
           >
-            <SelectTrigger className="w-40 h-8 text-xs rounded-lg">
+            <SelectTrigger className="w-40 h-9 text-xs rounded-xl border-border/50 bg-muted/30">
               <SelectValue placeholder="Response" />
             </SelectTrigger>
             <SelectContent>
@@ -186,7 +186,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
               value={currentFilters.tagId ?? "all"}
               onValueChange={(val) => updateFilter("tagId", val)}
             >
-              <SelectTrigger className="w-36 h-8 text-xs rounded-lg">
+              <SelectTrigger className="w-36 h-9 text-xs rounded-xl border-border/50 bg-muted/30">
                 <SelectValue placeholder="Tag" />
               </SelectTrigger>
               <SelectContent>
@@ -205,14 +205,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
 
           <Input
             type="date"
-            className="w-[130px] h-8 text-xs rounded-lg"
+            className="w-[130px] h-9 text-xs rounded-xl border-border/50 bg-muted/30"
             value={currentFilters.dateFrom ?? ""}
             onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
             placeholder="From"
           />
           <Input
             type="date"
-            className="w-[130px] h-8 text-xs rounded-lg"
+            className="w-[130px] h-9 text-xs rounded-xl border-border/50 bg-muted/30"
             value={currentFilters.dateTo ?? ""}
             onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
             placeholder="To"

@@ -1,6 +1,6 @@
 "use client";
 
-import { format, isThisYear, isToday, isYesterday } from "date-fns";
+import { format, isThisYear, isToday, isYesterday, differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
 
 interface SmartDateProps {
   date: Date | string;
@@ -8,8 +8,16 @@ interface SmartDateProps {
 }
 
 function formatSmart(d: Date): string {
-  if (isToday(d)) return `Today, ${format(d, "HH:mm")}`;
-  if (isYesterday(d)) return `Yesterday, ${format(d, "HH:mm")}`;
+  const now = new Date();
+  const mins = differenceInMinutes(now, d);
+  const hours = differenceInHours(now, d);
+  const days = differenceInDays(now, d);
+
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24 && isToday(d)) return `${hours}h ago`;
+  if (isYesterday(d)) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
   if (isThisYear(d)) return format(d, "d MMM");
   return format(d, "d MMM yyyy");
 }

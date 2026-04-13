@@ -587,8 +587,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 <TaskCard
                   key={task.id}
                   task={task}
+                  repairJobId={repair.id}
                   onUpdate={handleRefresh}
                   onProblem={(id) => setProblemTaskId(id)}
+                  photos={repair.photos.filter((p) => p.repairTaskId === task.id).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
                 />
               ))}
             </div>

@@ -18,7 +18,7 @@ import {
   FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem } from "@/types";
-import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -29,7 +29,7 @@ import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQu
 import { deleteRepairJob } from "@/actions/repairs";
 import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
 import { createPart } from "@/actions/parts";
-import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, updateRepairTaskPricing } from "@/actions/garage";
+import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction, updateRepairTaskPricing } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent } from "@/actions/estimates";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
@@ -42,6 +42,7 @@ import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
 import { cn } from "@/lib/utils";
 
 import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
+import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import type { RepairTask } from "@/types";
 
@@ -140,9 +141,10 @@ interface RepairDetailProps {
   blockers?: BlockerItem[];
   estimateLines?: EstimateLineItem[];
   partCategories?: PartCategory[];
+  photos?: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string }[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], partCategories = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], partCategories = [], photos = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -758,12 +760,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </div>
           )}
 
-          {/* ── FINDINGS from Workshop ── */}
+          {/* ── WORKSHOP FINDINGS ── */}
           {findings.length > 0 && (
             <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
               <details open={findings.some(f => !f.resolvedAt)}>
                 <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                  Findings ({findings.filter(f => !f.resolvedAt).length} open, {findings.filter(f => f.resolvedAt).length} resolved)
+                  Workshop Findings ({findings.filter(f => !f.resolvedAt).length} open, {findings.filter(f => f.resolvedAt).length} resolved)
                   <ChevronDown className="h-3.5 w-3.5 opacity-40" />
                 </summary>
                 <div className="px-6 pb-6 space-y-3">
@@ -797,21 +799,37 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           {f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      {!f.resolvedAt && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!f.resolvedAt && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-green-700 hover:bg-green-50"
+                            onClick={() => {
+                              startPartTransition(async () => {
+                                await resolveFindingAction(f.id);
+                                router.refresh();
+                              });
+                            }}
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" /> Resolve
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="shrink-0 text-xs text-green-700 hover:bg-green-50"
+                          className="text-xs text-red-600 hover:bg-red-50 h-7 w-7 p-0"
                           onClick={() => {
                             startPartTransition(async () => {
-                              await resolveFindingAction(f.id);
+                              await deleteFindingAction(f.id);
+                              toast.success("Finding removed");
                               router.refresh();
                             });
                           }}
                         >
-                          <CheckCircle className="h-3 w-3 mr-1" /> Resolve
+                          <Trash2 className="h-3 w-3" />
                         </Button>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -904,11 +922,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {activeFlags.map((flag) => (
-                    <button
+                    <span
                       key={flag.label}
-                      type="button"
-                      onClick={() => flag.set(!flag.value)}
-                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer border ${
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium transition-all border ${
                         flag.danger
                           ? "bg-red-50 text-red-600 border-red-200/60 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/60"
                           : "bg-muted text-foreground/80 border-border/60"
@@ -916,7 +932,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     >
                       <span className="mr-1">✓</span>
                       {flag.label}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => flag.set(false)}
+                        className="ml-1.5 -mr-1 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                        title={`Remove ${flag.label}`}
+                      >
+                        <XIcon className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
                   ))}
                   {showAllFlags && inactiveFlags.map((flag) => (
                     <button
@@ -1161,6 +1185,56 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             />
           </div>
 
+          {/* ── Photos ── */}
+          {photos.length > 0 && (
+            <Card className="rounded-xl border-border/50 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Photos
+                  <Badge variant="secondary" className="text-xs">{photos.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(() => {
+                  const taskPhotos = photos.filter(p => p.repairTaskId);
+                  const generalPhotos = photos.filter(p => !p.repairTaskId);
+                  const grouped = taskPhotos.reduce<Record<string, typeof photos>>((acc, p) => {
+                    const key = p.repairTaskId!;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(p);
+                    return acc;
+                  }, {});
+                  const taskName = (taskId: string) => tasks.find(t => t.id === taskId)?.title ?? "Task";
+                  return (
+                    <>
+                      {Object.entries(grouped).map(([taskId, taskPics]) => (
+                        <div key={taskId} className="space-y-2">
+                          <h4 className="text-xs font-medium text-muted-foreground">{taskName(taskId)}</h4>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                            {taskPics.map(photo => (
+                              <PhotoCard key={photo.id} photo={photo} />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {generalPhotos.length > 0 && (
+                        <div className="space-y-2">
+                          {taskPhotos.length > 0 && <h4 className="text-xs font-medium text-muted-foreground">General</h4>}
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                            {generalPhotos.map(photo => (
+                              <PhotoCard key={photo.id} photo={photo} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Timeline + Communication — merged into tabs */}
           {(job.events.length > 0 || communicationLogs.length > 0) && (
             <TimelineCommunicationCard
@@ -1348,18 +1422,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <span className="text-right font-mono text-xs">{job.bayReference}</span>
                   </div>
                 )}
-                {job.statusConfidence && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Import confidence</span>
-                    <span className={`text-right text-xs font-medium ${
-                      job.statusConfidence === "high" ? "text-green-600 dark:text-green-400" :
-                      job.statusConfidence === "medium" ? "text-amber-600 dark:text-amber-400" :
-                      "text-red-600 dark:text-red-400"
-                    }`}>
-                      {job.statusConfidence}
-                    </span>
-                  </div>
-                )}
                 {job.extraNotesRaw && (
                   <div className="border-t border-border/40 pt-2">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Extra notes (from import)</p>
@@ -1429,6 +1491,56 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ─── Photo Card ───
+
+function PhotoCard({ photo }: { photo: { id: string; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; createdAt: Date | string } }) {
+  const [deleting, startDelete] = useTransition();
+  const router = useRouter();
+
+  return (
+    <div className="group relative rounded-lg overflow-hidden border border-border/50 bg-muted/20">
+      <a href={photo.url} target="_blank" rel="noopener noreferrer">
+        <img
+          src={photo.thumbnailUrl || photo.url}
+          alt={photo.caption || "Photo"}
+          className="aspect-square w-full object-cover"
+        />
+      </a>
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end justify-center gap-1 p-1 opacity-0 group-hover:opacity-100">
+        <a
+          href={photo.url}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-md bg-white/90 p-1.5 hover:bg-white transition-colors"
+        >
+          <Download className="h-3.5 w-3.5 text-foreground" />
+        </a>
+        <button
+          disabled={deleting}
+          onClick={() => {
+            startDelete(async () => {
+              try {
+                await deleteRepairPhoto(photo.id);
+                toast.success("Photo deleted");
+                router.refresh();
+              } catch {
+                toast.error("Failed to delete photo");
+              }
+            });
+          }}
+          className="rounded-md bg-white/90 p-1.5 hover:bg-red-100 transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5 text-red-600" />
+        </button>
+      </div>
+      {photo.caption && (
+        <p className="px-1.5 py-1 text-[10px] text-muted-foreground truncate">{photo.caption}</p>
+      )}
     </div>
   );
 }
@@ -1615,11 +1727,11 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             }}
           />
           {dueDate && (
-            <button onClick={handleRemove} disabled={saving} className="p-1 rounded hover:bg-muted" title="Remove from planning">
-              <XIcon className="h-3 w-3 text-muted-foreground" />
+            <button onClick={handleRemove} disabled={saving} className="p-1 rounded hover:bg-destructive/10" title="Remove from planning">
+              <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
             </button>
           )}
-          <button onClick={() => setEditing(false)} className="p-1 rounded hover:bg-muted">
+          <button onClick={() => setEditing(false)} className="p-1 rounded hover:bg-muted" title="Cancel">
             <XIcon className="h-3 w-3 text-muted-foreground" />
           </button>
         </div>
@@ -1955,29 +2067,15 @@ function FinancialWorkflow({
       {/* ─── STEP 1: Estimate ─── */}
       <div className="px-6 py-5 space-y-5">
         {/* Auto-calculated pricing summary */}
-        <div className="flex items-start gap-6">
-          <div className="flex-[1.2]">
-            <span className="text-xs font-medium text-foreground/70 block mb-1">
-              Estimated{costLines.length > 0 && <span className="text-muted-foreground/40 ml-1">· auto</span>}
-            </span>
-            <div className="h-12 flex items-center justify-end text-xl font-bold tabular-nums px-2">
-              €{costLines.length > 0 ? costLinesTotalInclTax.toFixed(2) : parseFloat(estimatedCost || "0").toFixed(2)}
-            </div>
-          </div>
-          <div className="flex-1">
-            <span className="text-xs text-muted-foreground block mb-1">Our Cost</span>
-            <div className="h-12 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-2">
-              €{costLines.length > 0 ? costLinesInternalTotal.toFixed(2) : parseFloat(internalCost || "0").toFixed(2)}
-            </div>
-          </div>
-          <div className="flex-1">
-            <span className="text-[11px] text-muted-foreground/50 block mb-1">Margin</span>
-            <div className="h-12 flex items-center justify-end text-xs tabular-nums text-muted-foreground/60 px-2">
-              {costLinesInternalTotal > 0
-                ? `€${(costLinesTotal - costLinesInternalTotal).toFixed(2)} (${Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100)}%)`
-                : costLinesTotal > 0 ? `€${costLinesTotal.toFixed(2)}` : "—"}
-            </div>
-          </div>
+        <div className="flex items-center gap-6 text-xs">
+          <span className="text-muted-foreground">Estimated{costLines.length > 0 && <span className="opacity-40 ml-0.5">· auto</span>}</span>
+          <span className="font-bold tabular-nums text-sm">€{costLines.length > 0 ? costLinesTotalInclTax.toFixed(2) : parseFloat(estimatedCost || "0").toFixed(2)}</span>
+          <span className="text-muted-foreground/60">·</span>
+          <span className="text-muted-foreground">Our Cost</span>
+          <span className="tabular-nums text-muted-foreground">€{costLines.length > 0 ? costLinesInternalTotal.toFixed(2) : parseFloat(internalCost || "0").toFixed(2)}</span>
+          <span className="text-muted-foreground/60">·</span>
+          <span className="text-muted-foreground/50">Margin</span>
+          <span className="tabular-nums text-muted-foreground/60">{costLinesInternalTotal > 0 ? `€${(costLinesTotal - costLinesInternalTotal).toFixed(2)} (${Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100)}%)` : costLinesTotal > 0 ? `€${costLinesTotal.toFixed(2)}` : "—"}</span>
         </div>
 
         {/* Warranty toggle */}

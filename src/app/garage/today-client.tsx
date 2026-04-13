@@ -18,6 +18,8 @@ type RepairItem = {
   unitRegistration: string | null;
   unitBrand: string | null;
   unitModel: string | null;
+  unitStorageLocation: string | null;
+  unitCurrentPosition: string | null;
   assignedUserName: string | null;
   finalCheckStatus: string | null;
   tasks: { total: number; done: number; problem: number };

@@ -154,13 +154,21 @@ export async function unscheduleRepair(repairId: string) {
   const session = await requireAuth();
 
   const [job] = await db
-    .select({ id: repairJobs.id, dueDate: repairJobs.dueDate })
+    .select({ id: repairJobs.id, status: repairJobs.status, dueDate: repairJobs.dueDate })
     .from(repairJobs)
     .where(eq(repairJobs.id, repairId));
 
   if (!job) throw new Error("Repair not found");
 
-  await db.update(repairJobs).set({ dueDate: null, updatedAt: new Date() }).where(eq(repairJobs.id, repairId));
+  const updates: Record<string, unknown> = { dueDate: null, updatedAt: new Date() };
+
+  // Auto-revert status to "todo" if currently in a scheduled/in-progress state
+  const revertStatuses = ["scheduled", "in_progress"];
+  if (revertStatuses.includes(job.status)) {
+    updates.status = "todo";
+  }
+
+  await db.update(repairJobs).set(updates).where(eq(repairJobs.id, repairId));
 
   await db.insert(repairJobEvents).values({
     repairJobId: repairId,

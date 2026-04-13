@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers } from "@/lib/db/schema";
-import { requireAuth } from "@/lib/auth-utils";
+import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -195,6 +195,8 @@ export async function getGarageRepairsToday() {
       unitRegistration: units.registration,
       unitBrand: units.brand,
       unitModel: units.model,
+      unitStorageLocation: units.storageLocation,
+      unitCurrentPosition: units.currentPosition,
       assignedUserName: users.name,
       finalCheckStatus: repairJobs.finalCheckStatus,
     })
@@ -1029,6 +1031,12 @@ export async function resolveFinding(findingId: string) {
     .update(repairFindings)
     .set({ resolvedAt: new Date() })
     .where(eq(repairFindings.id, findingId));
+  revalidatePath("/");
+}
+
+export async function deleteFinding(findingId: string) {
+  await requireRole("admin");
+  await db.delete(repairFindings).where(eq(repairFindings.id, findingId));
   revalidatePath("/");
 }
 

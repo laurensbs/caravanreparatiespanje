@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { units, customers, repairJobs, unitTags } from "@/lib/db/schema";
+import { units, customers, repairJobs, unitTags, tags } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { unitSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
@@ -87,7 +87,7 @@ export async function getUnitById(id: string) {
   const [unit] = await db.select().from(units).where(eq(units.id, id)).limit(1);
   if (!unit) return null;
 
-  const [customer, jobs] = await Promise.all([
+  const [customer, jobs, unitTagRows] = await Promise.all([
     unit.customerId
       ? db.select().from(customers).where(eq(customers.id, unit.customerId)).limit(1)
       : Promise.resolve([]),
@@ -96,9 +96,14 @@ export async function getUnitById(id: string) {
       .from(repairJobs)
       .where(and(eq(repairJobs.unitId, id), isNull(repairJobs.deletedAt)))
       .orderBy(desc(repairJobs.updatedAt)),
+    db
+      .select({ id: tags.id, name: tags.name, color: tags.color })
+      .from(unitTags)
+      .innerJoin(tags, eq(unitTags.tagId, tags.id))
+      .where(eq(unitTags.unitId, id)),
   ]);
 
-  return { ...unit, customer: customer[0] ?? null, repairJobs: jobs };
+  return { ...unit, customer: customer[0] ?? null, repairJobs: jobs, tags: unitTagRows };
 }
 
 export async function createUnit(data: unknown) {

@@ -14,6 +14,8 @@ interface RepairCardProps {
   unitRegistration: string | null;
   unitBrand: string | null;
   unitModel: string | null;
+  unitStorageLocation: string | null;
+  unitCurrentPosition: string | null;
   assignedUserName: string | null;
   tasks: { total: number; done: number; problem: number };
   parts: { total: number; received: number; pending: number };
@@ -78,9 +80,14 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
             {[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ") || repair.title}
           </p>
 
-          {/* Customer + title */}
+          {/* Customer + title + location */}
           {repair.customerName && (
             <p className="text-sm text-muted-foreground truncate mt-0.5">{repair.customerName}</p>
+          )}
+          {repair.unitStorageLocation && (
+            <p className="text-[11px] text-muted-foreground/60 truncate mt-0.5">
+              📍 {repair.unitStorageLocation}{repair.unitCurrentPosition ? ` · ${repair.unitCurrentPosition}` : ""}
+            </p>
           )}
           {repair.title && (repair.unitBrand || repair.unitModel) && (
             <p className="text-xs text-muted-foreground/60 truncate mt-0.5">{repair.title}</p>

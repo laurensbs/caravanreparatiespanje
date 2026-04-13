@@ -119,6 +119,7 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     priority: repairJobs.priority,
     customerName: customers.name,
     invoiceStatus: repairJobs.invoiceStatus,
+    dueDate: repairJobs.dueDate,
   };
   const orderCol = sortColumn[filters.sort ?? ""] ?? repairJobs.updatedAt;
   const orderDir = filters.dir === "asc" ? asc : desc;

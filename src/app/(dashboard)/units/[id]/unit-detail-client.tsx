@@ -17,14 +17,17 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
+import { TagPicker, type TagItem } from "@/components/tag-picker";
+import { addTagToUnit, removeTagFromUnit } from "@/actions/tags";
 
 type UnitData = NonNullable<Awaited<ReturnType<typeof import("@/actions/units").getUnitById>>>;
 
 interface Props {
   unit: UnitData;
+  allTags?: TagItem[];
 }
 
-export function UnitDetailClient({ unit: initialUnit }: Props) {
+export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const unit = initialUnit;
@@ -88,6 +91,15 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
                   <Link href={`/customers/${unit.customer.id}`} className="text-primary hover:underline">{unit.customer.name}</Link>
                 </>
               )}
+            </div>
+            {/* Tags */}
+            <div className="mt-1.5">
+              <TagPicker
+                allTags={allTags}
+                activeTags={unit.tags ?? []}
+                onAdd={(tagId) => addTagToUnit(unit.id, tagId)}
+                onRemove={(tagId) => removeTagFromUnit(unit.id, tagId)}
+              />
             </div>
           </div>
         </div>
@@ -182,11 +194,12 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
               <p className="text-sm text-muted-foreground italic">No repairs for this unit</p>
             ) : (
               <div className="space-y-1.5 max-h-[600px] overflow-y-auto">
-                {unit.repairJobs.map((job) => (
+                {unit.repairJobs.map((job, idx) => (
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
+                    className="flex items-center justify-between rounded-lg border ring-1 ring-border/50 p-2.5 text-sm hover:bg-muted/50 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all animate-slide-up"
+                    style={{ animationDelay: `${idx * 30}ms` }}
                   >
                     <div className="min-w-0 mr-2">
                       <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>

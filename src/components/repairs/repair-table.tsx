@@ -145,7 +145,6 @@ export function RepairTable({ jobs }: RepairTableProps) {
                   onCheckedChange={toggleAll}
                 />
               </TableHead>
-              <TableHead className="w-24 text-[11px] font-semibold uppercase tracking-wider">Ref</TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Title</TableHead>
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("status")}>
                 <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
@@ -156,11 +155,13 @@ export function RepairTable({ jobs }: RepairTableProps) {
               <TableHead className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("customerName")}>
                 <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
               </TableHead>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Assigned</TableHead>
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("invoiceStatus")}>
                 <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
               </TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Tags</TableHead>
+              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("dueDate")}>
+                <span className="inline-flex items-center">Planned<SortIcon column="dueDate" /></span>
+              </TableHead>
               <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("updatedAt")}>
                 <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
               </TableHead>
@@ -169,7 +170,7 @@ export function RepairTable({ jobs }: RepairTableProps) {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-16 text-center">
+                <TableCell colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ArrowUpDown className="h-8 w-8 opacity-20" />
                     <p className="font-medium text-sm">No repair jobs found</p>
@@ -195,19 +196,14 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       onCheckedChange={() => toggleOne(job.id)}
                     />
                   </TableCell>
-                  <TableCell className="font-mono text-[11px] text-muted-foreground">
-                    {job.publicCode ?? "—"}
-                  </TableCell>
                   <TableCell>
                     <div className="max-w-xs">
                       <p className="truncate font-medium text-xs group-hover:text-primary transition-colors">
                         {job.title || "Unnamed repair"}
                       </p>
-                      {job.descriptionRaw && (
-                        <p className="truncate text-[11px] text-muted-foreground mt-0.5">
-                          {job.descriptionRaw.slice(0, 80)}
-                        </p>
-                      )}
+                      <p className="truncate text-[11px] text-muted-foreground mt-0.5">
+                        {[job.publicCode, job.descriptionRaw?.slice(0, 60)].filter(Boolean).join(" · ") || "—"}
+                      </p>
                     </div>
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
@@ -253,16 +249,6 @@ export function RepairTable({ jobs }: RepairTableProps) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs">
-                    {job.assignedUserName ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm ${getInitialsColor(job.assignedUserName)}`}>
-                          {getInitials(job.assignedUserName)}
-                        </span>
-                        <span className="hidden xl:inline text-xs">{job.assignedUserName}</span>
-                      </span>
-                    ) : <span className="text-muted-foreground">—</span>}
-                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-0.5">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium w-fit ${
@@ -294,6 +280,13 @@ export function RepairTable({ jobs }: RepairTableProps) {
                           </span>
                         ))}
                       </div>
+                    ) : (
+                      <span className="text-muted-foreground text-[11px]">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {job.dueDate ? (
+                      <SmartDate date={job.dueDate} className="text-xs text-muted-foreground" />
                     ) : (
                       <span className="text-muted-foreground text-[11px]">—</span>
                     )}

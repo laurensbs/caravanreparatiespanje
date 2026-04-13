@@ -8,9 +8,11 @@ import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
-import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, garageRequestPart, toggleMyWorker } from "@/actions/garage";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS } from "@/types";
-import type { RepairTask, RepairPhoto, RepairStatus, Priority } from "@/types";
+import { FindingDialog } from "@/components/garage/finding-dialog";
+import { BlockerDialog } from "@/components/garage/blocker-dialog";
+import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, garageRequestPart, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
+import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { toast } from "sonner";
 
 type RepairDetail = {
@@ -69,6 +71,26 @@ type RepairDetail = {
     note: string | null;
     createdAt: Date | string;
   }[];
+  findings: {
+    id: string;
+    category: string;
+    description: string;
+    severity: string;
+    requiresFollowUp: boolean;
+    requiresCustomerApproval: boolean;
+    resolvedAt: Date | string | null;
+    createdAt: Date | string;
+    createdByName: string | null;
+  }[];
+  blockers: {
+    id: string;
+    reason: string;
+    description: string | null;
+    active: boolean;
+    createdAt: Date | string;
+    resolvedAt: Date | string | null;
+    createdByName: string | null;
+  }[];
 };
 
 interface Props {
@@ -96,6 +118,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   // Not done reason
   const [showNotDone, setShowNotDone] = useState(false);
   const [notDoneReason, setNotDoneReason] = useState("");
+
+  // Findings & blockers
+  const [showFinding, setShowFinding] = useState(false);
+  const [showBlocker, setShowBlocker] = useState(false);
 
   // Request part
   const [showRequestPart, setShowRequestPart] = useState(false);
@@ -191,6 +217,17 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
     });
   }
 
+  function handleResolveBlocker(blockerId: string) {
+    startTransition(async () => {
+      await resolveBlockerAction(blockerId);
+      toast.success(t("Blocker resolved", "Bloqueo resuelto", "Blokkade opgelost"));
+      router.refresh();
+    });
+  }
+
+  const activeBlockers = repair.blockers.filter(b => b.active);
+  const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
+
   return (
     <div className="flex flex-col min-h-screen bg-muted/30">
       {/* Header */}
@@ -260,6 +297,41 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-5 py-5 pb-28 space-y-4">
+
+        {/* Active blockers — prominent red banner */}
+        {activeBlockers.length > 0 && (
+          <div className="rounded-2xl border-2 border-red-400/60 bg-red-50/80 dark:bg-red-950/30 p-4 space-y-2">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-red-600/80 dark:text-red-400/80">
+              🚫 {t("Blocked", "Bloqueado", "Geblokkeerd")} ({activeBlockers.length})
+            </h3>
+            {activeBlockers.map((b) => (
+              <div key={b.id} className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="text-sm font-bold text-red-700 dark:text-red-300">
+                    {t(
+                      BLOCKER_REASON_LABELS[b.reason as BlockerReason],
+                      BLOCKER_REASON_LABELS[b.reason as BlockerReason],
+                      BLOCKER_REASON_LABELS[b.reason as BlockerReason]
+                    )}
+                  </span>
+                  {b.description && (
+                    <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-0.5">{b.description}</p>
+                  )}
+                  <p className="text-[11px] text-red-500/60 mt-0.5">
+                    {b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleResolveBlocker(b.id)}
+                  disabled={isPending}
+                  className="shrink-0 rounded-xl border border-green-300 bg-green-50 px-3 py-1.5 text-[11px] font-bold text-green-700 active:bg-green-100 transition-colors"
+                >
+                  ✓ {t("Resolve", "Resolver", "Oplossen")}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Flags (prominent warnings) */}
         {flags.length > 0 && (
@@ -348,6 +420,47 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {repair.internalComments && (
               <p className="text-sm whitespace-pre-wrap mt-2 text-muted-foreground italic">{repair.internalComments}</p>
             )}
+          </div>
+        )}
+
+        {/* Findings */}
+        {unresolvedFindings.length > 0 && (
+          <div className="rounded-2xl border border-border/50 bg-white dark:bg-card p-4 shadow-sm">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground/60 mb-3">
+              🔍 {t("Findings", "Hallazgos", "Bevindingen")} ({unresolvedFindings.length})
+            </h3>
+            <div className="space-y-2.5">
+              {unresolvedFindings.map((f) => (
+                <div key={f.id} className="flex items-start gap-2.5 text-sm">
+                  <span className="text-lg mt-0.5 shrink-0">{FINDING_CATEGORY_EMOJI[f.category as FindingCategory]}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold">
+                        {FINDING_CATEGORY_LABELS[f.category as FindingCategory]}
+                      </span>
+                      <span className={`inline-flex items-center rounded-lg px-1.5 py-0.5 text-[10px] font-bold ${
+                        f.severity === "critical"
+                          ? "bg-red-100 text-red-700"
+                          : f.severity === "minor"
+                          ? "bg-slate-100 text-slate-600"
+                          : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
+                      </span>
+                      {f.requiresCustomerApproval && (
+                        <span className="inline-flex items-center rounded-lg bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[10px] font-bold">
+                          👤 {t("Approval", "Aprobación", "Goedkeuring")}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground mt-0.5">{f.description}</p>
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                      {f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -675,6 +788,23 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             )}
           </div>
         )}
+        {/* Third row: Finding & Blocker */}
+        {isActive && !showComment && !showSuggest && !showNotDone && (
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => setShowFinding(true)}
+              className="flex-1 rounded-2xl border border-blue-300/60 bg-blue-50/60 dark:bg-blue-950/20 p-3 text-sm font-bold text-blue-700 dark:text-blue-300 active:bg-blue-100/60 transition-colors shadow-sm"
+            >
+              🔍 {t("Finding", "Hallazgo", "Bevinding")}
+            </button>
+            <button
+              onClick={() => setShowBlocker(true)}
+              className="flex-1 rounded-2xl border border-red-300/60 bg-red-50/60 dark:bg-red-950/20 p-3 text-sm font-bold text-red-700 dark:text-red-300 active:bg-red-100/60 transition-colors shadow-sm"
+            >
+              🚫 {t("Blocker", "Bloqueo", "Blokkade")}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}
@@ -688,6 +818,18 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         repairJobId={repair.id}
         open={showFinalCheck}
         onClose={() => setShowFinalCheck(false)}
+        onComplete={handleRefresh}
+      />
+      <FindingDialog
+        repairJobId={repair.id}
+        open={showFinding}
+        onClose={() => setShowFinding(false)}
+        onComplete={handleRefresh}
+      />
+      <BlockerDialog
+        repairJobId={repair.id}
+        open={showBlocker}
+        onClose={() => setShowBlocker(false)}
         onComplete={handleRefresh}
       />
     </div>

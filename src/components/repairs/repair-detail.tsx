@@ -15,8 +15,9 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS,
   CUSTOMER_RESPONSE_LABELS, INVOICE_STATUS_LABELS,
+  FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS,
 } from "@/types";
-import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus } from "@/types";
+import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -28,7 +29,7 @@ import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQu
 import { deleteRepairJob } from "@/actions/repairs";
 import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
 import { createPart } from "@/actions/parts";
-import { addRepairWorker, removeRepairWorker } from "@/actions/garage";
+import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction } from "@/actions/garage";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
@@ -104,6 +105,28 @@ interface ActiveUserItem {
   role: string;
 }
 
+interface FindingItem {
+  id: string;
+  category: string;
+  description: string;
+  severity: string;
+  requiresFollowUp: boolean;
+  requiresCustomerApproval: boolean;
+  resolvedAt: Date | string | null;
+  createdAt: Date | string;
+  createdByName: string | null;
+}
+
+interface BlockerItem {
+  id: string;
+  reason: string;
+  description: string | null;
+  active: boolean;
+  createdAt: Date | string;
+  resolvedAt: Date | string | null;
+  createdByName: string | null;
+}
+
 interface RepairDetailProps {
   job: any;
   communicationLogs?: any[];
@@ -119,9 +142,11 @@ interface RepairDetailProps {
   partRequests?: PartRequestItem[];
   repairWorkers?: WorkerItem[];
   activeUsers?: ActiveUserItem[];
+  findings?: FindingItem[];
+  blockers?: BlockerItem[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -609,6 +634,106 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             <div className="rounded-xl bg-muted/30 border border-border/50 p-6">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Parts Needed</h3>
               <div className="whitespace-pre-wrap text-sm">{job.partsNeededRaw}</div>
+            </div>
+          )}
+
+          {/* ── ACTIVE BLOCKERS — prominent red section ── */}
+          {blockers.filter(b => b.active).length > 0 && (
+            <div className="rounded-xl bg-red-50/80 dark:bg-red-950/20 border-2 border-red-300/60 p-6">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400 mb-3 flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" /> Active Blockers
+              </h3>
+              <div className="space-y-3">
+                {blockers.filter(b => b.active).map((b) => (
+                  <div key={b.id} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="text-sm font-semibold text-red-700 dark:text-red-300">
+                        {BLOCKER_REASON_LABELS[b.reason as BlockerReason]}
+                      </span>
+                      {b.description && (
+                        <p className="text-sm text-red-600/70 dark:text-red-400/70 mt-0.5">{b.description}</p>
+                      )}
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                      onClick={() => {
+                        startPartTransition(async () => {
+                          await resolveBlockerAction(b.id);
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" /> Resolve
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── FINDINGS from Workshop ── */}
+          {findings.length > 0 && (
+            <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
+              <details open={findings.some(f => !f.resolvedAt)}>
+                <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                  Findings ({findings.filter(f => !f.resolvedAt).length} open, {findings.filter(f => f.resolvedAt).length} resolved)
+                  <ChevronDown className="h-3.5 w-3.5 opacity-40" />
+                </summary>
+                <div className="px-6 pb-6 space-y-3">
+                  {findings.map((f) => (
+                    <div key={f.id} className={`flex items-start gap-3 rounded-lg p-3 ${f.resolvedAt ? "opacity-50" : "bg-background/60"}`}>
+                      <span className="text-lg mt-0.5 shrink-0">{FINDING_CATEGORY_EMOJI[f.category as FindingCategory]}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
+                          <Badge className={
+                            f.severity === "critical"
+                              ? "bg-red-100 text-red-700 border-red-200"
+                              : f.severity === "minor"
+                              ? "bg-slate-100 text-slate-600 border-slate-200"
+                              : "bg-amber-100 text-amber-700 border-amber-200"
+                          }>
+                            {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
+                          </Badge>
+                          {f.requiresCustomerApproval && (
+                            <Badge className="bg-orange-100 text-orange-700 border-orange-200">Approval Needed</Badge>
+                          )}
+                          {f.requiresFollowUp && (
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">Follow-up</Badge>
+                          )}
+                          {f.resolvedAt && (
+                            <Badge className="bg-green-100 text-green-700 border-green-200">Resolved</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{f.description}</p>
+                        <p className="text-[11px] text-muted-foreground/60 mt-1">
+                          {f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {!f.resolvedAt && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0 text-xs text-green-700 hover:bg-green-50"
+                          onClick={() => {
+                            startPartTransition(async () => {
+                              await resolveFindingAction(f.id);
+                              router.refresh();
+                            });
+                          }}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" /> Resolve
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
             </div>
           )}
 

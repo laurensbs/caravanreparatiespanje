@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers } from "@/lib/db/schema";
+import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -863,4 +863,287 @@ export async function getActiveUsers() {
     .from(users)
     .where(eq(users.active, true))
     .orderBy(users.name);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FINDINGS: technicians log inspection findings
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addFinding(
+  repairJobId: string,
+  data: {
+    category: string;
+    description: string;
+    severity: string;
+    requiresFollowUp?: boolean;
+    requiresCustomerApproval?: boolean;
+  }
+) {
+  const session = await requireAuth();
+
+  const [finding] = await db
+    .insert(repairFindings)
+    .values({
+      repairJobId,
+      category: data.category as any,
+      description: data.description,
+      severity: data.severity as any,
+      requiresFollowUp: data.requiresFollowUp ?? false,
+      requiresCustomerApproval: data.requiresCustomerApproval ?? false,
+      createdByUserId: session.user.id,
+    })
+    .returning();
+
+  // Log timeline event
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "finding_added",
+    comment: `${data.severity} finding (${data.category}): ${data.description}`,
+  });
+
+  // Auto-behaviors based on severity/flags
+  if (data.severity === "critical") {
+    // Auto-escalate priority to high if currently normal or low
+    const [job] = await db
+      .select({ priority: repairJobs.priority })
+      .from(repairJobs)
+      .where(eq(repairJobs.id, repairJobId));
+    if (job && (job.priority === "normal" || job.priority === "low")) {
+      await db
+        .update(repairJobs)
+        .set({ priority: "high", updatedAt: new Date() })
+        .where(eq(repairJobs.id, repairJobId));
+    }
+    await notifyOffice(
+      repairJobId,
+      `⚠️ Critical finding: ${data.description}`,
+      `Category: ${data.category}, Severity: CRITICAL`,
+      "garage_critical_finding"
+    );
+  }
+
+  if (data.requiresCustomerApproval) {
+    await db
+      .update(repairJobs)
+      .set({
+        customerResponseStatus: "waiting_response",
+        updatedAt: new Date(),
+      })
+      .where(eq(repairJobs.id, repairJobId));
+    await notifyOffice(
+      repairJobId,
+      `Customer approval required: ${data.description}`,
+      `Category: ${data.category}`,
+      "garage_approval_needed"
+    );
+  } else if (data.severity !== "critical") {
+    await notifyOffice(
+      repairJobId,
+      `Finding logged: ${data.description}`,
+      `Category: ${data.category}, Severity: ${data.severity}`,
+      "garage_finding"
+    );
+  }
+
+  // Set relevant flags based on category
+  const flagMap: Record<string, Record<string, boolean>> = {
+    water_damage: { waterDamageRiskFlag: true },
+    tyres: { tyresFlag: true },
+    lighting: { lightsFlag: true },
+    brakes: { brakesFlag: true },
+    windows: { windowsFlag: true },
+    seals: { sealsFlag: true },
+  };
+  const flagUpdate = flagMap[data.category];
+  if (flagUpdate) {
+    await db
+      .update(repairJobs)
+      .set({ ...flagUpdate, updatedAt: new Date() })
+      .where(eq(repairJobs.id, repairJobId));
+  }
+
+  if (data.requiresFollowUp) {
+    await db
+      .update(repairJobs)
+      .set({ followUpRequiredFlag: true, updatedAt: new Date() })
+      .where(eq(repairJobs.id, repairJobId));
+  }
+
+  revalidatePath(`/garage/repairs/${repairJobId}`);
+  revalidatePath(`/repairs/${repairJobId}`);
+  return finding;
+}
+
+export async function getRepairFindings(repairJobId: string) {
+  return db
+    .select({
+      id: repairFindings.id,
+      category: repairFindings.category,
+      description: repairFindings.description,
+      severity: repairFindings.severity,
+      requiresFollowUp: repairFindings.requiresFollowUp,
+      requiresCustomerApproval: repairFindings.requiresCustomerApproval,
+      resolvedAt: repairFindings.resolvedAt,
+      createdAt: repairFindings.createdAt,
+      createdByName: users.name,
+    })
+    .from(repairFindings)
+    .leftJoin(users, eq(repairFindings.createdByUserId, users.id))
+    .where(eq(repairFindings.repairJobId, repairJobId))
+    .orderBy(desc(repairFindings.createdAt));
+}
+
+export async function resolveFinding(findingId: string) {
+  await requireAuth();
+  await db
+    .update(repairFindings)
+    .set({ resolvedAt: new Date() })
+    .where(eq(repairFindings.id, findingId));
+  revalidatePath("/");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOCKERS: job-level blockers
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addBlocker(
+  repairJobId: string,
+  data: { reason: string; description?: string }
+) {
+  const session = await requireAuth();
+
+  const [blocker] = await db
+    .insert(repairBlockers)
+    .values({
+      repairJobId,
+      reason: data.reason as any,
+      description: data.description ?? null,
+      createdByUserId: session.user.id,
+    })
+    .returning();
+
+  // Log timeline event
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "blocker_added",
+    comment: `Blocker: ${data.reason}${data.description ? ` — ${data.description}` : ""}`,
+  });
+
+  // Auto-update repair status based on blocker reason
+  const statusMap: Record<string, string> = {
+    waiting_parts: "waiting_parts",
+    waiting_customer: "waiting_customer",
+  };
+  const newStatus = statusMap[data.reason] ?? "blocked";
+  await db
+    .update(repairJobs)
+    .set({
+      status: newStatus as any,
+      currentBlocker: data.description || data.reason,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  // Update customer response status for waiting_customer
+  if (data.reason === "waiting_customer") {
+    await db
+      .update(repairJobs)
+      .set({ customerResponseStatus: "waiting_response" })
+      .where(eq(repairJobs.id, repairJobId));
+  }
+
+  // Parts required flag for waiting_parts
+  if (data.reason === "waiting_parts") {
+    await db
+      .update(repairJobs)
+      .set({ partsRequiredFlag: true })
+      .where(eq(repairJobs.id, repairJobId));
+  }
+
+  await notifyOffice(
+    repairJobId,
+    `🚫 Blocker: ${data.reason}`,
+    data.description ?? undefined,
+    "garage_blocker"
+  );
+
+  revalidatePath(`/garage/repairs/${repairJobId}`);
+  revalidatePath(`/repairs/${repairJobId}`);
+  return blocker;
+}
+
+export async function resolveBlocker(blockerId: string) {
+  const session = await requireAuth();
+
+  const [blocker] = await db
+    .select({
+      repairJobId: repairBlockers.repairJobId,
+      reason: repairBlockers.reason,
+    })
+    .from(repairBlockers)
+    .where(eq(repairBlockers.id, blockerId));
+
+  if (!blocker) throw new Error("Blocker not found");
+
+  await db
+    .update(repairBlockers)
+    .set({
+      active: false,
+      resolvedAt: new Date(),
+      resolvedByUserId: session.user.id,
+    })
+    .where(eq(repairBlockers.id, blockerId));
+
+  // Log event
+  await db.insert(repairJobEvents).values({
+    repairJobId: blocker.repairJobId,
+    userId: session.user.id,
+    eventType: "blocker_resolved",
+    comment: `Blocker resolved: ${blocker.reason}`,
+  });
+
+  // Check if there are other active blockers
+  const [remaining] = await db
+    .select({ cnt: count() })
+    .from(repairBlockers)
+    .where(
+      and(
+        eq(repairBlockers.repairJobId, blocker.repairJobId),
+        eq(repairBlockers.active, true)
+      )
+    );
+
+  // If no more active blockers, move back to in_progress
+  if (!remaining || remaining.cnt === 0) {
+    await db
+      .update(repairJobs)
+      .set({
+        status: "in_progress",
+        currentBlocker: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(repairJobs.id, blocker.repairJobId));
+  }
+
+  revalidatePath(`/garage/repairs/${blocker.repairJobId}`);
+  revalidatePath(`/repairs/${blocker.repairJobId}`);
+}
+
+export async function getRepairBlockers(repairJobId: string) {
+  return db
+    .select({
+      id: repairBlockers.id,
+      reason: repairBlockers.reason,
+      description: repairBlockers.description,
+      active: repairBlockers.active,
+      createdAt: repairBlockers.createdAt,
+      resolvedAt: repairBlockers.resolvedAt,
+      createdByName: users.name,
+    })
+    .from(repairBlockers)
+    .leftJoin(users, eq(repairBlockers.createdByUserId, users.id))
+    .where(eq(repairBlockers.repairJobId, repairJobId))
+    .orderBy(desc(repairBlockers.active), desc(repairBlockers.createdAt));
 }

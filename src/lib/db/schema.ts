@@ -135,6 +135,36 @@ export const finalCheckStatusEnum = pgEnum("final_check_status", [
   "failed",
 ]);
 
+export const findingSeverityEnum = pgEnum("finding_severity", [
+  "minor",
+  "normal",
+  "critical",
+]);
+
+export const findingCategoryEnum = pgEnum("finding_category", [
+  "tyres",
+  "lighting",
+  "brakes",
+  "windows",
+  "water_damage",
+  "seals",
+  "door_lock",
+  "electrical",
+  "bodywork",
+  "chassis",
+  "interior",
+  "other",
+]);
+
+export const blockerReasonEnum = pgEnum("blocker_reason", [
+  "waiting_parts",
+  "waiting_customer",
+  "unknown_issue",
+  "no_time",
+  "missing_info",
+  "other",
+]);
+
 export const importStatusEnum = pgEnum("import_status", [
   "pending",
   "processing",
@@ -1265,6 +1295,9 @@ export const repairPhotos = pgTable(
     repairTaskId: uuid("repair_task_id").references(() => repairTasks.id, {
       onDelete: "cascade",
     }),
+    findingId: uuid("finding_id").references(() => repairFindings.id, {
+      onDelete: "set null",
+    }),
     url: text("url").notNull(),
     thumbnailUrl: text("thumbnail_url"),
     caption: text("caption"),
@@ -1279,6 +1312,7 @@ export const repairPhotos = pgTable(
   (table) => [
     index("repair_photos_job_idx").on(table.repairJobId),
     index("repair_photos_task_idx").on(table.repairTaskId),
+    index("repair_photos_finding_idx").on(table.findingId),
   ]
 );
 
@@ -1348,3 +1382,98 @@ export const repairWorkersRelations = relations(repairWorkers, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPAIR FINDINGS (inspection findings by technicians)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const repairFindings = pgTable(
+  "repair_findings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    category: findingCategoryEnum("category").notNull().default("other"),
+    description: text("description").notNull(),
+    severity: findingSeverityEnum("severity").notNull().default("normal"),
+    requiresFollowUp: boolean("requires_follow_up").notNull().default(false),
+    requiresCustomerApproval: boolean("requires_customer_approval")
+      .notNull()
+      .default(false),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("repair_findings_job_idx").on(table.repairJobId),
+    index("repair_findings_severity_idx").on(table.severity),
+  ]
+);
+
+export const repairFindingsRelations = relations(
+  repairFindings,
+  ({ one }) => ({
+    repairJob: one(repairJobs, {
+      fields: [repairFindings.repairJobId],
+      references: [repairJobs.id],
+    }),
+    createdBy: one(users, {
+      fields: [repairFindings.createdByUserId],
+      references: [users.id],
+    }),
+  })
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPAIR BLOCKERS (job-level blockers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const repairBlockers = pgTable(
+  "repair_blockers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    reason: blockerReasonEnum("reason").notNull().default("other"),
+    description: text("description"),
+    active: boolean("active").notNull().default(true),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedByUserId: uuid("resolved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("repair_blockers_job_idx").on(table.repairJobId),
+    index("repair_blockers_active_idx").on(table.active),
+  ]
+);
+
+export const repairBlockersRelations = relations(
+  repairBlockers,
+  ({ one }) => ({
+    repairJob: one(repairJobs, {
+      fields: [repairBlockers.repairJobId],
+      references: [repairJobs.id],
+    }),
+    createdBy: one(users, {
+      fields: [repairBlockers.createdByUserId],
+      references: [users.id],
+    }),
+    resolvedBy: one(users, {
+      fields: [repairBlockers.resolvedByUserId],
+      references: [users.id],
+    }),
+  })
+);

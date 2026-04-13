@@ -1,4 +1,4 @@
-import { getGarageRepairDetail, garageAutoStart } from "@/actions/garage";
+import { getGarageRepairDetail, garageAutoStart, getRepairFindings, getRepairBlockers } from "@/actions/garage";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { GarageRepairDetailClient } from "./detail-client";
@@ -9,9 +9,11 @@ export default async function GarageRepairDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [repair, session] = await Promise.all([
+  const [repair, session, findings, blockers] = await Promise.all([
     getGarageRepairDetail(id),
     auth(),
+    getRepairFindings(id),
+    getRepairBlockers(id),
   ]);
 
   if (!repair) {
@@ -23,7 +25,7 @@ export default async function GarageRepairDetailPage({
 
   return (
     <GarageRepairDetailClient
-      repair={repair}
+      repair={{ ...repair, findings, blockers }}
       currentUserId={session?.user?.id ?? ""}
       currentUserName={session?.user?.name ?? ""}
     />

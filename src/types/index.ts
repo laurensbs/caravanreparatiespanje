@@ -19,6 +19,8 @@ import type {
   communicationLogs,
   repairTasks,
   repairPhotos,
+  repairFindings,
+  repairBlockers,
 } from "@/lib/db/schema";
 
 export type UserRole = "admin" | "manager" | "staff" | "technician" | "viewer";
@@ -120,12 +122,18 @@ export type ActionReminder = typeof actionReminders.$inferSelect;
 export type CommunicationLog = typeof communicationLogs.$inferSelect;
 export type RepairTask = typeof repairTasks.$inferSelect;
 export type RepairPhoto = typeof repairPhotos.$inferSelect;
+export type RepairFinding = typeof repairFindings.$inferSelect;
+export type RepairBlocker = typeof repairBlockers.$inferSelect;
 
 export type RepairTaskStatus = "pending" | "in_progress" | "done" | "problem" | "review";
 export type FinalCheckStatus = "pending" | "passed" | "failed";
 export type PhotoType = "before" | "damage" | "after" | "problem" | "general";
 export type TaskSource = "office" | "garage";
 export type ProblemCategory = "missing_part" | "extra_damage" | "unclear_instructions" | "time_shortage" | "other";
+
+export type FindingSeverity = "minor" | "normal" | "critical";
+export type FindingCategory = "tyres" | "lighting" | "brakes" | "windows" | "water_damage" | "seals" | "door_lock" | "electrical" | "bodywork" | "chassis" | "interior" | "other";
+export type BlockerReason = "waiting_parts" | "waiting_customer" | "unknown_issue" | "no_time" | "missing_info" | "other";
 
 export type ReminderType =
   | "create_invoice"
@@ -245,6 +253,51 @@ export const PROBLEM_CATEGORY_LABELS: Record<ProblemCategory, string> = {
   extra_damage: "Extra Damage Found",
   unclear_instructions: "Unclear Instructions",
   time_shortage: "Time Shortage",
+  other: "Other",
+};
+
+export const FINDING_CATEGORY_LABELS: Record<FindingCategory, string> = {
+  tyres: "Tyres",
+  lighting: "Lighting",
+  brakes: "Brakes",
+  windows: "Windows / Rooflight",
+  water_damage: "Water Damage",
+  seals: "Seals / Rails",
+  door_lock: "Door / Lock",
+  electrical: "Electrical",
+  bodywork: "Bodywork",
+  chassis: "Chassis",
+  interior: "Interior",
+  other: "Other",
+};
+
+export const FINDING_CATEGORY_EMOJI: Record<FindingCategory, string> = {
+  tyres: "🛞",
+  lighting: "💡",
+  brakes: "🛑",
+  windows: "🪟",
+  water_damage: "💧",
+  seals: "🔧",
+  door_lock: "🚪",
+  electrical: "⚡",
+  bodywork: "🚗",
+  chassis: "🔩",
+  interior: "🪑",
+  other: "📋",
+};
+
+export const FINDING_SEVERITY_LABELS: Record<FindingSeverity, string> = {
+  minor: "Minor",
+  normal: "Normal",
+  critical: "Critical",
+};
+
+export const BLOCKER_REASON_LABELS: Record<BlockerReason, string> = {
+  waiting_parts: "Waiting for Parts",
+  waiting_customer: "Waiting for Customer",
+  unknown_issue: "Unknown Issue",
+  no_time: "No Time",
+  missing_info: "Missing Information",
   other: "Other",
 };
 

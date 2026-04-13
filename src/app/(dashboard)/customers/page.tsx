@@ -195,19 +195,19 @@ export default async function CustomersPage({ searchParams }: Props) {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {page > 1 && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
                 <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.contactType ? { contactType: params.contactType } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), page: String(page - 1) }).toString()}`}>
                   Previous
                 </Link>
               </Button>
             )}
             {page < totalPages && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
                 <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.contactType ? { contactType: params.contactType } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), page: String(page + 1) }).toString()}`}>
                   Next
                 </Link>

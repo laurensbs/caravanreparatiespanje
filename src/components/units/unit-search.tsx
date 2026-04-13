@@ -150,7 +150,7 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search registration, brand, model..."
+          placeholder="Search license plate, brand, model..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -206,7 +206,7 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
           <form onSubmit={handleCreateUnit} className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-[11px]">Registration</Label>
+                <Label className="text-[11px]">License Plate</Label>
                 <Input name="registration" defaultValue={query} className="h-8 text-xs mt-0.5" autoFocus />
               </div>
               <div>

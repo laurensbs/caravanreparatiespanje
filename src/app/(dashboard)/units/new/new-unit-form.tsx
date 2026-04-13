@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CustomerSearch } from "@/components/customers/customer-search";
 
 interface NewUnitFormProps {
@@ -65,7 +66,7 @@ export function NewUnitForm({ customers }: NewUnitFormProps) {
             </div>
           </div>
           <div>
-            <Label htmlFor="registration">Registration / License</Label>
+            <Label htmlFor="registration">License Plate</Label>
             <Input id="registration" name="registration" className="mt-1" />
           </div>
           <div>
@@ -90,11 +91,24 @@ export function NewUnitForm({ customers }: NewUnitFormProps) {
           </div>
           <div>
             <Label htmlFor="storageLocation">Storage Location</Label>
-            <Input id="storageLocation" name="storageLocation" className="mt-1" placeholder="e.g. Peratallada Outside" />
+            <Select name="storageLocation">
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Select location..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cruïllas">Cruïllas</SelectItem>
+                <SelectItem value="Sant Climent">Sant Climent</SelectItem>
+                <SelectItem value="Peratallada">Peratallada</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="storageType">Storage Type</Label>
-            <Input id="storageType" name="storageType" className="mt-1" placeholder="e.g. Outside, Inside" />
+            <Select name="storageType">
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Inside / Outside" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Inside">Inside</SelectItem>
+                <SelectItem value="Outside">Outside</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="currentPosition">Current Position</Label>

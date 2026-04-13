@@ -118,10 +118,10 @@ export function FeedbackClient({
   const closedItems = items.filter((i) => i.status === "done" || i.status === "dismissed");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Feedback</h1>
+          <h1 className="text-lg font-bold tracking-tight">Feedback</h1>
           <p className="text-sm text-muted-foreground">
             Suggestions, improvements and feature requests
           </p>

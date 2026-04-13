@@ -1,6 +1,6 @@
 import { getRepairJobById, getCustomerRepairs } from "@/actions/repairs";
 import { getCommunicationLogs } from "@/actions/communications";
-import { getParts, getPartRequests } from "@/actions/parts";
+import { getParts, getPartRequests, getPartCategories } from "@/actions/parts";
 import { getAppSettings } from "@/actions/settings";
 import { getTags, getRepairTags } from "@/actions/tags";
 import { getUsers } from "@/actions/users";
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
@@ -42,6 +42,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getRepairFindings(id),
     getRepairBlockers(id),
     getEstimateLineItems(id),
+    getPartCategories(),
   ]);
   if (!job) notFound();
 
@@ -67,6 +68,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       findings={findings}
       blockers={blockers}
       estimateLines={estimateLines}
+      partCategories={partCategories}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

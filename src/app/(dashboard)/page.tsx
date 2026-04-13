@@ -54,7 +54,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -89,9 +89,9 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap gap-2">
         {quickFilters.map((f) => (
           <Link key={f.label} href={f.href}>
-            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all hover:shadow-md hover:scale-105 active:scale-95 cursor-pointer", f.bg)}>
+              <span className={cn("inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer ring-1 ring-border/50", f.bg)}>
               {f.label}
-              <span className="font-bold">{f.value}</span>
+              <span className="font-bold tabular-nums">{f.value}</span>
             </span>
           </Link>
         ))}
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
 
       <DashboardSuggestions data={dashboardSuggestions} />
 
-      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
         {/* Recent Activity */}
         <Card className="lg:col-span-2 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Right column */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Status breakdown */}
           <Card className="animate-slide-up" style={{ animationDelay: "250ms", animationFillMode: "backwards" }}>
             <CardHeader className="pb-3">

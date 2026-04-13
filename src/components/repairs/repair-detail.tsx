@@ -38,6 +38,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CustomerSearch } from "@/components/customers/customer-search";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
+import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
+import { cn } from "@/lib/utils";
 
 import { addTagToRepair, removeTagFromRepair } from "@/actions/tags";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
@@ -47,6 +49,7 @@ interface PartItem {
   id: string;
   name: string;
   partNumber: string | null;
+  category: string | null;
   defaultCost: string | null;
   markupPercent: string | null;
   supplierName: string | null;
@@ -136,9 +139,10 @@ interface RepairDetailProps {
   findings?: FindingItem[];
   blockers?: BlockerItem[];
   estimateLines?: EstimateLineItem[];
+  partCategories?: PartCategory[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], partCategories = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -173,6 +177,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [showAllFlags, setShowAllFlags] = useState(false);
   const [showPartPicker, setShowPartPicker] = useState(false);
   const [partSearch, setPartSearch] = useState("");
+  const [partCategory, setPartCategory] = useState<string | null>(null);
   const [discountPercent, setDiscountPercent] = useState(parseFloat(job.discountPercent ?? "0"));
   const [nextAction, setNextAction] = useState(job.nextAction ?? "");
   const [currentBlocker, setCurrentBlocker] = useState(job.currentBlocker ?? "");
@@ -332,13 +337,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     }, 500);
   }
 
-  const filteredParts = partSearch.length > 0
-    ? partsList.filter(
+  const filteredParts = (() => {
+    let result = partsList;
+    if (partCategory) {
+      result = result.filter((p) => p.category === partCategory);
+    }
+    if (partSearch.length > 0) {
+      result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(partSearch.toLowerCase()) ||
           p.partNumber?.toLowerCase().includes(partSearch.toLowerCase())
-      ).slice(0, 8)
-    : partsList.slice(0, 8);
+      );
+    }
+    // Show all when filtering by category, limit to 8 when browsing all without search
+    if (!partCategory && !partSearch) return result.slice(0, 8);
+    return result;
+  })();
 
   async function handleDelete() {
     if (!confirm("Move this repair job to the bin? You can restore it later.")) return;
@@ -478,7 +492,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           <span className="text-muted-foreground/30">·</span>
 
-          {/* Clickable registration / unit + location */}
+          {/* Clickable license plate / unit + location */}
           {job.unit ? (
             <button
               onClick={() => setExpandUnit((v) => !v)}
@@ -486,8 +500,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               title="Click to view / edit unit"
             >
               <span className="font-mono">{job.unit.registration || 'No license plate'}</span>
-              {job.unit.brand && <span className="text-muted-foreground/60">({[job.unit.brand, job.unit.model].filter(Boolean).join(' ')})</span>}
-              {job.location && <span className="text-muted-foreground/60">· {job.location.slug ? job.location.slug.toUpperCase() : job.location.name}</span>}
               <Pencil className="h-2.5 w-2.5 opacity-40" />
             </button>
           ) : (
@@ -814,17 +826,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 Workshop
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
-            <div className="px-6 pb-6 space-y-5">
+            <div className="px-6 pb-5 space-y-4">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Assigned + Planning — side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Assigned workers */}
                 <div>
-                  <Label className="text-xs text-muted-foreground">Assigned</Label>
+                  <p className="text-xs text-muted-foreground font-medium mb-1.5">Assigned</p>
                   {repairWorkers.length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1 mb-1.5">
                       {repairWorkers.map((w) => (
-                        <span key={w.id} className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-xs font-medium group">
-                          <span className="flex items-center justify-center h-5 w-5 rounded-full bg-foreground/10 text-[10px] font-bold text-foreground/70">
+                        <span key={w.id} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs group">
+                          <span className="flex items-center justify-center h-4 w-4 rounded-full bg-foreground/10 text-[9px] font-bold text-foreground/70">
                             {w.userName.charAt(0).toUpperCase()}
                           </span>
                           {w.userName}
@@ -838,7 +851,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                             className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all ml-0.5"
                             title="Remove"
                           >
-                            <XIcon className="h-3 w-3" />
+                            <XIcon className="h-2.5 w-2.5" />
                           </button>
                         </span>
                       ))}
@@ -859,7 +872,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           });
                         }}
                       >
-                        <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg border-border/50"><SelectValue placeholder="+ Assign technician..." /></SelectTrigger>
+                        <SelectTrigger className="h-7 text-xs rounded-lg border-border/50"><SelectValue placeholder="+ Assign technician..." /></SelectTrigger>
                         <SelectContent>
                           {availableUsers.map((u) => (
                             <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
@@ -877,8 +890,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
 
               {/* Flags */}
-              <div className="border-t border-border/30 pt-4">
-                <div className="flex items-center justify-between mb-2">
+              <div className="border-t border-border/30 pt-3">
+                <div className="flex items-center justify-between mb-1.5">
                   <p className="text-xs text-muted-foreground font-medium">Inspection Flags</p>
                   {!showAllFlags && (
                     <button
@@ -925,18 +938,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   )}
                   {activeFlags.length === 0 && !showAllFlags && (
-                    <span className="text-xs text-muted-foreground">None</span>
+                    <span className="text-xs text-muted-foreground/60">None</span>
                   )}
                 </div>
               </div>
-              {/* Garage Tasks */}
-              <div className="border-t border-border/30 pt-4">
+
+              {/* Tasks */}
+              <div className="border-t border-border/30 pt-3">
                 <RepairTaskList repairJobId={job.id} initialTasks={tasks} defaultHourlyRate={settings.hourlyRate} />
               </div>
 
               {/* Parts Used */}
-              <div className="border-t border-border/30 pt-4">
-                <div className="flex items-center justify-between mb-2">
+              <div className="border-t border-border/30 pt-3">
+                <div className="flex items-center justify-between mb-1.5">
                   <p className="text-xs text-muted-foreground font-medium">
                       Parts Used
                     {partRequests.length > 0 && (
@@ -1132,6 +1146,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               setShowPartPicker={setShowPartPicker}
               partSearch={partSearch}
               setPartSearch={setPartSearch}
+              partCategory={partCategory}
+              setPartCategory={setPartCategory}
+              partCategories={partCategories}
               filteredParts={filteredParts}
               addLabourLine={addLabourLine}
               addCustomLine={addCustomLine}
@@ -1566,15 +1583,13 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Planning date */}
       <div className="flex items-center justify-between group/plan">
-        <span className="text-muted-foreground text-sm">
-          Planning
-        </span>
+        <p className="text-xs text-muted-foreground font-medium">Planning</p>
         {dueDate && !editing ? (
           <span className="flex items-center gap-1.5">
-            <span className="text-right font-medium text-sm">{format(new Date(dueDate), "dd MMM yyyy")}</span>
+            <span className="text-right font-medium text-xs">{format(new Date(dueDate), "dd MMM yyyy")}</span>
             <button
               onClick={() => setEditing(true)}
               className="opacity-0 group-hover/plan:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
@@ -1583,7 +1598,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             </button>
           </span>
         ) : !editing ? (
-          <span className="text-xs text-muted-foreground">Not planned</span>
+          <span className="text-xs text-muted-foreground/60">Not planned</span>
         ) : null}
       </div>
 
@@ -1613,7 +1628,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
       {/* Start Repair / In Workshop status */}
       {inGarage ? (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">
+          <span className="text-xs font-medium text-foreground">
             In Workshop Today
           </span>
           <Link
@@ -1629,7 +1644,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
           <button
             onClick={handleSendToday}
             disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2.5 px-3 transition-colors hover:bg-foreground/90 disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-foreground text-background text-xs font-medium py-2 px-2.5 transition-colors hover:bg-foreground/90 disabled:opacity-50"
           >
             {saving ? "..." : "Start Repair Now"}
           </button>
@@ -1640,7 +1655,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
               }
             }}
             disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2.5 px-3 transition-colors disabled:opacity-50 relative overflow-hidden"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2 px-2.5 transition-colors disabled:opacity-50 relative overflow-hidden"
           >
             <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
             Schedule Repair
@@ -1743,6 +1758,9 @@ function InlineUnitEdit({ unit, onDone }: { unit: any; onDone: () => void }) {
   const [nfcTag, setNfcTag] = useState(unit.nfcTag ?? "");
   const [notes, setNotes] = useState(unit.notes ?? "");
 
+  const STORAGE_LOCATIONS = ["Cruïllas", "Sant Climent", "Peratallada"];
+  const STORAGE_TYPES = ["Inside", "Outside"];
+
   function handleSave() {
     startTransition(async () => {
       try {
@@ -1763,13 +1781,11 @@ function InlineUnitEdit({ unit, onDone }: { unit: any; onDone: () => void }) {
     });
   }
 
-  const fields: [string, string, (v: string) => void, string?][] = [
-    ["Registration", registration, setRegistration, "font-mono"],
+  const textFields: [string, string, (v: string) => void, string?][] = [
+    ["License Plate", registration, setRegistration, "font-mono"],
     ["Brand", brand, setBrand], ["Model", model, setModel],
     ["Year", year, setYear], ["Chassis", chassisId, setChassisId, "font-mono"],
     ["Length", length, setLength],
-    ["Storage Loc.", storageLocation, setStorageLocation],
-    ["Storage Type", storageType, setStorageType],
     ["Position", currentPosition, setCurrentPosition],
     ["NFC Tag", nfcTag, setNfcTag, "font-mono"],
   ];
@@ -1777,12 +1793,40 @@ function InlineUnitEdit({ unit, onDone }: { unit: any; onDone: () => void }) {
   return (
     <div className="rounded-lg border bg-muted/30 p-2.5 space-y-2 animate-slide-up">
       <div className="grid grid-cols-2 gap-2">
-        {fields.map(([label, value, setter, extra]) => (
+        {textFields.map(([label, value, setter, extra]) => (
           <div key={label}>
             <label className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</label>
             <Input value={value} onChange={(e) => setter(e.target.value)} className={`h-7 text-xs rounded-md mt-0.5 ${extra ?? ""}`} />
           </div>
         ))}
+        {/* Storage Location — dropdown */}
+        <div>
+          <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Storage Location</label>
+          <Select value={storageLocation} onValueChange={setStorageLocation}>
+            <SelectTrigger className="h-7 text-xs rounded-md mt-0.5">
+              <SelectValue placeholder="Select location..." />
+            </SelectTrigger>
+            <SelectContent>
+              {STORAGE_LOCATIONS.map((loc) => (
+                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Storage Type — dropdown */}
+        <div>
+          <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Storage Type</label>
+          <Select value={storageType} onValueChange={setStorageType}>
+            <SelectTrigger className="h-7 text-xs rounded-md mt-0.5">
+              <SelectValue placeholder="Inside / Outside" />
+            </SelectTrigger>
+            <SelectContent>
+              {STORAGE_TYPES.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div>
         <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Notes</label>
@@ -1807,7 +1851,7 @@ function FinancialWorkflow({
   discountPercent, discountAmount,
   warrantyFlag, setWarrantyFlag, invoiceStatus, setInvoiceStatus,
   status, setStatus, settings, showPartPicker, setShowPartPicker,
-  partSearch, setPartSearch, filteredParts, addLabourLine, addCustomLine,
+  partSearch, setPartSearch, partCategory, setPartCategory, partCategories, filteredParts, addLabourLine, addCustomLine,
   addPartLine, removeCostLine, updateCostLine, handleGenerateFromWork,
   handleDiscountChange, router,
 }: {
@@ -1833,6 +1877,9 @@ function FinancialWorkflow({
   setShowPartPicker: (v: boolean) => void;
   partSearch: string;
   setPartSearch: (v: string) => void;
+  partCategory: string | null;
+  setPartCategory: (v: string | null) => void;
+  partCategories: PartCategory[];
   filteredParts: PartItem[];
   addLabourLine: () => void;
   addCustomLine: () => void;
@@ -1975,7 +2022,37 @@ function FinancialWorkflow({
           {showPartPicker && (
             <div className="mb-3 border border-border/50 rounded-lg p-2 bg-background/50">
               <Input placeholder="Search parts..." value={partSearch} onChange={(e) => setPartSearch(e.target.value)} className="h-7 text-xs rounded-lg mb-2" autoFocus />
-              <div className="max-h-40 overflow-y-auto space-y-0.5">
+              {/* Category tabs */}
+              <div className="flex flex-wrap gap-1 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setPartCategory(null)}
+                  className={cn(
+                    "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium transition-colors",
+                    !partCategory ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  All
+                </button>
+                {partCategories.filter(c => c.active).map((cat) => {
+                  const CatIcon = ICON_MAP[cat.icon] ?? Package;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => setPartCategory(partCategory === cat.key ? null : cat.key)}
+                      className={cn(
+                        "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium transition-colors",
+                        partCategory === cat.key ? `${cat.color}` : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <CatIcon className="h-3 w-3" />
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-0.5">
                 {filteredParts.length === 0 ? (
                   <p className="text-xs text-muted-foreground py-2 text-center">No parts found</p>
                 ) : (
@@ -2073,15 +2150,13 @@ function FinancialWorkflow({
       </div>
 
       {/* ─── STEP 2: Quote ─── */}
-      <div className="px-6 py-4 space-y-2.5">
+      {(costLines.length > 0 || hasQuote) && (
+      <div className="px-6 py-3 space-y-2">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-foreground">Quote</p>
-            <p className="text-[11px] text-muted-foreground/60">Based on estimate</p>
-          </div>
+          <p className="text-xs font-medium text-foreground">Quote</p>
           {hasQuote && (
             <div className="flex items-center gap-2">
-              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">
                 {job.holdedQuoteNum} ↗
               </a>
               {quoteSent ? (
@@ -2123,46 +2198,42 @@ function FinancialWorkflow({
             )}
           </div>
         ) : (
-          <div className="space-y-1.5">
-            <div className="flex gap-2">
-              <Button variant="default" size="sm" className="flex-1 text-xs"
+          <div className="flex gap-2">
+            <Button variant="default" size="sm" className="flex-1 text-xs"
+              disabled={!job.customer || costLines.length === 0 || !!loading}
+              onClick={() => handleAction("create-quote", async () => {
+                const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 })), discountPercent);
+                toast.success(`Quote ${result.quoteNum} created`);
+                router.refresh();
+              })}>
+              {loading === "create-quote" ? <Spinner className="mr-1" /> : null}Send Quote (through Holded)
+            </Button>
+            {job.customer?.email && (
+              <Button variant="outline" size="sm" className="flex-1 text-xs"
                 disabled={!job.customer || costLines.length === 0 || !!loading}
-                onClick={() => handleAction("create-quote", async () => {
+                onClick={() => handleAction("create-send-quote", async () => {
                   const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 })), discountPercent);
-                  toast.success(`Quote ${result.quoteNum} created`);
+                  await sendHoldedQuote(job.id);
+                  toast.success(`Quote ${result.quoteNum} created & sent`);
                   router.refresh();
                 })}>
-                {loading === "create-quote" ? <Spinner className="mr-1" /> : null}Create Quote
+                {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}Send & Email Quote
               </Button>
-              {job.customer?.email && (
-                <Button variant="outline" size="sm" className="flex-1 text-xs"
-                  disabled={!job.customer || costLines.length === 0 || !!loading}
-                  onClick={() => handleAction("create-send-quote", async () => {
-                    const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 })), discountPercent);
-                    await sendHoldedQuote(job.id);
-                    toast.success(`Quote ${result.quoteNum} created & sent`);
-                    router.refresh();
-                  })}>
-                  {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}Create & Send
-                </Button>
-              )}
-            </div>
+            )}
             {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
-            {job.customer && costLines.length === 0 && <p className="text-[11px] text-muted-foreground">Add estimate lines first</p>}
           </div>
         )}
       </div>
+      )}
 
       {/* ─── STEP 3: Invoice ─── */}
-      <div className="px-6 py-4 space-y-2.5">
+      {(hasQuote || hasInvoice) && (
+      <div className="px-6 py-3 space-y-2">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-foreground">Invoice</p>
-            <p className="text-[11px] text-muted-foreground/60">Based on actual work</p>
-          </div>
+          <p className="text-xs font-medium text-foreground">Invoice</p>
           {hasInvoice && (
             <div className="flex items-center gap-2">
-              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">
                 {job.holdedInvoiceNum} ↗
               </a>
               {invoiceSent ? (
@@ -2209,21 +2280,19 @@ function FinancialWorkflow({
             )}
           </div>
         ) : (
-          <div className="space-y-1.5">
-            <Button variant="default" size="sm" className="w-full text-xs"
-              disabled={!job.customer || costLines.length === 0 || !!loading}
-              onClick={() => handleAction("create-invoice", async () => {
-                const items = costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 }));
-                const result = await createHoldedInvoice(job.id, items, discountPercent);
-                toast.success(`Invoice ${result.invoiceNum} created`);
-                router.refresh();
-              })}>
-              {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}Create Invoice
-            </Button>
-            {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
-          </div>
+          <Button variant="default" size="sm" className="w-full text-xs"
+            disabled={!job.customer || costLines.length === 0 || !!loading}
+            onClick={() => handleAction("create-invoice", async () => {
+              const items = costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 }));
+              const result = await createHoldedInvoice(job.id, items, discountPercent);
+              toast.success(`Invoice ${result.invoiceNum} created`);
+              router.refresh();
+            })}>
+            {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}Send Invoice (through Holded)
+          </Button>
         )}
       </div>
+      )}
 
       {/* Unsent warning */}
       {hasUnsentDoc && (

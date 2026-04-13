@@ -77,13 +77,13 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Locations</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="sm" className="h-9 rounded-lg text-xs" onClick={openNew}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               Add Location
             </Button>
           </DialogTrigger>
@@ -156,28 +156,29 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
       {visibleLocations.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <MapPin className="mb-2 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">
+            <MapPin className="mb-2 h-8 w-8 opacity-20" />
+            <p className="font-medium text-sm text-muted-foreground">
               {tab === "main" ? "No main locations yet." : "No misc locations."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleLocations.map((loc) => (
+          {visibleLocations.map((loc, idx) => (
             <Card
               key={loc.id}
-              className="cursor-pointer transition-shadow hover:shadow-md"
+              className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] ring-1 ring-border/50 animate-slide-up"
+              style={{ animationDelay: `${idx * 40}ms`, animationFillMode: "backwards" }}
               onClick={() => openEdit(loc)}
             >
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">{loc.name}</CardTitle>
+                <CardTitle className="text-sm">{loc.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {loc.description || "No description"}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Slug: {loc.slug}
                 </p>
               </CardContent>

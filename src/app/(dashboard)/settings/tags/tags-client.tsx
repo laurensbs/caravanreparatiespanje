@@ -59,13 +59,13 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Tags</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="sm" className="h-9 rounded-lg text-xs">
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               Add Tag
             </Button>
           </DialogTrigger>
@@ -122,31 +122,31 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
       {tags.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Tag className="mb-2 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              No tags yet. Add tags to categorize repairs, contacts, and units.
-            </p>
+            <Tag className="mb-2 h-8 w-8 opacity-20" />
+            <p className="font-medium text-sm text-muted-foreground">No tags yet</p>
+            <p className="text-xs text-muted-foreground">Add tags to categorize repairs, contacts, and units.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-wrap gap-3">
-          {tags.map((tag) => (
+        <div className="flex flex-wrap gap-2">
+          {tags.map((tag, idx) => (
             <div
               key={tag.id}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2"
+              className="flex items-center gap-2 rounded-xl border ring-1 ring-border/50 px-3 py-2 transition-all hover:shadow-sm animate-slide-up"
+              style={{ animationDelay: `${idx * 30}ms`, animationFillMode: "backwards" }}
             >
               {tag.color && (
                 <span
-                  className="h-3 w-3 rounded-full"
+                  className="h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: tag.color }}
                 />
               )}
-              <span className="text-sm font-medium">{tag.name}</span>
+              <span className="text-xs font-medium">{tag.name}</span>
               <button
                 onClick={() => handleDelete(tag.id)}
-                className="ml-1 text-muted-foreground hover:text-destructive"
+                className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3 w-3" />
               </button>
             </div>
           ))}

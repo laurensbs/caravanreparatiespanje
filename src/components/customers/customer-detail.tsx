@@ -97,7 +97,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" asChild>
@@ -271,7 +271,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
         </div>
 
         {/* Right column: Units + Repairs */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-4 lg:col-span-2">
           <Card className="rounded-xl">
             <CardContent className="pt-5">
               <div className="flex items-center justify-between mb-4">
@@ -306,7 +306,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 <div className="mb-3 border rounded-lg p-2.5 bg-muted/30 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[10px]">Registration</Label>
+                      <Label className="text-[10px]">License Plate</Label>
                       <Input value={unitForm.registration} onChange={(e) => setUnitForm(f => ({ ...f, registration: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" placeholder="XX-999-X" />
                     </div>
                     <div>
@@ -364,7 +364,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                       <div key={unit.id} className="border rounded-lg p-2.5 bg-muted/30 space-y-2">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label className="text-[10px]">Registration</Label>
+                            <Label className="text-[10px]">License Plate</Label>
                             <Input value={unitForm.registration} onChange={(e) => setUnitForm(f => ({ ...f, registration: e.target.value }))} className="mt-0.5 h-7 text-xs rounded-lg" />
                           </div>
                           <div>

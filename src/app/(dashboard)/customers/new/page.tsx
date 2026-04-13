@@ -39,8 +39,8 @@ export default function NewCustomerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">New Contact</h1>
+    <div className="mx-auto max-w-2xl space-y-4 animate-fade-in">
+      <h1 className="text-lg font-bold tracking-tight">New Contact</h1>
       <form onSubmit={handleSubmit}>
         {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         <Card>

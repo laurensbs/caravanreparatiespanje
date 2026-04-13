@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
@@ -123,7 +124,7 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
               )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="u-reg">Registration</Label>
+                  <Label htmlFor="u-reg">License Plate</Label>
                   <Input id="u-reg" name="registration" defaultValue={unit.registration ?? ""} className="mt-1" />
                 </div>
                 <div>
@@ -148,11 +149,24 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
                 </div>
                 <div>
                   <Label htmlFor="u-storageLocation">Storage Location</Label>
-                  <Input id="u-storageLocation" name="storageLocation" defaultValue={unit.storageLocation ?? ""} className="mt-1" />
+                  <Select name="storageLocation" defaultValue={unit.storageLocation ?? ""}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select location..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cruïllas">Cruïllas</SelectItem>
+                      <SelectItem value="Sant Climent">Sant Climent</SelectItem>
+                      <SelectItem value="Peratallada">Peratallada</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="u-storageType">Storage Type</Label>
-                  <Input id="u-storageType" name="storageType" defaultValue={unit.storageType ?? ""} className="mt-1" />
+                  <Select name="storageType" defaultValue={unit.storageType ?? ""}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Inside / Outside" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Inside">Inside</SelectItem>
+                      <SelectItem value="Outside">Outside</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="u-currentPosition">Current Position</Label>
@@ -180,7 +194,7 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
           ) : (
             <div className="space-y-4 px-6 pb-6 pt-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <DetailField label="Registration" value={unit.registration} mono />
+                <DetailField label="License Plate" value={unit.registration} mono />
                 <DetailField label="Brand" value={unit.brand} />
                 <DetailField label="Model" value={unit.model} />
                 <DetailField label="Year" value={unit.year?.toString()} />

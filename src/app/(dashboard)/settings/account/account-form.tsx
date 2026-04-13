@@ -65,7 +65,7 @@ export function AccountForm({ userName, userEmail }: AccountFormProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-4 max-w-2xl animate-fade-in">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Profile</CardTitle>

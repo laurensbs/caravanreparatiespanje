@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Hash, Truck, Calendar, User, Wrench, StickyNote,
   MapPin, Ruler, Warehouse, Navigation, Tag, Pencil, Check, X,
@@ -97,7 +98,7 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
         <div className="space-y-4">
           <Card>
             <CardContent className="space-y-0 divide-y">
-              <InlineRow icon={Hash} label="Registration" value={registration} field="registration" mono
+              <InlineRow icon={Hash} label="License Plate" value={registration} field="registration" mono
                 editingField={editingField} saving={isPending} onChange={setRegistration} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineRow icon={Truck} label="Brand" value={brand} field="brand"
                 editingField={editingField} saving={isPending} onChange={setBrand} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
@@ -125,9 +126,11 @@ export function UnitDetailClient({ unit: initialUnit }: Props) {
                   <Warehouse className="h-3 w-3" /> Storage & Location
                 </p>
               </div>
-              <InlineRow icon={MapPin} label="Location" value={storageLocation} field="storageLocation"
+              <InlineSelectRow icon={MapPin} label="Location" value={storageLocation} field="storageLocation"
+                options={["Cruïllas", "Sant Climent", "Peratallada"]} placeholder="Select location..."
                 editingField={editingField} saving={isPending} onChange={setStorageLocation} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
-              <InlineRow icon={Warehouse} label="Type" value={storageType} field="storageType"
+              <InlineSelectRow icon={Warehouse} label="Type" value={storageType} field="storageType"
+                options={["Inside", "Outside"]} placeholder="Inside / Outside"
                 editingField={editingField} saving={isPending} onChange={setStorageType} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineRow icon={Navigation} label="Position" value={currentPosition} field="currentPosition"
                 editingField={editingField} saving={isPending} onChange={setCurrentPosition} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
@@ -222,6 +225,40 @@ function InlineRow({ icon: Icon, label, value, field, mono, type, editingField, 
         </div>
       ) : (
         <span className={`flex items-center gap-1 font-medium cursor-pointer hover:text-primary transition-colors ${mono ? "font-mono text-xs" : ""}`} onClick={() => onEdit(field)}>
+          {value || "—"}
+          <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
+        </span>
+      )}
+    </div>
+  );
+}
+
+function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder, editingField, saving, onChange, onSave, onEdit, onCancel }: {
+  icon: any; label: string; value: string; field: string; options: string[]; placeholder?: string;
+  editingField: string | null; saving: boolean;
+  onChange: (v: string) => void; onSave: (field: string, value: string) => void;
+  onEdit: (f: string) => void; onCancel: () => void;
+}) {
+  const isEditing = editingField === field;
+  return (
+    <div className="group/row flex items-center justify-between py-2 text-sm">
+      <span className="flex items-center gap-2 text-muted-foreground shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
+      {isEditing ? (
+        <div className="flex items-center gap-1">
+          <Select value={value} onValueChange={(v) => { onChange(v); onSave(field, v); }}>
+            <SelectTrigger className="h-6 w-36 text-xs rounded-md">
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((o) => (
+                <SelectItem key={o} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button onClick={onCancel} className="p-0.5 rounded hover:bg-muted"><X className="h-3 w-3 text-muted-foreground" /></button>
+        </div>
+      ) : (
+        <span className="flex items-center gap-1 font-medium cursor-pointer hover:text-primary transition-colors" onClick={() => onEdit(field)}>
           {value || "—"}
           <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
         </span>

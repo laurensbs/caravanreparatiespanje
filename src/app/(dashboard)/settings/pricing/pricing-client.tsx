@@ -42,7 +42,7 @@ export function PricingSettingsClient({
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-4 max-w-2xl animate-fade-in">
       <Card className="rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

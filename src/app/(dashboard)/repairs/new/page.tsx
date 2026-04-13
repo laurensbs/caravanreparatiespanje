@@ -18,9 +18,9 @@ export default async function NewRepairPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">New Repair Job</h1>
+        <h1 className="text-lg font-bold tracking-tight">New Repair Job</h1>
         <p className="text-sm text-muted-foreground">Create a new repair job entry</p>
       </div>
       <WorkflowGuide page="repair-new" />

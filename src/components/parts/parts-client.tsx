@@ -35,25 +35,26 @@ import {
   Snowflake, Warehouse, Truck, Sparkles, Hammer,
   Package, Home, AlertTriangle, CheckCircle,
 } from "lucide-react";
-import { createPart, updatePart, deletePart } from "@/actions/parts";
+import { createPart, updatePart, deletePart, createPartCategory, deletePartCategory } from "@/actions/parts";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 
-// ─── Category config ───
-export const PART_CATEGORIES: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  elektra: { label: "Elektra", icon: Zap, color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400" },
-  chassis: { label: "Chassis", icon: Wrench, color: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-400" },
-  ramen: { label: "Ramen & Dakluiken", icon: SquareStack, color: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400" },
-  carrosserie: { label: "Carrosserie", icon: Paintbrush, color: "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400" },
-  sanitair: { label: "Sanitair & Gas", icon: Droplets, color: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400" },
-  klimaat: { label: "Klimaat", icon: Snowflake, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400" },
-  stalling: { label: "Stalling", icon: Warehouse, color: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" },
-  transport: { label: "Transport", icon: Truck, color: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400" },
-  reiniging: { label: "Reiniging", icon: Sparkles, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" },
-  diensten: { label: "Diensten", icon: Hammer, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-400" },
-  materiaal: { label: "Materiaal", icon: Package, color: "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400" },
-  interieur: { label: "Interieur", icon: Home, color: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400" },
+// ─── Icon map (maps DB icon string → component) ───
+export const ICON_MAP: Record<string, React.ElementType> = {
+  Zap, Wrench, SquareStack, Paintbrush, Droplets,
+  Snowflake, Warehouse, Truck, Sparkles, Hammer,
+  Package, Home,
 };
+
+export interface PartCategory {
+  id: string;
+  key: string;
+  label: string;
+  icon: string;
+  color: string;
+  sortOrder: number;
+  active: boolean;
+}
 
 interface Part {
   id: string;
@@ -79,10 +80,11 @@ interface Supplier {
 interface PartsClientProps {
   parts: Part[];
   suppliers: Supplier[];
+  categories: PartCategory[];
   defaultMarkup?: number;
 }
 
-export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClientProps) {
+export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }: PartsClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -90,11 +92,22 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
   const [stockFilter, setStockFilter] = useState<"all" | "low_stock" | "out_of_stock">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryLabel, setNewCategoryLabel] = useState("");
+
+  // Build lookup map from DB categories
+  const categoryMap = useMemo(() => {
+    const m: Record<string, { label: string; icon: React.ElementType; color: string }> = {};
+    for (const cat of categories) {
+      m[cat.key] = { label: cat.label, icon: ICON_MAP[cat.icon] ?? Package, color: cat.color };
+    }
+    return m;
+  }, [categories]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const p of parts) {
-      const cat = p.category ?? "diensten";
+      const cat = p.category ?? "services";
       counts[cat] = (counts[cat] ?? 0) + 1;
     }
     return counts;
@@ -102,7 +115,7 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
 
   const filtered = useMemo(() => {
     return parts.filter((p) => {
-      if (activeCategory && (p.category ?? "diensten") !== activeCategory) return false;
+      if (activeCategory && (p.category ?? "services") !== activeCategory) return false;
       if (stockFilter === "out_of_stock" && !(p.minStockLevel > 0 && p.stockQuantity <= 0)) return false;
       if (stockFilter === "low_stock" && !(p.stockQuantity > 0 && p.stockQuantity <= p.minStockLevel)) return false;
       if (search) {
@@ -153,24 +166,80 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
           All
           <span className="font-bold tabular-nums">{parts.length}</span>
         </button>
-        {Object.entries(PART_CATEGORIES).map(([key, { label, icon: Icon, color }]) => {
-          const cnt = categoryCounts[key] ?? 0;
+        {categories.filter(c => c.active).map((cat) => {
+          const cnt = categoryCounts[cat.key] ?? 0;
           if (cnt === 0) return null;
+          const CatIcon = ICON_MAP[cat.icon] ?? Package;
           return (
             <button
-              key={key}
-              onClick={() => setActiveCategory(activeCategory === key ? null : key)}
+              key={cat.key}
+              onClick={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all hover:shadow-md active:scale-95 cursor-pointer ring-1",
-                activeCategory === key ? `${color} ring-2 shadow-md` : `ring-border/50 bg-card hover:bg-muted/60`
+                activeCategory === cat.key ? `${cat.color} ring-2 shadow-md` : `ring-border/50 bg-card hover:bg-muted/60`
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
+              <CatIcon className="h-3.5 w-3.5" />
+              {cat.label}
               <span className="font-bold tabular-nums">{cnt}</span>
             </button>
           );
         })}
+        {/* Add category */}
+        {showAddCategory ? (
+          <div className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 ring-1 ring-border/50 bg-card">
+            <Input
+              value={newCategoryLabel}
+              onChange={(e) => setNewCategoryLabel(e.target.value)}
+              placeholder="Category name..."
+              className="h-7 w-32 text-xs"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newCategoryLabel.trim()) {
+                  startTransition(async () => {
+                    await createPartCategory({
+                      key: newCategoryLabel.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, ""),
+                      label: newCategoryLabel.trim(),
+                    });
+                    setNewCategoryLabel("");
+                    setShowAddCategory(false);
+                    router.refresh();
+                  });
+                }
+                if (e.key === "Escape") { setShowAddCategory(false); setNewCategoryLabel(""); }
+              }}
+            />
+            <button
+              onClick={() => {
+                if (!newCategoryLabel.trim()) return;
+                startTransition(async () => {
+                  await createPartCategory({
+                    key: newCategoryLabel.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, ""),
+                    label: newCategoryLabel.trim(),
+                  });
+                  setNewCategoryLabel("");
+                  setShowAddCategory(false);
+                  router.refresh();
+                });
+              }}
+              disabled={!newCategoryLabel.trim()}
+              className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              Add
+            </button>
+            <button onClick={() => { setShowAddCategory(false); setNewCategoryLabel(""); }} className="text-muted-foreground hover:text-foreground">
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowAddCategory(true)}
+            className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium transition-all hover:shadow-md active:scale-95 cursor-pointer ring-1 ring-dashed ring-border/50 bg-card hover:bg-muted/60 text-muted-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Category
+          </button>
+        )}
       </div>
 
       {/* Search + stock filter + add button */}
@@ -231,6 +300,7 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
             <PartForm
               part={editingPart}
               suppliers={suppliers}
+              categories={categories}
               defaultMarkup={defaultMarkup}
               onDone={() => {
                 setDialogOpen(false);
@@ -244,7 +314,7 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
       {/* Results count */}
       <p className="text-xs text-muted-foreground">
         {filtered.length} part{filtered.length !== 1 ? "s" : ""}
-        {activeCategory ? ` in ${PART_CATEGORIES[activeCategory]?.label ?? activeCategory}` : ""}
+        {activeCategory ? ` in ${categoryMap[activeCategory]?.label ?? activeCategory}` : ""}
         {search ? ` matching "${search}"` : ""}
       </p>
 
@@ -271,7 +341,7 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
             </TableHeader>
             <TableBody>
               {filtered.map((part) => {
-                const cat = PART_CATEGORIES[part.category ?? "diensten"];
+                const cat = categoryMap[part.category ?? "services"];
                 const CatIcon = cat?.icon ?? Package;
                 const markup = part.markupPercent ? parseFloat(part.markupPercent) : defaultMarkup;
                 const cost = part.defaultCost ? parseFloat(part.defaultCost) : null;
@@ -357,11 +427,13 @@ export function PartsClient({ parts, suppliers, defaultMarkup = 25 }: PartsClien
 function PartForm({
   part,
   suppliers,
+  categories,
   defaultMarkup,
   onDone,
 }: {
   part: Part | null;
   suppliers: Supplier[];
+  categories: PartCategory[];
   defaultMarkup: number;
   onDone: () => void;
 }) {
@@ -440,14 +512,17 @@ function PartForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No category</SelectItem>
-              {Object.entries(PART_CATEGORIES).map(([key, { label, icon: Icon }]) => (
-                <SelectItem key={key} value={key}>
-                  <span className="flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </span>
-                </SelectItem>
-              ))}
+              {categories.filter(c => c.active).map((cat) => {
+                const CatIcon = ICON_MAP[cat.icon] ?? Package;
+                return (
+                  <SelectItem key={cat.key} value={cat.key}>
+                    <span className="flex items-center gap-1.5">
+                      <CatIcon className="h-3.5 w-3.5" />
+                      {cat.label}
+                    </span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

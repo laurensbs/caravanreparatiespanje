@@ -44,13 +44,13 @@ interface User {
   createdAt: Date;
 }
 
-const ROLE_COLORS: Record<string, string> = {
-  admin: "bg-red-100 text-red-800",
-  manager: "bg-blue-100 text-blue-800",
-  technician: "bg-cyan-100 text-cyan-800",
-  staff: "bg-green-100 text-green-800",
-  viewer: "bg-gray-100 text-gray-800",
-};
+  const ROLE_COLORS: Record<string, string> = {
+    admin: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
+    manager: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
+    technician: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400",
+    staff: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+    viewer: "bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
+  };
 
 export function UsersClient({ users }: { users: User[] }) {
   const router = useRouter();
@@ -82,13 +82,13 @@ export function UsersClient({ users }: { users: User[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Users</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="sm" className="h-9 rounded-lg text-xs">
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               Add User
             </Button>
           </DialogTrigger>
@@ -173,15 +173,15 @@ export function UsersClient({ users }: { users: User[] }) {
       {users.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Users className="mb-2 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">No users yet.</p>
+            <Users className="mb-2 h-8 w-8 opacity-20" />
+            <p className="font-medium text-sm text-muted-foreground">No users yet</p>
           </CardContent>
         </Card>
       ) : (
         <div className="rounded-lg border bg-card overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Name</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Role</TableHead>
@@ -190,14 +190,14 @@ export function UsersClient({ users }: { users: User[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+                {users.map((user, idx) => (
+                  <TableRow key={user.id} className="table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
+                    <TableCell className="font-medium text-xs">{user.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className={ROLE_COLORS[user.role]}
+                      className={`text-[11px] ${ROLE_COLORS[user.role]}`}
                     >
                       {user.role}
                     </Badge>

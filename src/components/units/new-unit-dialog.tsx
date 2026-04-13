@@ -89,7 +89,7 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="dlg-reg" className="text-xs">Registration</Label>
+              <Label htmlFor="dlg-reg" className="text-xs">License Plate</Label>
               <Input id="dlg-reg" name="registration" className="mt-1 h-9 rounded-lg" autoFocus />
             </div>
             <div>

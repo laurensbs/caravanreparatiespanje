@@ -3,6 +3,10 @@ import { auditLogs, users } from "@/lib/db/schema";
 import { requireRole } from "@/lib/auth-utils";
 import { desc, eq, like, and, sql, gte, lte } from "drizzle-orm";
 import { format } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Shield, ArrowUpDown } from "lucide-react";
+import Link from "next/link";
 
 export default async function AuditLogPage({
   searchParams,
@@ -56,54 +60,64 @@ export default async function AuditLogPage({
   const totalPages = Math.ceil(totalCount / perPage);
 
   const ACTION_COLORS: Record<string, string> = {
-    create: "bg-green-100 text-green-800",
-    update: "bg-blue-100 text-blue-800",
-    delete: "bg-red-100 text-red-800",
-    import: "bg-purple-100 text-purple-800",
-    export: "bg-yellow-100 text-yellow-800",
-    bulk_update: "bg-orange-100 text-orange-800",
+    create: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+    update: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
+    delete: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
+    import: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
+    export: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+    bulk_update: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
   };
 
+  function buildHref(overrides: Record<string, string>) {
+    const p = new URLSearchParams();
+    const merged = { action: params.action ?? "", entity: params.entity ?? "", dateFrom: params.dateFrom ?? "", dateTo: params.dateTo ?? "", ...overrides };
+    for (const [k, v] of Object.entries(merged)) { if (v) p.set(k, v); }
+    return `/audit?${p.toString()}`;
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
+        <h1 className="text-lg font-bold tracking-tight">Audit Log</h1>
         <p className="text-sm text-muted-foreground">
-          Complete history of all actions in the system.
+          {totalCount} entr{totalCount !== 1 ? "ies" : "y"} recorded
         </p>
       </div>
 
+      {/* Quick action pills */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: "All", action: "" },
+          { label: "Create", action: "create", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 ring-emerald-300/40" },
+          { label: "Update", action: "update", bg: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400 ring-blue-300/40" },
+          { label: "Delete", action: "delete", bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 ring-red-300/40" },
+          { label: "Import", action: "import", bg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400 ring-purple-300/40" },
+        ].map((btn) => {
+          const isActive = (params.action ?? "") === btn.action;
+          const href = btn.action ? buildHref({ action: btn.action }) : `/audit?${new URLSearchParams({ ...(params.entity ? { entity: params.entity } : {}), ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}), ...(params.dateTo ? { dateTo: params.dateTo } : {}) }).toString()}`;
+          return (
+            <Link key={btn.label} href={isActive && btn.action ? `/audit?${new URLSearchParams({ ...(params.entity ? { entity: params.entity } : {}) }).toString()}` : href}>
+              <span className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer ring-1 ${btn.bg ?? "bg-muted text-foreground ring-border/50"} ${isActive ? "ring-2 shadow-md scale-[1.02]" : btn.action ? "" : (!params.action ? "ring-2 shadow-md scale-[1.02] bg-primary text-primary-foreground ring-primary" : "")}`}>
+                {btn.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 rounded-lg border bg-card p-3">
-        <select
-          name="action"
-          defaultValue={params.action ?? ""}
-          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
-          onChange={(e) => {
-            const val = e.target.value;
-            const p = new URLSearchParams();
-            if (val) p.set("action", val);
-            if (params.entity) p.set("entity", params.entity);
-            window.location.href = `/audit?${p.toString()}`;
-          }}
-        >
-          <option value="">All Actions</option>
-          <option value="create">Create</option>
-          <option value="update">Update</option>
-          <option value="delete">Delete</option>
-          <option value="import">Import</option>
-          <option value="export">Export</option>
-          <option value="bulk_update">Bulk Update</option>
-        </select>
+      <div className="flex flex-wrap gap-2 rounded-lg border bg-card p-3 items-center">
         <select
           name="entity"
           defaultValue={params.entity ?? ""}
-          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          className="rounded-lg border px-3 h-8 text-xs bg-background"
           onChange={(e) => {
             const val = e.target.value;
             const p = new URLSearchParams();
             if (params.action) p.set("action", params.action);
             if (val) p.set("entity", val);
+            if (params.dateFrom) p.set("dateFrom", params.dateFrom);
+            if (params.dateTo) p.set("dateTo", params.dateTo);
             window.location.href = `/audit?${p.toString()}`;
           }}
         >
@@ -117,7 +131,7 @@ export default async function AuditLogPage({
         <input
           type="date"
           defaultValue={params.dateFrom ?? ""}
-          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          className="rounded-lg border px-3 h-8 text-xs bg-background"
           onChange={(e) => {
             const p = new URLSearchParams();
             if (params.action) p.set("action", params.action);
@@ -130,7 +144,7 @@ export default async function AuditLogPage({
         <input
           type="date"
           defaultValue={params.dateTo ?? ""}
-          className="rounded-lg border px-3 py-1.5 text-xs bg-background"
+          className="rounded-lg border px-3 h-8 text-xs bg-background"
           onChange={(e) => {
             const p = new URLSearchParams();
             if (params.action) p.set("action", params.action);
@@ -140,87 +154,91 @@ export default async function AuditLogPage({
             window.location.href = `/audit?${p.toString()}`;
           }}
         />
+        {(params.action || params.entity || params.dateFrom || params.dateTo) && (
+          <Link href="/audit" className="text-xs text-muted-foreground hover:text-foreground ml-1">
+            Clear filters
+          </Link>
+        )}
       </div>
 
       {/* Log table */}
       <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/40">
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Timestamp</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">User</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Action</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Entity</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Details</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="overflow-x-auto max-h-[calc(100vh-20rem)] overflow-y-auto">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-card">
+            <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Timestamp</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">User</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Action</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Entity</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Details</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {logs.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-12 text-center text-muted-foreground"
-                >
-                  No audit log entries found.
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={5} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Shield className="h-8 w-8 opacity-20" />
+                    <p className="font-medium text-sm">No audit log entries found</p>
+                    <p className="text-xs">Try adjusting your filters</p>
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : (
-              logs.map((log) => (
-                <tr key={log.id} className="border-b">
-                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+              logs.map((log, idx) => (
+                <TableRow key={log.id} className="table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                  <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                     {format(new Date(log.createdAt), "dd MMM yyyy HH:mm:ss")}
-                  </td>
-                  <td className="px-4 py-3">
-                    {log.userName ?? log.userEmail ?? "System"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {log.userName ?? log.userEmail ?? <span className="text-muted-foreground">System</span>}
+                  </TableCell>
+                  <TableCell>
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-800"
+                      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {log.action}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs">
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-[11px] text-muted-foreground">
                       {log.entityType}:{log.entityId?.slice(0, 8)}
                     </span>
-                  </td>
-                  <td className="max-w-xs truncate px-4 py-3 text-xs text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-[11px] text-muted-foreground">
                     {log.changes ? JSON.stringify(log.changes).slice(0, 100) : "—"}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-2">
           <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages} ({totalCount} entries)
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {page > 1 && (
-              <a
-                href={`/audit?page=${page - 1}&action=${params.action ?? ""}&entity=${params.entity ?? ""}`}
-                className="rounded-lg border px-3 py-1.5 text-xs hover:bg-muted"
-              >
-                Previous
-              </a>
+              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
+                <Link href={buildHref({ page: String(page - 1) })}>
+                  Previous
+                </Link>
+              </Button>
             )}
             {page < totalPages && (
-              <a
-                href={`/audit?page=${page + 1}&action=${params.action ?? ""}&entity=${params.entity ?? ""}`}
-                className="rounded-lg border px-3 py-1.5 text-xs hover:bg-muted"
-              >
-                Next
-              </a>
+              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
+                <Link href={buildHref({ page: String(page + 1) })}>
+                  Next
+                </Link>
+              </Button>
             )}
           </div>
         </div>

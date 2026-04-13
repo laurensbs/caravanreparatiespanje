@@ -108,7 +108,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
         <div className="relative flex-1 min-w-0 sm:max-w-64">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search registration, brand, model..."
+              placeholder="Search license plate, brand, model..."
               className="w-full pl-8 h-8 text-xs rounded-lg"
               value={searchInput}
               onChange={handleSearchChange}
@@ -168,11 +168,11 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
 
       {/* Table */}
       <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Registration</TableHead>
+              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">License Plate</TableHead>
               <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
             </TableRow>
           </TableHeader>
@@ -213,7 +213,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
           <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {page > 1 && (
               <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs" asChild>
                 <Link href={`/units?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(page - 1) }).toString()}`}>
@@ -222,7 +222,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
               </Button>
             )}
             {page < totalPages && (
-              <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
                 <Link href={`/units?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(page + 1) }).toString()}`}>
                   Next
                 </Link>

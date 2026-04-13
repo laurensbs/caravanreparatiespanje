@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { suppliers, parts, partRequests, repairJobs } from "@/lib/db/schema";
+import { suppliers, parts, partRequests, repairJobs, partCategories } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit";
 
@@ -233,5 +233,40 @@ export async function updatePartRequestStatus(
   if (status === "received") updateData.receivedDate = new Date();
 
   await db.update(partRequests).set(updateData).where(eq(partRequests.id, id));
+  revalidatePath("/parts");
+}
+
+// === Part Categories ===
+
+export async function getPartCategories() {
+  await requireAuth();
+  return db.select().from(partCategories).orderBy(asc(partCategories.sortOrder), asc(partCategories.label));
+}
+
+export async function createPartCategory(data: { key: string; label: string; icon?: string; color?: string }) {
+  await requireRole("admin");
+  const [cat] = await db
+    .insert(partCategories)
+    .values({
+      key: data.key.toLowerCase().replace(/[^a-z0-9_-]/g, "_"),
+      label: data.label,
+      icon: data.icon || "Package",
+      color: data.color || "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400",
+      sortOrder: 99,
+    })
+    .returning();
+  revalidatePath("/parts");
+  return cat;
+}
+
+export async function updatePartCategory(id: string, data: { label?: string; icon?: string; color?: string; active?: boolean; sortOrder?: number }) {
+  await requireRole("admin");
+  await db.update(partCategories).set({ ...data, updatedAt: new Date() }).where(eq(partCategories.id, id));
+  revalidatePath("/parts");
+}
+
+export async function deletePartCategory(id: string) {
+  await requireRole("admin");
+  await db.delete(partCategories).where(eq(partCategories.id, id));
   revalidatePath("/parts");
 }

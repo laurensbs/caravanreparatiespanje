@@ -903,7 +903,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
                 {/* Planning + Send to Garage */}
                 <div>
-                  <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={job.status} />
+                  <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={status} onStatusChange={setStatus} />
                 </div>
               </div>
 
@@ -1637,7 +1637,7 @@ function TimelineCommunicationCard({
 
 // ─── Planning Date Row (with Send to Garage) ───
 
-function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: string | Date | null; status: string }) {
+function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: string; dueDate: string | Date | null; status: string; onStatusChange?: (s: string) => void }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1684,6 +1684,9 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
     setSaving(true);
     try {
       await unscheduleRepair(jobId);
+      if (["scheduled", "in_progress"].includes(status)) {
+        onStatusChange?.("todo");
+      }
       toast.success("Removed from planning");
       setEditing(false);
       router.refresh();

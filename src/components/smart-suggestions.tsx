@@ -36,15 +36,15 @@ function SuggestionRow({ suggestion }: { suggestion: Suggestion }) {
   const content = (
     <div
       className={cn(
-        "flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 transition-all shrink-0",
+        "flex items-center gap-1.5 rounded-lg bg-gray-50 dark:bg-muted px-3 py-1.5 transition-all shrink-0",
         (suggestion.href || suggestion.onClick) &&
-          "cursor-pointer hover:bg-gray-100 hover:-translate-y-px active:translate-y-0"
+          "cursor-pointer hover:bg-gray-100 dark:hover:bg-accent hover:-translate-y-px active:translate-y-0"
       )}
     >
-      <span className="shrink-0 text-gray-400">
+      <span className="shrink-0 text-gray-400 dark:text-muted-foreground">
         {LEVEL_ICON[suggestion.level]}
       </span>
-      <p className="text-xs font-medium text-gray-600 leading-tight whitespace-nowrap">{suggestion.title}</p>
+      <p className="text-xs font-medium text-gray-600 dark:text-muted-foreground leading-tight whitespace-nowrap">{suggestion.title}</p>
       {(suggestion.href || suggestion.onClick) && (
         <ArrowRight className="h-3 w-3 shrink-0 text-gray-300" />
       )}
@@ -117,7 +117,7 @@ export function SmartSuggestions({
 
   return (
     <div className={cn("flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin", className)}>
-      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 shrink-0">
+      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 dark:bg-muted shrink-0">
         <Lightbulb className="h-3.5 w-3.5 text-gray-400" />
       </div>
       {visible.map((s) => (

@@ -63,15 +63,15 @@ const SEVERITY_NL: Record<FindingSeverity, string> = {
 };
 
 const SEVERITY_COLORS: Record<FindingSeverity, string> = {
-  minor: "border-slate-300 bg-slate-50 text-slate-700",
-  normal: "border-amber-300 bg-amber-50 text-amber-700",
-  critical: "border-red-400 bg-red-50 text-red-700 ring-2 ring-red-200",
+  minor: "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-500/10 dark:text-slate-400",
+  normal: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  critical: "border-red-400 bg-red-50 text-red-700 ring-2 ring-red-200 dark:border-red-600 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/20",
 };
 
 const SEVERITY_SELECTED: Record<FindingSeverity, string> = {
-  minor: "border-slate-500 bg-slate-50 text-slate-700 ring-2 ring-slate-200",
-  normal: "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200",
-  critical: "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200",
+  minor: "border-slate-500 bg-slate-50 text-slate-700 ring-2 ring-slate-200 dark:border-slate-400 dark:bg-slate-500/10 dark:text-slate-300 dark:ring-slate-500/20",
+  normal: "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200 dark:border-amber-400 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20",
+  critical: "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200 dark:border-red-400 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20",
 };
 
 interface FindingDialogProps {

@@ -30,6 +30,7 @@ const BOARD_COLUMNS: RepairStatus[] = [
   "blocked",
   "completed",
   "invoiced",
+  "rejected",
   "archived",
 ];
 

@@ -10,6 +10,7 @@ import { NewCustomerDialog } from "@/components/customers/new-customer-dialog";
 import { HoldedHint } from "@/components/holded-hint";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { CustomersTableClient } from "@/components/customers/customer-quickview";
+import { BusinessesTableClient } from "@/components/customers/businesses-table";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
@@ -122,11 +123,11 @@ export default async function CustomersPage({ searchParams }: Props) {
       )}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border overflow-hidden">
         <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
           <table className="w-full">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50/80 backdrop-blur-sm border-b border-gray-100">
+              <tr className="bg-gray-50/80 dark:bg-muted/80 backdrop-blur-sm border-b border-gray-100 dark:border-border">
                 <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Name</th>
                 {isBusiness ? (
                   <>
@@ -148,59 +149,14 @@ export default async function CustomersPage({ searchParams }: Props) {
               </tr>
             </thead>
             {isBusiness ? (
-              <tbody className="divide-y divide-gray-50">
-                {suppliersList.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-20 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <Building2 className="h-8 w-8 text-gray-200" />
-                        <p className="text-sm font-medium text-gray-400">No businesses found</p>
-                        <p className="text-xs text-gray-400">Businesses are synced from Holded</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  suppliersList.map((s) => (
-                    <tr key={s.id} className="group hover:bg-gray-50 transition-colors duration-150">
-                      <td className="px-5 py-3.5">
-                        <span className="text-sm font-medium text-gray-900">{s.name}</span>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">{s.contactName || <span className="text-gray-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">{s.phone || <span className="text-gray-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">{s.email || <span className="text-gray-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">
-                        {s.website ? (
-                          <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-[#0CC0DF] hover:underline truncate max-w-[200px] inline-block">
-                            {s.website.replace(/^https?:\/\//, "")}
-                          </a>
-                        ) : <span className="text-gray-300">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {s.holdedContactId ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                            <ExternalLink className="h-2.5 w-2.5" /> Linked
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+              <BusinessesTableClient suppliers={suppliersList} />
             ) : (
-              <CustomersTableClient customers={customers} />
+              <CustomersTableClient customers={customers} total={total} filters={filters} />
             )}
           </table>
         </div>
       </div>
 
-      {/* ── Pagination hint ────────────────────────────── */}
-      {total > limit && (
-        <p className="text-xs text-gray-400 text-center py-2">
-          Showing {customers.length} of {total} contacts
-        </p>
-      )}
     </div>
   );
 }

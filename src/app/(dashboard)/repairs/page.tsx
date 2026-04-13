@@ -68,8 +68,8 @@ export default async function RepairsPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Repairs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-foreground">Repairs</h1>
+          <p className="text-sm text-gray-500 dark:text-muted-foreground mt-0.5">
             {total} repair{total !== 1 ? "s" : ""}
           </p>
         </div>
@@ -107,8 +107,8 @@ export default async function RepairsPage({ searchParams }: Props) {
             <Link key={btn.label} href={isActive ? "/repairs" : href}>
               <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all duration-150 cursor-pointer ${
                 isActive
-                  ? "bg-gray-900 text-white font-medium shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  ? "bg-gray-900 dark:bg-foreground text-white dark:text-background font-medium shadow-sm"
+                  : "text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent"
               }`}>
                 <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-white" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
                 {btn.label}

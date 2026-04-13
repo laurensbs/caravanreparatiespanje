@@ -171,21 +171,21 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   };
 
   const STATUS_PILL: Record<string, string> = {
-    new: "bg-gray-100 text-gray-600",
-    todo: "bg-gray-100 text-gray-600",
-    in_inspection: "bg-sky-50 text-sky-700",
-    no_damage: "bg-emerald-50 text-emerald-700",
-    quote_needed: "bg-amber-50 text-amber-700",
-    waiting_approval: "bg-amber-50 text-amber-700",
-    waiting_customer: "bg-orange-50 text-orange-700",
-    waiting_parts: "bg-amber-50 text-amber-700",
-    scheduled: "bg-sky-50 text-sky-700",
-    in_progress: "bg-sky-50 text-sky-700",
-    blocked: "bg-red-50 text-red-600",
-    completed: "bg-emerald-50 text-emerald-700",
-    invoiced: "bg-emerald-50 text-emerald-700",
-    rejected: "bg-red-50 text-red-600",
-    archived: "bg-gray-100 text-gray-400",
+    new: "bg-gray-100 text-gray-600 dark:bg-muted dark:text-muted-foreground",
+    todo: "bg-gray-100 text-gray-600 dark:bg-muted dark:text-muted-foreground",
+    in_inspection: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+    no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+    quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+    waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+    waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+    waiting_parts: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+    scheduled: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+    in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+    blocked: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+    completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+    invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+    rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
+    archived: "bg-gray-100 text-gray-400 dark:bg-muted dark:text-muted-foreground",
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
@@ -249,7 +249,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <div
                 key={job.id}
                 className={`group relative flex items-center gap-5 rounded-xl px-5 py-[18px] transition-all duration-150 cursor-pointer
-                  hover:bg-gray-50 active:scale-[0.998] border-b border-gray-100/60 last:border-b-0
+                  hover:bg-gray-50 dark:hover:bg-accent active:scale-[0.998] border-b border-gray-100/60 dark:border-border/60 last:border-b-0
                   ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100" : ""}
                   ${isUrgent ? "" : ""}
                   animate-slide-up`}
@@ -310,7 +310,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-shadow hover:ring-1 hover:ring-gray-200 ${STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-shadow hover:ring-1 hover:ring-gray-200 dark:hover:ring-border ${STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground"}`}>
                           <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_ACCENT[job.status] ?? "bg-gray-300"}`} />
                           {STATUS_LABELS[job.status as RepairStatus]}
                         </span>

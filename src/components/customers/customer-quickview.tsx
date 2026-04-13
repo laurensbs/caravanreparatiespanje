@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, useCallback, useEffect } from "react";
+import { useState, useTransition, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { updateCustomer, getCustomerById } from "@/actions/customers";
+import { updateCustomer, getCustomerById, getCustomers, type CustomerFilters } from "@/actions/customers";
 import { getCustomerHoldedInvoices, getCustomerHoldedQuotes } from "@/actions/holded";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ExternalLink, Phone, Mail, Wrench, Pencil, Save, Truck,
-  MapPin, User, Receipt, FileText, RefreshCw,
+  MapPin, User, Receipt, FileText, RefreshCw, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -38,15 +38,57 @@ interface CustomerRow {
 
 interface Props {
   customers: CustomerRow[];
+  total: number;
+  filters: CustomerFilters;
 }
 
-export function CustomersTableClient({ customers }: Props) {
+export function CustomersTableClient({ customers: initialCustomers, total, filters }: Props) {
   const [selected, setSelected] = useState<CustomerRow | null>(null);
+  const [allCustomers, setAllCustomers] = useState<CustomerRow[]>(initialCustomers);
+  const [loading, startLoading] = useTransition();
+  const [hasMore, setHasMore] = useState(initialCustomers.length < total);
+  const pageRef = useRef(1);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset when initialCustomers change (filters/sort changed)
+  useEffect(() => {
+    setAllCustomers(initialCustomers);
+    pageRef.current = 1;
+    setHasMore(initialCustomers.length < total);
+  }, [initialCustomers, total]);
+
+  const loadMore = useCallback(() => {
+    if (loading || !hasMore) return;
+    startLoading(async () => {
+      const nextPage = pageRef.current + 1;
+      const { customers: more } = await getCustomers({ ...filters, page: nextPage });
+      setAllCustomers(prev => {
+        const existingIds = new Set(prev.map(c => c.id));
+        const newCustomers = (more as CustomerRow[]).filter(c => !existingIds.has(c.id));
+        return [...prev, ...newCustomers];
+      });
+      pageRef.current = nextPage;
+      const loaded = nextPage * (filters.limit ?? 50);
+      if (loaded >= total) setHasMore(false);
+    });
+  }, [loading, hasMore, filters, total]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   return (
     <>
       <tbody className="divide-y divide-gray-50">
-        {customers.length === 0 ? (
+        {allCustomers.length === 0 ? (
           <tr>
             <td colSpan={6} className="py-20 text-center">
               <div className="flex flex-col items-center gap-2">
@@ -57,10 +99,10 @@ export function CustomersTableClient({ customers }: Props) {
             </td>
           </tr>
         ) : (
-          customers.map((c) => (
+          allCustomers.map((c) => (
             <tr
               key={c.id}
-              className="group cursor-pointer hover:bg-gray-50 transition-colors duration-150"
+              className="group cursor-pointer hover:bg-gray-50 dark:hover:bg-accent transition-colors duration-150"
               onClick={() => setSelected(c)}
             >
               <td className="px-5 py-3.5">
@@ -70,7 +112,7 @@ export function CustomersTableClient({ customers }: Props) {
               </td>
               <td className="px-5 py-3.5">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                  <span className="rounded-full bg-gray-100 dark:bg-muted px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-muted-foreground">
                     {c.contactType === "business" ? "Business" : "Person"}
                   </span>
                   {c.holdedContactId && (
@@ -82,7 +124,7 @@ export function CustomersTableClient({ customers }: Props) {
               </td>
               <td className="px-5 py-3.5 text-center">
                 {c.repairCount > 0 ? (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1.5 text-xs font-medium text-gray-600">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 dark:bg-muted px-1.5 text-xs font-medium text-gray-600 dark:text-muted-foreground">
                     {c.repairCount}
                   </span>
                 ) : (
@@ -96,6 +138,24 @@ export function CustomersTableClient({ customers }: Props) {
               </td>
             </tr>
           ))
+        )}
+        {hasMore && (
+          <tr>
+            <td colSpan={6}>
+              <div ref={sentinelRef} className="flex justify-center py-4">
+                {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+              </div>
+            </td>
+          </tr>
+        )}
+        {!hasMore && allCustomers.length > 0 && (
+          <tr>
+            <td colSpan={6}>
+              <p className="text-center text-[11px] text-gray-400 py-3">
+                {allCustomers.length} contact{allCustomers.length !== 1 ? "s" : ""}
+              </p>
+            </td>
+          </tr>
         )}
       </tbody>
 

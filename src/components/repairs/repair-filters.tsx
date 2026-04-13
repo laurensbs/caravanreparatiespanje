@@ -74,7 +74,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="Search repairs..."
-              className="w-full pl-9 h-10 text-sm rounded-xl border-gray-200 bg-white focus:bg-white placeholder:text-gray-400"
+              className="w-full pl-9 h-10 text-sm rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card focus:bg-white dark:focus:bg-card placeholder:text-gray-400 dark:placeholder:text-muted-foreground"
               value={searchInput}
               onChange={handleSearchChange}
             />
@@ -84,7 +84,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 bg-white">
+          <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +99,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           value={currentFilters.priority ?? "all"}
           onValueChange={(val) => updateFilter("priority", val)}
         >
-          <SelectTrigger className="w-28 h-10 text-xs rounded-xl border-gray-200 bg-white">
+          <SelectTrigger className="w-28 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -126,7 +126,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
         </Button>
 
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-10 text-xs rounded-xl text-gray-500 hover:text-gray-900">
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-10 text-xs rounded-xl text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground">
             <X className="mr-1 h-3 w-3" />
             Clear all
           </Button>
@@ -135,12 +135,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
 
       {/* Secondary filters — collapsible */}
       {showMore && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center pt-3 border-t border-gray-100">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center pt-3 border-t border-gray-100 dark:border-border">
           <Select
             value={currentFilters.locationId ?? "all"}
             onValueChange={(val) => updateFilter("locationId", val)}
           >
-            <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 bg-white">
+            <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
@@ -155,7 +155,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
             value={currentFilters.invoiceStatus ?? "all"}
             onValueChange={(val) => updateFilter("invoiceStatus", val)}
           >
-            <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 bg-white">
+            <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
               <SelectValue placeholder="Invoice" />
             </SelectTrigger>
             <SelectContent>
@@ -170,7 +170,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
             value={currentFilters.customerResponseStatus ?? "all"}
             onValueChange={(val) => updateFilter("customerResponseStatus", val)}
           >
-            <SelectTrigger className="w-40 h-10 text-xs rounded-xl border-gray-200 bg-white">
+            <SelectTrigger className="w-40 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
               <SelectValue placeholder="Response" />
             </SelectTrigger>
             <SelectContent>
@@ -186,7 +186,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
               value={currentFilters.tagId ?? "all"}
               onValueChange={(val) => updateFilter("tagId", val)}
             >
-              <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 bg-white">
+              <SelectTrigger className="w-36 h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card">
                 <SelectValue placeholder="Tag" />
               </SelectTrigger>
               <SelectContent>
@@ -205,14 +205,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
 
           <Input
             type="date"
-            className="w-[130px] h-10 text-xs rounded-xl border-gray-200 bg-white"
+            className="w-[130px] h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card"
             value={currentFilters.dateFrom ?? ""}
             onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
             placeholder="From"
           />
           <Input
             type="date"
-            className="w-[130px] h-10 text-xs rounded-xl border-gray-200 bg-white"
+            className="w-[130px] h-10 text-xs rounded-xl border-gray-200 dark:border-border bg-white dark:bg-card"
             value={currentFilters.dateTo ?? ""}
             onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
             placeholder="To"

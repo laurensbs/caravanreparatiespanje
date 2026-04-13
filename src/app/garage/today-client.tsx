@@ -103,7 +103,7 @@ export function GarageTodayClient({ repairs, userName }: Props) {
   return (
     <div className={`flex flex-col min-h-screen ${hasRepairs ? 'bg-gradient-to-br from-slate-50 via-background to-blue-50/30 dark:from-slate-950 dark:via-background dark:to-blue-950/10' : 'bg-[#F9FAFB]'}`}>
       {/* Header */}
-      <header className={`sticky top-0 z-30 backdrop-blur-2xl ${hasRepairs ? 'bg-white/70 dark:bg-slate-950/70 border-b border-border/50' : 'bg-white/60'}`}>
+      <header className={`sticky top-0 z-30 backdrop-blur-2xl ${hasRepairs ? 'bg-white/70 dark:bg-slate-950/70 border-b border-border/50' : 'bg-white/60 dark:bg-slate-950/60'}`}>
         <div className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto w-full">
           <div>
             <p className="text-sm text-gray-500">{greeting}, <span className="font-semibold text-gray-900">{firstName}</span></p>
@@ -116,7 +116,7 @@ export function GarageTodayClient({ repairs, userName }: Props) {
             <LanguageToggle />
             <button
               onClick={() => router.refresh()}
-              className="h-11 w-11 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-all duration-150"
+              className="h-11 w-11 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-accent active:bg-gray-200 dark:active:bg-accent transition-all duration-150"
               title={t("Refresh", "Actualizar", "Vernieuwen")}
             >
               <RefreshCw className="h-[18px] w-[18px]" />

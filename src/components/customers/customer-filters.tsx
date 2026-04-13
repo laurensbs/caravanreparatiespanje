@@ -67,13 +67,13 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
   );
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+    <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-100 dark:border-border p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1 min-w-0 sm:max-w-72">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             placeholder="Search contacts..."
-            className="pl-9 pr-8 h-10 rounded-xl bg-white border-gray-200 text-sm"
+            className="pl-9 pr-8 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm"
             value={searchInput}
             onChange={handleSearchChange}
           />
@@ -92,7 +92,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
           value={currentFilters.repairStatus ?? "all"}
           onValueChange={(val) => updateFilter("repairStatus", val)}
         >
-          <SelectTrigger className="w-56 h-10 rounded-xl bg-white border-gray-200 text-sm text-gray-700">
+          <SelectTrigger className="w-56 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm text-gray-700 dark:text-foreground">
             <SelectValue placeholder="Repair status" />
           </SelectTrigger>
           <SelectContent>
@@ -107,7 +107,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
           value={currentFilters.locationId ?? "all"}
           onValueChange={(val) => updateFilter("locationId", val)}
         >
-          <SelectTrigger className="w-40 h-10 rounded-xl bg-white border-gray-200 text-sm text-gray-700">
+          <SelectTrigger className="w-40 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm text-gray-700 dark:text-foreground">
             <SelectValue placeholder="Location" />
           </SelectTrigger>
           <SelectContent>
@@ -123,7 +123,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
             value={currentFilters.tagId ?? "all"}
             onValueChange={(val) => updateFilter("tagId", val)}
           >
-            <SelectTrigger className="w-40 h-10 rounded-xl bg-white border-gray-200 text-sm text-gray-700">
+            <SelectTrigger className="w-40 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm text-gray-700 dark:text-foreground">
               <SelectValue placeholder="Tag" />
             </SelectTrigger>
             <SelectContent>
@@ -142,14 +142,14 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
 
         <Input
           type="date"
-          className="w-[140px] h-10 text-sm rounded-xl bg-white border-gray-200"
+          className="w-[140px] h-10 text-sm rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border"
           value={currentFilters.dateFrom ?? ""}
           onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
           placeholder="From"
         />
         <Input
           type="date"
-          className="w-[140px] h-10 text-sm rounded-xl bg-white border-gray-200"
+          className="w-[140px] h-10 text-sm rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border"
           value={currentFilters.dateTo ?? ""}
           onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
           placeholder="To"

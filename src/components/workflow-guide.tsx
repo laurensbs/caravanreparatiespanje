@@ -562,12 +562,12 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
   }, [tutorial.id, onClose]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-xl shadow-sm overflow-hidden">
       <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">
           {tutorial.title}
         </span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -579,26 +579,26 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
               key={i}
               className={cn(
                 "h-1 flex-1 rounded-full transition-colors",
-                i <= currentStep ? "bg-[#0CC0DF]" : "bg-gray-200",
+                i <= currentStep ? "bg-[#0CC0DF]" : "bg-gray-200 dark:bg-muted",
               )}
             />
           ))}
         </div>
-        <p className="text-xs text-gray-400 mt-1.5">
+        <p className="text-xs text-gray-400 dark:text-muted-foreground mt-1.5">
           Step {currentStep + 1} of {tutorial.steps.length}
         </p>
       </div>
 
-      <div className="px-5 pb-4 border-t border-gray-100 pt-3">
+      <div className="px-5 pb-4 border-t border-gray-100 dark:border-border pt-3">
         <div className="mb-3">
-          <p className="text-sm font-medium text-gray-900">{step.title}</p>
-          <p className="text-sm text-gray-500 leading-relaxed mt-1">{step.description}</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-foreground">{step.title}</p>
+          <p className="text-sm text-gray-500 dark:text-muted-foreground leading-relaxed mt-1">{step.description}</p>
         </div>
 
         {step.action && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gray-50 mb-4">
-            <MousePointerClick className="h-3.5 w-3.5 mt-0.5 text-gray-400 shrink-0" />
-            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-muted mb-4">
+            <MousePointerClick className="h-3.5 w-3.5 mt-0.5 text-gray-400 dark:text-muted-foreground shrink-0" />
+            <p className="text-xs text-gray-600 dark:text-muted-foreground leading-relaxed font-medium">
               {step.action}
             </p>
           </div>
@@ -606,7 +606,7 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
 
         <div className="flex items-center justify-between">
           <button
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-30"
+            className="text-sm text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors disabled:opacity-30"
             disabled={isFirst}
             onClick={() => setCurrentStep(currentStep - 1)}
           >
@@ -622,7 +622,7 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
             </button>
           ) : (
             <button
-              className="text-sm font-medium text-gray-900 hover:text-[#0CC0DF] transition-colors"
+              className="text-sm font-medium text-gray-900 dark:text-foreground hover:text-[#0CC0DF] transition-colors"
               onClick={() => setCurrentStep(currentStep + 1)}
             >
               Next →
@@ -655,12 +655,12 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
   const allTutorials = [...relevant, ...others];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-xl shadow-sm overflow-hidden">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">
           Tutorials
         </span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -673,7 +673,7 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
             <button
               key={tutorial.id}
               onClick={() => onSelectTutorial(tutorial)}
-              className="w-full text-left rounded-xl px-4 py-3 transition-all duration-150 hover:bg-gray-50"
+              className="w-full text-left rounded-xl px-4 py-3 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -684,7 +684,7 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
                   )}
                   <span className={cn(
                     "text-sm font-medium",
-                    isCompleted ? "text-gray-400" : "text-gray-900",
+                    isCompleted ? "text-gray-400 dark:text-muted-foreground" : "text-gray-900 dark:text-foreground",
                   )}>
                     {tutorial.title}
                   </span>
@@ -787,16 +787,16 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
         <button
           type="button"
           onClick={handleRestore}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
         >
           <HelpCircle className="h-3.5 w-3.5" />
           Show guide
         </button>
-        <span className="text-gray-300">·</span>
+        <span className="text-gray-300 dark:text-muted-foreground/50">·</span>
         <button
           type="button"
           onClick={() => { setDismissed(false); setShowTutorials(true); }}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
         >
           <BookOpen className="h-3.5 w-3.5" />
           Tutorials
@@ -808,32 +808,32 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
   return (
     <div
       className={cn(
-        "bg-white rounded-xl shadow-sm overflow-hidden transition-all",
+        "bg-white dark:bg-card rounded-xl shadow-sm overflow-hidden transition-all",
         className,
       )}
     >
       {/* Header with workflow steps */}
       <div className="px-5 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-sm font-semibold text-gray-900 dark:text-foreground">
             {guide.title}
           </span>
           <div className="flex items-center gap-2">
             <button
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
+              className="text-xs text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors flex items-center gap-1"
               onClick={() => setShowTutorials(true)}
             >
               <BookOpen className="h-3.5 w-3.5" />
               Tutorials
             </button>
             <button
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
               onClick={() => setExpanded(!expanded)}
             >
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             <button
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
               onClick={handleDismiss}
             >
               <X className="h-4 w-4" />
@@ -852,10 +852,10 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                 <div
                   className={cn(
                     "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    isActive && "bg-gray-100 text-gray-900",
+                    isActive && "bg-gray-100 dark:bg-muted text-gray-900 dark:text-foreground",
                     isCompleted && "text-[#0CC0DF]",
-                    isFuture && "text-gray-300",
-                    !isActive && !isCompleted && !isFuture && "text-gray-400",
+                    isFuture && "text-gray-300 dark:text-muted-foreground/40",
+                    !isActive && !isCompleted && !isFuture && "text-gray-400 dark:text-muted-foreground",
                   )}
                 >
                   {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.icon}
@@ -864,7 +864,7 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                 {i < STEPS.length - 1 && (
                   <ArrowRight className={cn(
                     "h-3 w-3 mx-0.5 shrink-0",
-                    isCompleted ? "text-[#0CC0DF]/40" : "text-gray-200",
+                    isCompleted ? "text-[#0CC0DF]/40" : "text-gray-200 dark:text-muted-foreground/30",
                   )} />
                 )}
               </div>
@@ -875,11 +875,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
 
       {/* Expandable content */}
       {expanded && (
-        <div className="px-5 pb-4 border-t border-gray-100 pt-3">
+        <div className="px-5 pb-4 border-t border-gray-100 dark:border-border pt-3">
           <div className="space-y-2 mb-3">
             {guide.steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-2.5 text-sm text-gray-600 leading-relaxed">
-                <span className="mt-0.5 shrink-0 w-4 text-center text-gray-300 font-medium text-xs">
+              <div key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-muted-foreground leading-relaxed">
+                <span className="mt-0.5 shrink-0 w-4 text-center text-gray-300 dark:text-muted-foreground/50 font-medium text-xs">
                   {step.startsWith("✅") || step.startsWith("→") ? "" : `${i + 1}.`}
                 </span>
                 <span>{step}</span>
@@ -887,9 +887,9 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             ))}
           </div>
 
-          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-gray-50 mb-3">
-            <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-gray-400 shrink-0" />
-            <p className="text-xs text-gray-500 leading-relaxed">
+          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-muted mb-3">
+            <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-gray-400 dark:text-muted-foreground shrink-0" />
+            <p className="text-xs text-gray-500 dark:text-muted-foreground leading-relaxed">
               {guide.tip}
             </p>
           </div>
@@ -901,7 +901,7 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
                 >
                   <ArrowRight className="h-3 w-3" />
                   {action.label}
@@ -915,8 +915,8 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             const relevantTutorials = TUTORIALS.filter(t => t.pages.includes(page));
             if (relevantTutorials.length === 0) return null;
             return (
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-border">
+                <p className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-2">
                   Tutorials for this page
                 </p>
                 <div className="space-y-1">
@@ -924,11 +924,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                     <button
                       key={tutorial.id}
                       onClick={() => setActiveTutorial(tutorial)}
-                      className="w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                     >
-                      <Play className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                      <span className="text-sm text-gray-600">{tutorial.title}</span>
-                      <span className="text-xs text-gray-400 ml-auto shrink-0">{tutorial.duration}</span>
+                      <Play className="h-3.5 w-3.5 text-gray-400 dark:text-muted-foreground shrink-0" />
+                      <span className="text-sm text-gray-600 dark:text-muted-foreground">{tutorial.title}</span>
+                      <span className="text-xs text-gray-400 dark:text-muted-foreground ml-auto shrink-0">{tutorial.duration}</span>
                     </button>
                   ))}
                 </div>

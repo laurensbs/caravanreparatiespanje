@@ -351,7 +351,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                 return (
                 <TableRow key={part.id}>
                   <TableCell>
-                    <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-gray-100 text-gray-600")}>
+                    <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground")}>
                       <CatIcon className="h-3.5 w-3.5" />
                     </span>
                   </TableCell>

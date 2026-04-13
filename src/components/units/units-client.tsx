@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getUnits } from "@/actions/units";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, Truck } from "lucide-react";
+import { Search, X, Truck, Loader2 } from "lucide-react";
 import { UnitDialog } from "./unit-dialog";
 import { NewUnitDialog } from "./new-unit-dialog";
 
@@ -53,12 +54,56 @@ interface UnitsClientProps {
   customers?: { id: string; name: string }[];
 }
 
-export function UnitsClient({ units, total, page, limit, currentQ, currentTagId, currentDateFrom, currentDateTo, allTags, customers = [] }: UnitsClientProps) {
+export function UnitsClient({ units: initialUnits, total, page, limit, currentQ, currentTagId, currentDateFrom, currentDateTo, allTags, customers = [] }: UnitsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQ ?? "");
   const [selectedUnit, setSelectedUnit] = useState<UnitRow | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Infinite scroll state
+  const [allUnits, setAllUnits] = useState<UnitRow[]>(initialUnits);
+  const [scrollLoading, startScrollLoading] = useTransition();
+  const [hasMore, setHasMore] = useState(initialUnits.length < total);
+  const pageRef = useRef(1);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset when initial data changes (filters changed)
+  useEffect(() => {
+    setAllUnits(initialUnits);
+    pageRef.current = 1;
+    setHasMore(initialUnits.length < total);
+  }, [initialUnits, total]);
+
+  const filters = { q: currentQ, tagId: currentTagId, dateFrom: currentDateFrom, dateTo: currentDateTo, limit };
+
+  const loadMore = useCallback(() => {
+    if (scrollLoading || !hasMore) return;
+    startScrollLoading(async () => {
+      const nextPage = pageRef.current + 1;
+      const { units: more } = await getUnits({ ...filters, page: nextPage });
+      setAllUnits(prev => {
+        const existingIds = new Set(prev.map(u => u.id));
+        const newUnits = (more as UnitRow[]).filter(u => !existingIds.has(u.id));
+        return [...prev, ...newUnits];
+      });
+      pageRef.current = nextPage;
+      const loaded = nextPage * (limit ?? 50);
+      if (loaded >= total) setHasMore(false);
+    });
+  }, [scrollLoading, hasMore, filters, total, limit]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   function updateParams(updates: Record<string, string | undefined>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -157,7 +202,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
       {/* Table */}
       <div className="rounded-xl border border-border/50 bg-card">
         <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
-          {units.length === 0 ? (
+          {allUnits.length === 0 ? (
             <div className="py-16 text-center">
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <Truck className="h-8 w-8 opacity-20" />
@@ -167,7 +212,7 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
             </div>
           ) : (
             <div className="divide-y divide-border/50">
-              {units.map((u, idx) => (
+              {allUnits.map((u, idx) => (
                 <div
                   key={u.id}
                   className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/40 cursor-pointer animate-slide-up"
@@ -190,13 +235,19 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
             </div>
           )}
         </div>
-      </div>
 
-      {total > units.length && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          Showing {units.length} of {total} units
-        </p>
-      )}
+        {/* Infinite scroll sentinel */}
+        {hasMore && (
+          <div ref={sentinelRef} className="flex justify-center py-4">
+            {scrollLoading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+          </div>
+        )}
+        {!hasMore && allUnits.length > 0 && (
+          <p className="text-center text-[11px] text-gray-400 py-3">
+            {allUnits.length} unit{allUnits.length !== 1 ? "s" : ""}
+          </p>
+        )}
+      </div>
 
       {/* Unit detail popup */}
       {selectedUnit && (

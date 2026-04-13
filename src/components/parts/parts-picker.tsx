@@ -130,9 +130,9 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
           {value.map((part) => (
             <div
               key={part.partId}
-              className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm"
+              className="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-muted px-3 py-2 text-sm"
             >
-              <span className="flex-1 truncate text-gray-700">
+              <span className="flex-1 truncate text-gray-700 dark:text-foreground">
                 {part.name}
                 {part.partNumber && (
                   <span className="ml-1.5 font-mono text-xs text-gray-400">
@@ -143,15 +143,15 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  className="rounded px-1 text-gray-400 hover:text-gray-700"
+                  className="rounded px-1 text-gray-400 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground"
                   onClick={() => updateQuantity(part.partId, part.quantity - 1)}
                 >
                   −
                 </button>
-                <span className="w-6 text-center text-xs font-medium text-gray-600">{part.quantity}</span>
+                <span className="w-6 text-center text-xs font-medium text-gray-600 dark:text-muted-foreground">{part.quantity}</span>
                 <button
                   type="button"
-                  className="rounded px-1 text-gray-400 hover:text-gray-700"
+                  className="rounded px-1 text-gray-400 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground"
                   onClick={() => updateQuantity(part.partId, part.quantity + 1)}
                 >
                   +
@@ -177,7 +177,7 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-96 p-0" align="start">
-          <div className="p-2.5 border-b border-gray-100">
+          <div className="p-2.5 border-b border-gray-100 dark:border-border">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
               <Input
@@ -198,8 +198,8 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                   className={cn(
                     "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
                     !activeCategory
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-50 text-gray-500 hover:bg-gray-100",
+                      ? "bg-gray-900 dark:bg-foreground text-white dark:text-background"
+                      : "bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-accent",
                   )}
                 >
                   All
@@ -215,8 +215,8 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                       className={cn(
                         "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
                         isActive
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-50 text-gray-500 hover:bg-gray-100",
+                          ? "bg-gray-900 dark:bg-foreground text-white dark:text-background"
+                          : "bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-accent",
                       )}
                     >
                       <Icon className="h-3 w-3" />
@@ -230,25 +230,25 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
           <div className="max-h-56 overflow-y-auto">
             {showCreate ? (
               <div className="p-3 space-y-2">
-                <p className="text-sm font-semibold text-gray-900">New part</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-foreground">New part</p>
                 <form onSubmit={handleCreatePart} className="space-y-2">
                   <div>
-                    <Label className="text-xs text-gray-500">Name *</Label>
+                    <Label className="text-xs text-gray-500 dark:text-muted-foreground">Name *</Label>
                     <Input name="name" required defaultValue={search} className="h-8 text-sm mt-0.5" autoFocus />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs text-gray-500">Part number</Label>
+                      <Label className="text-xs text-gray-500 dark:text-muted-foreground">Part number</Label>
                       <Input name="partNumber" className="h-8 text-sm mt-0.5" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-500">Cost (€)</Label>
+                      <Label className="text-xs text-gray-500 dark:text-muted-foreground">Cost (€)</Label>
                       <Input name="defaultCost" type="number" step="0.01" className="h-8 text-sm mt-0.5" />
                     </div>
                   </div>
                   {categories.length > 0 && (
                     <div>
-                      <Label className="text-xs text-gray-500">Category</Label>
+                      <Label className="text-xs text-gray-500 dark:text-muted-foreground">Category</Label>
                       <select
                         name="category"
                         defaultValue={activeCategory ?? ""}
@@ -297,11 +297,11 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                     <button
                       key={part.id}
                       type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                       onClick={() => addPart(part)}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="truncate font-medium text-gray-900">{part.name}</p>
+                        <p className="truncate font-medium text-gray-900 dark:text-foreground">{part.name}</p>
                         <p className="text-xs text-gray-400">
                           {[
                             part.partNumber,
@@ -321,7 +321,7 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                 <button
                   type="button"
                   onClick={() => setShowCreate(true)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[#0CC0DF] hover:bg-gray-50 transition-colors text-left border-t border-gray-100"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[#0CC0DF] hover:bg-gray-50 dark:hover:bg-accent transition-colors text-left border-t border-gray-100 dark:border-border"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   New part...

@@ -45,11 +45,11 @@ interface User {
 }
 
   const ROLE_COLORS: Record<string, string> = {
-    admin: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
-    manager: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
-    technician: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400",
-    staff: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-    viewer: "bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
+    admin: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+    manager: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+    technician: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
+    staff: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    viewer: "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
   };
 
 export function UsersClient({ users }: { users: User[] }) {
@@ -82,7 +82,7 @@ export function UsersClient({ users }: { users: User[] }) {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Users</h2>
         <Dialog open={open} onOpenChange={setOpen}>

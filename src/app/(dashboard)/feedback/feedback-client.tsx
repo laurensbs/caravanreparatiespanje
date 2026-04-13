@@ -53,25 +53,25 @@ const statusConfig = {
     label: "Open",
     icon: CircleDot,
     variant: "default" as const,
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    className: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   },
   in_progress: {
     label: "In Progress",
     icon: Clock,
     variant: "secondary" as const,
-    className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    className: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
   },
   done: {
     label: "Done",
     icon: CheckCircle2,
     variant: "outline" as const,
-    className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    className: "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
   },
   dismissed: {
     label: "Dismissed",
     icon: XCircle,
     variant: "outline" as const,
-    className: "bg-gray-100 text-gray-500 dark:bg-gray-800/30 dark:text-gray-400",
+    className: "bg-gray-50 text-gray-500 dark:bg-gray-500/10 dark:text-gray-400",
   },
 };
 
@@ -118,11 +118,11 @@ export function FeedbackClient({
   const closedItems = items.filter((i) => i.status === "done" || i.status === "dismissed");
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Feedback</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Suggestions, improvements and feature requests
           </p>
         </div>

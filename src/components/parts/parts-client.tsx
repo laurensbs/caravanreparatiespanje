@@ -159,12 +159,12 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
         <button
           onClick={() => setActiveCategory(null)}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all hover:shadow-md active:scale-95 cursor-pointer ring-1 ring-border/50",
-            !activeCategory ? "bg-primary text-primary-foreground ring-primary shadow-md" : "bg-card hover:bg-muted/60"
+            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer",
+            !activeCategory ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 hover:bg-muted"
           )}
         >
           All
-          <span className="font-bold tabular-nums">{parts.length}</span>
+          <span className="font-semibold tabular-nums">{parts.length}</span>
         </button>
         {categories.filter(c => c.active).map((cat) => {
           const cnt = categoryCounts[cat.key] ?? 0;
@@ -175,13 +175,13 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
               key={cat.key}
               onClick={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all hover:shadow-md active:scale-95 cursor-pointer ring-1",
-                activeCategory === cat.key ? `${cat.color} ring-2 shadow-md` : `ring-border/50 bg-card hover:bg-muted/60`
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer",
+                activeCategory === cat.key ? `${cat.color} shadow-sm` : `bg-muted/60 hover:bg-muted`
               )}
             >
               <CatIcon className="h-3.5 w-3.5" />
               {cat.label}
-              <span className="font-bold tabular-nums">{cnt}</span>
+              <span className="font-semibold tabular-nums">{cnt}</span>
             </button>
           );
         })}
@@ -234,7 +234,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
         ) : (
           <button
             onClick={() => setShowAddCategory(true)}
-            className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium transition-all hover:shadow-md active:scale-95 cursor-pointer ring-1 ring-dashed ring-border/50 bg-card hover:bg-muted/60 text-muted-foreground"
+            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer border border-dashed border-border/50 bg-muted/40 hover:bg-muted/60 text-muted-foreground"
           >
             <Plus className="h-3.5 w-3.5" />
             Category
@@ -263,7 +263,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer",
                     stockFilter === "out_of_stock"
                       ? "bg-red-600 text-white"
-                      : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 hover:bg-red-200"
+                      : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100"
                   )}
                 >
                   <AlertTriangle className="h-3 w-3" />
@@ -277,7 +277,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer",
                     stockFilter === "low_stock"
                       ? "bg-amber-600 text-white"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 hover:bg-amber-200"
+                      : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 hover:bg-amber-100"
                   )}
                 >
                   Low Stock ({lowStockCount})
@@ -370,9 +370,9 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                     {part.minStockLevel > 0 ? (
                       <span className={cn(
                         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                        isOutOfStock ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" :
-                        isLowStock ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" :
-                        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                        isOutOfStock ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" :
+                        isLowStock ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
+                        "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
                       )}>
                         {isOutOfStock || isLowStock ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                         {part.stockQuantity}

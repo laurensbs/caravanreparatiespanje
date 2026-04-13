@@ -72,7 +72,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

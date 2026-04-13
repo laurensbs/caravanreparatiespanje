@@ -78,7 +78,7 @@ export function RepairTaskList({ repairJobId, initialTasks, defaultHourlyRate = 
           {tasks.length > 0 && (
             <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
               doneCount === tasks.length
-                ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
                 : "bg-muted text-muted-foreground"
             }`}>
               {doneCount}/{tasks.length}

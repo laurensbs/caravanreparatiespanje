@@ -23,11 +23,11 @@ import { HoldedHint } from "@/components/holded-hint";
 import { WorkflowGuide } from "@/components/workflow-guide";
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
-  requested: "bg-yellow-100 text-yellow-800",
-  ordered: "bg-blue-100 text-blue-800",
-  shipped: "bg-indigo-100 text-indigo-800",
-  received: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-800",
+  requested: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
+  ordered: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  shipped: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
+  received: "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
+  cancelled: "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
 };
 
 export default async function PartsPage() {
@@ -42,13 +42,13 @@ export default async function PartsPage() {
   const defaultMarkup = parseFloat(settings.default_markup_percent ?? "25");
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-lg font-bold tracking-tight">
           Parts &amp; Suppliers
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Manage parts catalog, suppliers, and part requests for repair jobs.
+        <p className="text-xs text-muted-foreground">
+          Manage parts catalog, suppliers, and part requests.
         </p>
       </div>
 

@@ -180,7 +180,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
   const totalCount = filteredRepairs.length;
 
   return (
-    <div className="space-y-4 print:space-y-2">
+    <div className="space-y-6 print:space-y-2">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div className="flex items-center gap-2">

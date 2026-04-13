@@ -777,21 +777,21 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           <span className="text-sm font-semibold">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
                           <Badge className={
                             f.severity === "critical"
-                              ? "bg-red-100 text-red-700 border-red-200"
+                              ? "bg-red-50 text-red-600 border-red-100"
                               : f.severity === "minor"
-                              ? "bg-slate-100 text-slate-600 border-slate-200"
-                              : "bg-amber-100 text-amber-700 border-amber-200"
+                              ? "bg-slate-50 text-slate-600 border-slate-100"
+                              : "bg-amber-50 text-amber-600 border-amber-100"
                           }>
                             {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
                           </Badge>
                           {f.requiresCustomerApproval && (
-                            <Badge className="bg-orange-100 text-orange-700 border-orange-200">Approval Needed</Badge>
+                            <Badge className="bg-orange-50 text-orange-600 border-orange-100">Approval Needed</Badge>
                           )}
                           {f.requiresFollowUp && (
-                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">Follow-up</Badge>
+                            <Badge className="bg-purple-50 text-purple-600 border-purple-100">Follow-up</Badge>
                           )}
                           {f.resolvedAt && (
-                            <Badge className="bg-green-100 text-green-700 border-green-200">Resolved</Badge>
+                            <Badge className="bg-green-50 text-green-600 border-green-100">Resolved</Badge>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">{f.description}</p>
@@ -980,8 +980,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {partRequests.length > 0 && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                         partRequests.every(p => p.status === "received" || p.status === "cancelled")
-                          ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-                          : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
+                          ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+                          : "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
                       }`}>
                         {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
                       </span>
@@ -1115,11 +1115,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         }}
                       >
                         <SelectTrigger className={`h-6 w-[100px] text-[10px] font-semibold rounded-full border-0 ${
-                          pr.status === "received" ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" :
-                          pr.status === "shipped" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400" :
-                          pr.status === "ordered" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400" :
-                          pr.status === "cancelled" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" :
-                          "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400"
+                          pr.status === "received" ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400" :
+                          pr.status === "shipped" ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" :
+                          pr.status === "ordered" ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" :
+                          pr.status === "cancelled" ? "bg-gray-50 text-gray-500 dark:bg-gray-500/10 dark:text-gray-500" :
+                          "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400"
                         }`}>
                           <SelectValue />
                         </SelectTrigger>

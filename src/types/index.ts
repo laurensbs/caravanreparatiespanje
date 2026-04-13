@@ -212,10 +212,10 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
 };
 
 export const PRIORITY_COLORS: Record<Priority, string> = {
-  low: "bg-slate-100 text-slate-600",
-  normal: "bg-blue-100 text-blue-700",
-  high: "bg-orange-100 text-orange-700",
-  urgent: "bg-red-100 text-red-700",
+  low: "bg-slate-50 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400",
+  normal: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  high: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+  urgent: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
 };
 
 export const CUSTOMER_RESPONSE_LABELS: Record<CustomerResponseStatus, string> = {
@@ -246,11 +246,11 @@ export const TASK_STATUS_LABELS: Record<RepairTaskStatus, string> = {
 };
 
 export const TASK_STATUS_COLORS: Record<RepairTaskStatus, string> = {
-  pending: "bg-slate-100 text-slate-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  done: "bg-green-100 text-green-700",
-  problem: "bg-red-100 text-red-700",
-  review: "bg-orange-100 text-orange-700",
+  pending: "bg-slate-50 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400",
+  in_progress: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  done: "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
+  problem: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  review: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
 };
 
 export const PROBLEM_CATEGORY_LABELS: Record<ProblemCategory, string> = {
@@ -328,8 +328,8 @@ export const UNIT_TYPE_LABELS: Record<UnitType, string> = {
 };
 
 export const CONFIDENCE_COLORS: Record<StatusConfidence, string> = {
-  high: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  low: "bg-red-100 text-red-700",
-  manual: "bg-blue-100 text-blue-700",
+  high: "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
+  medium: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
+  low: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  manual: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
 };

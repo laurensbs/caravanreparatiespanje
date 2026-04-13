@@ -612,7 +612,7 @@ export const partCategories = pgTable("part_categories", {
   key: varchar("key", { length: 50 }).notNull().unique(),
   label: varchar("label", { length: 100 }).notNull(),
   icon: varchar("icon", { length: 50 }).notNull().default("Package"),
-  color: varchar("color", { length: 100 }).notNull().default("bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400"),
+  color: varchar("color", { length: 100 }).notNull().default("bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400"),
   sortOrder: integer("sort_order").notNull().default(0),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })

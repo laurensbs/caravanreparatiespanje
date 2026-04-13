@@ -5,10 +5,10 @@ export default async function RepairBinPage() {
   const deletedJobs = await getDeletedRepairJobs();
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-lg font-bold tracking-tight">Bin</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {deletedJobs.length} deleted repair{deletedJobs.length !== 1 ? "s" : ""}. Items are permanently removed after 30 days.
         </p>
       </div>

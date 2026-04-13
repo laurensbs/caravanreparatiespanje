@@ -4,8 +4,7 @@ import { requireRole } from "@/lib/auth-utils";
 import { desc, eq, like, and, sql, gte, lte } from "drizzle-orm";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Shield, ArrowUpDown } from "lucide-react";
+import { Shield } from "lucide-react";
 import Link from "next/link";
 
 export default async function AuditLogPage({
@@ -60,12 +59,12 @@ export default async function AuditLogPage({
   const totalPages = Math.ceil(totalCount / perPage);
 
   const ACTION_COLORS: Record<string, string> = {
-    create: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-    update: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
-    delete: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
-    import: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
-    export: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-    bulk_update: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
+    create: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    update: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+    delete: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+    import: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
+    export: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+    bulk_update: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
   };
 
   function buildHref(overrides: Record<string, string>) {
@@ -76,10 +75,10 @@ export default async function AuditLogPage({
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-lg font-bold tracking-tight">Audit Log</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {totalCount} entr{totalCount !== 1 ? "ies" : "y"} recorded
         </p>
       </div>
@@ -88,16 +87,16 @@ export default async function AuditLogPage({
       <div className="flex flex-wrap gap-2">
         {[
           { label: "All", action: "" },
-          { label: "Create", action: "create", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 ring-emerald-300/40" },
-          { label: "Update", action: "update", bg: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400 ring-blue-300/40" },
-          { label: "Delete", action: "delete", bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 ring-red-300/40" },
-          { label: "Import", action: "import", bg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400 ring-purple-300/40" },
+          { label: "Create", action: "create", bg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" },
+          { label: "Update", action: "update", bg: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" },
+          { label: "Delete", action: "delete", bg: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" },
+          { label: "Import", action: "import", bg: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400" },
         ].map((btn) => {
           const isActive = (params.action ?? "") === btn.action;
           const href = btn.action ? buildHref({ action: btn.action }) : `/audit?${new URLSearchParams({ ...(params.entity ? { entity: params.entity } : {}), ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}), ...(params.dateTo ? { dateTo: params.dateTo } : {}) }).toString()}`;
           return (
             <Link key={btn.label} href={isActive && btn.action ? `/audit?${new URLSearchParams({ ...(params.entity ? { entity: params.entity } : {}) }).toString()}` : href}>
-              <span className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer ring-1 ${btn.bg ?? "bg-muted text-foreground ring-border/50"} ${isActive ? "ring-2 shadow-md scale-[1.02]" : btn.action ? "" : (!params.action ? "ring-2 shadow-md scale-[1.02] bg-primary text-primary-foreground ring-primary" : "")}`}>
+              <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80 active:scale-95 cursor-pointer ${btn.bg ?? "bg-muted text-foreground"} ${isActive ? "ring-2 ring-primary/50 shadow-sm" : btn.action ? "" : (!params.action ? "ring-2 ring-primary/50 shadow-sm bg-primary text-primary-foreground" : "")}`}>
                 {btn.label}
               </span>
             </Link>
@@ -221,27 +220,9 @@ export default async function AuditLogPage({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {page} of {totalPages} ({totalCount} entries)
-          </p>
-          <div className="flex gap-1.5">
-            {page > 1 && (
-              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={buildHref({ page: String(page - 1) })}>
-                  Previous
-                </Link>
-              </Button>
-            )}
-            {page < totalPages && (
-              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={buildHref({ page: String(page + 1) })}>
-                  Next
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
+        <p className="text-xs text-muted-foreground text-center py-2">
+          Page {page} of {totalPages} ({totalCount} entries)
+        </p>
       )}
     </div>
   );

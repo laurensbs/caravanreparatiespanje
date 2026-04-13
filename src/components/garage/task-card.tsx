@@ -191,7 +191,7 @@ function getActions(status: string) {
           labelEn: "⚠ Problem",
           labelEs: "⚠ Problema",
           labelNl: "⚠ Probleem",
-          className: "bg-red-100 text-red-700 border border-red-300",
+          className: "bg-red-50 text-red-600 border border-red-200",
         },
       ];
     case "problem":

@@ -195,10 +195,10 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
   const overdueTotal = overdue.reduce((sum, inv) => sum + (inv.total ?? 0), 0);
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-lg font-bold tracking-tight">Invoices & Quotes</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {tab === "invoices"
             ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
             : tab === "quotes"
@@ -672,10 +672,10 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                             className={cn(
                               "rounded-full text-[10px] px-2 py-0",
                               inv.daysOverdue > 90
-                                ? "bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-400"
+                                ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400"
                                 : inv.daysOverdue > 60
-                                ? "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950 dark:text-orange-400"
-                                : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400"
+                                ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400"
+                                : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400"
                             )}
                           >
                             <Clock className="h-2.5 w-2.5 mr-0.5" />

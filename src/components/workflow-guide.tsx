@@ -637,13 +637,13 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
                 <span className={cn(
                   "text-[10px] px-1.5 py-0.5 rounded-full",
                   tutorial.difficulty === "beginner"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                    ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+                    : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
                 )}>
                   {tutorial.difficulty}
                 </span>
                 {isRelevant && !isCompleted && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
                     relevant for this page
                   </span>
                 )}

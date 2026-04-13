@@ -64,15 +64,14 @@ export default async function CustomersPage({ searchParams }: Props) {
     MAIN_LOCATIONS.includes(l.name.toLowerCase())
   );
 
-  const totalPages = isBusiness ? 1 : Math.ceil(total / limit);
   const displayTotal = isBusiness ? suppliersList.length : total;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Contacts</h1>
-          <p className="text-sm text-muted-foreground">{displayTotal} {isBusiness ? "business" : "contact"}{displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}</p>
+          <p className="text-xs text-muted-foreground">{displayTotal} {isBusiness ? "business" : "contact"}{displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}</p>
         </div>
         <NewCustomerDialog />
       </div>
@@ -193,28 +192,10 @@ export default async function CustomersPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-1.5">
-            {page > 1 && (
-              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.contactType ? { contactType: params.contactType } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), page: String(page - 1) }).toString()}`}>
-                  Previous
-                </Link>
-              </Button>
-            )}
-            {page < totalPages && (
-              <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={`/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.contactType ? { contactType: params.contactType } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), page: String(page + 1) }).toString()}`}>
-                  Next
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
+      {total > limit && (
+        <p className="text-xs text-muted-foreground text-center py-2">
+          Showing {customers.length} of {total} contacts
+        </p>
       )}
     </div>
   );

@@ -69,9 +69,9 @@ const SEVERITY_COLORS: Record<FindingSeverity, string> = {
 };
 
 const SEVERITY_SELECTED: Record<FindingSeverity, string> = {
-  minor: "border-slate-500 bg-slate-100 text-slate-800 ring-2 ring-slate-300",
-  normal: "border-amber-500 bg-amber-100 text-amber-800 ring-2 ring-amber-300",
-  critical: "border-red-500 bg-red-100 text-red-800 ring-2 ring-red-300",
+  minor: "border-slate-500 bg-slate-50 text-slate-700 ring-2 ring-slate-200",
+  normal: "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200",
+  critical: "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200",
 };
 
 interface FindingDialogProps {

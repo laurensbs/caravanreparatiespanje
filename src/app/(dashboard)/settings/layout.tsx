@@ -7,10 +7,10 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   return (
-      <div className="space-y-4 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground">Manage locations, users, and tags.</p>
+          <p className="text-xs text-muted-foreground">Manage locations, users, and tags.</p>
         </div>
 
       <nav className="flex gap-1 border-b overflow-x-auto">

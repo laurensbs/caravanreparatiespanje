@@ -251,7 +251,7 @@ export async function createPartCategory(data: { key: string; label: string; ico
       key: data.key.toLowerCase().replace(/[^a-z0-9_-]/g, "_"),
       label: data.label,
       icon: data.icon || "Package",
-      color: data.color || "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400",
+      color: data.color || "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
       sortOrder: 99,
     })
     .returning();

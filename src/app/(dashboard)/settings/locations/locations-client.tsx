@@ -77,7 +77,7 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Locations</h2>
         <Dialog open={open} onOpenChange={setOpen}>

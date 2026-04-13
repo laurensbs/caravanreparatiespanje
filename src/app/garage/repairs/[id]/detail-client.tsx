@@ -440,15 +440,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                       </span>
                       <span className={`inline-flex items-center rounded-lg px-1.5 py-0.5 text-[10px] font-bold ${
                         f.severity === "critical"
-                          ? "bg-red-100 text-red-700"
+                          ? "bg-red-50 text-red-600"
                           : f.severity === "minor"
-                          ? "bg-slate-100 text-slate-600"
-                          : "bg-amber-100 text-amber-700"
+                          ? "bg-slate-50 text-slate-600"
+                          : "bg-amber-50 text-amber-600"
                       }`}>
                         {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
                       </span>
                       {f.requiresCustomerApproval && (
-                        <span className="inline-flex items-center rounded-lg bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[10px] font-bold">
+                        <span className="inline-flex items-center rounded-lg bg-orange-50 text-orange-600 px-1.5 py-0.5 text-[10px] font-bold">
                           👤 {t("Approval", "Aprobación", "Goedkeuring")}
                         </span>
                       )}

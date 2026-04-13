@@ -12,8 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
-  Wrench, Clock, Package, Users, CheckCircle, AlertTriangle,
-  ArrowRight, PhoneOff, TrendingUp,
+  Wrench, AlertTriangle, ArrowRight, PhoneOff, TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
@@ -47,19 +46,19 @@ export default async function DashboardPage() {
   ];
 
   const quickFilters = [
-    { label: "To Do", value: stats?.todo ?? 0, bg: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400", href: "/repairs?status=todo" },
-    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, bg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400", href: "/repairs?status=waiting_parts" },
-    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
-    { label: "Completed", value: stats?.completed ?? 0, bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400", href: "/repairs?status=completed" },
+    { label: "To Do", value: stats?.todo ?? 0, bg: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400", href: "/repairs?status=todo" },
+    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, bg: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400", href: "/repairs?status=waiting_parts" },
+    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, bg: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
+    { label: "Completed", value: stats?.completed ?? 0, bg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400", href: "/repairs?status=completed" },
   ];
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Overview of all repair operations</p>
+          <p className="text-xs text-muted-foreground">Overview of all repair operations</p>
         </div>
         <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
       </div>
@@ -89,9 +88,9 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap gap-2">
         {quickFilters.map((f) => (
           <Link key={f.label} href={f.href}>
-              <span className={cn("inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer ring-1 ring-border/50", f.bg)}>
+              <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80 active:scale-95 cursor-pointer", f.bg)}>
               {f.label}
-              <span className="font-bold tabular-nums">{f.value}</span>
+              <span className="font-semibold tabular-nums">{f.value}</span>
             </span>
           </Link>
         ))}
@@ -103,7 +102,7 @@ export default async function DashboardPage() {
 
       <DashboardSuggestions data={dashboardSuggestions} />
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3 animate-slide-up" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
         {/* Recent Activity */}
         <Card className="lg:col-span-2 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -168,7 +167,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Right column */}
-        <div className="space-y-4">
+        <div className="space-y-4 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
           {/* Status breakdown */}
           <Card className="animate-slide-up" style={{ animationDelay: "250ms", animationFillMode: "backwards" }}>
             <CardHeader className="pb-3">

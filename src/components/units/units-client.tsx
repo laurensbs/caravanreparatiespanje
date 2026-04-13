@@ -6,23 +6,13 @@ import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Search, X, Truck } from "lucide-react";
-import Link from "next/link";
+import { Search, X, Truck } from "lucide-react";
 import { UnitDialog } from "./unit-dialog";
 import { NewUnitDialog } from "./new-unit-dialog";
 
@@ -70,8 +60,6 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
   const [selectedUnit, setSelectedUnit] = useState<UnitRow | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const totalPages = Math.ceil(total / limit);
-
   function updateParams(updates: Record<string, string | undefined>) {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(updates)) {
@@ -90,11 +78,11 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Units</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {total} unit{total !== 1 ? "s" : ""} registered
           </p>
         </div>
@@ -167,69 +155,47 @@ export function UnitsClient({ units, total, page, limit, currentQ, currentTagId,
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">License Plate</TableHead>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {units.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={2} className="py-16 text-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Truck className="h-8 w-8 opacity-20" />
-                    <p className="font-medium text-sm">No units found</p>
-                    <p className="text-xs">Try adjusting your search or filters</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              units.map((u, idx) => (
-                <TableRow
+      <div className="rounded-xl border border-border/50 bg-card">
+        <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+          {units.length === 0 ? (
+            <div className="py-16 text-center">
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <Truck className="h-8 w-8 opacity-20" />
+                <p className="font-medium text-sm">No units found</p>
+                <p className="text-xs">Try adjusting your search or filters</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {units.map((u, idx) => (
+                <div
                   key={u.id}
-                  className="group interactive-row table-row-animate"
-                  style={{ animationDelay: `${idx * 20}ms` }}
+                  className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/40 cursor-pointer animate-slide-up"
+                  style={{ animationDelay: `${idx * 20}ms`, animationFillMode: "backwards" }}
                   onClick={() => setSelectedUnit(u)}
                 >
-                  <TableCell className="font-mono text-[13px] font-medium group-hover:text-primary transition-colors">
-                    {u.registration ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-[13px]">{u.customerName ?? "—"}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="font-mono text-sm font-medium group-hover:text-primary transition-colors">
+                      {u.registration ?? "—"}
+                    </span>
+                    {u.brand && (
+                      <span className="text-xs text-muted-foreground">
+                        {u.brand}{u.model ? ` ${u.model}` : ""}{u.year ? ` (${u.year})` : ""}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0 ml-4">{u.customerName ?? "—"}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-1.5">
-            {page > 1 && (
-              <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs" asChild>
-                <Link href={`/units?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(page - 1) }).toString()}`}>
-                  Previous
-                </Link>
-              </Button>
-            )}
-            {page < totalPages && (
-                <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs">
-                <Link href={`/units?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(page + 1) }).toString()}`}>
-                  Next
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
+      {total > units.length && (
+        <p className="text-xs text-muted-foreground text-center py-2">
+          Showing {units.length} of {total} units
+        </p>
       )}
 
       {/* Unit detail popup */}

@@ -18,7 +18,7 @@ import {
   FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem } from "@/types";
-import { ArrowLeft, Save, Clock, User, MapPin, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -262,69 +262,74 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     const baseCost = part.defaultCost ? parseFloat(part.defaultCost) : 0;
     const markup = part.markupPercent ? parseFloat(part.markupPercent) : settings.defaultMarkup;
     const sellingPrice = baseCost * (1 + markup / 100);
-    await addEstimateLineItem(job.id, {
-      type: "part",
-      description: part.name,
-      quantity: 1,
-      unitPrice: Math.round(sellingPrice * 100) / 100,
-      internalCost: baseCost,
-      sourceType: "manual",
-    });
-    router.refresh();
+    // Optimistic: add placeholder line immediately
+    const tempId = crypto.randomUUID();
+    const now = new Date();
+    setCostLines(prev => [...prev, { id: tempId, repairJobId: job.id, type: "part", sourceType: "manual", sourceId: null, description: part.name, quantity: "1", unitPrice: String(Math.round(sellingPrice * 100) / 100), internalCost: String(baseCost), sortOrder: prev.length, createdAt: now, updatedAt: now } as any]);
     setShowPartPicker(false);
     setPartSearch("");
+    await addEstimateLineItem(job.id, { type: "part", description: part.name, quantity: 1, unitPrice: Math.round(sellingPrice * 100) / 100, internalCost: baseCost, sourceType: "manual" });
+    router.refresh();
   }
 
   async function addLabourLine() {
-    await addEstimateLineItem(job.id, {
-      type: "labour",
-      description: "Labour",
-      quantity: 1,
-      unitPrice: settings.hourlyRate,
-      internalCost: 0,
-      sourceType: "manual",
-    });
+    const tempId = crypto.randomUUID();
+    const now = new Date();
+    setCostLines(prev => [...prev, { id: tempId, repairJobId: job.id, type: "labour", sourceType: "manual", sourceId: null, description: "Labour", quantity: "1", unitPrice: String(settings.hourlyRate), internalCost: "0", sortOrder: prev.length, createdAt: now, updatedAt: now } as any]);
+    await addEstimateLineItem(job.id, { type: "labour", description: "Labour", quantity: 1, unitPrice: settings.hourlyRate, internalCost: 0, sourceType: "manual" });
     router.refresh();
   }
 
   async function addCustomLine() {
-    await addEstimateLineItem(job.id, {
-      type: "custom",
-      description: "",
-      quantity: 1,
-      unitPrice: 0,
-      internalCost: 0,
-      sourceType: "manual",
-    });
+    const tempId = crypto.randomUUID();
+    const now = new Date();
+    setCostLines(prev => [...prev, { id: tempId, repairJobId: job.id, type: "custom", sourceType: "manual", sourceId: null, description: "", quantity: "1", unitPrice: "0", internalCost: "0", sortOrder: prev.length, createdAt: now, updatedAt: now } as any]);
+    await addEstimateLineItem(job.id, { type: "custom", description: "", quantity: 1, unitPrice: 0, internalCost: 0, sourceType: "manual" });
     router.refresh();
   }
 
   async function removeCostLine(id: string) {
+    // Optimistic: remove immediately
+    setCostLines(prev => prev.filter(l => l.id !== id));
     await removeEstimateLineItem(id);
     router.refresh();
   }
 
-  async function updateCostLine(id: string, field: string, value: string | number) {
-    const updates: Record<string, number | string> = {};
-    if (field === "description") updates.description = String(value);
-    else if (field === "quantity") updates.quantity = parseFloat(String(value)) || 1;
-    else if (field === "unitPrice") updates.unitPrice = parseFloat(String(value)) || 0;
-    else if (field === "internalCost") updates.internalCost = parseFloat(String(value)) || 0;
-    await updateEstimateLineItem(id, updates);
-    router.refresh();
+  // Debounced server sync for line edits
+  const updateTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  function updateCostLine(id: string, field: string, value: string | number) {
+    // Optimistic: update local state immediately
+    setCostLines(prev => prev.map(l => l.id === id ? { ...l, [field]: field === "description" ? String(value) : String(value) } : l));
+    // Debounce server call (500ms)
+    const timerKey = `${id}-${field}`;
+    if (updateTimers.current[timerKey]) clearTimeout(updateTimers.current[timerKey]);
+    updateTimers.current[timerKey] = setTimeout(async () => {
+      const updates: Record<string, number | string> = {};
+      if (field === "description") updates.description = String(value);
+      else if (field === "quantity") updates.quantity = parseFloat(String(value)) || 1;
+      else if (field === "unitPrice") updates.unitPrice = parseFloat(String(value)) || 0;
+      else if (field === "internalCost") updates.internalCost = parseFloat(String(value)) || 0;
+      await updateEstimateLineItem(id, updates);
+      router.refresh();
+    }, 500);
   }
 
   async function handleGenerateFromWork() {
     const result = await generateEstimateFromWork(job.id, settings.hourlyRate, settings.defaultMarkup);
-    toast.success(`Generated ${result.labourCount} labour + ${result.partCount} part lines from workshop`);
+    toast.success(`Generated ${result.labourCount} labour + ${result.partCount} part lines`);
     router.refresh();
   }
 
   async function handleDiscountChange(percent: number) {
     const clamped = Math.min(100, Math.max(0, percent));
     setDiscountPercent(clamped);
-    await updateDiscountPercent(job.id, clamped);
-    router.refresh();
+    // Debounce discount server call
+    if (updateTimers.current['discount']) clearTimeout(updateTimers.current['discount']);
+    updateTimers.current['discount'] = setTimeout(async () => {
+      await updateDiscountPercent(job.id, clamped);
+      router.refresh();
+    }, 500);
   }
 
   const filteredParts = partSearch.length > 0
@@ -456,18 +461,40 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           {job.customer ? (
             <button
               onClick={() => setExpandCustomer((v) => !v)}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${expandCustomer ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
-              title="View / edit customer"
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors underline decoration-dotted underline-offset-2 ${expandCustomer ? 'bg-primary/10 text-primary decoration-primary' : 'text-foreground decoration-muted-foreground/40 hover:decoration-foreground hover:bg-muted'}`}
+              title="Click to view / edit customer"
             >
               {job.customer.name}
+              <Pencil className="h-2.5 w-2.5 opacity-40" />
             </button>
           ) : (
             <button
               onClick={() => setShowCustomerLinker(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors italic"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors italic underline decoration-dotted underline-offset-2"
             >
-              Geen klant
+              No customer
             </button>
+          )}
+
+          <span className="text-muted-foreground/30">·</span>
+
+          {/* Clickable registration / unit + location */}
+          {job.unit ? (
+            <button
+              onClick={() => setExpandUnit((v) => !v)}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs transition-colors underline decoration-dotted underline-offset-2 ${expandUnit ? 'bg-primary/10 text-primary decoration-primary' : 'text-muted-foreground decoration-muted-foreground/40 hover:text-foreground hover:decoration-foreground hover:bg-muted'}`}
+              title="Click to view / edit unit"
+            >
+              <span className="font-mono">{job.unit.registration || 'No license plate'}</span>
+              {job.unit.brand && <span className="text-muted-foreground/60">({[job.unit.brand, job.unit.model].filter(Boolean).join(' ')})</span>}
+              {job.location && <span className="text-muted-foreground/60">· {job.location.slug ? job.location.slug.toUpperCase() : job.location.name}</span>}
+              <Pencil className="h-2.5 w-2.5 opacity-40" />
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground/50 italic">
+              No unit
+              {job.location && <span className="text-muted-foreground/60 not-italic">· {job.location.slug ? job.location.slug.toUpperCase() : job.location.name}</span>}
+            </span>
           )}
 
           <span className="text-muted-foreground/30">·</span>
@@ -481,34 +508,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${financialStage.color}`}>
             {financialStage.label}
           </span>
-
-          {/* Location */}
-          {job.location && (
-            <>
-              <span className="text-muted-foreground/30">·</span>
-              <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
-                <MapPin className="h-3 w-3" />
-                {job.location.slug ? `${job.location.slug.toUpperCase()} = ${job.location.name}` : job.location.name}
-              </span>
-            </>
-          )}
-
-          {/* Clickable registration / unit */}
-          <span className="text-muted-foreground/30">·</span>
-          {job.unit ? (
-            <button
-              onClick={() => setExpandUnit((v) => !v)}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-mono transition-colors ${expandUnit ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              title="View / edit unit"
-            >
-              {job.unit.registration || 'Geen kenteken'}
-              {job.unit.brand && <span className="font-sans text-muted-foreground/60 ml-1">({[job.unit.brand, job.unit.model].filter(Boolean).join(' ')})</span>}
-            </button>
-          ) : (
-            <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs text-muted-foreground/50 italic">
-              Geen unit
-            </span>
-          )}
 
           {repairWorkers.length > 0 && (
             <>
@@ -1960,16 +1959,16 @@ function FinancialWorkflow({
             <span className="text-xs font-medium text-muted-foreground">Line items</span>
             <div className="flex items-center gap-1">
               <button
-                className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-950/80 transition-colors"
+                className="inline-flex items-center h-6 text-[11px] px-2 rounded-md text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 transition-colors"
                 onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
                 disabled={!!loading}
               >
-                {loading === "generate" ? <Spinner className="mr-1 h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-                Generate from Workshop
+                {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-0.5" />}
+                Generate
               </button>
-              <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>Labour</button>
-              <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>Custom</button>
-              <button className="inline-flex items-center h-7 text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>Part</button>
+              <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>Labour</button>
+              <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>Custom</button>
+              <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>Part</button>
             </div>
           </div>
 
@@ -2054,20 +2053,19 @@ function FinancialWorkflow({
               </div>
             </div>
           ) : (
-            <div className="py-6 text-center">
-              <p className="text-sm text-muted-foreground">No estimate lines yet</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">Generate from workshop tasks + parts, or add manual lines</p>
-              <div className="flex items-center justify-center gap-2 mt-3">
+            <div className="py-4 text-center">
+              <p className="text-xs text-muted-foreground">No estimate lines yet</p>
+              <div className="flex items-center justify-center gap-1.5 mt-2">
                 <button
-                  className="inline-flex items-center h-8 text-xs font-medium px-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
                   disabled={!!loading}
                 >
-                  {loading === "generate" ? <Spinner className="mr-1 h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-                  Generate from Workshop
+                  {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                  Generate
                 </button>
-                <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>+ Labour</button>
-                <button className="inline-flex items-center h-8 text-xs px-3 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
+                <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>+ Labour</button>
+                <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
               </div>
             </div>
           )}

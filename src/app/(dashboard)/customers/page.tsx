@@ -2,9 +2,6 @@ import { getCustomers, type CustomerFilters } from "@/actions/customers";
 import { getLocations } from "@/actions/locations";
 import { getSuppliers } from "@/actions/parts";
 import { getTags } from "@/actions/tags";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Users, Building2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -67,19 +64,22 @@ export default async function CustomersPage({ searchParams }: Props) {
   const displayTotal = isBusiness ? suppliersList.length : total;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
+      {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold tracking-tight">Contacts</h1>
-          <p className="text-xs text-muted-foreground">{displayTotal} {isBusiness ? "business" : "contact"}{displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Contacts</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {displayTotal} {isBusiness ? "business" : "contact"}{displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}
+          </p>
         </div>
         <NewCustomerDialog />
       </div>
 
       <WorkflowGuide page="customers" />
 
-      {/* Contact type tabs */}
-      <div className="flex gap-1 border-b">
+      {/* ── Tabs ───────────────────────────────────────── */}
+      <div className="flex gap-6 border-b border-gray-200">
         {CONTACT_TYPE_TABS.map((tab) => {
           const isActive = (params.contactType ?? "all") === tab.value;
           const href = tab.value === "all"
@@ -89,10 +89,10 @@ export default async function CustomersPage({ searchParams }: Props) {
             <Link
               key={tab.value}
               href={href}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`pb-2.5 text-sm font-medium border-b-2 transition-colors ${
                 isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50"
+                  ? "border-[#0CC0DF] text-gray-900"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               {tab.label}
@@ -101,6 +101,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         })}
       </div>
 
+      {/* ── Filters ────────────────────────────────────── */}
       {!isBusiness && (
         <CustomerFiltersBar
           locations={filteredLocations}
@@ -109,91 +110,94 @@ export default async function CustomersPage({ searchParams }: Props) {
         />
       )}
 
+      {/* ── Holded hint ────────────────────────────────── */}
       {isBusiness ? (
         <HoldedHint variant="readonly">
           Businesses (suppliers) are synced from <strong>Holded</strong>. Edit supplier details in Holded — changes appear here on next sync.
         </HoldedHint>
       ) : (
         <HoldedHint variant="sync">
-          Contacts with the <span className="inline-flex items-center text-emerald-600"><ExternalLink className="h-2.5 w-2.5 mx-0.5" /></span> icon are linked to Holded. Editing their phone, email, or address will update in Holded too.
+          Contacts with the <span className="inline-flex items-center text-sky-600"><ExternalLink className="h-2.5 w-2.5 mx-0.5" /></span> icon are linked to Holded. Editing their phone, email, or address will update in Holded too.
         </HoldedHint>
       )}
 
-      <div className="rounded-lg border bg-card overflow-hidden">
+      {/* ── Table ──────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-card">
-            <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Name</TableHead>
-              {isBusiness ? (
-                <>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact Person</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Phone</TableHead>
-                  <TableHead className="hidden md:table-cell text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
-                  <TableHead className="hidden md:table-cell text-[11px] font-semibold uppercase tracking-wider">Website</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Holded</TableHead>
-                </>
-              ) : (
-                <>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Type</TableHead>
-                  <TableHead className="text-center text-[11px] font-semibold uppercase tracking-wider">Repairs</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Phone</TableHead>
-                  <TableHead className="hidden md:table-cell text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Updated</TableHead>
-                </>
-              )}
-            </TableRow>
-          </TableHeader>
-          {isBusiness ? (
-          <TableBody>
-            {suppliersList.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Building2 className="h-8 w-8 opacity-20" />
-                      <p className="font-medium text-sm">No businesses found</p>
-                      <p className="text-xs">Businesses are synced from Holded</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                suppliersList.map((s, idx) => (
-                  <TableRow key={s.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
-                    <TableCell>
-                      <span className="font-medium text-[13px]">{s.name}</span>
-                    </TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground">{s.contactName ?? "—"}</TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground">{s.phone ?? "—"}</TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground hidden md:table-cell">{s.email ?? "—"}</TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground hidden md:table-cell">
-                      {s.website ? (
-                        <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate max-w-[200px] inline-block">
-                          {s.website.replace(/^https?:\/\//, "")}
-                        </a>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {s.holdedContactId ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
-                          <ExternalLink className="h-2.5 w-2.5" /> Linked
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-          </TableBody>
-          ) : (
-            <CustomersTableClient customers={customers} />
-          )}
-        </Table>
+          <table className="w-full">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50/80 backdrop-blur-sm border-b border-gray-100">
+                <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Name</th>
+                {isBusiness ? (
+                  <>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Contact Person</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Phone</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3 hidden md:table-cell">Email</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3 hidden md:table-cell">Website</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Holded</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Type</th>
+                    <th className="text-center text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Repairs</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Phone</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3 hidden md:table-cell">Email</th>
+                    <th className="text-right text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Updated</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            {isBusiness ? (
+              <tbody className="divide-y divide-gray-50">
+                {suppliersList.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-20 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Building2 className="h-8 w-8 text-gray-200" />
+                        <p className="text-sm font-medium text-gray-400">No businesses found</p>
+                        <p className="text-xs text-gray-400">Businesses are synced from Holded</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  suppliersList.map((s) => (
+                    <tr key={s.id} className="group hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-5 py-3.5">
+                        <span className="text-sm font-medium text-gray-900">{s.name}</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">{s.contactName || <span className="text-gray-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">{s.phone || <span className="text-gray-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">{s.email || <span className="text-gray-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">
+                        {s.website ? (
+                          <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-[#0CC0DF] hover:underline truncate max-w-[200px] inline-block">
+                            {s.website.replace(/^https?:\/\//, "")}
+                          </a>
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {s.holdedContactId ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                            <ExternalLink className="h-2.5 w-2.5" /> Linked
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            ) : (
+              <CustomersTableClient customers={customers} />
+            )}
+          </table>
         </div>
       </div>
 
+      {/* ── Pagination hint ────────────────────────────── */}
       {total > limit && (
-        <p className="text-xs text-muted-foreground text-center py-2">
+        <p className="text-xs text-gray-400 text-center py-2">
           Showing {customers.length} of {total} contacts
         </p>
       )}

@@ -6,6 +6,7 @@ import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle
 import { RepairCard } from "@/components/garage/repair-card";
 import { WeatherWidget } from "@/components/garage/weather-widget";
 import { signOut } from "next-auth/react";
+import { ClipboardCheck, RefreshCw } from "lucide-react";
 
 type RepairItem = {
   id: string;
@@ -97,30 +98,32 @@ export function GarageTodayClient({ repairs, userName }: Props) {
     return t("Good evening", "Buenas noches", "Goedenavond");
   })();
 
+  const hasRepairs = repairs.length > 0;
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-background to-blue-50/30 dark:from-slate-950 dark:via-background dark:to-blue-950/10">
-      {/* Header — compact, modern */}
-      <header className="sticky top-0 z-30 bg-white/70 dark:bg-slate-950/70 backdrop-blur-2xl border-b border-border/50">
-        <div className="flex items-center justify-between px-5 py-3.5">
+    <div className={`flex flex-col min-h-screen ${hasRepairs ? 'bg-gradient-to-br from-slate-50 via-background to-blue-50/30 dark:from-slate-950 dark:via-background dark:to-blue-950/10' : 'bg-[#F9FAFB]'}`}>
+      {/* Header */}
+      <header className={`sticky top-0 z-30 backdrop-blur-2xl ${hasRepairs ? 'bg-white/70 dark:bg-slate-950/70 border-b border-border/50' : 'bg-white/60'}`}>
+        <div className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto w-full">
           <div>
-            <p className="text-sm text-muted-foreground">{greeting}, <span className="font-semibold text-foreground">{firstName}</span></p>
+            <p className="text-sm text-gray-500">{greeting}, <span className="font-semibold text-gray-900">{firstName}</span></p>
             <div className="flex items-baseline gap-2.5 mt-0.5">
-              <h1 className="text-2xl font-extrabold tracking-tight">{today}</h1>
-              <span className="text-lg tabular-nums text-muted-foreground/60 font-medium">{clock}</span>
+              <h1 className="text-3xl font-semibold text-gray-900">{today}</h1>
+              <span className="text-lg tabular-nums text-gray-400 font-medium">{clock}</span>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <LanguageToggle />
             <button
               onClick={() => router.refresh()}
-              className="h-10 w-10 flex items-center justify-center rounded-xl text-lg active:bg-muted/80 transition-all hover:bg-muted/50"
+              className="h-11 w-11 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-all duration-150"
               title={t("Refresh", "Actualizar", "Vernieuwen")}
             >
-              ↻
+              <RefreshCw className="h-[18px] w-[18px]" />
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="h-10 w-10 flex items-center justify-center rounded-xl text-sm font-bold bg-primary/10 text-primary active:bg-primary/20 transition-all"
+              className="h-11 w-11 flex items-center justify-center rounded-xl text-sm font-bold bg-[#0CC0DF]/10 text-[#0CC0DF] active:bg-[#0CC0DF]/20 transition-all duration-150"
               title={t("Sign out", "Cerrar sesión", "Uitloggen")}
             >
               {firstName.charAt(0).toUpperCase()}
@@ -129,10 +132,10 @@ export function GarageTodayClient({ repairs, userName }: Props) {
         </div>
       </header>
 
-      {/* Stats + Weather hero */}
-      <div className="px-5 pt-5 pb-2 space-y-4">
-        {/* Stats grid */}
-        {repairs.length > 0 ? (
+      {/* Stats + Weather hero — only when there are repairs */}
+      {hasRepairs && (
+        <div className="px-5 pt-5 pb-2 space-y-4">
+          {/* Stats grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
               <p className="text-2xl font-extrabold tabular-nums">{activeRepairs}</p>
@@ -156,38 +159,36 @@ export function GarageTodayClient({ repairs, userName }: Props) {
               </p>
             </div>
           </div>
-        ) : null}
 
-        {/* Progress bar (only when there's work) */}
-        {totalTasks > 0 && (
-          <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {t("Day Progress", "Progreso del Día", "Dagvoortgang")}
-              </span>
-              <span className="text-sm font-bold tabular-nums">{overallProgress}%</span>
-            </div>
-            <div className="h-3 w-full rounded-full bg-muted/60 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-green-500 transition-all duration-700 ease-out"
-                style={{ width: `${overallProgress}%` }}
-              />
-            </div>
-            {(problemTasks > 0 || urgentCount > 0) && (
-              <div className="flex gap-3 mt-2">
-                {problemTasks > 0 && (
-                  <span className="text-xs text-red-500 font-semibold">⚠ {problemTasks} {t("problems", "problemas", "problemen")}</span>
-                )}
-                {urgentCount > 0 && (
-                  <span className="text-xs text-orange-500 font-semibold">🔴 {urgentCount} {t("urgent", "urgente", "spoed")}</span>
-                )}
+          {/* Progress bar */}
+          {totalTasks > 0 && (
+            <div className="rounded-2xl bg-white dark:bg-card border border-border/50 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {t("Day Progress", "Progreso del Día", "Dagvoortgang")}
+                </span>
+                <span className="text-sm font-bold tabular-nums">{overallProgress}%</span>
               </div>
-            )}
-          </div>
-        )}
+              <div className="h-3 w-full rounded-full bg-muted/60 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-green-500 transition-all duration-700 ease-out"
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+              {(problemTasks > 0 || urgentCount > 0) && (
+                <div className="flex gap-3 mt-2">
+                  {problemTasks > 0 && (
+                    <span className="text-xs text-red-500 font-semibold">⚠ {problemTasks} {t("problems", "problemas", "problemen")}</span>
+                  )}
+                  {urgentCount > 0 && (
+                    <span className="text-xs text-orange-500 font-semibold">🔴 {urgentCount} {t("urgent", "urgente", "spoed")}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Status pills — scrollable */}
-        {repairs.length > 0 && (
+          {/* Status pills — scrollable */}
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-none">
             {groups.filter(g => g.items.length > 0).map((g) => (
               <div key={g.key} className={`flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap ${g.color} ${g.lightBg} border border-transparent`}>
@@ -197,11 +198,11 @@ export function GarageTodayClient({ repairs, userName }: Props) {
               </div>
             ))}
           </div>
-        )}
 
-        {/* Weather */}
-        <WeatherWidget />
-      </div>
+          {/* Weather */}
+          <WeatherWidget />
+        </div>
+      )}
 
       {/* Repair groups */}
       <div className="flex-1 px-5 pb-8 space-y-6 mt-2">
@@ -227,13 +228,54 @@ export function GarageTodayClient({ repairs, userName }: Props) {
             </section>
           ))}
 
-        {repairs.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-950/40 dark:to-emerald-950/40 flex items-center justify-center mb-5">
-              <span className="text-4xl">🎉</span>
+        {!hasRepairs && (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
+            {/* Empty state — centered, calm, intentional */}
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-6">
+              <ClipboardCheck className="h-8 w-8 text-emerald-600" />
             </div>
-            <p className="text-xl font-bold">{t("No repairs today!", "¡Sin reparaciones hoy!", "Geen reparaties vandaag!")}</p>
-            <p className="text-sm text-muted-foreground mt-1.5">{t("Enjoy your day", "Disfruta el día", "Geniet van je dag")}</p>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+              {t("No repairs today", "Sin reparaciones hoy", "Geen reparaties vandaag")}
+            </h2>
+            <p className="text-base text-gray-500 mt-2 max-w-md">
+              {t(
+                "There is nothing planned for today.",
+                "No hay nada planificado para hoy.",
+                "Er staat vandaag niets op de planning."
+              )}
+            </p>
+            <p className="text-sm text-gray-400 mt-1.5">
+              {t(
+                "New jobs will appear here automatically.",
+                "Los nuevos trabajos aparecerán aquí automáticamente.",
+                "Nieuwe opdrachten verschijnen hier automatisch."
+              )}
+            </p>
+
+            {/* Subtle secondary hints */}
+            <div className="mt-10 space-y-2.5 max-w-sm w-full">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                {t(
+                  "New repairs appear automatically",
+                  "Las reparaciones nuevas aparecen automáticamente",
+                  "Nieuwe reparaties verschijnen automatisch"
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                {t(
+                  "Use refresh if the schedule just changed",
+                  "Usa actualizar si el horario acaba de cambiar",
+                  "Gebruik vernieuwen als de planning net is aangepast"
+                )}
+              </div>
+            </div>
+
+            {/* Tiny weather strip — secondary, non-dominant */}
+            <div className="mt-10 w-full max-w-xs">
+              <WeatherWidget />
+            </div>
           </div>
         )}
       </div>

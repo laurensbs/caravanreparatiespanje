@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
   FileText, Wrench, Receipt, CheckCircle2, ExternalLink,
-  Inbox, CircleDot, BanknoteIcon, XCircle,
+  BanknoteIcon, XCircle,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -251,47 +251,27 @@ interface PipelineSummaryProps {
 const PIPELINE_SEGMENTS = [
   {
     key: "backlog",
-    label: "Backlog",
-    icon: <Inbox className="h-3 w-3" />,
-    color: "bg-zinc-400 dark:bg-zinc-600",
-    dot: "bg-zinc-400",
-    text: "text-zinc-600 dark:text-zinc-400",
+    label: "backlog",
     href: "/repairs?status=new,todo,quote_needed,waiting_approval",
   },
   {
     key: "active",
-    label: "Active",
-    icon: <Wrench className="h-3 w-3" />,
-    color: "bg-blue-500",
-    dot: "bg-blue-500",
-    text: "text-blue-600 dark:text-blue-400",
+    label: "active",
     href: "/repairs?status=in_progress,scheduled,in_inspection,waiting_parts,waiting_customer,blocked",
   },
   {
     key: "done",
-    label: "Done",
-    icon: <CircleDot className="h-3 w-3" />,
-    color: "bg-amber-500",
-    dot: "bg-amber-500",
-    text: "text-amber-600 dark:text-amber-400",
+    label: "done",
     href: "/repairs?status=completed&invoiceStatus=not_invoiced",
   },
   {
     key: "invoiced",
-    label: "Invoiced",
-    icon: <Receipt className="h-3 w-3" />,
-    color: "bg-purple-500",
-    dot: "bg-purple-500",
-    text: "text-purple-600 dark:text-purple-400",
+    label: "invoiced",
     href: "/repairs?invoiceStatus=sent",
   },
   {
     key: "paid",
-    label: "Paid",
-    icon: <BanknoteIcon className="h-3 w-3" />,
-    color: "bg-emerald-500",
-    dot: "bg-emerald-500",
-    text: "text-emerald-600 dark:text-emerald-400",
+    label: "paid",
     href: "/repairs?invoiceStatus=paid",
   },
 ] as const;
@@ -309,47 +289,32 @@ export function PipelineSummary({ repairs, className }: PipelineSummaryProps) {
     paid: pipeline.paid,
   };
 
+  // Progress = everything past backlog
+  const progressPercent = total > 0
+    ? Math.round(((counts.active + counts.done + counts.invoiced + counts.paid) / total) * 100)
+    : 0;
+
   return (
-    <div className={cn("rounded-xl border bg-card p-3", className)}>
-      {/* Compact bar + labels in one row */}
-      <div className="flex items-center gap-3">
-        {/* Progress bar */}
-        <div className="flex h-2 rounded-full overflow-hidden bg-muted/50 flex-1 min-w-0">
-          {PIPELINE_SEGMENTS.map(s => {
-            const c = counts[s.key] ?? 0;
-            if (c === 0) return null;
-            return (
-              <Link
-                key={s.key}
-                href={s.href}
-                className={cn("transition-all hover:brightness-110", s.color)}
-                style={{ width: `${(c / total) * 100}%` }}
-                title={`${c} ${s.label}`}
-              />
-            );
-          })}
-        </div>
+    <div className={cn("space-y-2", className)}>
+      {/* Thin progress bar */}
+      <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[#0CC0DF] transition-all duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
 
-      {/* Labels row */}
-      <div className="flex items-center gap-3 mt-2 flex-wrap">
-        {PIPELINE_SEGMENTS.map(s => {
-          const c = counts[s.key] ?? 0;
-          return (
-            <Link
-              key={s.key}
-              href={s.href}
-              className={cn(
-                "flex items-center gap-1.5 text-[11px] font-medium hover:underline transition-colors",
-                c > 0 ? s.text : "text-muted-foreground/40",
-              )}
-            >
-              <span className={cn("h-1.5 w-1.5 rounded-full", c > 0 ? s.dot : "bg-muted-foreground/20")} />
-              {c} {s.label}
+      {/* Summary text */}
+      <p className="text-xs text-gray-500">
+        {PIPELINE_SEGMENTS.map((s, i) => (
+          <span key={s.key}>
+            {i > 0 && <span className="mx-1.5">·</span>}
+            <Link href={s.href} className="hover:text-gray-900 transition-colors">
+              {counts[s.key]} {s.label}
             </Link>
-          );
-        })}
-      </div>
+          </span>
+        ))}
+      </p>
     </div>
   );
 }

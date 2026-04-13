@@ -33,6 +33,7 @@ interface CatalogPart {
   partNumber: string | null;
   defaultCost: string | null;
   orderUrl: string | null;
+  category: string | null;
 }
 
 interface UnitOption {
@@ -44,14 +45,17 @@ interface UnitOption {
   customerId: string | null;
 }
 
+import type { PartCategory } from "@/components/parts/parts-client";
+
 interface NewRepairDialogProps {
   locations: { id: string; name: string }[];
   customers: { id: string; name: string }[];
   partsCatalog?: CatalogPart[];
+  partCategories?: PartCategory[];
   units?: UnitOption[];
 }
 
-export function NewRepairDialog({ locations, customers, partsCatalog = [], units = [] }: NewRepairDialogProps) {
+export function NewRepairDialog({ locations, customers, partsCatalog = [], partCategories = [], units = [] }: NewRepairDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -184,7 +188,7 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], units
               <div>
                 <Label>Parts from Catalog</Label>
                 <div className="mt-1">
-                  <PartsPicker catalog={partsCatalog} value={selectedParts} onChange={setSelectedParts} />
+                  <PartsPicker catalog={partsCatalog} categories={partCategories} value={selectedParts} onChange={setSelectedParts} />
                 </div>
               </div>
               <div>

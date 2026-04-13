@@ -8,15 +8,15 @@ interface HoldedHintProps {
 }
 
 const VARIANT_STYLES = {
-  info: "bg-emerald-100 border-emerald-400 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300",
-  sync: "bg-sky-100 border-sky-400 text-sky-900 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300",
-  readonly: "bg-amber-100 border-amber-400 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300",
+  info: "bg-emerald-50/60 border-emerald-100 text-emerald-800",
+  sync: "bg-sky-50/60 border-sky-100 text-sky-800",
+  readonly: "bg-amber-50/60 border-amber-100 text-amber-800",
 };
 
 const ICON_STYLES = {
-  info: "text-emerald-600 dark:text-emerald-400",
-  sync: "text-sky-600 dark:text-sky-400",
-  readonly: "text-amber-600 dark:text-amber-400",
+  info: "text-emerald-500",
+  sync: "text-sky-500",
+  readonly: "text-amber-500",
 };
 
 export function HoldedHint({ children, variant = "info", className }: HoldedHintProps) {
@@ -30,7 +30,7 @@ export function HoldedHint({ children, variant = "info", className }: HoldedHint
 
 export function HoldedBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-400">
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
       <ExternalLink className="h-2.5 w-2.5" />
       {children}
     </span>

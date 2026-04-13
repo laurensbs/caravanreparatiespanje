@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateCustomer, deleteCustomer } from "@/actions/customers";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -97,12 +95,12 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" asChild>
-            <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
-          </Button>
+          <Link href="/customers" className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
           <div>
             <div className="flex items-center gap-2.5 group/name">
               {editingField === "name" ? (
@@ -110,7 +108,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-8 text-lg font-extrabold w-64 rounded-lg"
+                    className="h-9 text-xl font-semibold text-gray-900 w-64 rounded-xl border-gray-200"
                     autoFocus
                     onKeyDown={(e) => { if (e.key === "Enter") saveField("name", name); if (e.key === "Escape") setEditingField(null); }}
                   />
@@ -123,9 +121,9 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 </div>
               ) : (
                 <>
-                  <h1 className="text-xl font-extrabold tracking-tight">{customer.name}</h1>
-                  <button onClick={() => startEditField("name")} className="opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted" title="Edit name">
-                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                  <h1 className="text-2xl font-semibold text-gray-900">{customer.name}</h1>
+                  <button onClick={() => startEditField("name")} className="opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100" title="Edit name">
+                    <Pencil className="h-3 w-3 text-gray-400" />
                   </button>
                 </>
               )}
@@ -137,18 +135,18 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 className="cursor-pointer"
                 title="Click to toggle type"
               >
-                <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0 hover:bg-muted transition-colors">
+                <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium px-2.5 py-0.5 hover:bg-gray-200 transition-colors">
                   {customer.contactType === "business" ? "Business" : "Person"}
-                </Badge>
+                </span>
               </button>
               {customer.holdedContactId && (
-                <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400">
+                <span className="inline-flex items-center rounded-full text-[10px] font-medium px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100">
                   <RefreshCw className="h-2.5 w-2.5 mr-1" />
                   Syncs to Holded
-                </Badge>
+                </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-500">
               {[customer.phone, customer.email].filter(Boolean).join(" · ") || "No contact info"}
             </p>
             {allTags.length > 0 && (
@@ -164,9 +162,9 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
+          <button className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -179,12 +177,12 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
 
       {!editingField && <SmartSuggestions suggestions={getCustomerSuggestions(customer, holdedInvoices)} />}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Left column: Contact + Address — all inline-editable */}
         <div className="space-y-5 lg:col-span-1">
-        <Card className="rounded-xl">
-          <CardContent className="pt-5 space-y-0.5">
-            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-5 space-y-0.5">
+            <p className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               <User className="h-3.5 w-3.5" /> Contact
             </p>
             <InlineField icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={phone} field="phone"
@@ -200,12 +198,12 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             <InlineField icon={<Hash className="h-3.5 w-3.5" />} label="VAT / NIF" value={vatnumber} field="vatnumber"
               editingField={editingField} saving={saving}
               onChange={setVatnumber} onSave={saveField} onEdit={startEditField} onCancel={() => setEditingField(null)} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="rounded-xl">
-          <CardContent className="pt-5 space-y-0.5">
-            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-5 space-y-0.5">
+            <p className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               <MapPin className="h-3.5 w-3.5" /> Address
             </p>
             <InlineField icon={null} label="Street" value={address} field="address"
@@ -223,19 +221,19 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             <InlineField icon={null} label="Country" value={country} field="country"
               editingField={editingField} saving={saving}
               onChange={setCountry} onSave={saveField} onEdit={startEditField} onCancel={() => setEditingField(null)} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="rounded-xl">
-          <CardContent className="pt-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-5">
             <div className="group/notes">
               <div className="flex items-center justify-between mb-2">
-                <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   <StickyNote className="h-3.5 w-3.5" /> Notes
                 </p>
                 {editingField !== "notes" && (
-                  <button onClick={() => startEditField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
-                    <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                  <button onClick={() => startEditField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100">
+                    <Pencil className="h-2.5 w-2.5 text-gray-400" />
                   </button>
                 )}
               </div>
@@ -248,13 +246,13 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors" onClick={() => startEditField("notes")}>
+                <p className="text-sm text-gray-500 whitespace-pre-wrap cursor-pointer hover:text-gray-900 transition-colors" onClick={() => startEditField("notes")}>
                   {notes || <span className="italic text-xs">Click to add notes</span>}
                 </p>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
             {/* Holded link */}
             {customer.holdedContactId && (
@@ -262,7 +260,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 href={`https://app.holded.com/contacts/${customer.holdedContactId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors rounded-xl border border-dashed py-2.5 hover:border-primary/30 hover:bg-muted/30"
+                className="flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-[#0CC0DF] transition-colors rounded-xl border border-dashed border-gray-200 py-2.5 hover:border-[#0CC0DF]/30 hover:bg-gray-50"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 View in Holded
@@ -272,16 +270,16 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
 
         {/* Right column: Units + Repairs */}
         <div className="space-y-4 lg:col-span-2">
-          <Card className="rounded-xl">
-            <CardContent className="pt-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                    <Truck className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100">
+                    <Truck className="h-4 w-4 text-gray-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">Units</p>
-                    <p className="text-[11px] text-muted-foreground">{customer.units.length} linked</p>
+                    <p className="text-sm font-semibold text-gray-900">Units</p>
+                    <p className="text-[11px] text-gray-500">{customer.units.length} linked</p>
                   </div>
                 </div>
                 {!addingUnit && (
@@ -303,7 +301,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
 
               {/* Add new unit form */}
               {addingUnit && (
-                <div className="mb-3 border rounded-lg p-2.5 bg-muted/30 space-y-2">
+                <div className="mb-3 border border-gray-100 rounded-xl p-3 bg-gray-50/50 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px]">License Plate</Label>
@@ -356,12 +354,12 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
               )}
 
               {customer.units.length === 0 && !addingUnit ? (
-                <p className="text-sm text-muted-foreground italic">No units linked</p>
+                <p className="text-sm text-gray-400 italic">No units linked</p>
               ) : (
                 <div className="space-y-1.5">
                   {customer.units.map((unit: any) => (
                     editingUnitId === unit.id ? (
-                      <div key={unit.id} className="border rounded-lg p-2.5 bg-muted/30 space-y-2">
+                      <div key={unit.id} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50 space-y-2">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <Label className="text-[10px]">License Plate</Label>
@@ -414,19 +412,19 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                     ) : (
                       <div
                         key={unit.id}
-                        className="flex items-center gap-2 rounded-lg border p-2.5 text-sm hover:bg-muted/50 transition-colors group"
+                        className="flex items-center gap-2 rounded-xl border border-gray-100 px-4 py-3 text-sm hover:bg-gray-50 transition-colors group"
                       >
                         <Link href={`/units/${unit.id}`} className="min-w-0 flex-1">
                           <p className="font-medium text-[13px] truncate">
                             {[unit.brand, unit.model].filter(Boolean).join(" ") || "No details yet"}
                           </p>
                           {unit.registration && (
-                            <p className="font-mono text-[11px] text-muted-foreground">{unit.registration}</p>
+                            <p className="font-mono text-[11px] text-gray-400">{unit.registration}</p>
                           )}
                         </Link>
                         <button
                           type="button"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100"
                           title="Edit unit"
                           onClick={() => {
                             setEditingUnitId(unit.id);
@@ -439,40 +437,40 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                             });
                           }}
                         >
-                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                          <Pencil className="h-3 w-3 text-gray-400" />
                         </button>
                       </div>
                     )
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="rounded-xl">
-            <CardContent className="pt-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="p-5">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Wrench className="h-4 w-4 text-muted-foreground" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100">
+                  <Wrench className="h-4 w-4 text-gray-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">Repairs</p>
-                  <p className="text-[11px] text-muted-foreground">{customer.repairJobs.length} total</p>
+                  <p className="text-sm font-semibold text-gray-900">Repairs</p>
+                  <p className="text-[11px] text-gray-500">{customer.repairJobs.length} total</p>
                 </div>
               </div>
               {customer.repairJobs.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">No repair jobs linked</p>
+                <p className="text-sm text-gray-400 italic">No repair jobs linked</p>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {customer.repairJobs.map((job: any) => (
                     <Link
                       key={job.id}
                       href={`/repairs/${job.id}`}
-                      className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-muted/50 active:bg-muted transition-colors"
+                      className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 text-sm hover:bg-gray-50 transition-colors"
                     >
                       <div className="min-w-0 mr-2 flex-1">
                         <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>
-                        <p className="font-mono text-[11px] text-muted-foreground">{job.publicCode}</p>
+                        <p className="font-mono text-[11px] text-gray-400">{job.publicCode}</p>
                       </div>
                       <CompactProgressTracker
                         data={{
@@ -488,30 +486,30 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Holded Documents — Invoices & Quotes */}
       {(holdedInvoices.length > 0 || holdedQuotes.length > 0) && (
-        <Card className="rounded-xl">
-          <CardContent className="pt-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-5">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <Receipt className="h-4 w-4 text-muted-foreground" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100">
+                <Receipt className="h-4 w-4 text-gray-500" />
               </div>
               <div>
-                <p className="text-sm font-semibold">Holded Documents</p>
-                <p className="text-[11px] text-muted-foreground">{holdedInvoices.length + holdedQuotes.length} documents</p>
+                <p className="text-sm font-semibold text-gray-900">Holded Documents</p>
+                <p className="text-[11px] text-gray-500">{holdedInvoices.length + holdedQuotes.length} documents</p>
               </div>
-              <div className="ml-auto flex gap-1 bg-muted/60 rounded-lg p-0.5">
+              <div className="ml-auto flex gap-1 bg-gray-100 rounded-lg p-0.5">
                 <button
                   type="button"
                   className={`px-3 py-1 text-[11px] font-medium rounded-md transition-all ${
                     holdedTab === "invoices"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-900"
                   }`}
                   onClick={() => setHoldedTab("invoices")}
                 >
@@ -521,8 +519,8 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                   type="button"
                   className={`px-3 py-1 text-[11px] font-medium rounded-md transition-all ${
                     holdedTab === "quotes"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-900"
                   }`}
                   onClick={() => setHoldedTab("quotes")}
                 >
@@ -537,7 +535,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             {holdedTab === "invoices" && (
               <div className="space-y-1.5">
                 {holdedInvoices.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic py-2">No invoices</p>
+                  <p className="text-sm text-gray-400 italic py-2">No invoices</p>
                 ) : (
                   holdedInvoices.map((inv: any) => {
                     const isDraft = inv.status === 0 && inv.draft === 1;
@@ -546,30 +544,29 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                       <Wrapper
                         key={inv.id}
                         {...(!isDraft ? { href: `/api/holded/pdf?type=invoice&id=${inv.id}`, target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className={`flex items-center justify-between rounded-lg border p-2.5 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-muted/50 active:bg-muted cursor-pointer"}`}
+                        className={`flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-gray-50 cursor-pointer"}`}
                       >
                         <div className="min-w-0 mr-2">
                           <p className="font-medium text-[13px]">{inv.docNumber || "Draft"}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
+                          <p className="text-[11px] text-gray-500 truncate">
                             {inv.desc || "No description"}
                             {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-medium tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</span>
-                          <Badge
-                            variant="secondary"
-                            className={`rounded-full text-[10px] px-2 py-0 ${
+                          <span
+                            className={`inline-flex items-center rounded-full text-[10px] font-medium px-2 py-0.5 ${
                               inv.status === 1
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                 : inv.status === 2
-                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400"
-                                : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400"
+                                ? "bg-amber-50 text-amber-700 border border-amber-100"
+                                : "bg-red-50 text-red-700 border border-red-100"
                             }`}
                           >
                             {inv.status === 1 ? "Paid" : inv.status === 2 ? "Partial" : isDraft ? "Draft" : "Unpaid"}
-                          </Badge>
-                          {!isDraft && <FileText className="h-3 w-3 text-muted-foreground" />}
+                          </span>
+                          {!isDraft && <FileText className="h-3 w-3 text-gray-400" />}
                         </div>
                       </Wrapper>
                     );
@@ -581,7 +578,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
             {holdedTab === "quotes" && (
               <div className="space-y-1.5">
                 {holdedQuotes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic py-2">No quotes</p>
+                  <p className="text-sm text-gray-400 italic py-2">No quotes</p>
                 ) : (
                   holdedQuotes.map((q: any) => {
                     const isDraft = q.draft === 1;
@@ -590,30 +587,29 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                       <Wrapper
                         key={q.id}
                         {...(!isDraft ? { href: `/api/holded/pdf?type=estimate&id=${q.id}`, target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className={`flex items-center justify-between rounded-lg border p-2.5 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-muted/50 active:bg-muted cursor-pointer"}`}
+                        className={`flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-gray-50 cursor-pointer"}`}
                       >
                         <div className="min-w-0 mr-2">
                           <p className="font-medium text-[13px]">{q.docNumber || "Draft"}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
+                          <p className="text-[11px] text-gray-500 truncate">
                             {q.desc || "No description"}
                             {q.date && ` · ${new Date(q.date * 1000).toLocaleDateString("nl-NL")}`}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-medium tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</span>
-                          <Badge
-                            variant="secondary"
-                            className={`rounded-full text-[10px] px-2 py-0 ${
+                          <span
+                            className={`inline-flex items-center rounded-full text-[10px] font-medium px-2 py-0.5 ${
                               q.status === 1
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                 : isDraft
-                                ? "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-400"
-                                : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400"
+                                ? "bg-gray-50 text-gray-600 border border-gray-200"
+                                : "bg-blue-50 text-blue-700 border border-blue-100"
                             }`}
                           >
                             {q.status === 1 ? "Accepted" : isDraft ? "Draft" : "Sent"}
-                          </Badge>
-                          {!isDraft && <FileText className="h-3 w-3 text-muted-foreground" />}
+                          </span>
+                          {!isDraft && <FileText className="h-3 w-3 text-gray-400" />}
                         </div>
                       </Wrapper>
                     );
@@ -621,8 +617,8 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Delete dialog */}
@@ -631,7 +627,7 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
           <DialogHeader>
             <DialogTitle>Delete &ldquo;{customer.name}&rdquo;?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">This will remove the customer from the admin. Linked repairs and units will be unlinked.</p>
+          <p className="text-sm text-gray-500">This will remove the customer from the admin. Linked repairs and units will be unlinked.</p>
           {customer.holdedContactId && (
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-2">
@@ -708,7 +704,7 @@ function InlineField({
     return (
       <div className="flex items-center gap-2 py-2">
         <div className="w-20 shrink-0">
-          <span className="text-[11px] text-muted-foreground">{label}</span>
+          <span className="text-[11px] text-gray-500">{label}</span>
         </div>
         <Input
           value={value}
@@ -729,22 +725,22 @@ function InlineField({
   }
 
   return (
-    <div className="flex items-center justify-between py-2.5 group/row text-sm cursor-pointer hover:bg-muted/40 -mx-3 px-3 rounded-lg transition-colors" onClick={() => onEdit(field)}>
-      <span className="flex items-center gap-2 text-muted-foreground shrink-0">
+    <div className="flex items-center justify-between py-2.5 group/row text-sm cursor-pointer hover:bg-gray-50 -mx-3 px-3 rounded-lg transition-colors" onClick={() => onEdit(field)}>
+      <span className="flex items-center gap-2 text-gray-500 shrink-0">
         {icon}
         {label}
       </span>
       <div className="flex items-center gap-1.5 min-w-0">
         {value ? (
           href ? (
-            <a href={href} className="font-medium hover:text-primary truncate max-w-[200px]" onClick={(e) => e.stopPropagation()}>{value}</a>
+            <a href={href} className="font-medium text-gray-900 hover:text-[#0CC0DF] truncate max-w-[200px]" onClick={(e) => e.stopPropagation()}>{value}</a>
           ) : (
-            <span className="font-medium truncate max-w-[200px]">{value}</span>
+            <span className="font-medium text-gray-900 truncate max-w-[200px]">{value}</span>
           )
         ) : (
-          <span className="text-xs text-muted-foreground italic">—</span>
+          <span className="text-xs text-gray-300 italic">—</span>
         )}
-        <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity shrink-0" />
+        <Pencil className="h-2.5 w-2.5 text-gray-400 opacity-0 group-hover/row:opacity-100 transition-opacity shrink-0" />
       </div>
     </div>
   );

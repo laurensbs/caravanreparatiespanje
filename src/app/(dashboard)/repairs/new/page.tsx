@@ -1,16 +1,17 @@
 import { RepairForm } from "@/components/repairs/repair-form";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
-import { getParts } from "@/actions/parts";
+import { getParts, getPartCategories } from "@/actions/parts";
 import { WorkflowGuide } from "@/components/workflow-guide";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function NewRepairPage() {
-  const [locationsList, customersList, partsCatalog] = await Promise.all([
+  const [locationsList, customersList, partsCatalog, partCategories] = await Promise.all([
     getLocations(),
     getAllCustomers(),
     getParts(),
+    getPartCategories(),
   ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -24,7 +25,7 @@ export default async function NewRepairPage() {
         <p className="text-xs text-muted-foreground">Create a new repair job entry</p>
       </div>
       <WorkflowGuide page="repair-new" />
-      <RepairForm locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} />
+      <RepairForm locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} />
     </div>
   );
 }

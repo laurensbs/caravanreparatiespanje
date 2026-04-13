@@ -1,7 +1,7 @@
 import { getRepairJobs, getRepairStatusCounts, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
-import { getParts } from "@/actions/parts";
+import { getParts, getPartCategories } from "@/actions/parts";
 import { getAllUnits } from "@/actions/units";
 import { getTags } from "@/actions/tags";
 import { RepairTable } from "@/components/repairs/repair-table";
@@ -37,7 +37,7 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total }, locationsList, customersList, partsCatalog, allTags, unitsList, statusCounts] = await Promise.all([
+  const [{ jobs, total }, locationsList, customersList, partsCatalog, allTags, unitsList, statusCounts, partCategories] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
     getAllCustomers(),
@@ -45,6 +45,7 @@ export default async function RepairsPage({ searchParams }: Props) {
     getTags(),
     getAllUnits(),
     getRepairStatusCounts(),
+    getPartCategories(),
   ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -79,7 +80,7 @@ export default async function RepairsPage({ searchParams }: Props) {
               Bin
             </Link>
           </Button>
-          <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
+          <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
         </div>
       </div>
 

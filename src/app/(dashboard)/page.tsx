@@ -5,25 +5,21 @@ import { PipelineSummary } from "@/components/repair-progress";
 
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
-import { getParts } from "@/actions/parts";
+import { getParts, getPartCategories } from "@/actions/parts";
 import { getAllUnits } from "@/actions/units";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
   Wrench, AlertTriangle, ArrowRight, PhoneOff, TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
-import type { RepairStatus, Priority, CustomerResponseStatus } from "@/types";
+import { STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
+import type { RepairStatus, CustomerResponseStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
-import { cn } from "@/lib/utils";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList, partCategories] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
@@ -32,6 +28,7 @@ export default async function DashboardPage() {
       getParts(),
       getDashboardSuggestions(),
       getAllUnits(),
+      getPartCategories(),
     ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -39,91 +36,88 @@ export default async function DashboardPage() {
   );
 
   const heroCards = [
-    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5" />, bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-500/20", href: "/repairs" },
-    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5" />, bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 ring-sky-500/20", href: "/repairs?status=in_progress" },
-    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5" />, bg: "bg-red-500/10 text-red-600 dark:text-red-400 ring-red-500/20", href: "/repairs?priority=urgent" },
-    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5" />, bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-rose-500/20", href: "/repairs?customerResponseStatus=no_response" },
+    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5 text-gray-400" />, href: "/repairs" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5 text-gray-400" />, href: "/repairs?status=in_progress" },
+    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5 text-gray-400" />, href: "/repairs?priority=urgent" },
+    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5 text-gray-400" />, href: "/repairs?customerResponseStatus=no_response" },
   ];
 
-  const quickFilters = [
-    { label: "To Do", value: stats?.todo ?? 0, bg: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400", href: "/repairs?status=todo" },
-    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, bg: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400", href: "/repairs?status=waiting_parts" },
-    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, bg: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400", href: "/repairs?status=waiting_customer" },
-    { label: "Completed", value: stats?.completed ?? 0, bg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400", href: "/repairs?status=completed" },
+  const statusTabs = [
+    { label: "To Do", value: stats?.todo ?? 0, href: "/repairs?status=todo" },
+    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts" },
+    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer" },
+    { label: "Completed", value: stats?.completed ?? 0, href: "/repairs?status=completed" },
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
-          <p className="text-xs text-muted-foreground">Overview of all repair operations</p>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Overview of repair operations</p>
         </div>
-        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} units={unitsList} />
+        <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
       </div>
 
-      {/* Hero KPI Cards */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        {heroCards.map((kpi, i) => (
+      {/* ── KPI Cards ──────────────────────────────────────── */}
+      <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+        {heroCards.map((kpi) => (
           <Link key={kpi.label} href={kpi.href}>
-            <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-card ring-1 ring-border/50 animate-slide-up" style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}>
-              <CardContent className="pt-4 pb-4 px-4">
-                <div className="flex items-center gap-3">
-                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-xl shrink-0", kpi.bg)}>
-                    {kpi.icon}
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold tracking-tight leading-none">{kpi.value}</p>
-                    <p className="text-xs font-medium text-muted-foreground mt-0.5">{kpi.label}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-xl shadow-sm p-6 transition-all duration-150 hover:shadow-md cursor-pointer">
+              <div className="opacity-40 mb-3">{kpi.icon}</div>
+              <p className="text-3xl font-semibold tracking-tight text-gray-900">{kpi.value}</p>
+              <p className="text-sm text-gray-500 mt-1">{kpi.label}</p>
+            </div>
           </Link>
         ))}
       </div>
 
-      {/* Quick Filter Pills */}
-      <div className="flex flex-wrap gap-2">
-        {quickFilters.map((f) => (
-          <Link key={f.label} href={f.href}>
-              <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80 active:scale-95 cursor-pointer", f.bg)}>
-              {f.label}
-              <span className="font-semibold tabular-nums">{f.value}</span>
-            </span>
+      {/* ── Status Tabs ────────────────────────────────────── */}
+      <div className="flex items-center gap-6 border-b border-gray-200 overflow-x-auto">
+        {statusTabs.map((tab) => (
+          <Link
+            key={tab.label}
+            href={tab.href}
+            className="flex items-center gap-1.5 pb-2.5 text-sm text-gray-500 hover:text-gray-900 transition-colors whitespace-nowrap border-b-2 border-transparent hover:border-[#0CC0DF]"
+          >
+            {tab.label}
+            <span className="font-medium tabular-nums text-gray-400">{tab.value}</span>
           </Link>
         ))}
       </div>
 
+      {/* ── Pipeline Progress ──────────────────────────────── */}
       <PipelineSummary repairs={pipelineJobs} />
 
       <WorkflowGuide page="dashboard" />
 
       <DashboardSuggestions data={dashboardSuggestions} />
 
-        <div className="grid gap-4 lg:grid-cols-3 animate-slide-up" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+      {/* ── Main Content ───────────────────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent Activity – Left */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm">
+          <div className="flex items-center justify-between p-6 pb-4">
             <div>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription className="text-xs">Latest updated repair jobs</CardDescription>
+              <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Latest updated repair jobs</p>
             </div>
-            <Button variant="ghost" size="sm" asChild className="text-xs h-7 rounded-lg">
-              <Link href="/repairs">
-                View all <ArrowRight className="ml-1 h-3 w-3" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
+            <Link
+              href="/repairs"
+              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              View all <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div className="px-6 pb-6">
             {recentJobs.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                <Wrench className="mx-auto mb-3 h-10 w-10 opacity-20" />
-                <p className="font-medium text-sm">No repair jobs yet</p>
-                <Button variant="link" asChild className="mt-1 text-xs">
-                  <Link href="/repairs/new">Create your first repair job</Link>
-                </Button>
+              <div className="py-16 text-center">
+                <Wrench className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+                <p className="font-medium text-sm text-gray-500">No repair jobs yet</p>
+                <Link href="/repairs/new" className="text-sm text-[#0CC0DF] hover:underline mt-1 inline-block">
+                  Create your first repair job
+                </Link>
               </div>
             ) : (
               <div className="space-y-1">
@@ -131,166 +125,139 @@ export default async function DashboardPage() {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between rounded-lg p-3 transition-all hover:bg-muted/60 group"
+                    className="flex items-center justify-between rounded-xl p-4 transition-all duration-150 hover:bg-gray-50 group"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5">
-                          {job.publicCode}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className={cn("text-[10px] px-1.5 py-0", STATUS_COLORS[job.status as RepairStatus])}
-                        >
-                          {STATUS_LABELS[job.status as RepairStatus]}
-                        </Badge>
-                        {job.priority === "urgent" && (
-                          <Badge className={cn("text-[10px] px-1.5 py-0", PRIORITY_COLORS[job.priority as Priority])}>
-                            {PRIORITY_LABELS[job.priority as Priority]}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 truncate text-sm font-medium group-hover:text-primary transition-colors">
+                      <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#0CC0DF] transition-colors">
                         {job.title || job.customerName || "Unnamed repair"}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-sm text-gray-500 mt-0.5">
                         {job.locationName && `${job.locationName} · `}
                         {job.customerName}
                       </p>
                     </div>
-                    <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground ml-4 shrink-0" />
+                    <div className="flex items-center gap-3 ml-4 shrink-0">
+                      <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-xs">
+                        {STATUS_LABELS[job.status as RepairStatus]}
+                      </span>
+                      <SmartDate date={job.updatedAt} className="text-xs text-gray-400" />
+                    </div>
                   </Link>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Right column */}
-        <div className="space-y-4 animate-slide-up" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
-          {/* Status breakdown */}
-          <Card className="animate-slide-up" style={{ animationDelay: "250ms", animationFillMode: "backwards" }}>
-            <CardHeader className="pb-3">
-              <CardTitle>By Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {jobsByStatus.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {jobsByStatus.map((item) => (
-                    <Link
-                      key={item.status}
-                      href={`/repairs?status=${item.status}`}
-                      className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-all hover:bg-muted/60"
-                    >
-                      <Badge variant="secondary" className={cn("text-[10px]", STATUS_COLORS[item.status as RepairStatus])}>
-                        {STATUS_LABELS[item.status as RepairStatus]}
-                      </Badge>
-                      <span className="text-sm font-semibold tabular-nums">{item.count}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Status Summary */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Status Summary</h3>
+            {jobsByStatus.length === 0 ? (
+              <p className="text-sm text-gray-500">No data</p>
+            ) : (
+              <div className="space-y-0">
+                {jobsByStatus.map((item) => (
+                  <Link
+                    key={item.status}
+                    href={`/repairs?status=${item.status}`}
+                    className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 -mx-3 px-3 rounded-lg"
+                  >
+                    <span className="flex items-center gap-2.5 text-sm text-gray-600">
+                      <span className="h-2 w-2 rounded-full bg-gray-300 shrink-0" />
+                      {STATUS_LABELS[item.status as RepairStatus]}
+                    </span>
+                    <span className="text-sm font-medium text-gray-900 tabular-nums">{item.count}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
-          {/* Location breakdown */}
-          <Card className="animate-slide-up" style={{ animationDelay: "300ms", animationFillMode: "backwards" }}>
-            <CardHeader className="pb-3">
-              <CardTitle>By Location</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {jobsByLocation.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data</p>
-              ) : (
-                (() => {
-                  const mainLocations = ["Cruïllas", "Peratallada", "Sant Climent"];
-                  const locationColors: Record<string, string> = {
-                    "Cruïllas": "bg-blue-500",
-                    "Peratallada": "bg-amber-500",
-                    "Sant Climent": "bg-emerald-500",
-                  };
-                  const main = jobsByLocation.filter((item) =>
-                    mainLocations.some((m) => item.locationName?.includes(m))
-                  );
-                  const misc = jobsByLocation.filter((item) =>
-                    !mainLocations.some((m) => item.locationName?.includes(m))
-                  );
-                  const miscTotal = misc.reduce((sum, item) => sum + Number(item.count), 0);
+          {/* Location Breakdown */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">By Location</h3>
+            {jobsByLocation.length === 0 ? (
+              <p className="text-sm text-gray-500">No data</p>
+            ) : (
+              (() => {
+                const mainLocations = ["Cruïllas", "Peratallada", "Sant Climent"];
+                const main = jobsByLocation.filter((item) =>
+                  mainLocations.some((m) => item.locationName?.includes(m))
+                );
+                const misc = jobsByLocation.filter((item) =>
+                  !mainLocations.some((m) => item.locationName?.includes(m))
+                );
+                const miscTotal = misc.reduce((sum, item) => sum + Number(item.count), 0);
 
-                  return (
-                    <div className="space-y-1.5">
-                      {main.map((item) => (
-                        <Link
-                          key={item.locationName ?? "unassigned"}
-                          href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
-                          className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-all hover:bg-muted/60"
-                        >
-                          <span className="flex items-center gap-2 text-muted-foreground">
-                            <span className={cn("h-2 w-2 rounded-full", locationColors[item.locationName!] ?? "bg-gray-400")} />
-                            {item.locationName ?? "Unassigned"}
-                          </span>
-                          <span className="font-semibold tabular-nums">{item.count}</span>
-                        </Link>
-                      ))}
-                      {miscTotal > 0 && (
-                        <>
-                          <div className="border-t my-1.5" />
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2">Other</p>
-                          {misc.map((item) => (
-                            <Link
-                              key={item.locationName ?? "unassigned"}
-                              href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
-                              className="flex items-center justify-between rounded-lg px-2 py-1 text-xs transition-all hover:bg-muted/60"
-                            >
-                              <span className="text-muted-foreground">{item.locationName ?? "Unassigned"}</span>
-                              <span className="font-medium tabular-nums text-muted-foreground">{item.count}</span>
-                            </Link>
-                          ))}
-                        </>
-                      )}
-                    </div>
-                  );
-                })()
-              )}
-            </CardContent>
-          </Card>
+                return (
+                  <div className="space-y-0">
+                    {main.map((item) => (
+                      <Link
+                        key={item.locationName ?? "unassigned"}
+                        href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
+                        className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 -mx-3 px-3 rounded-lg"
+                      >
+                        <span className="flex items-center gap-2.5 text-sm text-gray-600">
+                          <span className="h-2 w-2 rounded-full bg-gray-300 shrink-0" />
+                          {item.locationName ?? "Unassigned"}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900 tabular-nums">{item.count}</span>
+                      </Link>
+                    ))}
+                    {miscTotal > 0 && (
+                      <>
+                        <div className="border-t border-gray-100 my-2" />
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Other</p>
+                        {misc.map((item) => (
+                          <Link
+                            key={item.locationName ?? "unassigned"}
+                            href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
+                            className="flex items-center justify-between py-2 transition-all duration-150 hover:bg-gray-50 -mx-3 px-3 rounded-lg"
+                          >
+                            <span className="text-sm text-gray-500">{item.locationName ?? "Unassigned"}</span>
+                            <span className="text-sm font-medium text-gray-500 tabular-nums">{item.count}</span>
+                          </Link>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+          </div>
 
           {/* Follow-ups */}
           {followUps.length > 0 && (
-            <Card className="animate-slide-up border-rose-200/50 dark:border-rose-500/20" style={{ animationDelay: "350ms", animationFillMode: "backwards" }}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-rose-600 dark:text-rose-400">
-                  <PhoneOff className="h-3.5 w-3.5" />
-                  Needs Follow-up
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1.5">
-                  {followUps.slice(0, 6).map((job) => (
-                    <Link
-                      key={job.id}
-                      href={`/repairs/${job.id}`}
-                      className="flex items-center justify-between rounded-lg p-2 text-xs transition-all hover:bg-muted/60"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <span className="font-mono text-[10px] text-muted-foreground">{job.publicCode}</span>
-                        <p className="truncate font-medium text-sm">{job.customerName || job.title || "Unknown"}</p>
-                      </div>
-                      <Badge variant="secondary" className="ml-2 text-[10px] shrink-0">
-                        {CUSTOMER_RESPONSE_LABELS[job.customerResponseStatus as CustomerResponseStatus]}
-                      </Badge>
-                    </Link>
-                  ))}
-                  {followUps.length > 6 && (
-                    <Link href="/repairs?customerResponseStatus=no_response" className="block text-center text-xs text-muted-foreground hover:text-primary py-1">
-                      +{followUps.length - 6} more
-                    </Link>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <PhoneOff className="h-3.5 w-3.5 text-gray-400" />
+                Needs Follow-up
+              </h3>
+              <div className="space-y-1">
+                {followUps.slice(0, 6).map((job) => (
+                  <Link
+                    key={job.id}
+                    href={`/repairs/${job.id}`}
+                    className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 -mx-3 px-3 rounded-lg"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{job.customerName || job.title || "Unknown"}</p>
+                      <span className="text-xs text-gray-400 font-mono">{job.publicCode}</span>
+                    </div>
+                    <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-xs ml-2 shrink-0">
+                      {CUSTOMER_RESPONSE_LABELS[job.customerResponseStatus as CustomerResponseStatus]}
+                    </span>
+                  </Link>
+                ))}
+                {followUps.length > 6 && (
+                  <Link href="/repairs?customerResponseStatus=no_response" className="block text-center text-xs text-gray-400 hover:text-gray-600 py-2 transition-colors">
+                    +{followUps.length - 6} more
+                  </Link>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

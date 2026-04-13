@@ -18,21 +18,25 @@ import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { PrioritySelect } from "@/components/repairs/priority-select";
 import { HoldedHint } from "@/components/holded-hint";
 
+import type { PartCategory } from "@/components/parts/parts-client";
+
 interface CatalogPart {
   id: string;
   name: string;
   partNumber: string | null;
   defaultCost: string | null;
   orderUrl: string | null;
+  category: string | null;
 }
 
 interface RepairFormProps {
   locations: { id: string; name: string }[];
   customers: { id: string; name: string }[];
   partsCatalog?: CatalogPart[];
+  partCategories?: PartCategory[];
 }
 
-export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFormProps) {
+export function RepairForm({ locations, customers, partsCatalog = [], partCategories = [] }: RepairFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -139,7 +143,7 @@ export function RepairForm({ locations, customers, partsCatalog = [] }: RepairFo
           <div>
             <Label>Parts from Catalog</Label>
             <div className="mt-1">
-              <PartsPicker catalog={partsCatalog} value={selectedParts} onChange={setSelectedParts} />
+              <PartsPicker catalog={partsCatalog} categories={partCategories} value={selectedParts} onChange={setSelectedParts} />
             </div>
           </div>
           <div>

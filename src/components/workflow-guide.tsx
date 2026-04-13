@@ -5,21 +5,20 @@ import { cn } from "@/lib/utils";
 import {
   FileText, Wrench, Receipt, Send, CheckCircle2, ChevronDown, ChevronUp,
   X, ArrowRight, HelpCircle, Lightbulb, BookOpen, Play, ChevronRight,
-  GraduationCap, Target, MousePointerClick,
+  MousePointerClick,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 // ─── Workflow steps ──────────────────────────────────────────
 
 export type WorkflowStep = "quote" | "repair" | "invoice" | "send" | "paid";
 
-const STEPS: { key: WorkflowStep; label: string; icon: React.ReactNode; color: string; activeColor: string }[] = [
-  { key: "quote", label: "Quote", icon: <FileText className="h-3.5 w-3.5" />, color: "text-muted-foreground", activeColor: "text-blue-600 dark:text-blue-400" },
-  { key: "repair", label: "Repair", icon: <Wrench className="h-3.5 w-3.5" />, color: "text-muted-foreground", activeColor: "text-amber-600 dark:text-amber-400" },
-  { key: "invoice", label: "Invoice", icon: <Receipt className="h-3.5 w-3.5" />, color: "text-muted-foreground", activeColor: "text-purple-600 dark:text-purple-400" },
-  { key: "send", label: "Send", icon: <Send className="h-3.5 w-3.5" />, color: "text-muted-foreground", activeColor: "text-sky-600 dark:text-sky-400" },
-  { key: "paid", label: "Paid", icon: <CheckCircle2 className="h-3.5 w-3.5" />, color: "text-muted-foreground", activeColor: "text-emerald-600 dark:text-emerald-400" },
+const STEPS: { key: WorkflowStep; label: string; icon: React.ReactNode }[] = [
+  { key: "quote", label: "Quote", icon: <FileText className="h-3.5 w-3.5" /> },
+  { key: "repair", label: "Repair", icon: <Wrench className="h-3.5 w-3.5" /> },
+  { key: "invoice", label: "Invoice", icon: <Receipt className="h-3.5 w-3.5" /> },
+  { key: "send", label: "Send", icon: <Send className="h-3.5 w-3.5" /> },
+  { key: "paid", label: "Paid", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
 ];
 
 // ─── Tutorial definitions ───────────────────────────────────
@@ -549,83 +548,71 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
   }, [tutorial.id, onClose]);
 
   return (
-    <div className="rounded-xl border border-border/50 bg-background shadow-sm overflow-hidden">
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
-            <GraduationCap className="h-3 w-3 text-muted-foreground" />
-          </div>
-          <span className="text-xs font-semibold">
-            {tutorial.title}
-          </span>
-        </div>
-        <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground" onClick={onClose}>
-          <X className="h-3 w-3" />
-        </Button>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-900">
+          {tutorial.title}
+        </span>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
-      <div className="px-4 pb-2">
+      <div className="px-5 pb-3">
         <div className="flex gap-1">
           {tutorial.steps.map((_, i) => (
             <div
               key={i}
               className={cn(
                 "h-1 flex-1 rounded-full transition-colors",
-                i <= currentStep ? "bg-foreground" : "bg-muted",
+                i <= currentStep ? "bg-[#0CC0DF]" : "bg-gray-200",
               )}
             />
           ))}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1">
+        <p className="text-xs text-gray-400 mt-1.5">
           Step {currentStep + 1} of {tutorial.steps.length}
         </p>
       </div>
 
-      <div className="px-4 pb-3 border-t border-border/50 pt-2.5">
-        <div className="flex items-start gap-2 mb-2">
-          <Target className="h-3.5 w-3.5 mt-0.5 text-foreground/60 shrink-0" />
-          <div>
-            <p className="text-[12px] font-semibold">{step.title}</p>
-            <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">{step.description}</p>
-          </div>
+      <div className="px-5 pb-4 border-t border-gray-100 pt-3">
+        <div className="mb-3">
+          <p className="text-sm font-medium text-gray-900">{step.title}</p>
+          <p className="text-sm text-gray-500 leading-relaxed mt-1">{step.description}</p>
         </div>
 
         {step.action && (
-          <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-muted/50 mb-3">
-            <MousePointerClick className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
-            <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gray-50 mb-4">
+            <MousePointerClick className="h-3.5 w-3.5 mt-0.5 text-gray-400 shrink-0" />
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
               {step.action}
             </p>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs h-7 text-muted-foreground"
+        <div className="flex items-center justify-between">
+          <button
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-30"
             disabled={isFirst}
             onClick={() => setCurrentStep(currentStep - 1)}
           >
             ← Previous
-          </Button>
+          </button>
           {isLast ? (
-            <Button
-              size="sm"
-              className="text-xs h-7"
+            <button
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-[#0CC0DF] hover:bg-[#0bb0cc] rounded-lg px-4 py-2 transition-colors shadow-sm"
               onClick={completeTutorial}
             >
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+              <CheckCircle2 className="h-3.5 w-3.5" />
               Complete
-            </Button>
+            </button>
           ) : (
-            <Button
-              size="sm"
-              className="text-xs h-7"
+            <button
+              className="text-sm font-medium text-gray-900 hover:text-[#0CC0DF] transition-colors"
               onClick={() => setCurrentStep(currentStep + 1)}
             >
               Next →
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -654,22 +641,17 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
   const allTutorials = [...relevant, ...others];
 
   return (
-    <div className="rounded-xl border border-border/50 bg-background shadow-sm overflow-hidden">
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
-            <BookOpen className="h-3 w-3 text-muted-foreground" />
-          </div>
-          <span className="text-xs font-semibold">
-            Tutorials — Learn step by step
-          </span>
-        </div>
-        <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground" onClick={onClose}>
-          <X className="h-3 w-3" />
-        </Button>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-900">
+          Tutorials
+        </span>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
-      <div className="px-4 pb-3 border-t border-border/50 pt-2.5 space-y-2">
+      <div className="px-5 pb-4 space-y-1">
         {allTutorials.map((tutorial) => {
           const isCompleted = completedIds.includes(tutorial.id);
           const isRelevant = relevant.includes(tutorial);
@@ -677,44 +659,29 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
             <button
               key={tutorial.id}
               onClick={() => onSelectTutorial(tutorial)}
-              className={cn(
-                "w-full text-left rounded-lg px-3 py-2.5 transition-colors border",
-                isCompleted
-                  ? "bg-muted/30 border-border/30"
-                  : isRelevant
-                    ? "bg-background border-border/50 hover:bg-muted/40"
-                    : "bg-background/50 border-border/30 hover:bg-muted/30",
-              )}
+              className="w-full text-left rounded-xl px-4 py-3 transition-all duration-150 hover:bg-gray-50"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   {isCompleted ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-gray-400 shrink-0" />
                   ) : (
-                    <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <Play className="h-4 w-4 text-gray-400 shrink-0" />
                   )}
                   <span className={cn(
-                    "text-[12px] font-medium",
-                    isCompleted ? "text-muted-foreground" : "",
+                    "text-sm font-medium",
+                    isCompleted ? "text-gray-400" : "text-gray-900",
                   )}>
                     {tutorial.title}
                   </span>
                 </div>
-                <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
               </div>
-              <div className="flex items-center gap-3 mt-1 pl-5">
-                <span className="text-[10px] text-muted-foreground/70">{tutorial.duration}</span>
-                <span className="text-[10px] text-muted-foreground/70">{tutorial.steps.length} steps</span>
-                <span className={cn(
-                  "text-[10px] px-1.5 py-0.5 rounded-full",
-                  tutorial.difficulty === "beginner"
-                    ? "bg-muted/60 text-muted-foreground"
-                    : "bg-muted/60 text-muted-foreground",
-                )}>
-                  {tutorial.difficulty}
-                </span>
+              <div className="flex items-center gap-3 mt-1 pl-[26px]">
+                <span className="text-xs text-gray-400">{tutorial.duration}</span>
+                <span className="text-xs text-gray-400">{tutorial.steps.length} steps</span>
                 {isRelevant && !isCompleted && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/[0.06] text-muted-foreground font-medium">
+                  <span className="text-xs text-gray-500 font-medium">
                     for this page
                   </span>
                 )}
@@ -806,18 +773,18 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
         <button
           type="button"
           onClick={handleRestore}
-          className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <HelpCircle className="h-3 w-3" />
+          <HelpCircle className="h-3.5 w-3.5" />
           Show guide
         </button>
-        <span className="text-muted-foreground/20">·</span>
+        <span className="text-gray-300">·</span>
         <button
           type="button"
           onClick={() => { setDismissed(false); setShowTutorials(true); }}
-          className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <BookOpen className="h-3 w-3" />
+          <BookOpen className="h-3.5 w-3.5" />
           Tutorials
         </button>
       </div>
@@ -827,47 +794,36 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/50 bg-background shadow-sm overflow-hidden transition-all",
+        "bg-white rounded-xl shadow-sm overflow-hidden transition-all",
         className,
       )}
     >
       {/* Header with workflow steps */}
-      <div className="px-4 pt-3 pb-2">
-        <div className="flex items-center justify-between mb-2">
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-semibold text-gray-900">
+            {guide.title}
+          </span>
           <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
-              <Lightbulb className="h-3 w-3 text-muted-foreground" />
-            </div>
-            <span className="text-xs font-semibold">
-              {guide.title}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 text-[10px] px-2 text-muted-foreground hover:text-foreground"
+            <button
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
               onClick={() => setShowTutorials(true)}
             >
-              <BookOpen className="h-3 w-3 mr-1" />
+              <BookOpen className="h-3.5 w-3.5" />
               Tutorials
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 text-muted-foreground hover:text-foreground"
+            </button>
+            <button
+              className="text-gray-400 hover:text-gray-600 transition-colors"
               onClick={() => setExpanded(!expanded)}
             >
-              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 text-muted-foreground hover:text-foreground"
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            <button
+              className="text-gray-400 hover:text-gray-600 transition-colors"
               onClick={handleDismiss}
             >
-              <X className="h-3 w-3" />
-            </Button>
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
@@ -881,21 +837,20 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
               <div key={step.key} className="flex items-center">
                 <div
                   className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-all",
-                    isActive && "bg-muted shadow-sm border border-border/50",
-                    isCompleted && "text-emerald-600 dark:text-emerald-400",
-                    isFuture && "text-muted-foreground/40",
-                    !isActive && !isCompleted && !isFuture && step.color,
-                    isActive && step.activeColor,
+                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    isActive && "bg-gray-100 text-gray-900",
+                    isCompleted && "text-[#0CC0DF]",
+                    isFuture && "text-gray-300",
+                    !isActive && !isCompleted && !isFuture && "text-gray-400",
                   )}
                 >
-                  {isCompleted ? <CheckCircle2 className="h-3 w-3" /> : step.icon}
+                  {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.icon}
                   <span className="hidden sm:inline">{step.label}</span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <ArrowRight className={cn(
-                    "h-2.5 w-2.5 mx-0.5 shrink-0",
-                    isCompleted ? "text-emerald-400/60" : "text-muted-foreground/20",
+                    "h-3 w-3 mx-0.5 shrink-0",
+                    isCompleted ? "text-[#0CC0DF]/40" : "text-gray-200",
                   )} />
                 )}
               </div>
@@ -906,11 +861,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
 
       {/* Expandable content */}
       {expanded && (
-        <div className="px-4 pb-3 border-t border-border/50 mt-1 pt-2.5">
-          <div className="space-y-1.5 mb-2.5">
+        <div className="px-5 pb-4 border-t border-gray-100 pt-3">
+          <div className="space-y-2 mb-3">
             {guide.steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-2 text-[12px] text-foreground/80 leading-relaxed">
-                <span className="mt-0.5 shrink-0 w-4 text-center text-muted-foreground/50 font-bold text-[10px]">
+              <div key={i} className="flex items-start gap-2.5 text-sm text-gray-600 leading-relaxed">
+                <span className="mt-0.5 shrink-0 w-4 text-center text-gray-300 font-medium text-xs">
                   {step.startsWith("✅") || step.startsWith("→") ? "" : `${i + 1}.`}
                 </span>
                 <span>{step}</span>
@@ -918,23 +873,23 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             ))}
           </div>
 
-          <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-muted/40 mb-2.5">
-            <Lightbulb className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
+          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-gray-50 mb-3">
+            <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-gray-400 shrink-0" />
+            <p className="text-xs text-gray-500 leading-relaxed">
               {guide.tip}
             </p>
           </div>
 
           {/* Quick actions */}
           {guide.quickActions && guide.quickActions.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {guide.quickActions.map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-md bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                 >
-                  <ArrowRight className="h-2.5 w-2.5" />
+                  <ArrowRight className="h-3 w-3" />
                   {action.label}
                 </Link>
               ))}
@@ -946,8 +901,8 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             const relevantTutorials = TUTORIALS.filter(t => t.pages.includes(page));
             if (relevantTutorials.length === 0) return null;
             return (
-              <div className="mt-2.5 pt-2.5 border-t border-border/50">
-                <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
                   Tutorials for this page
                 </p>
                 <div className="space-y-1">
@@ -955,11 +910,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                     <button
                       key={tutorial.id}
                       onClick={() => setActiveTutorial(tutorial)}
-                      className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors"
+                      className="w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <Play className="h-3 w-3 text-muted-foreground/60 shrink-0" />
-                      <span className="text-[11px] text-muted-foreground">{tutorial.title}</span>
-                      <span className="text-[10px] text-muted-foreground/50 ml-auto shrink-0">{tutorial.duration}</span>
+                      <Play className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span className="text-sm text-gray-600">{tutorial.title}</span>
+                      <span className="text-xs text-gray-400 ml-auto shrink-0">{tutorial.duration}</span>
                     </button>
                   ))}
                 </div>

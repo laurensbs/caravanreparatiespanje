@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactNode, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Lightbulb,
   AlertTriangle,
@@ -26,60 +25,28 @@ export interface Suggestion {
   onClick?: () => void;
 }
 
-const LEVEL_CONFIG: Record<
-  SuggestionLevel,
-  { icon: ReactNode; bg: string; border: string; text: string; iconColor: string }
-> = {
-  action: {
-    icon: <Zap className="h-3.5 w-3.5" />,
-    bg: "bg-blue-100 dark:bg-blue-950/40",
-    border: "border-blue-300 dark:border-blue-800",
-    text: "text-blue-900 dark:text-blue-200",
-    iconColor: "text-blue-600 dark:text-blue-400",
-  },
-  warning: {
-    icon: <AlertTriangle className="h-3.5 w-3.5" />,
-    bg: "bg-amber-100 dark:bg-amber-950/40",
-    border: "border-amber-300 dark:border-amber-800",
-    text: "text-amber-900 dark:text-amber-200",
-    iconColor: "text-amber-600 dark:text-amber-400",
-  },
-  info: {
-    icon: <Info className="h-3.5 w-3.5" />,
-    bg: "bg-slate-100 dark:bg-slate-900/40",
-    border: "border-slate-300 dark:border-slate-700",
-    text: "text-slate-800 dark:text-slate-300",
-    iconColor: "text-slate-500 dark:text-slate-400",
-  },
-  success: {
-    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-    bg: "bg-emerald-100 dark:bg-emerald-950/40",
-    border: "border-emerald-300 dark:border-emerald-800",
-    text: "text-emerald-900 dark:text-emerald-200",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-  },
+const LEVEL_ICON: Record<SuggestionLevel, ReactNode> = {
+  action: <Zap className="h-3.5 w-3.5" />,
+  warning: <AlertTriangle className="h-3.5 w-3.5" />,
+  info: <Info className="h-3.5 w-3.5" />,
+  success: <CheckCircle2 className="h-3.5 w-3.5" />,
 };
 
 function SuggestionRow({ suggestion }: { suggestion: Suggestion }) {
-  const config = LEVEL_CONFIG[suggestion.level];
-
   const content = (
     <div
       className={cn(
-        "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-all shrink-0",
-        config.bg,
-        config.border,
-        config.text,
+        "flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 transition-all shrink-0",
         (suggestion.href || suggestion.onClick) &&
-          "cursor-pointer hover:shadow-sm hover:-translate-y-px active:translate-y-0"
+          "cursor-pointer hover:bg-gray-100 hover:-translate-y-px active:translate-y-0"
       )}
     >
-      <span className={cn("shrink-0", config.iconColor)}>
-        {config.icon}
+      <span className="shrink-0 text-gray-400">
+        {LEVEL_ICON[suggestion.level]}
       </span>
-      <p className="text-[11px] font-semibold leading-tight whitespace-nowrap">{suggestion.title}</p>
+      <p className="text-xs font-medium text-gray-600 leading-tight whitespace-nowrap">{suggestion.title}</p>
       {(suggestion.href || suggestion.onClick) && (
-        <ArrowRight className="h-3 w-3 shrink-0 opacity-40" />
+        <ArrowRight className="h-3 w-3 shrink-0 text-gray-300" />
       )}
     </div>
   );
@@ -131,11 +98,11 @@ export function SmartSuggestions({
           try { localStorage.removeItem(SUGGESTIONS_HIDDEN_KEY); } catch {}
         }}
         className={cn(
-          "flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors",
+          "flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors",
           className,
         )}
       >
-        <Eye className="h-3 w-3" />
+        <Eye className="h-3.5 w-3.5" />
         Show suggestions ({suggestions.length})
       </button>
     );
@@ -150,23 +117,22 @@ export function SmartSuggestions({
 
   return (
     <div className={cn("flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin", className)}>
-      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/40 shrink-0">
-        <Lightbulb className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 shrink-0">
+        <Lightbulb className="h-3.5 w-3.5 text-gray-400" />
       </div>
       {visible.map((s) => (
         <SuggestionRow key={s.id} suggestion={s} />
       ))}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
+      <button
+        type="button"
+        className="text-gray-300 hover:text-gray-500 transition-colors shrink-0"
         onClick={() => {
           setHidden(true);
           try { localStorage.setItem(SUGGESTIONS_HIDDEN_KEY, "true"); } catch {}
         }}
       >
-        <X className="h-3 w-3" />
-      </Button>
+        <X className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }

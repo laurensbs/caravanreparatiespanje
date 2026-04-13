@@ -24,14 +24,6 @@ import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
 import { toast } from "sonner";
 import { CompactProgressTracker } from "@/components/repair-progress";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface CustomerRow {
   id: string;
@@ -53,58 +45,59 @@ export function CustomersTableClient({ customers }: Props) {
 
   return (
     <>
-      <TableBody>
+      <tbody className="divide-y divide-gray-50">
         {customers.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={6} className="py-16 text-center">
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <Wrench className="h-8 w-8 opacity-20" />
-                <p className="font-medium text-sm">No contacts found</p>
-                <p className="text-xs">Try adjusting your search or filters</p>
+          <tr>
+            <td colSpan={6} className="py-20 text-center">
+              <div className="flex flex-col items-center gap-2">
+                <Wrench className="h-8 w-8 text-gray-200" />
+                <p className="text-sm font-medium text-gray-400">No contacts found</p>
+                <p className="text-xs text-gray-400">Try adjusting your search or filters</p>
               </div>
-            </TableCell>
-          </TableRow>
+            </td>
+          </tr>
         ) : (
-          customers.map((c, idx) => (
-            <TableRow
+          customers.map((c) => (
+            <tr
               key={c.id}
-              className="group interactive-row table-row-animate"
-              style={{ animationDelay: `${idx * 20}ms` }}
+              className="group cursor-pointer hover:bg-gray-50 transition-colors duration-150"
               onClick={() => setSelected(c)}
             >
-              <TableCell>
-                <span className="font-medium text-[13px] group-hover:text-primary transition-colors">
+              <td className="px-5 py-3.5">
+                <span className="text-sm font-medium text-gray-900 group-hover:text-[#0CC0DF] transition-colors">
                   {c.name}
                 </span>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
-                  {c.contactType === "business" ? "Business" : "Person"}
-                </Badge>
-                {c.holdedContactId && (
-                  <span className="inline-flex items-center text-[10px] text-emerald-600 ml-1" title="Linked to Holded">
-                    <ExternalLink className="h-2.5 w-2.5" />
+              </td>
+              <td className="px-5 py-3.5">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                    {c.contactType === "business" ? "Business" : "Person"}
                   </span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
+                  {c.holdedContactId && (
+                    <span className="text-emerald-500" title="Linked to Holded">
+                      <ExternalLink className="h-3 w-3" />
+                    </span>
+                  )}
+                </span>
+              </td>
+              <td className="px-5 py-3.5 text-center">
                 {c.repairCount > 0 ? (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 px-1.5 text-xs font-medium text-gray-600">
                     {c.repairCount}
                   </span>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground">—</span>
+                  <span className="text-gray-300">—</span>
                 )}
-              </TableCell>
-              <TableCell className="text-[13px] text-muted-foreground">{c.phone ?? "—"}</TableCell>
-              <TableCell className="text-[13px] text-muted-foreground hidden md:table-cell">{c.email ?? "—"}</TableCell>
-              <TableCell>
-                <SmartDate date={c.updatedAt} className="text-[11px] text-muted-foreground" />
-              </TableCell>
-            </TableRow>
+              </td>
+              <td className="px-5 py-3.5 text-sm text-gray-500">{c.phone || <span className="text-gray-300">—</span>}</td>
+              <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">{c.email || <span className="text-gray-300">—</span>}</td>
+              <td className="px-5 py-3.5 text-right">
+                <SmartDate date={c.updatedAt} className="text-xs text-gray-400" />
+              </td>
+            </tr>
           ))
         )}
-      </TableBody>
+      </tbody>
 
       {selected && (
         <CustomerQuickView

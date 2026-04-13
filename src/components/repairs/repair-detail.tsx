@@ -431,8 +431,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               )}
               <p className="text-sm text-muted-foreground mt-0.5">
                 {job.publicCode && title ? job.publicCode : ''}
-                {job.customer ? `${job.publicCode && title ? ' · ' : ''}${job.customer.name}` : ''}
-                {job.unit ? ` · ${[job.unit.brand, job.unit.model].filter(Boolean).join(' ')}` : ''}
               </p>
             </div>
           </div>
@@ -452,8 +450,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
         </div>
 
-        {/* Status chips + tags */}
+        {/* Status chips + tags — all in one line */}
         <div className="flex items-center gap-2 flex-wrap pl-10">
+          {/* Clickable customer name */}
+          {job.customer ? (
+            <button
+              onClick={() => setExpandCustomer((v) => !v)}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${expandCustomer ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
+              title="View / edit customer"
+            >
+              {job.customer.name}
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowCustomerLinker(true)}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors italic"
+            >
+              Geen klant
+            </button>
+          )}
+
+          <span className="text-muted-foreground/30">·</span>
+
           <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ${STATUS_COLORS[status as RepairStatus] ?? 'bg-muted text-muted-foreground'}`}>
             {STATUS_LABELS[status as RepairStatus]}
           </span>
@@ -463,18 +481,45 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${financialStage.color}`}>
             {financialStage.label}
           </span>
-          {repairWorkers.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
-              <User className="h-3 w-3" />
-              {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
-            </span>
-          )}
+
+          {/* Location */}
           {job.location && (
-            <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
-              <MapPin className="h-3 w-3" />
-              {job.location.slug ? `${job.location.slug.toUpperCase()} = ${job.location.name}` : job.location.name}
+            <>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
+                <MapPin className="h-3 w-3" />
+                {job.location.slug ? `${job.location.slug.toUpperCase()} = ${job.location.name}` : job.location.name}
+              </span>
+            </>
+          )}
+
+          {/* Clickable registration / unit */}
+          <span className="text-muted-foreground/30">·</span>
+          {job.unit ? (
+            <button
+              onClick={() => setExpandUnit((v) => !v)}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-mono transition-colors ${expandUnit ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              title="View / edit unit"
+            >
+              {job.unit.registration || 'Geen kenteken'}
+              {job.unit.brand && <span className="font-sans text-muted-foreground/60 ml-1">({[job.unit.brand, job.unit.model].filter(Boolean).join(' ')})</span>}
+            </button>
+          ) : (
+            <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs text-muted-foreground/50 italic">
+              Geen unit
             </span>
           )}
+
+          {repairWorkers.length > 0 && (
+            <>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
+                <User className="h-3 w-3" />
+                {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
+              </span>
+            </>
+          )}
+
           {allTags.length > 0 && (
             <TagPicker
               allTags={allTags}
@@ -484,6 +529,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             />
           )}
         </div>
+
+        {/* Inline edit panels — expand below the chips */}
+        {expandCustomer && job.customer && (
+          <div className="pl-10">
+            <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
+          </div>
+        )}
+        {expandUnit && job.unit && (
+          <div className="pl-10">
+            <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
+          </div>
+        )}
       </div>
 
       {/* ── Summary Bar — next action, blocker ── */}

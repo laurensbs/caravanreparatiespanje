@@ -38,7 +38,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   // OPERATIONS
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" />, group: "Operations" },
-  { label: "Werkbonnen", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations" },
+  { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Garage", href: "/garage", icon: <Warehouse className="h-[18px] w-[18px]" />, external: true, group: "Operations" },
   // DATA

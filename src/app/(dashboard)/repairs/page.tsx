@@ -69,7 +69,7 @@ export default async function RepairsPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Werkbonnen</h1>
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Work Orders</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {total} work order{total !== 1 ? "s" : ""}
           </p>

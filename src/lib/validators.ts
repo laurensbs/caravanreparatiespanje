@@ -53,6 +53,8 @@ export const repairJobSchema = z.object({
   sealsFlag: z.boolean().optional(),
   partsRequiredFlag: z.boolean().optional(),
   followUpRequiredFlag: z.boolean().optional(),
+  nextAction: z.string().nullable().optional(),
+  currentBlocker: z.string().nullable().optional(),
 });
 
 export const customerSchema = z.object({

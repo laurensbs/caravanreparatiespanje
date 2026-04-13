@@ -358,6 +358,9 @@ export const repairJobs = pgTable(
       .notNull()
       .default(false),
 
+    nextAction: text("next_action"),
+    currentBlocker: text("current_blocker"),
+
     holdedInvoiceId: varchar("holded_invoice_id", { length: 255 }),
     holdedInvoiceNum: varchar("holded_invoice_num", { length: 100 }),
     holdedInvoiceDate: timestamp("holded_invoice_date", { withTimezone: true }),

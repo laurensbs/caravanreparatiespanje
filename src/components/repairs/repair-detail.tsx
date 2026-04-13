@@ -157,6 +157,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [showPartPicker, setShowPartPicker] = useState(false);
   const [partSearch, setPartSearch] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [nextAction, setNextAction] = useState(job.nextAction ?? "");
+  const [currentBlocker, setCurrentBlocker] = useState(job.currentBlocker ?? "");
 
   // Flag definitions for rendering
   const allFlags = [
@@ -179,6 +181,49 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const discountAmount = costLinesSubtotal * (discountPercent / 100);
   const costLinesTotal = costLinesSubtotal - discountAmount;
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
+
+  // Auto-compute next action from status when no manual override
+  const computedNextAction = (() => {
+    const map: Record<string, string> = {
+      new: "Inspect and assess damage",
+      todo: "Inspect and assess damage",
+      in_inspection: "Complete inspection",
+      no_damage: "Close or archive job",
+      quote_needed: "Create and send quote",
+      waiting_approval: "Follow up for approval",
+      waiting_customer: "Wait for customer response",
+      waiting_parts: "Check parts delivery",
+      scheduled: "Begin repair work",
+      in_progress: "Complete repair",
+      blocked: "Resolve blocker",
+      completed: job.holdedInvoiceId ? "Confirm payment" : "Create invoice",
+      invoiced: "Confirm payment",
+      rejected: "Archive job",
+    };
+    return map[status] ?? "";
+  })();
+
+  // Auto-compute blocker from status/flags
+  const computedBlocker = (() => {
+    if (status === "waiting_parts") return "Parts not yet delivered";
+    if (status === "waiting_customer") return "Awaiting customer response";
+    if (status === "blocked") return job.statusReason || "See notes for details";
+    if (!job.customer && ["quote_needed", "waiting_approval", "completed", "invoiced"].includes(status)) return "No customer linked";
+    if (partsRequiredFlag && partRequests.some(p => !["received", "cancelled"].includes(p.status))) return "Parts pending delivery";
+    return "";
+  })();
+
+  const displayNextAction = nextAction || computedNextAction;
+  const displayBlocker = currentBlocker || computedBlocker;
+
+  // Financial stage for summary bar
+  const financialStage = (() => {
+    if (job.invoiceStatus === "paid") return { label: "Paid", color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/30" };
+    if (job.holdedInvoiceId) return { label: "Invoiced", color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30" };
+    if (job.holdedQuoteId) return { label: "Quoted", color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30" };
+    if (parseFloat(estimatedCost || "0") > 0) return { label: "Estimated", color: "text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-800" };
+    return { label: "No estimate", color: "text-muted-foreground bg-muted/50" };
+  })();
 
   // Auto-sync Actual + Our Cost from line items
   useEffect(() => {
@@ -294,6 +339,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         sealsFlag,
         partsRequiredFlag,
         followUpRequiredFlag,
+        nextAction: nextAction || null,
+        currentBlocker: currentBlocker || null,
       });
       router.refresh();
       toast.success("Changes saved");
@@ -368,12 +415,27 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
         {/* Status chips + tags */}
         <div className="flex items-center gap-2 flex-wrap pl-10">
-          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status as RepairStatus] ?? 'bg-muted text-muted-foreground'}`}>
+          <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ${STATUS_COLORS[status as RepairStatus] ?? 'bg-muted text-muted-foreground'}`}>
             {STATUS_LABELS[status as RepairStatus]}
           </span>
           <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[priority as Priority] ?? 'bg-muted text-muted-foreground'}`}>
             {PRIORITY_LABELS[priority as Priority]}
           </span>
+          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${financialStage.color}`}>
+            {financialStage.label}
+          </span>
+          {repairWorkers.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
+              <User className="h-3 w-3" />
+              {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
+            </span>
+          )}
+          {job.location && (
+            <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground bg-muted/50">
+              <MapPin className="h-3 w-3" />
+              {job.location.name}
+            </span>
+          )}
           {allTags.length > 0 && (
             <TagPicker
               allTags={allTags}
@@ -384,6 +446,70 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           )}
         </div>
       </div>
+
+      {/* ── Summary Bar — next action, blocker ── */}
+      {(displayNextAction || displayBlocker) && (
+        <div className="rounded-xl border border-border/50 bg-muted/20 px-6 py-4 space-y-3">
+          {displayNextAction && (
+            <div className="flex items-start gap-3">
+              <div className="flex items-center gap-2 shrink-0 w-28">
+                <div className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground">Next action</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                {nextAction ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{nextAction}</span>
+                    <button onClick={() => setNextAction("")} className="text-muted-foreground hover:text-foreground p-0.5 rounded">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const val = prompt("Next action:", computedNextAction);
+                      if (val !== null) setNextAction(val);
+                    }}
+                    className="text-sm text-foreground/80 hover:text-foreground transition-colors"
+                  >
+                    {computedNextAction}
+                    <span className="text-[10px] text-muted-foreground/40 ml-1.5">· auto</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {displayBlocker && (
+            <div className="flex items-start gap-3">
+              <div className="flex items-center gap-2 shrink-0 w-28">
+                <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Blocker</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                {currentBlocker ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-amber-700 dark:text-amber-300">{currentBlocker}</span>
+                    <button onClick={() => setCurrentBlocker("")} className="text-muted-foreground hover:text-foreground p-0.5 rounded">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const val = prompt("Current blocker:", computedBlocker);
+                      if (val !== null) setCurrentBlocker(val);
+                    }}
+                    className="text-sm text-amber-700/80 dark:text-amber-300/80 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+                  >
+                    {computedBlocker}
+                    <span className="text-[10px] text-muted-foreground/40 ml-1.5">· auto</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Past Repairs ── */}
       {job.customer && customerRepairs.length > 0 && (
@@ -424,8 +550,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
 
-          {/* ═══ WORK CLUSTER ═══ */}
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Work</p>
+          {/* ═══ DESCRIPTION & NOTES ═══ */}
 
           {/* Issue description + notes merged */}
           <div className="rounded-xl bg-muted/30 border border-border/50 p-6" ref={descriptionRef}>
@@ -487,11 +612,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </div>
           )}
 
-          {/* ── GARAGE ZONE — workers, planning, flags, tasks, parts ── */}
+          {/* ── WORKSHOP — workers, planning, flags, tasks, parts ── */}
           <div className="rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
             <details open>
               <summary className="px-6 py-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                Garage
+                Workshop
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
             <div className="px-6 pb-6 space-y-5">
@@ -539,7 +664,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           });
                         }}
                       >
-                        <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg border-border/50"><SelectValue placeholder="+ Add worker..." /></SelectTrigger>
+                        <SelectTrigger className="mt-1.5 h-8 text-xs rounded-lg border-border/50"><SelectValue placeholder="+ Assign technician..." /></SelectTrigger>
                         <SelectContent>
                           {availableUsers.map((u) => (
                             <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
@@ -842,9 +967,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         {/* ═══ SIDEBAR ═══ */}
         <div className="space-y-6">
 
-          {/* ── Office ── */}
+          {/* ── Job Status ── */}
           <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Office</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Job Status</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Status</Label>
@@ -908,7 +1033,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <div className="border-t border-border/40 pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">Source</span>
-                  <span className="text-xs text-muted-foreground truncate max-w-[160px]">Jake&apos;s beautiful excel sheet</span>
+                  <span className="text-xs text-muted-foreground">Imported</span>
                 </div>
               </div>
               )}
@@ -985,6 +1110,56 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
           </div>
 
+          {/* ── Source & Import ── */}
+          {(job.sourceSheet || job.sourceCategory || job.spreadsheetInternalId) && (
+            <div className="rounded-xl bg-muted/30 border border-border/50 p-6 space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Source & Import</h3>
+              <div className="space-y-2 text-sm">
+                {job.sourceSheet && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Sheet</span>
+                    <span className="text-right text-xs font-medium truncate max-w-[160px]">{job.sourceSheet}</span>
+                  </div>
+                )}
+                {job.sourceCategory && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Category</span>
+                    <span className="text-right text-xs">{job.sourceCategory}</span>
+                  </div>
+                )}
+                {job.spreadsheetInternalId && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Ref ID</span>
+                    <span className="text-right font-mono text-xs">{job.spreadsheetInternalId}</span>
+                  </div>
+                )}
+                {job.bayReference && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Bay</span>
+                    <span className="text-right font-mono text-xs">{job.bayReference}</span>
+                  </div>
+                )}
+                {job.statusConfidence && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Import confidence</span>
+                    <span className={`text-right text-xs font-medium ${
+                      job.statusConfidence === "high" ? "text-green-600 dark:text-green-400" :
+                      job.statusConfidence === "medium" ? "text-amber-600 dark:text-amber-400" :
+                      "text-red-600 dark:text-red-400"
+                    }`}>
+                      {job.statusConfidence}
+                    </span>
+                  </div>
+                )}
+                {job.extraNotesRaw && (
+                  <div className="border-t border-border/40 pt-2">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Extra notes (from import)</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{job.extraNotesRaw}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
@@ -1175,10 +1350,10 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
       const today = new Date();
       today.setHours(8, 0, 0, 0);
       await scheduleRepair(jobId, today.toISOString());
-      toast.success("Sent to garage for today");
+      toast.success("Repair started for today");
       router.refresh();
     } catch {
-      toast.error("Failed to send to garage");
+      toast.error("Failed to start repair");
     } finally {
       setSaving(false);
     }
@@ -1243,11 +1418,11 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
         </div>
       )}
 
-      {/* Send to Garage / In Garage status */}
+      {/* Start Repair / In Workshop status */}
       {inGarage ? (
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">
-            In Garage Today
+            In Workshop Today
           </span>
           <Link
             href={`/garage/repairs/${jobId}`}
@@ -1264,7 +1439,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             disabled={saving}
             className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2.5 px-3 transition-colors hover:bg-foreground/90 disabled:opacity-50"
           >
-            {saving ? "..." : "Garage Now"}
+            {saving ? "..." : "Start Repair Now"}
           </button>
           <button
             onClick={() => {
@@ -1276,7 +1451,7 @@ function PlanningDateRow({ jobId, dueDate, status }: { jobId: string; dueDate: s
             className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2.5 px-3 transition-colors disabled:opacity-50 relative overflow-hidden"
           >
             <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-            Plan Future
+            Schedule Repair
             <input
               ref={futureRef}
               type="date"

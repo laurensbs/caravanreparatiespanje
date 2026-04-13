@@ -55,8 +55,13 @@ const TUTORIALS: Tutorial[] = [
         action: "Click on 'Repairs' in the sidebar, then '+ New Repair'",
       },
       {
+        title: "Add tags to categorise the repair",
+        description: "On the repair detail page, use the tag picker in the status bar. Click '+' to assign existing tags or create new ones on the fly — pick a name and colour directly in the dropdown.",
+        action: "Click the '+' button next to the status badges",
+      },
+      {
         title: "Add parts to the cost estimate",
-        description: "In the repair detail page, scroll down to 'Cost Estimate'. Click '+ Add Line' to add parts. Select parts from the catalog — the markup is applied automatically. You can also add custom lines for labour.",
+        description: "Scroll to 'Cost Estimate' and click '+ Add Line'. Select a part from the catalog — markup is applied automatically. Use the category tabs to filter parts by type.",
         action: "Click '+ Add Line' in the Cost Estimate section",
       },
       {
@@ -124,7 +129,7 @@ const TUTORIALS: Tutorial[] = [
   {
     id: "parts-pricing",
     title: "Parts catalog & pricing strategy",
-    description: "Set up your parts with cost prices and markup. The customer never sees your purchase price.",
+    description: "Set up your parts with cost prices, markup, and categories. The customer never sees your purchase price.",
     duration: "3 min",
     difficulty: "beginner",
     pages: ["parts", "repair-detail"],
@@ -135,18 +140,83 @@ const TUTORIALS: Tutorial[] = [
         action: "Click '+ New Part' on the Parts page",
       },
       {
+        title: "Organise parts with categories",
+        description: "Parts are grouped by categories like Lights, Tyres, Seals, etc. Use the filter tabs on the parts page to browse by category. You can add new categories directly from the filter bar.",
+        action: "Click '+ Add Category' on the Parts page filter bar",
+      },
+      {
         title: "Set the markup percentage",
         description: "Each part can have its own markup %. If left empty, the default markup from Settings → Pricing is used. Example: cost €10 with 40% markup = selling price €14.",
         action: "Edit a part and set the 'Markup %' field",
       },
       {
         title: "Use parts in a repair estimate",
-        description: "In a repair's cost estimate, click '+ Add Line' and select a part from the catalog. The selling price (cost + markup) is filled in automatically.",
+        description: "In a repair's cost estimate, click '+ Add Line' and select a part from the catalog. Use the category tabs to filter quickly. The selling price (cost + markup) is filled in automatically.",
         action: "Add a line to a repair's cost estimate",
       },
       {
         title: "Customer sees selling price only",
         description: "The quote and invoice always show the selling price (after markup). The customer never sees your purchase price. Your margin is fully protected.",
+      },
+    ],
+  },
+  {
+    id: "tags-filters",
+    title: "Using tags & filters",
+    description: "Organise repairs with tags, create new ones inline, and filter your overview.",
+    duration: "2 min",
+    difficulty: "beginner",
+    pages: ["repairs", "repair-detail"],
+    steps: [
+      {
+        title: "Assign tags to repairs",
+        description: "On any repair detail page, click the '+' button in the status bar to open the tag picker. Select a tag to assign it. Click the × on a tag to remove it.",
+        action: "Click '+' next to the status badges on a repair",
+      },
+      {
+        title: "Create new tags on the fly",
+        description: "In the tag picker dropdown, click 'New tag…' at the bottom. Type a name, pick a colour, and click Create. The tag is instantly available to assign.",
+        action: "Click 'New tag…' in the tag picker dropdown",
+      },
+      {
+        title: "Delete tags you no longer need",
+        description: "Hover over any tag in the picker dropdown — a trash icon appears on the right. Click it to permanently remove the tag from all repairs.",
+        action: "Hover over a tag in the dropdown and click the trash icon",
+      },
+      {
+        title: "Filter repairs by tag",
+        description: "On the repairs overview page, use the filter bar to select one or more tags. Only repairs with those tags will be shown.",
+        action: "Use the tag filter on the Repairs page",
+      },
+    ],
+  },
+  {
+    id: "garage-workflow",
+    title: "Garage technician workflow",
+    description: "How technicians use the garage view, request parts with categories, and report findings.",
+    duration: "3 min",
+    difficulty: "beginner",
+    pages: ["repair-detail", "repairs"],
+    steps: [
+      {
+        title: "Open a repair in the garage",
+        description: "Technicians access repairs via the garage URL. Each repair shows tasks, findings, and part requests — optimised for mobile use.",
+        action: "Open a repair from the garage overview",
+      },
+      {
+        title: "Request a part with a category",
+        description: "Tap '+ Request Part' and category chips appear immediately. Select a category (Tyres, Lights, Seals, etc.) to prefix the request, then type the specific part name.",
+        action: "Tap '+ Request Part' in the parts section",
+      },
+      {
+        title: "Add or manage categories",
+        description: "In the part request picker, tap '+' at the end of the category chips to create a new category. Select a category and tap 'Delete this category' to remove it.",
+        action: "Tap '+' next to the category chips",
+      },
+      {
+        title: "Report findings during repair",
+        description: "Found an issue? Tap '+ Finding' to log it with category, severity, and whether customer approval is needed. The office sees it immediately.",
+        action: "Tap '+ Finding' in the findings section",
       },
     ],
   },
@@ -258,11 +328,11 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         title: "Your repairs overview",
         steps: [
           "Each repair follows: Quote → Repair → Invoice → Paid.",
-          "Click on any repair to see its details, add parts, create quotes & invoices.",
-          "Use filters to find repairs by status — e.g. 'Completed' to see what needs invoicing.",
+          "Click on any repair to see its details, add parts, manage tags, and create quotes & invoices.",
+          "Use filters and tags to organise — create new tags directly from any repair detail page.",
           "Payment updates automatically from Holded — no manual tracking needed.",
         ],
-        tip: "Start a new repair top-right. The system will guide you through each step on the repair detail page.",
+        tip: "Start a new repair top-right. Use tags to categorise repairs (e.g. Pre-Sale Inspection, Warranty). You can create and delete tags directly from the tag picker on any repair.",
         activeStep: "repair",
         quickActions: [
           { label: "New Repair", href: "/repairs/new" },
@@ -275,11 +345,11 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         title: "Creating a new repair",
         steps: [
           "Fill in customer, unit (caravan), and description of the issue.",
-          "After creating, go to the repair detail to add parts and build a cost estimate.",
+          "After creating, go to the repair detail to add tags, parts, and build a cost estimate.",
           "Then create a Quote in Holded from the sidebar — you can email it directly to the customer.",
           "Once approved, start the repair work. When done, create an invoice.",
         ],
-        tip: "You can always add or change parts later — the quote/invoice amounts update automatically.",
+        tip: "You can always add or change parts later — the quote/invoice amounts update automatically. Use tags to label repairs for easy filtering.",
         activeStep: "quote",
       };
 
@@ -289,13 +359,13 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         return {
           title: "Repair workflow",
           steps: [
-            "1. Build cost estimate: add parts (with markup) + labour hours.",
-            "2. Create Quote → sends to Holded, you can email it to the customer directly.",
-            "3. Do the repair. Found extra issues? Update the estimate — amounts adjust automatically.",
-            "4. Create Invoice → converts your estimate to a Holded invoice. Send it via email.",
-            "5. Payment is tracked automatically from Holded — no manual work needed.",
+            "1. Add tags to categorise this repair — create new ones directly from the '+' button.",
+            "2. Build cost estimate: add parts (with markup) + labour hours. Filter parts by category.",
+            "3. Create Quote → sends to Holded, you can email it to the customer directly.",
+            "4. Do the repair. Found extra issues? Update the estimate — amounts adjust automatically.",
+            "5. Create Invoice → converts your estimate to a Holded invoice. Send it via email.",
           ],
-          tip: "Everything happens from this page. Use the sidebar on the right for Quote, Invoice, and Send actions.",
+          tip: "Everything happens from this page. Tags, parts, quotes, invoices — all managed inline without leaving the repair.",
           activeStep: "quote",
         };
       }
@@ -411,11 +481,12 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         title: "Parts catalog & pricing",
         steps: [
           "Add parts with their cost price (what you pay the supplier).",
+          "Organise parts into categories — filter by category using the tabs at the top.",
           "Set a markup % per part — or use the default markup from Settings → Pricing.",
           "When you add a part to a repair estimate, the selling price is calculated automatically.",
-          "The customer never sees your purchase price — only the selling price after markup.",
+          "In the garage, technicians can request parts by category — categories you create here show up there too.",
         ],
-        tip: "Your margin is protected: quotes and invoices show selling prices (cost + markup), never your purchase price.",
+        tip: "Your margin is protected: quotes and invoices show selling prices (cost + markup), never your purchase price. Manage categories directly from the filter bar.",
       };
 
     case "invoices":
@@ -478,13 +549,13 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
   }, [tutorial.id, onClose]);
 
   return (
-    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden">
+    <div className="rounded-xl border border-border/50 bg-background shadow-sm overflow-hidden">
       <div className="px-4 pt-3 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-900/40">
-            <GraduationCap className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
+            <GraduationCap className="h-3 w-3 text-muted-foreground" />
           </div>
-          <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+          <span className="text-xs font-semibold">
             {tutorial.title}
           </span>
         </div>
@@ -500,29 +571,29 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
               key={i}
               className={cn(
                 "h-1 flex-1 rounded-full transition-colors",
-                i <= currentStep ? "bg-emerald-500" : "bg-emerald-200 dark:bg-emerald-800",
+                i <= currentStep ? "bg-foreground" : "bg-muted",
               )}
             />
           ))}
         </div>
-        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">
+        <p className="text-[10px] text-muted-foreground mt-1">
           Step {currentStep + 1} of {tutorial.steps.length}
         </p>
       </div>
 
-      <div className="px-4 pb-3 border-t border-emerald-100 dark:border-emerald-900/40 pt-2.5">
+      <div className="px-4 pb-3 border-t border-border/50 pt-2.5">
         <div className="flex items-start gap-2 mb-2">
-          <Target className="h-3.5 w-3.5 mt-0.5 text-emerald-500 shrink-0" />
+          <Target className="h-3.5 w-3.5 mt-0.5 text-foreground/60 shrink-0" />
           <div>
-            <p className="text-[12px] font-semibold text-emerald-900 dark:text-emerald-200">{step.title}</p>
-            <p className="text-[11px] text-emerald-700 dark:text-emerald-300 leading-relaxed mt-1">{step.description}</p>
+            <p className="text-[12px] font-semibold">{step.title}</p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">{step.description}</p>
           </div>
         </div>
 
         {step.action && (
-          <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-emerald-100/50 dark:bg-emerald-900/30 mb-3">
-            <MousePointerClick className="h-3 w-3 mt-0.5 text-emerald-500 shrink-0" />
-            <p className="text-[11px] text-emerald-700 dark:text-emerald-300 leading-relaxed font-medium">
+          <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-muted/50 mb-3">
+            <MousePointerClick className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
               {step.action}
             </p>
           </div>
@@ -532,7 +603,7 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs h-7 text-emerald-600"
+            className="text-xs h-7 text-muted-foreground"
             disabled={isFirst}
             onClick={() => setCurrentStep(currentStep - 1)}
           >
@@ -541,7 +612,7 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
           {isLast ? (
             <Button
               size="sm"
-              className="text-xs h-7 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="text-xs h-7"
               onClick={completeTutorial}
             >
               <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -550,7 +621,7 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
           ) : (
             <Button
               size="sm"
-              className="text-xs h-7 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="text-xs h-7"
               onClick={() => setCurrentStep(currentStep + 1)}
             >
               Next →
@@ -583,13 +654,13 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
   const allTutorials = [...relevant, ...others];
 
   return (
-    <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 overflow-hidden">
+    <div className="rounded-xl border border-border/50 bg-background shadow-sm overflow-hidden">
       <div className="px-4 pt-3 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/40">
-            <BookOpen className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
+            <BookOpen className="h-3 w-3 text-muted-foreground" />
           </div>
-          <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+          <span className="text-xs font-semibold">
             Tutorials — Learn step by step
           </span>
         </div>
@@ -598,7 +669,7 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
         </Button>
       </div>
 
-      <div className="px-4 pb-3 border-t border-amber-100 dark:border-amber-900/40 pt-2.5 space-y-2">
+      <div className="px-4 pb-3 border-t border-border/50 pt-2.5 space-y-2">
         {allTutorials.map((tutorial) => {
           const isCompleted = completedIds.includes(tutorial.id);
           const isRelevant = relevant.includes(tutorial);
@@ -609,10 +680,10 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
               className={cn(
                 "w-full text-left rounded-lg px-3 py-2.5 transition-colors border",
                 isCompleted
-                  ? "bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-800/50"
+                  ? "bg-muted/30 border-border/30"
                   : isRelevant
-                    ? "bg-white dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                    : "bg-white/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+                    ? "bg-background border-border/50 hover:bg-muted/40"
+                    : "bg-background/50 border-border/30 hover:bg-muted/30",
               )}
             >
               <div className="flex items-center justify-between">
@@ -620,31 +691,31 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
                   {isCompleted ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   ) : (
-                    <Play className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   )}
                   <span className={cn(
                     "text-[12px] font-medium",
-                    isCompleted ? "text-emerald-700 dark:text-emerald-400" : "text-amber-900 dark:text-amber-200",
+                    isCompleted ? "text-muted-foreground" : "",
                   )}>
                     {tutorial.title}
                   </span>
                 </div>
-                <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
               </div>
               <div className="flex items-center gap-3 mt-1 pl-5">
-                <span className="text-[10px] text-muted-foreground">{tutorial.duration}</span>
-                <span className="text-[10px] text-muted-foreground">{tutorial.steps.length} steps</span>
+                <span className="text-[10px] text-muted-foreground/70">{tutorial.duration}</span>
+                <span className="text-[10px] text-muted-foreground/70">{tutorial.steps.length} steps</span>
                 <span className={cn(
                   "text-[10px] px-1.5 py-0.5 rounded-full",
                   tutorial.difficulty === "beginner"
-                    ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
-                    : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+                    ? "bg-muted/60 text-muted-foreground"
+                    : "bg-muted/60 text-muted-foreground",
                 )}>
                   {tutorial.difficulty}
                 </span>
                 {isRelevant && !isCompleted && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-                    relevant for this page
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/[0.06] text-muted-foreground font-medium">
+                    for this page
                   </span>
                 )}
               </div>
@@ -735,16 +806,16 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
         <button
           type="button"
           onClick={handleRestore}
-          className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
         >
           <HelpCircle className="h-3 w-3" />
           Show guide
         </button>
-        <span className="text-muted-foreground/30">·</span>
+        <span className="text-muted-foreground/20">·</span>
         <button
           type="button"
           onClick={() => { setDismissed(false); setShowTutorials(true); }}
-          className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
         >
           <BookOpen className="h-3 w-3" />
           Tutorials
@@ -756,7 +827,7 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
   return (
     <div
       className={cn(
-        "rounded-xl border border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 overflow-hidden transition-all",
+        "rounded-xl border border-border/50 bg-background shadow-sm overflow-hidden transition-all",
         className,
       )}
     >
@@ -764,10 +835,10 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900/40">
-              <Lightbulb className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
+              <Lightbulb className="h-3 w-3 text-muted-foreground" />
             </div>
-            <span className="text-xs font-semibold text-blue-900 dark:text-blue-200">
+            <span className="text-xs font-semibold">
               {guide.title}
             </span>
           </div>
@@ -775,7 +846,7 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             <Button
               variant="ghost"
               size="sm"
-              className="h-5 text-[10px] px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+              className="h-5 text-[10px] px-2 text-muted-foreground hover:text-foreground"
               onClick={() => setShowTutorials(true)}
             >
               <BookOpen className="h-3 w-3 mr-1" />
@@ -811,9 +882,9 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                 <div
                   className={cn(
                     "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-all",
-                    isActive && "bg-white dark:bg-blue-900/60 shadow-sm border border-blue-200 dark:border-blue-700",
+                    isActive && "bg-muted shadow-sm border border-border/50",
                     isCompleted && "text-emerald-600 dark:text-emerald-400",
-                    isFuture && "text-muted-foreground/50",
+                    isFuture && "text-muted-foreground/40",
                     !isActive && !isCompleted && !isFuture && step.color,
                     isActive && step.activeColor,
                   )}
@@ -824,7 +895,7 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                 {i < STEPS.length - 1 && (
                   <ArrowRight className={cn(
                     "h-2.5 w-2.5 mx-0.5 shrink-0",
-                    isCompleted ? "text-emerald-400" : "text-muted-foreground/30",
+                    isCompleted ? "text-emerald-400/60" : "text-muted-foreground/20",
                   )} />
                 )}
               </div>
@@ -835,11 +906,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
 
       {/* Expandable content */}
       {expanded && (
-        <div className="px-4 pb-3 border-t border-blue-100 dark:border-blue-900/40 mt-1 pt-2.5">
+        <div className="px-4 pb-3 border-t border-border/50 mt-1 pt-2.5">
           <div className="space-y-1.5 mb-2.5">
             {guide.steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-2 text-[12px] text-blue-800 dark:text-blue-300 leading-relaxed">
-                <span className="mt-0.5 shrink-0 w-4 text-center text-blue-400 dark:text-blue-600 font-bold text-[10px]">
+              <div key={i} className="flex items-start gap-2 text-[12px] text-foreground/80 leading-relaxed">
+                <span className="mt-0.5 shrink-0 w-4 text-center text-muted-foreground/50 font-bold text-[10px]">
                   {step.startsWith("✅") || step.startsWith("→") ? "" : `${i + 1}.`}
                 </span>
                 <span>{step}</span>
@@ -847,9 +918,9 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             ))}
           </div>
 
-          <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-blue-100/50 dark:bg-blue-900/30 mb-2.5">
-            <Lightbulb className="h-3 w-3 mt-0.5 text-blue-500 shrink-0" />
-            <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed">
+          <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-muted/40 mb-2.5">
+            <Lightbulb className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
               {guide.tip}
             </p>
           </div>
@@ -861,7 +932,7 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors"
+                  className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-md bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   <ArrowRight className="h-2.5 w-2.5" />
                   {action.label}
@@ -875,8 +946,8 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             const relevantTutorials = TUTORIALS.filter(t => t.pages.includes(page));
             if (relevantTutorials.length === 0) return null;
             return (
-              <div className="mt-2.5 pt-2.5 border-t border-blue-100 dark:border-blue-900/40">
-                <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
+              <div className="mt-2.5 pt-2.5 border-t border-border/50">
+                <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
                   Tutorials for this page
                 </p>
                 <div className="space-y-1">
@@ -884,11 +955,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
                     <button
                       key={tutorial.id}
                       onClick={() => setActiveTutorial(tutorial)}
-                      className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                      className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors"
                     >
-                      <Play className="h-3 w-3 text-blue-500 shrink-0" />
-                      <span className="text-[11px] text-blue-700 dark:text-blue-300">{tutorial.title}</span>
-                      <span className="text-[10px] text-blue-400 ml-auto shrink-0">{tutorial.duration}</span>
+                      <Play className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                      <span className="text-[11px] text-muted-foreground">{tutorial.title}</span>
+                      <span className="text-[10px] text-muted-foreground/50 ml-auto shrink-0">{tutorial.duration}</span>
                     </button>
                   ))}
                 </div>

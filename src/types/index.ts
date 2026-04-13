@@ -187,21 +187,21 @@ export const STATUS_LABELS: Record<RepairStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<RepairStatus, string> = {
-  new: "bg-blue-100 text-blue-800",
-  todo: "bg-slate-100 text-slate-800",
-  in_inspection: "bg-cyan-100 text-cyan-800",
-  no_damage: "bg-lime-100 text-lime-800",
-  quote_needed: "bg-amber-100 text-amber-800",
-  waiting_approval: "bg-yellow-100 text-yellow-800",
-  waiting_customer: "bg-orange-100 text-orange-800",
-  waiting_parts: "bg-purple-100 text-purple-800",
-  scheduled: "bg-indigo-100 text-indigo-800",
-  in_progress: "bg-green-100 text-green-800",
-  blocked: "bg-red-100 text-red-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  invoiced: "bg-teal-100 text-teal-800",
-  rejected: "bg-rose-100 text-rose-800",
-  archived: "bg-gray-100 text-gray-500",
+  new: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  todo: "bg-slate-50 text-slate-500 dark:bg-slate-500/10 dark:text-slate-400",
+  in_inspection: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
+  no_damage: "bg-lime-50 text-lime-600 dark:bg-lime-500/10 dark:text-lime-400",
+  quote_needed: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  waiting_approval: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
+  waiting_customer: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+  waiting_parts: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
+  scheduled: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
+  in_progress: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  blocked: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  completed: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+  invoiced: "bg-teal-50 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400",
+  rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
+  archived: "bg-gray-50 text-gray-400 dark:bg-gray-500/10 dark:text-gray-500",
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {

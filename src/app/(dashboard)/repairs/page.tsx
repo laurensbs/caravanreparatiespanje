@@ -9,7 +9,7 @@ import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
-import { Trash2, Wrench, Clock, Package, Users, AlertTriangle, CheckCircle, FileText, PhoneOff } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
@@ -56,25 +56,26 @@ export default async function RepairsPage({ searchParams }: Props) {
   const { byStatus, urgent } = statusCounts;
 
   const quickButtons = [
-    { label: "To Do", value: (byStatus["new"] ?? 0) + (byStatus["todo"] ?? 0), icon: <Clock className="h-4 w-4" />, status: "todo", bg: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400 ring-orange-300/40" },
-    { label: "In Progress", value: (byStatus["in_progress"] ?? 0) + (byStatus["scheduled"] ?? 0) + (byStatus["in_inspection"] ?? 0), icon: <Wrench className="h-4 w-4" />, status: "in_progress", bg: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400 ring-sky-300/40" },
-    { label: "Waiting Parts", value: byStatus["waiting_parts"] ?? 0, icon: <Package className="h-4 w-4" />, status: "waiting_parts", bg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400 ring-purple-300/40" },
-    { label: "Waiting Customer", value: byStatus["waiting_customer"] ?? 0, icon: <Users className="h-4 w-4" />, status: "waiting_customer", bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 ring-amber-300/40" },
-    { label: "Completed", value: byStatus["completed"] ?? 0, icon: <CheckCircle className="h-4 w-4" />, status: "completed", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 ring-emerald-300/40" },
-    { label: "Urgent", value: urgent, icon: <AlertTriangle className="h-4 w-4" />, status: undefined as string | undefined, priority: "urgent" as string | undefined, bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 ring-red-300/40" },
+    { label: "To Do", value: (byStatus["new"] ?? 0) + (byStatus["todo"] ?? 0), status: "todo", color: "text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-800/50" },
+    { label: "In Progress", value: (byStatus["in_progress"] ?? 0) + (byStatus["scheduled"] ?? 0) + (byStatus["in_inspection"] ?? 0), status: "in_progress", color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30" },
+    { label: "Waiting Parts", value: byStatus["waiting_parts"] ?? 0, status: "waiting_parts", color: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/30" },
+    { label: "Waiting Customer", value: byStatus["waiting_customer"] ?? 0, status: "waiting_customer", color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30" },
+    { label: "Completed", value: byStatus["completed"] ?? 0, status: "completed", color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/30" },
+    { label: "Urgent", value: urgent, status: undefined as string | undefined, priority: "urgent" as string | undefined, color: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30" },
   ];
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Repairs</h1>
-          <p className="text-sm text-muted-foreground">
-            {total} repair{total !== 1 ? "s" : ""} found
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {total} repair{total !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild className="h-9 rounded-lg text-xs">
+          <Button variant="ghost" size="sm" asChild className="h-8 rounded-lg text-xs text-muted-foreground">
             <Link href="/repairs/bin">
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
               Bin
@@ -84,8 +85,8 @@ export default async function RepairsPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {/* Quick status buttons */}
-      <div className="flex flex-wrap gap-2">
+      {/* Quick filters — calm pills */}
+      <div className="flex flex-wrap gap-1.5">
         {quickButtons.map((btn) => {
           const href = btn.priority
             ? `/repairs?priority=${btn.priority}`
@@ -95,10 +96,11 @@ export default async function RepairsPage({ searchParams }: Props) {
             : filters.status === btn.status;
           return (
             <Link key={btn.label} href={isActive ? "/repairs" : href}>
-              <span className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer ring-1 ${btn.bg} ${isActive ? "ring-2 shadow-md scale-[1.02]" : ""}`}>
-                {btn.icon}
+              <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                isActive ? `${btn.color} ring-1 ring-current/20 shadow-sm` : "text-muted-foreground hover:bg-muted/50"
+              }`}>
                 {btn.label}
-                <span className="text-base font-bold tabular-nums">{btn.value}</span>
+                <span className="tabular-nums font-semibold">{btn.value}</span>
               </span>
             </Link>
           );

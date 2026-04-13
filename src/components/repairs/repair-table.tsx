@@ -1,16 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, INVOICE_STATUS_LABELS } from "@/types";
-import type { RepairStatus, Priority, InvoiceStatus } from "@/types";
+import { STATUS_LABELS, STATUS_COLORS, INVOICE_STATUS_LABELS } from "@/types";
+import type { RepairStatus, InvoiceStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
 import { useState } from "react";
 import { BulkActions } from "./bulk-actions";
@@ -134,172 +130,171 @@ export function RepairTable({ jobs }: RepairTableProps) {
         />
       )}
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="overflow-x-auto max-h-[calc(100vh-16rem)] overflow-y-auto">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-card">
-            <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-              <TableHead className="w-10 sticky left-0 bg-muted/40">
-                <Checkbox
-                  checked={jobs.length > 0 && selected.size === jobs.length}
-                  onCheckedChange={toggleAll}
-                />
-              </TableHead>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Title</TableHead>
-              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("status")}>
-                <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
-              </TableHead>
-              <TableHead className="w-20 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("priority")}>
-                <span className="inline-flex items-center">Priority<SortIcon column="priority" /></span>
-              </TableHead>
-              <TableHead className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("customerName")}>
-                <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
-              </TableHead>
-              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("invoiceStatus")}>
-                <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
-              </TableHead>
-              <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Tags</TableHead>
-              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("dueDate")}>
-                <span className="inline-flex items-center">Planned<SortIcon column="dueDate" /></span>
-              </TableHead>
-              <TableHead className="w-24 cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider" onClick={() => handleSort("updatedAt")}>
-                <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {jobs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="py-16 text-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <ArrowUpDown className="h-8 w-8 opacity-20" />
-                    <p className="font-medium text-sm">No repair jobs found</p>
-                    <p className="text-xs">Try adjusting your filters</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              jobs.map((job, idx) => (
-                <TableRow
-                  key={job.id}
-                  className="interactive-row group table-row-animate"
-                  style={{ animationDelay: `${idx * 20}ms` }}
-                  data-state={selected.has(job.id) ? "selected" : undefined}
-                  onClick={() => {
-                    const backTo = `/repairs?${searchParams.toString()}`;
-                    router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
-                  }}
-                >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selected.has(job.id)}
-                      onCheckedChange={() => toggleOne(job.id)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs">
-                      <p className="truncate font-medium text-xs group-hover:text-primary transition-colors">
-                        {job.title || "Unnamed repair"}
-                      </p>
-                      <p className="truncate text-[11px] text-muted-foreground mt-0.5">
-                        {[job.publicCode, job.descriptionRaw?.slice(0, 60)].filter(Boolean).join(" · ") || "—"}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="focus:outline-none">
-                          <Badge variant="secondary" className={`text-[11px] cursor-pointer hover:ring-2 hover:ring-ring/30 transition-shadow ${STATUS_COLORS[job.status as RepairStatus]}`}>
-                            {STATUS_LABELS[job.status as RepairStatus]}
-                          </Badge>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-                        {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                          <DropdownMenuItem
-                            key={val}
-                            className={val === job.status ? "font-semibold" : ""}
-                            onClick={() => { if (val !== job.status) quickStatusChange(job.id, val); }}
-                          >
-                            <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_COLORS[val as RepairStatus].split(" ")[0]}`} />
-                            {label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={`text-[11px] ${PRIORITY_COLORS[job.priority as Priority]}`}>
-                      {PRIORITY_LABELS[job.priority as Priority]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <div className="min-w-0">
-                      <span className="flex items-center gap-1.5">
-                        {job.locationName && (
-                          <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-400"}`} title={job.locationName} />
-                        )}
-                        {job.customerName ?? <span className="text-muted-foreground">—</span>}
-                      </span>
-                      {(job.unitRegistration || job.locationName) && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                          {[job.locationName, job.unitRegistration].filter(Boolean).join(" · ")}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-0.5">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium w-fit ${
-                        job.invoiceStatus === "paid" ? "bg-emerald-100 text-emerald-700" :
-                        job.invoiceStatus === "sent" ? "bg-blue-100 text-blue-700" :
-                        job.invoiceStatus === "draft" ? "bg-amber-100 text-amber-700" :
-                        job.invoiceStatus === "warranty" ? "bg-purple-100 text-purple-700" :
-                        "bg-gray-100 text-gray-500"
-                      }`}>
-                        {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
-                      </span>
-                      {(job.warrantyInternalCostFlag || (job.internalCost && parseFloat(job.internalCost) > 0)) && (
-                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 w-fit">
-                          Our Cost{job.internalCost ? ` €${parseFloat(job.internalCost).toFixed(0)}` : ""}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {job.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {job.tags.map((tag) => (
-                          <span
-                            key={tag.id}
-                            className="inline-block rounded-full px-1.5 py-0 text-[10px] font-medium text-white leading-4"
-                            style={{ backgroundColor: tag.color }}
-                          >
-                            {tag.name}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-[11px]">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {job.dueDate ? (
-                      <SmartDate date={job.dueDate} className="text-xs text-muted-foreground" />
-                    ) : (
-                      <span className="text-muted-foreground text-[11px]">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <SmartDate date={job.updatedAt} className="text-xs text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      {/* Column headers */}
+      <div className="hidden md:flex items-center gap-4 px-4 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+        <div className="w-6 shrink-0" />
+        <div className="flex-[2] min-w-0 cursor-pointer select-none" onClick={() => handleSort("title")}>
+          <span className="inline-flex items-center">Title<SortIcon column="title" /></span>
         </div>
+        <div className="w-28 shrink-0 cursor-pointer select-none" onClick={() => handleSort("status")}>
+          <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
+        </div>
+        <div className="flex-1 min-w-0 cursor-pointer select-none" onClick={() => handleSort("customerName")}>
+          <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
+        </div>
+        <div className="w-24 shrink-0 cursor-pointer select-none" onClick={() => handleSort("invoiceStatus")}>
+          <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
+        </div>
+        <div className="w-24 shrink-0 cursor-pointer select-none" onClick={() => handleSort("dueDate")}>
+          <span className="inline-flex items-center">Planned<SortIcon column="dueDate" /></span>
+        </div>
+        <div className="w-20 shrink-0 cursor-pointer select-none text-right" onClick={() => handleSort("updatedAt")}>
+          <span className="inline-flex items-center">Updated<SortIcon column="updatedAt" /></span>
+        </div>
+      </div>
+
+      {/* Repair rows */}
+      <div className="space-y-1">
+        {jobs.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground">
+            <ArrowUpDown className="h-8 w-8 opacity-15" />
+            <p className="font-medium text-sm">No repair jobs found</p>
+            <p className="text-xs">Try adjusting your filters</p>
+          </div>
+        ) : (
+          jobs.map((job, idx) => {
+            const isUrgent = job.priority === "urgent";
+            const isHigh = job.priority === "high";
+
+            return (
+              <div
+                key={job.id}
+                className={`group relative flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all duration-150 cursor-pointer
+                  hover:bg-muted/50 hover:shadow-sm active:scale-[0.998]
+                  ${selected.has(job.id) ? "bg-primary/[0.04] ring-1 ring-primary/20" : ""}
+                  ${isUrgent ? "border-l-2 border-l-red-400" : ""}
+                  animate-slide-up`}
+                style={{ animationDelay: `${idx * 25}ms` }}
+                onClick={() => {
+                  const backTo = `/repairs?${searchParams.toString()}`;
+                  router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
+                }}
+              >
+                {/* Checkbox */}
+                <div className="w-6 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selected.has(job.id)}
+                    onCheckedChange={() => toggleOne(job.id)}
+                    className="opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 transition-opacity"
+                  />
+                </div>
+
+                {/* Title + description */}
+                <div className="flex-[2] min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                      {job.title || "Unnamed repair"}
+                    </p>
+                    {isUrgent && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
+                    {isHigh && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-orange-400" />}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {job.publicCode && (
+                      <span className="text-[11px] text-muted-foreground/50 font-mono">{job.publicCode}</span>
+                    )}
+                    {job.publicCode && job.descriptionRaw && <span className="text-muted-foreground/30">·</span>}
+                    {job.descriptionRaw && (
+                      <span className="text-[11px] text-muted-foreground/60 truncate">{job.descriptionRaw.slice(0, 60)}</span>
+                    )}
+                  </div>
+                  {/* Tags inline */}
+                  {job.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {job.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="inline-block rounded-md px-1.5 py-0 text-[10px] font-medium leading-4 opacity-70"
+                          style={{ backgroundColor: tag.color + "22", color: tag.color }}
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Status */}
+                <div className="w-28 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="focus:outline-none">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-shadow hover:ring-1 hover:ring-ring/20 ${STATUS_COLORS[job.status as RepairStatus]}`}>
+                          {STATUS_LABELS[job.status as RepairStatus]}
+                        </span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                      {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                        <DropdownMenuItem
+                          key={val}
+                          className={val === job.status ? "font-semibold" : ""}
+                          onClick={() => { if (val !== job.status) quickStatusChange(job.id, val); }}
+                        >
+                          <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_COLORS[val as RepairStatus].split(" ")[0]}`} />
+                          {label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Contact */}
+                <div className="flex-1 min-w-0 hidden md:block">
+                  <div className="flex items-center gap-1.5">
+                    {job.locationName && (
+                      <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300"}`} title={job.locationName} />
+                    )}
+                    <span className="text-xs text-foreground/80 truncate">
+                      {job.customerName ?? <span className="text-muted-foreground/40">—</span>}
+                    </span>
+                  </div>
+                  {(job.unitRegistration || job.locationName) && (
+                    <p className="text-[11px] text-muted-foreground/50 mt-0.5 truncate">
+                      {[job.locationName, job.unitRegistration].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </div>
+
+                {/* Invoice */}
+                <div className="w-24 shrink-0 hidden md:block">
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    job.invoiceStatus === "paid" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" :
+                    job.invoiceStatus === "sent" ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" :
+                    job.invoiceStatus === "draft" ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
+                    job.invoiceStatus === "warranty" ? "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400" :
+                    "text-muted-foreground/40"
+                  }`}>
+                    {job.invoiceStatus === "not_invoiced" ? "—" : (INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus)}
+                  </span>
+                </div>
+
+                {/* Planned */}
+                <div className="w-24 shrink-0 hidden md:block">
+                  {job.dueDate ? (
+                    <SmartDate date={job.dueDate} className="text-xs text-muted-foreground/60" />
+                  ) : (
+                    <span className="text-muted-foreground/30 text-[11px]">—</span>
+                  )}
+                </div>
+
+                {/* Updated */}
+                <div className="w-20 shrink-0 text-right hidden md:block">
+                  <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/40" />
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

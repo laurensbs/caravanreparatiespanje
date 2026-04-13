@@ -293,6 +293,7 @@ export type GuidePage =
   | "customers"
   | "parts"
   | "invoices"
+  | "quotes"
   | "units";
 
 interface GuideContent {
@@ -499,6 +500,19 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         ],
         tip: "When a customer pays in Holded (bank, iDEAL, etc.), the status updates here automatically. You can also mark invoices paid manually.",
         activeStep: "paid",
+      };
+
+    case "quotes":
+      return {
+        title: "All quotes synced from Holded",
+        steps: [
+          "Quotes are created from repair detail pages — build a cost estimate first, then click 'Create Quote'.",
+          "Each quote syncs to Holded instantly. You can email it to the customer from the repair page.",
+          "When a customer approves, start the repair. When done, convert to an invoice.",
+          "Quote status syncs automatically from Holded.",
+        ],
+        tip: "Quotes show the selling price (cost + markup). Your purchase prices are never visible to the customer.",
+        activeStep: "quote",
       };
 
     case "units":

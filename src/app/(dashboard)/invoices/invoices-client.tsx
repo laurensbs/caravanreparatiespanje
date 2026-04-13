@@ -250,7 +250,7 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
         </button>
       </div>
 
-      <WorkflowGuide page="invoices" />
+      <WorkflowGuide page={tab === "quotes" ? "quotes" : "invoices"} />
 
       {/* Shared filters */}
       <div className="flex flex-wrap items-center gap-2">

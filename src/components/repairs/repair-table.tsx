@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { STATUS_LABELS, STATUS_COLORS, INVOICE_STATUS_LABELS } from "@/types";
+import { STATUS_LABELS, INVOICE_STATUS_LABELS } from "@/types";
 import type { RepairStatus, InvoiceStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
 import { useState, useEffect, useRef, useCallback, useTransition } from "react";
@@ -152,6 +152,42 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
     return colors[Math.abs(hash) % colors.length];
   }
 
+  const STATUS_ACCENT: Record<string, string> = {
+    new: "bg-gray-300",
+    todo: "bg-gray-300",
+    in_inspection: "bg-sky-300",
+    no_damage: "bg-emerald-300",
+    quote_needed: "bg-amber-300",
+    waiting_approval: "bg-amber-300",
+    waiting_customer: "bg-orange-400",
+    waiting_parts: "bg-amber-400",
+    scheduled: "bg-sky-300",
+    in_progress: "bg-sky-400",
+    blocked: "bg-red-400",
+    completed: "bg-emerald-400",
+    invoiced: "bg-emerald-300",
+    rejected: "bg-red-300",
+    archived: "bg-gray-300",
+  };
+
+  const STATUS_PILL: Record<string, string> = {
+    new: "bg-gray-100 text-gray-600",
+    todo: "bg-gray-100 text-gray-600",
+    in_inspection: "bg-sky-50 text-sky-700",
+    no_damage: "bg-emerald-50 text-emerald-700",
+    quote_needed: "bg-amber-50 text-amber-700",
+    waiting_approval: "bg-amber-50 text-amber-700",
+    waiting_customer: "bg-orange-50 text-orange-700",
+    waiting_parts: "bg-amber-50 text-amber-700",
+    scheduled: "bg-sky-50 text-sky-700",
+    in_progress: "bg-sky-50 text-sky-700",
+    blocked: "bg-red-50 text-red-600",
+    completed: "bg-emerald-50 text-emerald-700",
+    invoiced: "bg-emerald-50 text-emerald-700",
+    rejected: "bg-red-50 text-red-600",
+    archived: "bg-gray-100 text-gray-400",
+  };
+
   async function quickStatusChange(jobId: string, newStatus: string) {
     try {
       await updateRepairJob(jobId, { status: newStatus as any });
@@ -174,12 +210,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {/* Column headers */}
-      <div className="hidden md:flex items-center gap-5 px-5 pb-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/40 select-none">
-        <div className="w-6 shrink-0" />
+      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-gray-400 select-none">
+        <div className="w-8 shrink-0" />
         <div className="flex-[2] min-w-0 cursor-pointer" onClick={() => handleSort("title")}>
           <span className="inline-flex items-center">Title<SortIcon column="title" /></span>
         </div>
-        <div className="w-24 shrink-0 cursor-pointer" onClick={() => handleSort("status")}>
+        <div className="w-28 shrink-0 cursor-pointer" onClick={() => handleSort("status")}>
           <span className="inline-flex items-center">Status<SortIcon column="status" /></span>
         </div>
         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleSort("customerName")}>
@@ -197,12 +233,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       </div>
 
       {/* Repair rows */}
-      <div className="space-y-0.5">
+      <div className="space-y-0">
         {allJobs.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground">
-            <ArrowUpDown className="h-8 w-8 opacity-15" />
-            <p className="font-medium text-sm">No repair jobs found</p>
-            <p className="text-xs">Try adjusting your filters</p>
+          <div className="flex flex-col items-center gap-2 py-20 text-gray-400">
+            <ArrowUpDown className="h-8 w-8 opacity-20" />
+            <p className="font-medium text-sm text-gray-500">No repair jobs found</p>
+            <p className="text-xs text-gray-400">Try adjusting your filters</p>
           </div>
         ) : (
           allJobs.map((job, idx) => {
@@ -212,10 +248,10 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
             return (
               <div
                 key={job.id}
-                className={`group relative flex items-center gap-5 rounded-xl px-5 py-4 transition-all duration-150 cursor-pointer
-                  hover:bg-muted/40 active:scale-[0.998]
-                  ${selected.has(job.id) ? "bg-primary/[0.04] ring-1 ring-primary/15" : ""}
-                  ${isUrgent ? "border-l-2 border-l-red-400" : ""}
+                className={`group relative flex items-center gap-5 rounded-xl px-5 py-[18px] transition-all duration-150 cursor-pointer
+                  hover:bg-gray-50 active:scale-[0.998] border-b border-gray-100/60 last:border-b-0
+                  ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100" : ""}
+                  ${isUrgent ? "" : ""}
                   animate-slide-up`}
                 style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                 onClick={() => {
@@ -223,8 +259,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
                 }}
               >
+                {/* Left status accent bar */}
+                <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full ${STATUS_ACCENT[job.status] ?? "bg-gray-300"}`} />
+
                 {/* Checkbox */}
-                <div className="w-6 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="w-6 shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selected.has(job.id)}
                     onCheckedChange={() => toggleOne(job.id)}
@@ -235,7 +274,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 {/* Title + description */}
                 <div className="flex-[2] min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                    <p className="truncate text-[15px] font-medium text-gray-900 group-hover:text-[#0CC0DF] transition-colors">
                       {job.title || "Unnamed repair"}
                     </p>
                     {isUrgent && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
@@ -243,11 +282,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {job.publicCode && (
-                      <span className="text-[11px] text-muted-foreground/50 font-mono">{job.publicCode}</span>
+                      <span className="text-[11px] text-gray-400 font-mono">{job.publicCode}</span>
                     )}
-                    {job.publicCode && job.descriptionRaw && <span className="text-muted-foreground/30">·</span>}
+                    {job.publicCode && job.descriptionRaw && <span className="text-gray-300">·</span>}
                     {job.descriptionRaw && (
-                      <span className="text-[11px] text-muted-foreground/60 truncate">{job.descriptionRaw.slice(0, 60)}</span>
+                      <span className="text-[11px] text-gray-400 truncate">{job.descriptionRaw.slice(0, 60)}</span>
                     )}
                   </div>
                   {/* Tags inline */}
@@ -267,11 +306,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 </div>
 
                 {/* Status */}
-                <div className="w-24 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="w-28 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
-                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium tracking-wide transition-shadow hover:ring-1 hover:ring-ring/15 ${STATUS_COLORS[job.status as RepairStatus]}`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-shadow hover:ring-1 hover:ring-gray-200 ${STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_ACCENT[job.status] ?? "bg-gray-300"}`} />
                           {STATUS_LABELS[job.status as RepairStatus]}
                         </span>
                       </button>
@@ -283,7 +323,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                           className={val === job.status ? "font-semibold" : ""}
                           onClick={() => { if (val !== job.status) quickStatusChange(job.id, val); }}
                         >
-                          <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_COLORS[val as RepairStatus].split(" ")[0]}`} />
+                          <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_ACCENT[val] ?? "bg-gray-300"}`} />
                           {label}
                         </DropdownMenuItem>
                       ))}
@@ -293,13 +333,13 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Contact */}
                 <div className="flex-1 min-w-0 hidden md:block">
-                  <span className="text-[13px] text-foreground/80 truncate block">
-                    {job.customerName ?? <span className="text-muted-foreground/30">—</span>}
+                  <span className="text-sm text-gray-800 truncate block">
+                    {job.customerName ?? <span className="text-gray-300">—</span>}
                   </span>
                   {job.locationName && (
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300"}`} />
-                      <span className="text-[11px] text-muted-foreground/40 truncate">{job.locationName}</span>
+                      <span className="text-[11px] text-gray-400 truncate">{job.locationName}</span>
                     </div>
                   )}
                 </div>
@@ -307,11 +347,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 {/* Invoice */}
                 <div className="w-24 shrink-0 hidden md:block">
                   <span className={`text-[11px] font-medium ${
-                    job.invoiceStatus === "paid" ? "text-emerald-600/70 dark:text-emerald-400/70" :
-                    job.invoiceStatus === "sent" ? "text-blue-600/70 dark:text-blue-400/70" :
-                    job.invoiceStatus === "draft" ? "text-amber-600/70 dark:text-amber-400/70" :
-                    job.invoiceStatus === "warranty" ? "text-purple-600/70 dark:text-purple-400/70" :
-                    "text-muted-foreground/30"
+                    job.invoiceStatus === "paid" ? "text-emerald-600" :
+                    job.invoiceStatus === "sent" ? "text-blue-600" :
+                    job.invoiceStatus === "draft" ? "text-amber-600" :
+                    job.invoiceStatus === "warranty" ? "text-purple-600" :
+                    "text-gray-300"
                   }`}>
                     {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
                   </span>
@@ -320,15 +360,15 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 {/* Planned */}
                 <div className="w-24 shrink-0 hidden md:block">
                   {job.dueDate ? (
-                    <SmartDate date={job.dueDate} className="text-xs text-muted-foreground/60" />
+                    <SmartDate date={job.dueDate} className="text-xs text-gray-500" />
                   ) : (
-                    <span className="text-muted-foreground/30 text-[11px]">—</span>
+                    <span className="text-gray-300 text-[11px]">—</span>
                   )}
                 </div>
 
                 {/* Updated */}
                 <div className="w-20 shrink-0 text-right hidden md:block">
-                  <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/60" />
+                  <SmartDate date={job.updatedAt} className="text-[11px] text-gray-400" />
                 </div>
               </div>
             );
@@ -339,12 +379,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       {/* Infinite scroll sentinel */}
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-6">
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/40" />}
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
         </div>
       )}
 
       {!hasMore && allJobs.length > 0 && (
-        <p className="text-center text-[11px] text-muted-foreground/30 py-4">
+        <p className="text-center text-[11px] text-gray-400 py-4">
           {allJobs.length} repair{allJobs.length !== 1 ? "s" : ""}
         </p>
       )}

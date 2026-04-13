@@ -36,10 +36,10 @@ export default async function DashboardPage() {
   );
 
   const heroCards = [
-    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5 text-gray-400" />, href: "/repairs" },
-    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5 text-gray-400" />, href: "/repairs?status=in_progress" },
-    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5 text-gray-400" />, href: "/repairs?priority=urgent" },
-    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5 text-gray-400" />, href: "/repairs?customerResponseStatus=no_response" },
+    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5 text-gray-400" />, href: "/repairs", bg: "bg-white border border-gray-100" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5 text-sky-500" />, href: "/repairs?status=in_progress", bg: "bg-sky-50 border border-sky-100" },
+    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5 text-red-500" />, href: "/repairs?priority=urgent", bg: "bg-red-50 border border-red-100" },
+    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5 text-amber-500" />, href: "/repairs?customerResponseStatus=no_response", bg: "bg-amber-50 border border-amber-100" },
   ];
 
   const statusTabs = [
@@ -64,9 +64,9 @@ export default async function DashboardPage() {
       <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
         {heroCards.map((kpi) => (
           <Link key={kpi.label} href={kpi.href}>
-            <div className="bg-white rounded-xl shadow-sm p-6 transition-all duration-150 hover:shadow-md cursor-pointer">
-              <div className="opacity-40 mb-3">{kpi.icon}</div>
-              <p className="text-3xl font-semibold tracking-tight text-gray-900">{kpi.value}</p>
+            <div className={`rounded-2xl shadow-sm p-6 transition-all duration-150 hover:shadow-md cursor-pointer ${kpi.bg}`}>
+              <div className="mb-3">{kpi.icon}</div>
+              <p className="text-2xl font-semibold text-gray-900 tabular-nums">{kpi.value}</p>
               <p className="text-sm text-gray-500 mt-1">{kpi.label}</p>
             </div>
           </Link>
@@ -97,10 +97,10 @@ export default async function DashboardPage() {
       {/* ── Main Content ───────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Activity – Left */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm">
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm">
           <div className="flex items-center justify-between p-6 pb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
               <p className="text-sm text-gray-500 mt-0.5">Latest updated repair jobs</p>
             </div>
             <Link
@@ -121,7 +121,16 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-1">
-                {recentJobs.map((job) => (
+                {recentJobs.map((job) => {
+                  const statusPill: Record<string, string> = {
+                    completed: "bg-emerald-50 text-emerald-700",
+                    invoiced: "bg-emerald-50 text-emerald-700",
+                    in_progress: "bg-sky-50 text-sky-700",
+                    waiting_parts: "bg-amber-50 text-amber-700",
+                    waiting_customer: "bg-orange-50 text-orange-700",
+                    blocked: "bg-red-50 text-red-600",
+                  };
+                  return (
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
@@ -137,13 +146,14 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3 ml-4 shrink-0">
-                      <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-xs">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusPill[job.status as string] ?? "bg-gray-100 text-gray-600"}`}>
                         {STATUS_LABELS[job.status as RepairStatus]}
                       </span>
                       <SmartDate date={job.updatedAt} className="text-xs text-gray-400" />
                     </div>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -152,31 +162,46 @@ export default async function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Status Summary */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Status Summary</h3>
             {jobsByStatus.length === 0 ? (
               <p className="text-sm text-gray-500">No data</p>
             ) : (
               <div className="space-y-0">
-                {jobsByStatus.map((item) => (
+                {jobsByStatus.map((item) => {
+                  const dotColor: Record<string, string> = {
+                    new: "bg-gray-300",
+                    todo: "bg-gray-400",
+                    in_inspection: "bg-sky-300",
+                    in_progress: "bg-sky-400",
+                    scheduled: "bg-sky-300",
+                    waiting_parts: "bg-amber-400",
+                    waiting_customer: "bg-orange-400",
+                    waiting_approval: "bg-amber-300",
+                    completed: "bg-emerald-400",
+                    invoiced: "bg-emerald-300",
+                    blocked: "bg-red-400",
+                  };
+                  return (
                   <Link
                     key={item.status}
                     href={`/repairs?status=${item.status}`}
                     className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 -mx-3 px-3 rounded-lg"
                   >
                     <span className="flex items-center gap-2.5 text-sm text-gray-600">
-                      <span className="h-2 w-2 rounded-full bg-gray-300 shrink-0" />
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${dotColor[item.status as string] ?? "bg-gray-300"}`} />
                       {STATUS_LABELS[item.status as RepairStatus]}
                     </span>
                     <span className="text-sm font-medium text-gray-900 tabular-nums">{item.count}</span>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
           {/* Location Breakdown */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-4">By Location</h3>
             {jobsByLocation.length === 0 ? (
               <p className="text-sm text-gray-500">No data</p>
@@ -199,8 +224,12 @@ export default async function DashboardPage() {
                         href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
                         className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 -mx-3 px-3 rounded-lg"
                       >
-                        <span className="flex items-center gap-2.5 text-sm text-gray-600">
-                          <span className="h-2 w-2 rounded-full bg-gray-300 shrink-0" />
+                    <span className="flex items-center gap-2.5 text-sm text-gray-600">
+                          <span className={`h-2 w-2 rounded-full shrink-0 ${{
+                            "cruïllas": "bg-sky-400",
+                            "peratallada": "bg-amber-400",
+                            "sant climent": "bg-emerald-400",
+                          }[item.locationName?.toLowerCase() ?? ""] ?? "bg-gray-300"}`} />
                           {item.locationName ?? "Unassigned"}
                         </span>
                         <span className="text-sm font-medium text-gray-900 tabular-nums">{item.count}</span>
@@ -230,13 +259,22 @@ export default async function DashboardPage() {
 
           {/* Follow-ups */}
           {followUps.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <PhoneOff className="h-3.5 w-3.5 text-gray-400" />
+                <PhoneOff className="h-3.5 w-3.5 text-amber-500" />
                 Needs Follow-up
               </h3>
               <div className="space-y-1">
-                {followUps.slice(0, 6).map((job) => (
+                {followUps.slice(0, 6).map((job) => {
+                  const responsePill: Record<string, string> = {
+                    not_contacted: "bg-red-50 text-red-600",
+                    no_response: "bg-gray-100 text-gray-600",
+                    waiting_response: "bg-amber-50 text-amber-700",
+                    contacted: "bg-sky-50 text-sky-700",
+                    approved: "bg-emerald-50 text-emerald-700",
+                    declined: "bg-red-50 text-red-600",
+                  };
+                  return (
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
@@ -246,11 +284,12 @@ export default async function DashboardPage() {
                       <p className="text-sm font-medium text-gray-900 truncate">{job.customerName || job.title || "Unknown"}</p>
                       <span className="text-xs text-gray-400 font-mono">{job.publicCode}</span>
                     </div>
-                    <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-xs ml-2 shrink-0">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ml-2 shrink-0 ${responsePill[job.customerResponseStatus as string] ?? "bg-gray-100 text-gray-600"}`}>
                       {CUSTOMER_RESPONSE_LABELS[job.customerResponseStatus as CustomerResponseStatus]}
                     </span>
                   </Link>
-                ))}
+                  );
+                })}
                 {followUps.length > 6 && (
                   <Link href="/repairs?customerResponseStatus=no_response" className="block text-center text-xs text-gray-400 hover:text-gray-600 py-2 transition-colors">
                     +{followUps.length - 6} more

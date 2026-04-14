@@ -54,7 +54,7 @@ export function LanguageToggle() {
   return (
     <button
       onClick={() => setLang(next)}
-      className="flex h-10 w-10 items-center justify-center rounded-lg text-xl active:bg-muted"
+      className="flex h-11 w-11 items-center justify-center rounded-xl text-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-150"
     >
       {FLAGS[lang]}
     </button>

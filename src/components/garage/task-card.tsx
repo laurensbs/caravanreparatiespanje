@@ -74,8 +74,8 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
   const actions = getActions(task.status);
 
   return (
-    <div className={`rounded-xl border bg-card p-4 shadow-sm ${isPending ? "opacity-60" : ""} ${
-      task.status === "problem" ? "border-red-300 bg-red-50/50" : ""
+    <div className={`rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ${isPending ? "opacity-60" : ""} ${
+      task.status === "problem" ? "border-red-200 bg-red-50" : ""
     } ${task.status === "done" ? "opacity-70" : ""}`}>
       <div className="flex items-start gap-3">
         {/* Status icon */}
@@ -101,7 +101,7 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
 
           {/* Description */}
           {task.description && (
-            <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+            <p className="text-sm text-gray-500 mt-1">{task.description}</p>
           )}
 
           {/* Problem info */}
@@ -122,7 +122,7 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
               key={photo.id}
               src={photo.url}
               alt={photo.caption || "Task photo"}
-              className="h-16 w-16 rounded-lg object-cover shrink-0 border"
+              className="h-16 w-16 rounded-xl object-cover shrink-0 border border-gray-100"
             />
           ))}
         </div>
@@ -146,7 +146,7 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
             key={action.status}
             onClick={() => handleStatusChange(action.status)}
             disabled={isPending}
-            className={`flex-1 rounded-lg px-3 py-3 text-sm font-medium transition-colors active:scale-[0.98] ${action.className}`}
+            className={`flex-1 rounded-xl px-3 py-3 text-sm font-bold transition-colors active:scale-[0.98] ${action.className}`}
           >
             {t(action.labelEn, action.labelEs, action.labelNl)}
           </button>
@@ -154,7 +154,7 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
         <button
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className={`rounded-lg px-3 py-3 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 active:scale-[0.98] transition-colors ${actions.length === 0 ? "flex-1" : ""}`}
+          className={`rounded-xl px-3 py-3 text-sm font-bold bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-[0.98] transition-colors ${actions.length === 0 ? "flex-1" : ""}`}
         >
           {uploading
             ? t("Uploading...", "Subiendo...", "Uploaden...")

@@ -98,9 +98,9 @@ export function WeatherWidget() {
     if (error) return null;
     // Loading skeleton
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-sky-500/10 to-blue-500/10 border border-sky-200/50 p-4 animate-pulse">
-        <div className="h-4 w-24 rounded bg-sky-200/50 mb-2" />
-        <div className="h-8 w-16 rounded bg-sky-200/50" />
+      <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 animate-pulse">
+        <div className="h-3 w-20 rounded bg-gray-100 mb-3" />
+        <div className="h-8 w-14 rounded bg-gray-100" />
       </div>
     );
   }
@@ -125,49 +125,36 @@ export function WeatherWidget() {
   });
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-sky-500/10 via-blue-500/5 to-indigo-500/10 border border-sky-200/40 p-4">
+    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 max-w-sm">
       {/* Location */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-sky-700/70 uppercase tracking-wider">
-          📍 Sant Climent
-        </span>
-      </div>
+      <p className="text-xs font-medium text-sky-700 uppercase tracking-wider mb-3">
+        📍 Sant Climent
+      </p>
 
       {/* Current weather */}
       <div className="flex items-center gap-3">
-        <span className="text-4xl">{info.icon}</span>
+        <span className="text-3xl">{info.icon}</span>
         <div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold tabular-nums">{weather.temperature}°</span>
-          </div>
-          <p className="text-sm text-muted-foreground">{label}</p>
+          <span className="text-3xl font-semibold text-gray-900 tabular-nums">{weather.temperature}°</span>
+          <p className="text-sm text-gray-500">{label}</p>
         </div>
-      </div>
-
-      {/* Details row */}
-      <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
-        <span>
-          🌡️ {t("Feels", "Sensación", "Voelt als")} {weather.feelsLike}°
-        </span>
-        <span>💧 {weather.humidity}%</span>
-        <span>💨 {weather.windSpeed} km/h</span>
       </div>
 
       {/* Forecast */}
       {weather.forecast.length > 0 && (
-        <div className="flex gap-3 mt-3 pt-3 border-t border-sky-200/30">
+        <div className="flex gap-4 mt-4 pt-3 border-t border-gray-100">
           {weather.forecast.map((f) => {
             const fInfo = WEATHER_INFO[f.weatherCode] ?? WEATHER_INFO[0]!;
             const dn = dayNames[f.time];
             return (
-              <div key={f.time} className="flex-1 text-center">
-                <p className="text-xs text-muted-foreground font-medium">
+              <div key={f.time} className="text-center">
+                <p className="text-xs text-gray-400 font-medium">
                   {dn ? t(dn.en, dn.es, dn.nl) : f.time.slice(5)}
                 </p>
-                <p className="text-lg my-0.5">{fInfo.icon}</p>
-                <p className="text-xs tabular-nums">
-                  <span className="font-medium">{f.tempMax}°</span>
-                  <span className="text-muted-foreground/60 ml-1">{f.tempMin}°</span>
+                <p className="text-base my-0.5">{fInfo.icon}</p>
+                <p className="text-xs tabular-nums text-gray-500">
+                  <span className="font-medium text-gray-700">{f.tempMax}°</span>
+                  <span className="text-gray-400 ml-0.5">{f.tempMin}°</span>
                 </p>
               </div>
             );

@@ -58,7 +58,7 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
 
         {mode === "choose" && (
           <div className="space-y-3 mt-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-500">
               {t(
                 "All tasks are complete. Perform final check.",
                 "Todas las tareas completadas. Realizar control final.",
@@ -86,7 +86,7 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t("Notes (optional)...", "Notas (opcional)...", "Opmerkingen (optioneel)...")}
-              className="w-full rounded-xl border p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
             />
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setMode("choose")} className="flex-1 h-12 rounded-xl" disabled={isPending}>
@@ -101,7 +101,7 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
 
         {mode === "fail" && (
           <div className="space-y-3 mt-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-500">
               {t(
                 "Describe what needs to be fixed:",
                 "Describe qué necesita ser corregido:",

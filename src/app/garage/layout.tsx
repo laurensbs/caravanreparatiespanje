@@ -17,9 +17,9 @@ export default async function GarageLayout({
 }) {
   return (
     <LanguageProvider>
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col bg-[#F9FAFB]">
         {children}
-        <Toaster richColors position="top-center" toastOptions={{ className: "rounded-lg" }} />
+        <Toaster richColors position="top-center" toastOptions={{ className: "rounded-2xl" }} />
       </div>
     </LanguageProvider>
   );

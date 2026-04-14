@@ -85,7 +85,7 @@ export function BlockerDialog({ open, onClose, repairJobId, onComplete }: Blocke
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-500">
             {t("Why can't you continue?", "¿Por qué no puedes continuar?", "Waarom kun je niet verder?")}
           </p>
 
@@ -98,7 +98,7 @@ export function BlockerDialog({ open, onClose, repairJobId, onComplete }: Blocke
                 className={`flex items-center gap-3 rounded-xl border p-3.5 text-left transition-colors active:scale-[0.98] ${
                   reason === r
                     ? "border-red-400 bg-red-50 ring-2 ring-red-200"
-                    : "hover:bg-muted/50"
+                    : "hover:bg-gray-50"
                 }`}
               >
                 <span className="text-xl">{REASON_ICONS[r]}</span>
@@ -118,7 +118,7 @@ export function BlockerDialog({ open, onClose, repairJobId, onComplete }: Blocke
               "Detalles adicionales (opcional)...",
               "Extra details (optioneel)..."
             )}
-            className="w-full rounded-xl border p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
           />
 
           {/* Submit */}

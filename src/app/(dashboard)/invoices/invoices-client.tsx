@@ -134,6 +134,49 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
     return result;
   }, [quotes, search, dateFrom, dateTo]);
 
+  const filteredOverdue = useMemo(() => {
+    let result: OverdueInvoice[] = overdue;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(i =>
+        i.docNumber?.toLowerCase().includes(q) ||
+        (i.customerName ?? i.contactName)?.toLowerCase().includes(q) ||
+        i.customerEmail?.toLowerCase().includes(q) ||
+        i.desc?.toLowerCase().includes(q)
+      );
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime() / 1000;
+      result = result.filter(i => (i.date ?? 0) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo).getTime() / 1000 + 86400;
+      result = result.filter(i => (i.date ?? 0) <= to);
+    }
+    return result;
+  }, [overdue, search, dateFrom, dateTo]);
+
+  const filteredOverdueEstimates = useMemo(() => {
+    let result: OverdueEstimate[] = overdueEstimates;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(i =>
+        i.docNumber?.toLowerCase().includes(q) ||
+        (i.customerName ?? i.contactName)?.toLowerCase().includes(q) ||
+        i.desc?.toLowerCase().includes(q)
+      );
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime() / 1000;
+      result = result.filter(i => (i.date ?? 0) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo).getTime() / 1000 + 86400;
+      result = result.filter(i => (i.date ?? 0) <= to);
+    }
+    return result;
+  }, [overdueEstimates, search, dateFrom, dateTo]);
+
   const paidCount = filtered.filter(i => i.status === 1).length;
   const unpaidCount = filtered.filter(i => i.status === 0).length;
 
@@ -198,9 +241,9 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
     }
   }
 
-  const overdueTotal = overdue.reduce((sum, inv) => sum + (inv.total ?? 0), 0);
-  const estimatesTotal = overdueEstimates.reduce((sum, q) => sum + (q.total ?? 0), 0);
-  const totalOverdueCount = overdue.length + overdueEstimates.length;
+  const overdueTotal = filteredOverdue.reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+  const estimatesTotal = filteredOverdueEstimates.reduce((sum, q) => sum + (q.total ?? 0), 0);
+  const totalOverdueCount = filteredOverdue.length + filteredOverdueEstimates.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -211,7 +254,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
             : tab === "quotes"
             ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
-            : `${overdue.length} overdue invoice${overdue.length !== 1 ? "s" : ""}${overdueEstimates.length > 0 ? ` + ${overdueEstimates.length} uninvoiced quote${overdueEstimates.length !== 1 ? "s" : ""}` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`
+            : `${filteredOverdue.length} overdue invoice${filteredOverdue.length !== 1 ? "s" : ""}${filteredOverdueEstimates.length > 0 ? ` + ${filteredOverdueEstimates.length} uninvoiced quote${filteredOverdueEstimates.length !== 1 ? "s" : ""}` : ""}${hasActiveFilters ? ` (${overdue.length + overdueEstimates.length} total)` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`
           }
         </p>
       </div>
@@ -265,7 +308,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder={tab === "invoices" ? "Search invoices..." : "Search quotes..."}
+            placeholder={tab === "invoices" ? "Search invoices..." : tab === "quotes" ? "Search quotes..." : "Search overdue..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 pl-8 text-xs rounded-lg"
@@ -589,7 +632,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             <Card className="rounded-xl border-red-200 dark:border-red-900">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-red-600 uppercase tracking-wider">Overdue</p>
-                <p className="text-xl font-bold text-red-600 tabular-nums">{overdue.length}</p>
+                <p className="text-xl font-bold text-red-600 tabular-nums">{filteredOverdue.length}</p>
                 <p className="text-[11px] text-muted-foreground">invoices</p>
               </CardContent>
             </Card>
@@ -603,14 +646,14 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             <Card className="rounded-xl border-amber-200 dark:border-amber-900">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-amber-600 uppercase tracking-wider">Uninvoiced</p>
-                <p className="text-xl font-bold text-amber-600 tabular-nums">{overdueEstimates.length}</p>
+                <p className="text-xl font-bold text-amber-600 tabular-nums">{filteredOverdueEstimates.length}</p>
                 <p className="text-[11px] text-muted-foreground">quotes · €{estimatesTotal.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card className="rounded-xl">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Needs Follow-up</p>
-                <p className="text-xl font-bold tabular-nums">{overdue.filter(i => i.daysOverdue >= 60).length + overdueEstimates.filter(q => q.daysOverdue >= 60).length}</p>
+                <p className="text-xl font-bold tabular-nums">{filteredOverdue.filter(i => i.daysOverdue >= 60).length + filteredOverdueEstimates.filter(q => q.daysOverdue >= 60).length}</p>
                 <p className="text-[11px] text-muted-foreground">60+ days overdue</p>
               </CardContent>
             </Card>
@@ -626,12 +669,17 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             </span>
           </div>
 
-          {overdue.length === 0 ? (
+          {filteredOverdue.length === 0 ? (
             <div className="rounded-xl border bg-card p-12 text-center">
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <AlertTriangle className="h-8 w-8 opacity-20" />
-                <p className="font-medium text-sm">No overdue invoices</p>
-                <p className="text-xs">All invoices have been paid within 30 days</p>
+                <p className="font-medium text-sm">{hasActiveFilters ? "No overdue invoices match filters" : "No overdue invoices"}</p>
+                <p className="text-xs">{hasActiveFilters ? "Try adjusting your search" : "All invoices have been paid within 30 days"}</p>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
@@ -651,7 +699,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {overdue.map((inv, idx) => (
+                    {filteredOverdue.map((inv, idx) => (
                       <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                         <TableCell>
                           <a
@@ -758,12 +806,12 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
           )}
 
           {/* ─── Uninvoiced Quotes Section ─── */}
-          {overdueEstimates.length > 0 && (
+          {filteredOverdueEstimates.length > 0 && (
             <>
               <div className="flex items-center gap-2 pt-2">
                 <h3 className="text-sm font-semibold">Uninvoiced quotes</h3>
                 <Badge variant="secondary" className="text-[10px] rounded-full bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
-                  {overdueEstimates.length} · €{estimatesTotal.toFixed(2)}
+                  {filteredOverdueEstimates.length} · €{estimatesTotal.toFixed(2)}
                 </Badge>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
@@ -785,7 +833,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {overdueEstimates.map((q, idx) => (
+                      {filteredOverdueEstimates.map((q, idx) => (
                         <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                           <TableCell>
                             <a

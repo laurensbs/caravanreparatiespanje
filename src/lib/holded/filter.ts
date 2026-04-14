@@ -56,7 +56,7 @@ export function isBlankInvoice(inv: HoldedInvoice): boolean {
 
 /** Filter an array of invoices to only repair-related ones */
 export function filterRepairInvoices(invoices: HoldedInvoice[]): HoldedInvoice[] {
-  return invoices.filter(inv => !isNonRepairInvoice(inv) && !isBlankInvoice(inv));
+  return invoices.filter(inv => !isNonRepairInvoice(inv));
 }
 
 /** Filter an array of quotes to only repair-related ones */

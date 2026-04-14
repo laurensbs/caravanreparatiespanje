@@ -201,3 +201,43 @@ export async function getAllQuotes(): Promise<QuoteWithRepair[]> {
     };
   }).sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
 }
+
+// ─── Overdue Estimates (quotes that were never invoiced) ───
+
+export interface OverdueEstimate extends QuoteWithRepair {
+  daysOverdue: number;
+  customerEmail?: string;
+}
+
+export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEstimate[]> {
+  await requireAuth();
+  const all = await getAllQuotes();
+  const now = Date.now();
+  const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
+
+  // Get customer emails
+  const dbCustomers = await db
+    .select({ holdedContactId: customers.holdedContactId, email: customers.email })
+    .from(customers)
+    .where(isNotNull(customers.holdedContactId));
+  const emailByHolded = new Map<string, string>();
+  for (const c of dbCustomers) {
+    if (c.holdedContactId && c.email) emailByHolded.set(c.holdedContactId, c.email);
+  }
+
+  return all
+    .filter((q) => {
+      // Only unconverted quotes (status 0 = pending)
+      if (q.status === 1) return false;
+      if (!q.date) return false;
+      if (q.total <= 0) return false;
+      const quoteDate = q.date * 1000;
+      return now - quoteDate > thresholdMs;
+    })
+    .map((q) => ({
+      ...q,
+      daysOverdue: Math.floor((now - (q.date ?? 0) * 1000) / (24 * 60 * 60 * 1000)),
+      customerEmail: emailByHolded.get(q.contact) ?? undefined,
+    }))
+    .sort((a, b) => b.daysOverdue - a.daysOverdue);
+}

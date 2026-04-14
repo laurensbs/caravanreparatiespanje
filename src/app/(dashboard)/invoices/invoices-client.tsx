@@ -57,16 +57,22 @@ interface OverdueInvoice extends Invoice {
   daysOverdue: number;
 }
 
+interface OverdueEstimate extends Quote {
+  daysOverdue: number;
+  customerEmail?: string;
+}
+
 interface InvoicesClientProps {
   invoices: Invoice[];
   quotes: Quote[];
   overdue: OverdueInvoice[];
+  overdueEstimates?: OverdueEstimate[];
 }
 
 type StatusFilter = "all" | "unpaid" | "paid" | "partial";
 type Tab = "invoices" | "quotes" | "overdue";
 
-export function InvoicesClient({ invoices, quotes, overdue, initialTab }: InvoicesClientProps & { initialTab?: Tab }) {
+export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [], initialTab }: InvoicesClientProps & { initialTab?: Tab }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(initialTab ?? "invoices");
   const [search, setSearch] = useState("");
@@ -193,6 +199,8 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
   }
 
   const overdueTotal = overdue.reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+  const estimatesTotal = overdueEstimates.reduce((sum, q) => sum + (q.total ?? 0), 0);
+  const totalOverdueCount = overdue.length + overdueEstimates.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -200,10 +208,10 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
         <h1 className="text-lg font-bold tracking-tight">Invoices & Quotes</h1>
         <p className="text-xs text-muted-foreground">
           {tab === "invoices"
-            ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
+            ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
             : tab === "quotes"
-            ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""} from Holded${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
-            : `${overdue.length} overdue invoice${overdue.length !== 1 ? "s" : ""} · €${overdueTotal.toFixed(2)} outstanding`
+            ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
+            : `${overdue.length} overdue invoice${overdue.length !== 1 ? "s" : ""}${overdueEstimates.length > 0 ? ` + ${overdueEstimates.length} uninvoiced quote${overdueEstimates.length !== 1 ? "s" : ""}` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`
           }
         </p>
       </div>
@@ -241,10 +249,10 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
           )}
         >
           <AlertTriangle className="h-3 w-3" />
-          Overdue ({overdue.length})
-          {overdue.length > 0 && (
+          Overdue ({totalOverdueCount})
+          {totalOverdueCount > 0 && (
             <span className="ml-0.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold px-1">
-              {overdue.length}
+              {totalOverdueCount}
             </span>
           )}
         </button>
@@ -588,22 +596,22 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
             <Card className="rounded-xl border-red-200 dark:border-red-900">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-red-600 uppercase tracking-wider">Outstanding</p>
-                <p className="text-xl font-bold text-red-600 tabular-nums">€{overdueTotal.toFixed(2)}</p>
+                <p className="text-xl font-bold text-red-600 tabular-nums">€{(overdueTotal + estimatesTotal).toFixed(2)}</p>
                 <p className="text-[11px] text-muted-foreground">total owed</p>
               </CardContent>
             </Card>
             <Card className="rounded-xl border-amber-200 dark:border-amber-900">
               <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-amber-600 uppercase tracking-wider">Needs Follow-up</p>
-                <p className="text-xl font-bold text-amber-600 tabular-nums">{overdue.filter(i => i.daysOverdue >= 60).length}</p>
-                <p className="text-[11px] text-muted-foreground">60+ days overdue</p>
+                <p className="text-[11px] text-amber-600 uppercase tracking-wider">Uninvoiced</p>
+                <p className="text-xl font-bold text-amber-600 tabular-nums">{overdueEstimates.length}</p>
+                <p className="text-[11px] text-muted-foreground">quotes · €{estimatesTotal.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card className="rounded-xl">
               <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Oldest</p>
-                <p className="text-xl font-bold tabular-nums">{overdue[0]?.daysOverdue ?? 0}d</p>
-                <p className="text-[11px] text-muted-foreground">overdue</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Needs Follow-up</p>
+                <p className="text-xl font-bold tabular-nums">{overdue.filter(i => i.daysOverdue >= 60).length + overdueEstimates.filter(q => q.daysOverdue >= 60).length}</p>
+                <p className="text-[11px] text-muted-foreground">60+ days overdue</p>
               </CardContent>
             </Card>
           </div>
@@ -747,6 +755,89 @@ export function InvoicesClient({ invoices, quotes, overdue, initialTab }: Invoic
                 </Table>
               </div>
             </div>
+          )}
+
+          {/* ─── Uninvoiced Quotes Section ─── */}
+          {overdueEstimates.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 pt-2">
+                <h3 className="text-sm font-semibold">Uninvoiced quotes</h3>
+                <Badge variant="secondary" className="text-[10px] rounded-full bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
+                  {overdueEstimates.length} · €{estimatesTotal.toFixed(2)}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>These quotes were sent to customers but never converted to invoices. Consider converting them in Holded or following up with the customer.</span>
+              </div>
+              <div className="rounded-xl border bg-card overflow-hidden">
+                <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-card">
+                      <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Quote</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Description</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {overdueEstimates.map((q, idx) => (
+                        <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                          <TableCell>
+                            <a
+                              href={`https://app.holded.com/documents/estimate/${q.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                            >
+                              {q.docNumber || "—"}
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          </TableCell>
+                          <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
+                          <TableCell className="text-[12px] text-muted-foreground max-w-[200px] truncate">{q.desc || "—"}</TableCell>
+                          <TableCell className="text-[13px] font-medium tabular-nums text-right">
+                            €{q.total?.toFixed(2) ?? "0.00"}
+                          </TableCell>
+                          <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
+                            {q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "rounded-full text-[10px] px-2 py-0",
+                                q.daysOverdue > 90
+                                  ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400"
+                                  : q.daysOverdue > 60
+                                  ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400"
+                                  : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400"
+                              )}
+                            >
+                              <Clock className="h-2.5 w-2.5 mr-0.5" />
+                              {q.daysOverdue}d
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {q.repairJobId ? (
+                              <Link href={`/repairs/${q.repairJobId}`} className="text-[11px] text-primary hover:underline">
+                                {q.repairPublicCode || "View"}
+                              </Link>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground/50">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
           )}
         </>
       )}

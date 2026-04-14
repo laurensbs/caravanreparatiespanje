@@ -4,7 +4,7 @@ import { repairJobs, repairJobEvents, customers } from "@/lib/db/schema";
 import { eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
-import { isNonRepairInvoice, isBlankInvoice } from "@/lib/holded/filter";
+import { isNonRepairInvoice } from "@/lib/holded/filter";
 
 // Vercel cron: runs every minute
 // Fetches ALL invoices from Holded, matches to repairs, syncs invoice status
@@ -88,9 +88,11 @@ export async function GET(request: Request) {
       try {
         const newStatus = holdedInvoiceStatus(inv);
 
-        // Skip blank invoices and non-repair invoices (transport, storage, etc.)
-        if (isBlankInvoice(inv)) continue;
+        // Skip non-repair invoices (transport, storage, etc.)
+        // Note: we no longer skip "blank" invoices — some have amounts but empty descriptions
+        // (e.g. quote-to-invoice conversions in Holded)
         if (isNonRepairInvoice(inv)) continue;
+        if (inv.total === 0 && !inv.desc) continue;
 
         // Case A: Invoice already linked to a repair → sync status + dates
         const existingRepair = repairByInvoiceId.get(inv.id);

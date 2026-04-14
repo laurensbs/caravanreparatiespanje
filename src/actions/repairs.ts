@@ -169,6 +169,10 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
         warrantyInternalCostFlag: repairJobs.warrantyInternalCostFlag,
         internalCost: repairJobs.internalCost,
         jobType: repairJobs.jobType,
+        holdedInvoiceId: repairJobs.holdedInvoiceId,
+        holdedInvoiceNum: repairJobs.holdedInvoiceNum,
+        holdedQuoteId: repairJobs.holdedQuoteId,
+        holdedQuoteNum: repairJobs.holdedQuoteNum,
       })
       .from(repairJobs)
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))

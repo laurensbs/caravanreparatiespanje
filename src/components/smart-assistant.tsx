@@ -1037,9 +1037,6 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Listen for toggle event from header button
-  useEffect(() => {
-    function handleToggle() {
   // Backward compat: listen for legacy window event too
   useEffect(() => {
     function handleToggle() {
@@ -1221,13 +1218,13 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
   }
 
   function handleQuickActionClick(qa: QuickActionDef) {
-    if (qa.intent === "explain") {
+    if (qa.intent.type === "question") {
       // FAQ-style — ask the question
       answerQuestion(qa.label);
     } else {
       // Action — execute directly
       const intent = detectIntent(qa.label);
-      if (intent) {
+      if (intent?.action) {
         executeAction(intent.action);
       } else {
         answerQuestion(qa.label);

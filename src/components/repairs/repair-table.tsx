@@ -5,8 +5,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { STATUS_LABELS, INVOICE_STATUS_LABELS, JOB_TYPE_LABELS, JOB_TYPE_COLORS } from "@/types";
-import type { RepairStatus, InvoiceStatus, JobType } from "@/types";
+import { STATUS_LABELS, JOB_TYPE_LABELS, JOB_TYPE_COLORS } from "@/types";
+import type { RepairStatus, JobType } from "@/types";
+import { ExternalLink } from "lucide-react";
 import { SmartDate } from "@/components/ui/smart-date";
 import { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import { BulkActions } from "./bulk-actions";
@@ -40,6 +41,10 @@ interface Job {
   warrantyInternalCostFlag: boolean;
   internalCost: string | null;
   jobType: string;
+  holdedInvoiceId: string | null;
+  holdedInvoiceNum: string | null;
+  holdedQuoteId: string | null;
+  holdedQuoteNum: string | null;
   tags: { id: string; name: string; color: string }[];
 }
 
@@ -139,6 +144,60 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
     "sant climent": "bg-emerald-500",
   };
 
+  function getDocumentInfo(job: Job): { type: string; label: string; color: string; pdfUrl?: string; holdedUrl?: string; title?: string } | null {
+    // 1. Invoice exists → show invoice
+    if (job.holdedInvoiceId) {
+      const isPaid = job.invoiceStatus === "paid";
+      const isSent = job.invoiceStatus === "sent";
+      return {
+        type: "invoice",
+        label: job.holdedInvoiceNum ? `Inv ${job.holdedInvoiceNum}` : "Invoice",
+        color: isPaid
+          ? "text-emerald-700 dark:text-emerald-400"
+          : isSent
+            ? "text-blue-700 dark:text-blue-400"
+            : "text-amber-700 dark:text-amber-400",
+        pdfUrl: `/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`,
+        holdedUrl: `https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`,
+        title: isPaid ? "Invoice (Paid)" : isSent ? "Invoice (Sent)" : "Invoice (Draft)",
+      };
+    }
+    // 2. Quote exists + rejected status → rejected quote
+    if (job.holdedQuoteId && (job.status === "rejected" || job.customerResponseStatus === "declined")) {
+      return {
+        type: "rejected-quote",
+        label: job.holdedQuoteNum ? `Quote ${job.holdedQuoteNum}` : "Rejected Quote",
+        color: "text-red-600 dark:text-red-400",
+        pdfUrl: `/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`,
+        holdedUrl: `https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`,
+        title: "Rejected Quote",
+      };
+    }
+    // 3. Quote exists → show quote
+    if (job.holdedQuoteId) {
+      return {
+        type: "quote",
+        label: job.holdedQuoteNum ? `Quote ${job.holdedQuoteNum}` : "Quote",
+        color: "text-sky-700 dark:text-sky-400",
+        pdfUrl: `/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`,
+        holdedUrl: `https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`,
+        title: "Quote",
+      };
+    }
+    // 4. Special statuses without documents
+    if (job.invoiceStatus === "warranty") {
+      return { type: "warranty", label: "Warranty", color: "text-purple-600 dark:text-purple-400" };
+    }
+    if (job.invoiceStatus === "no_damage") {
+      return { type: "no-damage", label: "No Damage", color: "text-gray-400 dark:text-slate-500" };
+    }
+    if (job.invoiceStatus === "paid") {
+      return { type: "paid", label: "Paid", color: "text-emerald-600 dark:text-emerald-400" };
+    }
+    // 5. No document
+    return null;
+  }
+
   function getInitials(name: string): string {
     return name.split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2);
   }
@@ -222,8 +281,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleSort("customerName")}>
           <span className="inline-flex items-center">Contact<SortIcon column="customerName" /></span>
         </div>
-        <div className="w-24 shrink-0 cursor-pointer" onClick={() => handleSort("invoiceStatus")}>
-          <span className="inline-flex items-center">Invoice<SortIcon column="invoiceStatus" /></span>
+        <div className="w-28 shrink-0 cursor-pointer" onClick={() => handleSort("invoiceStatus")}>
+          <span className="inline-flex items-center">Document<SortIcon column="invoiceStatus" /></span>
         </div>
         <div className="w-24 shrink-0 cursor-pointer" onClick={() => handleSort("dueDate")}>
           <span className="inline-flex items-center">Planned<SortIcon column="dueDate" /></span>
@@ -350,17 +409,39 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   )}
                 </div>
 
-                {/* Invoice */}
-                <div className="w-24 shrink-0 hidden md:block">
-                  <span className={`text-[11px] font-medium truncate block ${
-                    job.invoiceStatus === "paid" ? "text-emerald-600 dark:text-emerald-400" :
-                    job.invoiceStatus === "sent" ? "text-blue-600 dark:text-blue-400" :
-                    job.invoiceStatus === "draft" ? "text-amber-600 dark:text-amber-400" :
-                    job.invoiceStatus === "warranty" ? "text-purple-600 dark:text-purple-400" :
-                    "text-gray-300 dark:text-slate-500"
-                  }`}>
-                    {INVOICE_STATUS_LABELS[job.invoiceStatus as InvoiceStatus] ?? job.invoiceStatus}
-                  </span>
+                {/* Document */}
+                <div className="w-28 shrink-0 hidden md:block" onClick={(e) => e.stopPropagation()}>
+                  {(() => {
+                    // Document priority logic
+                    const doc = getDocumentInfo(job);
+                    if (!doc) return <span className="text-[11px] text-gray-300 dark:text-slate-600">—</span>;
+                    if (!doc.pdfUrl) {
+                      return <span className={`text-[11px] font-medium truncate block ${doc.color}`}>{doc.label}</span>;
+                    }
+                    return (
+                      <a
+                        href={doc.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`group/doc inline-flex items-center gap-1 text-[11px] font-medium truncate ${doc.color} hover:underline`}
+                        title={doc.title}
+                      >
+                        <span className="truncate">{doc.label}</span>
+                        {doc.holdedUrl && (
+                          <a
+                            href={doc.holdedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="opacity-0 group-hover/doc:opacity-100 shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
+                            title="Open in Holded"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </a>
+                    );
+                  })()}
                 </div>
 
                 {/* Planned */}

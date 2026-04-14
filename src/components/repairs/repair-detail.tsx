@@ -1551,6 +1551,78 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
           </div>
 
+          {/* Documents */}
+          {(job.holdedQuoteId || job.holdedInvoiceId) && (
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-3">
+              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Documents</h3>
+              <div className="space-y-2.5">
+                {job.holdedQuoteId && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Receipt className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {job.status === "rejected" || job.customerResponseStatus === "declined"
+                          ? "Rejected Quote"
+                          : "Quote"}
+                        {job.holdedQuoteNum && <span className="text-gray-500 dark:text-gray-400 ml-1">#{job.holdedQuoteNum}</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <a
+                        href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center h-7 px-2 text-[11px] font-medium text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded-md transition-colors"
+                      >
+                        PDF ↗
+                      </a>
+                      <a
+                        href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center h-7 px-2 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors"
+                      >
+                        Holded ↗
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {job.holdedInvoiceId && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                        Invoice
+                        {job.holdedInvoiceNum && <span className="text-gray-500 dark:text-gray-400 ml-1">#{job.holdedInvoiceNum}</span>}
+                      </span>
+                      {job.invoiceStatus === "paid" && (
+                        <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">Paid</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <a
+                        href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center h-7 px-2 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-md transition-colors"
+                      >
+                        PDF ↗
+                      </a>
+                      <a
+                        href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center h-7 px-2 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors"
+                      >
+                        Holded ↗
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Source & Import */}
           {(job.sourceSheet || job.sourceCategory || job.spreadsheetInternalId) && (
             <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-4">

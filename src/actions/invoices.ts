@@ -228,7 +228,8 @@ export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEs
   return all
     .filter((q) => {
       // Only unconverted quotes (status 0 = pending)
-      if (q.status === 1) return false;
+      if (q.status === 1) return false; // approved/converted
+      if (q.status === -1) return false; // cancelled/declined by customer
       if (!q.date) return false;
       if (q.total <= 0) return false;
       const quoteDate = q.date * 1000;

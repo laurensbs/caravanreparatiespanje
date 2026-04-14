@@ -90,7 +90,7 @@ export interface HoldedQuote {
   dueDate?: number;
   total: number;
   subtotal: number;
-  status: number; // 1 = active/approved
+  status: number; // -1 = cancelled, 0 = pending, 1 = approved/converted
   currency: string;
   desc?: string;
   approvedAt?: number | null;

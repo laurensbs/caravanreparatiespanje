@@ -2256,7 +2256,7 @@ function FinancialWorkflow({
   const hasUnsentDoc = (job.holdedQuoteId && !quoteSent) || (job.holdedInvoiceId && !invoiceSent);
 
   // Only show Generate button if the garage has actually added tasks or part requests
-  const completedTasks = tasks.filter(t => t.done);
+  const completedTasks = tasks.filter(t => t.status === "done");
   const hasGarageActivity = completedTasks.length > 0 || partRequests.length > 0;
   const unresolvedFindings = findings.filter(f => !f.resolvedAt);
   const garageActivityCount = completedTasks.length + partRequests.length + unresolvedFindings.length;

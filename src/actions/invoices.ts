@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { repairJobs, customers, quoteOverrides } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { listAllInvoices, listAllQuotes, payInvoice, sendInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
+import { listAllInvoices, listAllQuotes, payInvoice, sendInvoice, convertEstimateToInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
 import { filterRepairInvoices, filterRepairQuotes } from "@/lib/holded/filter";
 import { eq, isNotNull, isNull, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -302,4 +302,40 @@ export async function setQuoteNote(holdedQuoteId: string, note: string): Promise
       set: { note: note.trim() || null, updatedByUserId: session.user.id, updatedAt: new Date() },
     });
   revalidatePath("/invoices");
+}
+
+export async function convertAndSendQuote(
+  holdedQuoteId: string,
+  email?: string,
+): Promise<{ invoiceId: string; docNumber?: string }> {
+  const session = await requireAuth();
+  // Convert the estimate to an invoice in Holded
+  const result = await convertEstimateToInvoice(holdedQuoteId);
+  // Send the invoice to the customer if we have their email
+  if (email && result.id) {
+    await sendInvoice(result.id, [email]);
+  }
+  // Record conversion and dismiss from uninvoiced list
+  const now = new Date();
+  await db
+    .insert(quoteOverrides)
+    .values({
+      holdedQuoteId,
+      dismissed: true,
+      convertedAt: now,
+      convertedInvoiceId: result.id,
+      updatedByUserId: session.user.id,
+    })
+    .onConflictDoUpdate({
+      target: quoteOverrides.holdedQuoteId,
+      set: {
+        dismissed: true,
+        convertedAt: now,
+        convertedInvoiceId: result.id,
+        updatedByUserId: session.user.id,
+        updatedAt: now,
+      },
+    });
+  revalidatePath("/invoices");
+  return { invoiceId: result.id, docNumber: result.docNumber };
 }

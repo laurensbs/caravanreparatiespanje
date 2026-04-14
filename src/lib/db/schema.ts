@@ -1593,6 +1593,8 @@ export const quoteOverrides = pgTable(
     holdedQuoteId: varchar("holded_quote_id", { length: 255 }).notNull().unique(),
     dismissed: boolean("dismissed").notNull().default(false),
     note: text("note"),
+    convertedAt: timestamp("converted_at", { withTimezone: true }),
+    convertedInvoiceId: varchar("converted_invoice_id", { length: 255 }),
     updatedByUserId: uuid("updated_by_user_id").references(() => users.id, { onDelete: "set null" }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

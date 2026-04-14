@@ -372,6 +372,19 @@ export async function sendQuote(
   });
 }
 
+/**
+ * Convert a Holded estimate (quote) to an invoice.
+ * Holded marks the estimate as status=1 (approved) and returns the new invoice.
+ */
+export async function convertEstimateToInvoice(
+  quoteId: string,
+): Promise<{ id: string; docNumber?: string }> {
+  return holdedFetch<{ id: string; docNumber?: string }>(
+    `/documents/estimate/${quoteId}/invoice`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
 // ─── Quote Listing Operations ───
 
 export async function getQuote(quoteId: string): Promise<HoldedQuote> {

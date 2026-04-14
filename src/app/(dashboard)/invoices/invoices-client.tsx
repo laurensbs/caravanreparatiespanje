@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2 } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
-import { markInvoicePaid, sendPaymentReminder, dismissQuote, setQuoteNote } from "@/actions/invoices";
+import { markInvoicePaid, sendPaymentReminder, dismissQuote, setQuoteNote, convertAndSendQuote } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { cn } from "@/lib/utils";
@@ -87,6 +87,8 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
   // Quote override state
   const [noteEditing, setNoteEditing] = useState<string | null>(null); // holdedQuoteId being edited
   const [noteValue, setNoteValue] = useState("");
+  // Track locally converted quotes (quoteId → converted date) for instant UI feedback
+  const [convertedRows, setConvertedRows] = useState<Record<string, Date>>({});
 
   const filtered = useMemo(() => {
     let result = invoices;
@@ -840,9 +842,11 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOverdueEstimates.map((q, idx) => (
+                      {filteredOverdueEstimates.map((q, idx) => {
+                        const convertedAt = convertedRows[q.id];
+                        return (
                         <>
-                        <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                        <TableRow key={q.id} className={cn("group interactive-row table-row-animate", convertedAt && "opacity-60")} style={{ animationDelay: `${idx * 15}ms` }}>
                           <TableCell>
                             <a
                               href={`https://app.holded.com/contacts/${q.contact}`}
@@ -856,7 +860,12 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                           </TableCell>
                           <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
                           <TableCell className="text-[12px] text-muted-foreground max-w-[200px]">
-                            {q.note
+                            {convertedAt ? (
+                              <span className="inline-flex items-center gap-1 text-green-600 font-medium">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                Converted {convertedAt.toLocaleDateString("en-GB")}
+                              </span>
+                            ) : q.note
                               ? <span className="italic text-foreground/70">{q.note}</span>
                               : q.repairJobId
                               ? "Repair done, quote not converted to invoice"
@@ -897,6 +906,27 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                title="Make invoice — convert to invoice and send"
+                                className="p-1 rounded hover:bg-green-50 text-muted-foreground hover:text-green-700 transition-colors"
+                                disabled={!!actionLoading || !!convertedRows[q.id]}
+                                onClick={async () => {
+                                  setActionLoading(`convert-${q.id}`);
+                                  try {
+                                    const res = await convertAndSendQuote(q.id, q.customerEmail);
+                                    setConvertedRows(prev => ({ ...prev, [q.id]: new Date() }));
+                                    toast.success(`Invoice ${res.docNumber ?? ""} created${q.customerEmail ? " and sent" : ""}`);
+                                    setTimeout(() => router.refresh(), 1500);
+                                  } catch (err) {
+                                    const msg = err instanceof Error ? err.message : "Failed to convert";
+                                    toast.error(msg);
+                                  } finally { setActionLoading(null); }
+                                }}
+                              >
+                                {actionLoading === `convert-${q.id}`
+                                  ? <span className="h-3.5 w-3.5 block animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  : <Receipt className="h-3.5 w-3.5" />}
+                              </button>
                               <button
                                 title="Add note"
                                 className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -969,7 +999,8 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                           </TableRow>
                         )}
                         </>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

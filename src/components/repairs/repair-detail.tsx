@@ -19,7 +19,7 @@ import {
   JOB_TYPE_LABELS, JOB_TYPE_COLORS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, JobType } from "@/types";
-import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -148,6 +148,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState(job.status);
   const [priority, setPriority] = useState(job.priority);
+  const [jobType, setJobType] = useState<JobType>(job.jobType as JobType ?? "repair");
   const [invoiceStatus, setInvoiceStatus] = useState(job.invoiceStatus);
   const [warrantyFlag, setWarrantyFlag] = useState(job.warrantyInternalCostFlag ?? false);
   const [prepaidFlag, setPrepaidFlag] = useState(job.prepaidFlag ?? false);
@@ -373,6 +374,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         descriptionRaw: description || null,
         status,
         priority,
+        jobType,
         invoiceStatus,
         customerResponseStatus,
         notesRaw: notes || null,
@@ -525,11 +527,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                {job.jobType && job.jobType !== "repair" && (
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300"}`}>
-                    {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
-                  </span>
-                )}
+                <JobTypePicker value={jobType} onChange={setJobType} />
                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${statusBadgeColor}`}>
                   {STATUS_LABELS[status as RepairStatus]}
                 </span>
@@ -2537,5 +2535,71 @@ function CustomerRepairsCard({ repairs, customerName }: { repairs: CustomerRepai
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Job Type Picker (inline dropdown badge) ────────────────────────────────
+
+const JOB_TYPE_ICON: Record<JobType, React.ElementType> = {
+  repair: Wrench,
+  wax: Sparkles,
+  maintenance: Settings,
+  inspection: ClipboardCheck,
+};
+
+function JobTypePicker({ value, onChange }: { value: JobType; onChange: (v: JobType) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const Icon = JOB_TYPE_ICON[value];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-gray-300",
+          JOB_TYPE_COLORS[value]
+        )}
+      >
+        <Icon className="h-3 w-3" />
+        {JOB_TYPE_LABELS[value]}
+        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[160px]">
+          {(Object.keys(JOB_TYPE_LABELS) as JobType[]).map((type) => {
+            const TypeIcon = JOB_TYPE_ICON[type];
+            const active = value === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => { onChange(type); setOpen(false); }}
+                className={cn(
+                  "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  active
+                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                )}
+              >
+                <TypeIcon className="h-3.5 w-3.5" />
+                {JOB_TYPE_LABELS[type]}
+                {active && <CheckCircle className="h-3 w-3 ml-auto text-green-500" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

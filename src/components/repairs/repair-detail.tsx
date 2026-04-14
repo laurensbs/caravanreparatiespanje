@@ -1349,6 +1349,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               handleGenerateFromWork={handleGenerateFromWork}
               handleDiscountChange={handleDiscountChange}
               router={router}
+              tasks={tasks}
+              partRequests={partRequests}
+              findings={findings}
             />
           </div>
 
@@ -2200,6 +2203,7 @@ function FinancialWorkflow({
   partSearch, setPartSearch, partCategory, setPartCategory, partCategories, filteredParts, addLabourLine, addCustomLine,
   addPartLine, removeCostLine, updateCostLine, handleGenerateFromWork,
   handleDiscountChange, router,
+  tasks, partRequests, findings,
 }: {
   job: any;
   estimatedCost: string;
@@ -2235,6 +2239,9 @@ function FinancialWorkflow({
   handleGenerateFromWork: () => Promise<void>;
   handleDiscountChange: (v: number) => Promise<void>;
   router: ReturnType<typeof useRouter>;
+  tasks: RepairTask[];
+  partRequests: PartRequestItem[];
+  findings: FindingItem[];
 }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
@@ -2247,6 +2254,12 @@ function FinancialWorkflow({
   const quoteSent = !!job.holdedQuoteSentAt;
   const invoiceSent = !!job.holdedInvoiceSentAt;
   const hasUnsentDoc = (job.holdedQuoteId && !quoteSent) || (job.holdedInvoiceId && !invoiceSent);
+
+  // Only show Generate button if the garage has actually added tasks or part requests
+  const completedTasks = tasks.filter(t => t.done);
+  const hasGarageActivity = completedTasks.length > 0 || partRequests.length > 0;
+  const unresolvedFindings = findings.filter(f => !f.resolvedAt);
+  const garageActivityCount = completedTasks.length + partRequests.length + unresolvedFindings.length;
 
   // Unsent document warning — beforeunload
   useEffect(() => {
@@ -2298,6 +2311,23 @@ function FinancialWorkflow({
         ))}
       </div>
 
+      {/* ─── Garage activity notification ─── */}
+      {hasGarageActivity && !hasEstimate && (
+        <div className="mx-4 mb-0 mt-0 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40 px-3.5 py-2.5 text-[12px] text-blue-800 dark:text-blue-300">
+          <RefreshCw className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium leading-snug">Werkplaats heeft werk klaarstaan</p>
+            <p className="text-blue-600/80 dark:text-blue-400/70 text-[11px] mt-0.5">
+              {completedTasks.length > 0 && `${completedTasks.length} afgeronde taak${completedTasks.length !== 1 ? "en" : ""}`}
+              {completedTasks.length > 0 && partRequests.length > 0 && " · "}
+              {partRequests.length > 0 && `${partRequests.length} onderdeel${partRequests.length !== 1 ? "en" : ""} aangevraagd`}
+              {unresolvedFindings.length > 0 && ` · ${unresolvedFindings.length} bevinding${unresolvedFindings.length !== 1 ? "en" : ""}`}
+              {" — klik 'Ophalen uit werkplaats' om de calculatie te genereren."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ─── STEP 1: Estimate ─── */}
       <div className="px-6 py-5 space-y-5">
         {/* Auto-calculated pricing summary */}
@@ -2337,14 +2367,20 @@ function FinancialWorkflow({
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium text-muted-foreground">Line items</span>
             <div className="flex items-center gap-1">
-              <button
-                className="inline-flex items-center h-6 text-[11px] px-2 rounded-md text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 transition-colors"
-                onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
-                disabled={!!loading}
-              >
-                {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-0.5" />}
-                Generate
-              </button>
+              {hasGarageActivity && (
+                <button
+                  className="inline-flex items-center h-6 text-[11px] px-2 rounded-md text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 transition-colors relative"
+                  onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
+                  disabled={!!loading}
+                  title={`Ophalen uit werkplaats (${completedTasks.length} taken, ${partRequests.length} onderdelen)`}
+                >
+                  {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-0.5" />}
+                  Ophalen uit werkplaats
+                  <span className="ml-1 inline-flex items-center justify-center h-3.5 min-w-[14px] rounded-full bg-blue-600 text-white text-[9px] font-bold px-0.5">
+                    {garageActivityCount}
+                  </span>
+                </button>
+              )}
               <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>Labour</button>
               <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>Custom</button>
               <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>Part</button>
@@ -2463,16 +2499,21 @@ function FinancialWorkflow({
             </div>
           ) : (
             <div className="py-4 text-center">
-              <p className="text-xs text-muted-foreground">No estimate lines yet</p>
+              <p className="text-xs text-muted-foreground">Nog geen regels</p>
               <div className="flex items-center justify-center gap-1.5 mt-2">
-                <button
-                  className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                  onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
-                  disabled={!!loading}
-                >
-                  {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-                  Generate
-                </button>
+                {hasGarageActivity && (
+                  <button
+                    className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors gap-1"
+                    onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
+                    disabled={!!loading}
+                  >
+                    {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3" />}
+                    Ophalen uit werkplaats
+                    <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-white/30 text-white text-[9px] font-bold px-0.5">
+                      {garageActivityCount}
+                    </span>
+                  </button>
+                )}
                 <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>+ Labour</button>
                 <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
               </div>

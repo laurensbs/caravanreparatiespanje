@@ -162,13 +162,13 @@ export function Sidebar({ userRole }: SidebarProps) {
     >
       <div className={cn(
         "flex items-center justify-center border-b border-white/10 transition-all duration-300",
-        collapsed ? "h-16 px-2" : "h-24 px-4"
+        collapsed ? "h-16 px-2" : "h-36 px-4"
       )}>
         <Image
           src="/favicon.png"
           alt="Logo"
-          width={collapsed ? 44 : 180}
-          height={collapsed ? 30 : 120}
+          width={collapsed ? 44 : 220}
+          height={collapsed ? 30 : 160}
           className="object-contain transition-all duration-300"
         />
       </div>

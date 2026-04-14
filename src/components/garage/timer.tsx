@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { startTimer, stopTimer, getJobActiveTimers } from "@/actions/time-entries";
+import { startTimer, stopTimer } from "@/actions/time-entries";
 import { toast } from "sonner";
 
 interface GarageTimerProps {
@@ -31,12 +31,10 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Find my active timer
   const myTimer = activeTimers.find((t) => t.userId === currentUserId);
   const otherTimers = activeTimers.filter((t) => t.userId !== currentUserId);
   const isRunning = !!myTimer;
 
-  // Live elapsed time
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -88,14 +86,14 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
         </div>
       )}
 
-      {/* Start / Stop button */}
+      {/* Start / Stop — large touch target */}
       <button
         onClick={isRunning ? handleStop : handleStart}
         disabled={isPending}
-        className={`w-full rounded-2xl p-4 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50 ${
+        className={`w-full rounded-2xl p-4 text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 ${
           isRunning
-            ? "bg-red-500 text-white active:bg-red-600 shadow-sm"
-            : "border-2 border-dashed border-[#0CC0DF]/30 text-[#0CC0DF] hover:bg-sky-50 active:bg-sky-100"
+            ? "bg-red-500 text-white shadow-sm"
+            : "border-2 border-dashed border-[#0CC0DF]/30 text-[#0CC0DF] active:bg-sky-50"
         }`}
       >
         {isRunning
@@ -103,7 +101,7 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
           : `▶ ${t("Start Timer", "Iniciar", "Start Timer")}`}
       </button>
 
-      {/* Other technicians currently working */}
+      {/* Other technicians */}
       {otherTimers.length > 0 && (
         <div className="mt-3 space-y-1.5">
           <p className="text-[11px] font-bold uppercase tracking-wider text-gray-300">
@@ -111,7 +109,7 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
           </p>
           {otherTimers.map((timer) => (
             <div key={timer.id} className="flex items-center gap-2 text-sm">
-              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-sky-500 text-[11px] font-bold text-white">
+              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-sky-500 text-[11px] font-bold text-white">
                 {(timer.userName ?? "?").charAt(0).toUpperCase()}
               </span>
               <span className="font-medium text-gray-700">{timer.userName}</span>
@@ -126,7 +124,6 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
   );
 }
 
-/** Small helper to show live elapsed time for other technicians */
 function LiveElapsed({ startedAt }: { startedAt: Date | string }) {
   const [elapsed, setElapsed] = useState("");
 
@@ -140,7 +137,7 @@ function LiveElapsed({ startedAt }: { startedAt: Date | string }) {
       setElapsed(hrs > 0 ? `${hrs}h ${m}m` : `${m}m`);
     }
     tick();
-    const interval = setInterval(tick, 30000); // update every 30s for others
+    const interval = setInterval(tick, 30000);
     return () => clearInterval(interval);
   }, [startedAt]);
 

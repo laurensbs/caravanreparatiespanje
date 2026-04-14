@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
 import { WeatherWidget } from "@/components/garage/weather-widget";
 import { signOut } from "next-auth/react";
-import { RefreshCw, ClipboardCheck, ChevronRight, AlertTriangle, Wrench, Search as SearchIcon, CircleCheck, CalendarDays, Package, Zap, Plus, Eye } from "lucide-react";
+import { RefreshCw, ChevronRight, AlertTriangle, Wrench, ClipboardCheck, Search as SearchIcon, CircleCheck, Package, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -91,7 +91,6 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
     return () => clearInterval(interval);
   }, []);
 
-  // Manual refresh with animation
   function handleRefresh() {
     setRefreshing(true);
     router.refresh();
@@ -138,7 +137,6 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
     done: grouped.done.length,
   };
 
-  // Filtered repairs for display
   const displayRepairs = useMemo(() => {
     if (!activeFilter) {
       return [
@@ -158,35 +156,35 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* ─── HEADER ─── */}
-      <header className="px-6 sm:px-8 pt-6 pb-5">
-        <div className="max-w-5xl mx-auto">
+      <header className="px-5 sm:px-8 pt-6 pb-4">
+        <div className="max-w-3xl mx-auto">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <Image src="/favicon.png" alt="Logo" width={44} height={44} className="rounded-xl object-contain shrink-0" />
+            <div className="flex items-center gap-4">
+              <Image src="/favicon.png" alt="Logo" width={48} height={48} className="rounded-2xl object-contain shrink-0 shadow-sm" />
               <div>
-                <p className="text-sm text-gray-500 font-medium">
+                <p className="text-sm text-gray-400 font-medium">
                   {greeting}, {firstName}
                 </p>
-                <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mt-1 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-tight">
                   {displayDate}
                 </h1>
-                <p className="text-xl text-gray-400 font-medium tabular-nums mt-0.5">
+                <p className="text-base text-gray-300 font-semibold tabular-nums mt-0.5">
                   {clock}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-1.5 mt-1">
               <LanguageToggle />
               <button
                 onClick={handleRefresh}
-                className="h-11 w-11 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-all duration-150"
+                className="h-11 w-11 flex items-center justify-center rounded-2xl text-gray-400 hover:text-gray-600 hover:bg-white active:bg-gray-100 transition-all duration-150"
                 title={t("Refresh", "Actualizar", "Vernieuwen")}
               >
                 <RefreshCw className={`h-[18px] w-[18px] ${refreshing ? "animate-spin" : ""}`} />
               </button>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="h-11 w-11 flex items-center justify-center rounded-2xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 transition-all duration-150"
+                className="h-11 w-11 flex items-center justify-center rounded-2xl text-sm font-bold bg-white text-gray-500 border border-gray-100 shadow-sm active:bg-gray-100 transition-all duration-150"
                 title={t("Sign out", "Cerrar sesión", "Uitloggen")}
               >
                 {firstName.charAt(0).toUpperCase()}
@@ -230,26 +228,26 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
   const hasPending = stats.urgentCount > 0 || stats.unassignedCount > 0;
 
   return (
-    <div className="max-w-lg mx-auto px-6 pb-10 space-y-5 pt-2">
-      {/* ─── Urgent / pending banner ─── */}
+    <div className="max-w-lg mx-auto px-5 pb-10 space-y-4 pt-2">
+      {/* Urgent / pending banner */}
       {stats.urgentCount > 0 ? (
         <button
           onClick={handleRefresh}
-          className="w-full text-left rounded-2xl bg-amber-50 border border-amber-200 px-5 py-5 active:scale-[0.98] transition-all duration-150"
+          className="w-full text-left rounded-2xl bg-amber-50 border border-amber-200/60 px-5 py-5 active:scale-[0.98] transition-all duration-150"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
               <Zap className="h-6 w-6 text-amber-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-base font-semibold text-amber-900">
-                ⚠️ {t(
+              <p className="text-base font-bold text-amber-900">
+                {t(
                   "Pending jobs need attention",
                   "Trabajos pendientes necesitan atención",
                   "Openstaande klussen vereisen aandacht"
                 )}
               </p>
-              <p className="text-sm text-amber-700 mt-0.5">
+              <p className="text-sm text-amber-700/80 mt-0.5">
                 {t(
                   `${stats.urgentCount} urgent — not scheduled for today`,
                   `${stats.urgentCount} urgente${stats.urgentCount > 1 ? "s" : ""} — no planificado${stats.urgentCount > 1 ? "s" : ""} para hoy`,
@@ -266,18 +264,18 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
           className="w-full text-left rounded-2xl bg-violet-50 border border-violet-100 px-5 py-5 active:scale-[0.98] transition-all duration-150"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center shrink-0">
               <ClipboardCheck className="h-6 w-6 text-violet-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-base font-semibold text-violet-900">
+              <p className="text-base font-bold text-violet-900">
                 {t(
                   `${stats.unassignedCount} unassigned job${stats.unassignedCount > 1 ? "s" : ""} available`,
                   `${stats.unassignedCount} trabajo${stats.unassignedCount > 1 ? "s" : ""} sin asignar`,
                   `${stats.unassignedCount} niet-toegewezen klus${stats.unassignedCount > 1 ? "sen" : ""}`
                 )}
               </p>
-              <p className="text-sm text-violet-700 mt-0.5">
+              <p className="text-sm text-violet-700/80 mt-0.5">
                 {t("Ask the office to schedule one", "Pide a la oficina que planifique uno", "Vraag het kantoor om er een in te plannen")}
               </p>
             </div>
@@ -286,14 +284,14 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
         </button>
       ) : null}
 
-      {/* ─── Calm state (only when truly nothing pending) ─── */}
+      {/* Calm state */}
       {!hasPending && (
         <div className="flex items-center gap-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 px-5 py-5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
             <ClipboardCheck className="h-6 w-6 text-emerald-500" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-base font-semibold text-gray-900">
+            <p className="text-base font-bold text-gray-900">
               {t("No work scheduled today", "Sin trabajo hoy", "Geen werk vandaag")}
             </p>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -309,72 +307,52 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
         </div>
       )}
 
-      {/* ─── Action buttons ─── */}
-      <div className="space-y-3">
-        <button
-          onClick={handleRefresh}
-          className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#0CC0DF] text-white text-base font-semibold shadow-sm hover:bg-[#0BB0CC] active:scale-[0.98] transition-all duration-150"
-        >
-          <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
-          {t("Refresh Planning", "Actualizar planificación", "Planning vernieuwen")}
-        </button>
-      </div>
+      {/* Refresh */}
+      <button
+        onClick={handleRefresh}
+        className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#0CC0DF] text-white text-base font-bold shadow-sm active:scale-[0.98] transition-all duration-150"
+      >
+        <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
+        {t("Refresh Planning", "Actualizar planificación", "Planning vernieuwen")}
+      </button>
 
-      {/* ─── Stats grid ─── */}
+      {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={handleRefresh}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md"
-        >
-          <div className="flex items-center gap-3">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex items-center gap-2.5 mb-1.5">
             <div className="w-2 h-2 rounded-full bg-gray-300" />
-            <span className="text-sm text-gray-500 font-medium">{t("Today", "Hoy", "Vandaag")}</span>
+            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{t("Today", "Hoy", "Vandaag")}</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
-            0 {t("jobs", "trabajos", "klussen")}
+          <p className="text-2xl font-bold text-gray-900 tabular-nums">
+            0 <span className="text-sm font-medium text-gray-400">{t("jobs", "trabajos", "klussen")}</span>
           </p>
-        </button>
-        <button
-          onClick={handleRefresh}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md"
-        >
-          <div className="flex items-center gap-3">
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex items-center gap-2.5 mb-1.5">
             <div className="w-2 h-2 rounded-full bg-sky-400" />
-            <span className="text-sm text-gray-500 font-medium">{t("Tomorrow", "Mañana", "Morgen")}</span>
+            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{t("Tomorrow", "Mañana", "Morgen")}</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
-            {stats.tomorrowCount} {t("planned", "planificados", "gepland")}
+          <p className="text-2xl font-bold text-gray-900 tabular-nums">
+            {stats.tomorrowCount} <span className="text-sm font-medium text-gray-400">{t("planned", "planificados", "gepland")}</span>
           </p>
-        </button>
-        <button
-          onClick={handleRefresh}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md"
-        >
-          <div className="flex items-center gap-3">
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex items-center gap-2.5 mb-1.5">
             <div className="w-2 h-2 rounded-full bg-purple-400" />
-            <span className="text-sm text-gray-500 font-medium">{t("Waiting parts", "Esperando piezas", "Wacht op onderdelen")}</span>
+            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{t("Waiting parts", "Esperando piezas", "Wacht op onderdelen")}</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
-            {stats.waitingPartsCount}
-          </p>
-        </button>
-        <button
-          onClick={handleRefresh}
-          className={`bg-white rounded-2xl border shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md ${
-            stats.urgentCount > 0 ? "border-amber-200 bg-amber-50/40" : "border-gray-100"
-          }`}
-        >
-          <div className="flex items-center gap-3">
+          <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.waitingPartsCount}</p>
+        </div>
+        <div className={`bg-white rounded-2xl border shadow-sm px-5 py-4 ${stats.urgentCount > 0 ? "border-amber-200 bg-amber-50/40" : "border-gray-100"}`}>
+          <div className="flex items-center gap-2.5 mb-1.5">
             <div className={`w-2 h-2 rounded-full ${stats.urgentCount > 0 ? "bg-amber-400" : "bg-gray-300"}`} />
-            <span className="text-sm text-gray-500 font-medium">{t("Urgent", "Urgente", "Spoed")}</span>
+            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{t("Urgent", "Urgente", "Spoed")}</span>
           </div>
-          <p className={`text-2xl font-bold mt-1.5 tabular-nums ${stats.urgentCount > 0 ? "text-amber-600" : "text-gray-900"}`}>
-            {stats.urgentCount}
-          </p>
-        </button>
+          <p className={`text-2xl font-bold tabular-nums ${stats.urgentCount > 0 ? "text-amber-600" : "text-gray-900"}`}>{stats.urgentCount}</p>
+        </div>
       </div>
 
-      {/* ─── Auto-update indicator ─── */}
+      {/* Auto-update indicator */}
       <div className="flex flex-col items-center gap-1 pt-4">
         <p className="text-xs text-gray-400 font-medium">
           {t("Jobs update automatically", "Los trabajos se actualizan automáticamente", "Opdrachten worden automatisch bijgewerkt")}
@@ -384,7 +362,7 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
         </p>
       </div>
 
-      {/* ─── Weather (secondary) ─── */}
+      {/* Weather */}
       <div className="mx-auto max-w-sm pt-2">
         <WeatherWidget />
       </div>
@@ -415,48 +393,48 @@ function WorkState({
   t: (en: string, es?: string | null, nl?: string | null) => string;
   activeTimers?: ActiveTimerItem[];
 }) {
-  const summaryCards: { key: StatusCategory; label: string; count: number; color: string; activeColor: string; icon: React.ReactNode }[] = [
+  const summaryCards: { key: StatusCategory; label: string; count: number; tint: string; activeTint: string; icon: React.ReactNode }[] = [
     {
       key: "todo",
       label: t("To Do", "Por hacer", "Te doen"),
       count: counts.todo,
-      color: "text-gray-600",
-      activeColor: "ring-2 ring-gray-300 bg-gray-50",
+      tint: "bg-white",
+      activeTint: "ring-2 ring-gray-300 bg-gray-50/80",
       icon: <ClipboardCheck className="h-5 w-5 text-gray-400" />,
     },
     {
       key: "in_progress",
-      label: t("In Progress", "En progreso", "Bezig"),
+      label: t("Working", "En progreso", "Bezig"),
       count: counts.in_progress,
-      color: "text-sky-600",
-      activeColor: "ring-2 ring-sky-300 bg-sky-50",
-      icon: <Wrench className="h-5 w-5 text-sky-400" />,
+      tint: "bg-sky-50/50",
+      activeTint: "ring-2 ring-sky-300 bg-sky-50",
+      icon: <Wrench className="h-5 w-5 text-sky-500" />,
     },
     {
       key: "waiting",
       label: t("Waiting", "Esperando", "Wachten"),
       count: counts.waiting,
-      color: "text-amber-600",
-      activeColor: "ring-2 ring-amber-300 bg-amber-50",
-      icon: <AlertTriangle className="h-5 w-5 text-amber-400" />,
+      tint: "bg-amber-50/50",
+      activeTint: "ring-2 ring-amber-300 bg-amber-50",
+      icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
     },
     {
       key: "check",
-      label: t("Final Check", "Control final", "Nacontrole"),
+      label: t("Check", "Control", "Controle"),
       count: counts.check,
-      color: "text-emerald-600",
-      activeColor: "ring-2 ring-emerald-300 bg-emerald-50",
-      icon: <SearchIcon className="h-5 w-5 text-emerald-400" />,
+      tint: "bg-emerald-50/50",
+      activeTint: "ring-2 ring-emerald-300 bg-emerald-50",
+      icon: <SearchIcon className="h-5 w-5 text-emerald-500" />,
     },
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-6 sm:px-8 pb-10 space-y-6">
+    <div className="max-w-3xl mx-auto px-5 sm:px-8 pb-10 space-y-5">
       {/* Alert strip */}
       {(urgentCount > 0 || problemCount > 0) && (
-        <div className="flex items-center gap-4 rounded-2xl bg-red-50 border border-red-100 px-5 py-3.5">
+        <div className="flex items-center gap-3 rounded-2xl bg-red-50 border border-red-100 px-5 py-3.5">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
-          <div className="flex gap-4 text-sm font-medium">
+          <div className="flex gap-4 text-sm font-bold">
             {urgentCount > 0 && (
               <span className="text-red-700">
                 {urgentCount} {t("urgent", "urgente", "spoed")}
@@ -471,39 +449,37 @@ function WorkState({
         </div>
       )}
 
-      {/* Summary strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Summary filter cards — large touch targets */}
+      <div className="grid grid-cols-4 gap-2.5">
         {summaryCards.map((card) => (
           <button
             key={card.key}
             onClick={() => setActiveFilter(activeFilter === card.key ? null : card.key)}
-            className={`rounded-2xl bg-white border border-gray-100 shadow-sm px-4 py-4 text-left transition-all duration-150 active:scale-[0.97] ${
-              activeFilter === card.key ? card.activeColor : "hover:shadow-md"
+            className={`rounded-2xl border border-gray-100 shadow-sm p-3.5 text-center transition-all duration-150 active:scale-[0.96] ${
+              activeFilter === card.key ? card.activeTint : `${card.tint} hover:shadow-md`
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-center mb-1.5">
               {card.icon}
-              {card.count > 0 && (
-                <span className={`text-2xl font-bold tabular-nums ${card.color}`}>
-                  {card.count}
-                </span>
-              )}
             </div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-2xl font-bold tabular-nums text-gray-900 leading-none">
+              {card.count}
+            </p>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mt-1">
               {card.label}
             </p>
           </button>
         ))}
       </div>
 
-      {/* Done count — subtle inline */}
+      {/* Done count */}
       {counts.done > 0 && (
         <button
           onClick={() => setActiveFilter(activeFilter === "done" ? null : "done")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
+          className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
             activeFilter === "done"
               ? "bg-emerald-50 text-emerald-700 ring-2 ring-emerald-200"
-              : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+              : "text-gray-400 hover:text-gray-600 hover:bg-white"
           }`}
         >
           <CircleCheck className="h-4 w-4" />
@@ -513,29 +489,29 @@ function WorkState({
 
       {/* Filter label */}
       {activeFilter && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
             {activeFilter === "done"
               ? t("Completed", "Completados", "Afgerond")
               : summaryCards.find(c => c.key === activeFilter)?.label ?? ""}
           </p>
           <button
             onClick={() => setActiveFilter(null)}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors font-medium"
+            className="text-xs text-[#0CC0DF] font-semibold active:opacity-70 transition-opacity"
           >
             {t("Show all", "Mostrar todo", "Alles tonen")}
           </button>
         </div>
       )}
 
-      {/* Work cards */}
+      {/* Job cards */}
       <div className="space-y-3">
         {displayRepairs.map((repair) => (
           <WorkCard key={repair.id} repair={repair} t={t} activeTimers={activeTimers.filter(at => at.repairJobId === repair.id)} />
         ))}
       </div>
 
-      {/* Weather — bottom secondary */}
+      {/* Weather */}
       <div className="pt-4">
         <WeatherWidget />
       </div>
@@ -544,7 +520,7 @@ function WorkState({
 }
 
 // ══════════════════════════════════════════════════
-// WORK CARD
+// WORK CARD — Premium job card
 // ══════════════════════════════════════════════════
 
 function WorkCard({
@@ -561,30 +537,38 @@ function WorkCard({
     ? Math.round((repair.tasks.done / repair.tasks.total) * 100)
     : 0;
 
-  const statusConfig: Record<StatusCategory, { label: string; cls: string }> = {
-    todo: { label: t("To Do", "Por hacer", "Te doen"), cls: "bg-gray-100 text-gray-600" },
-    in_progress: { label: t("In Progress", "En progreso", "Bezig"), cls: "bg-sky-50 text-sky-700" },
-    waiting: { label: t("Waiting", "Esperando", "Wachten"), cls: "bg-amber-50 text-amber-700" },
-    check: { label: t("Final Check", "Control final", "Nacontrole"), cls: "bg-emerald-50 text-emerald-700" },
-    done: { label: t("Done", "Completado", "Klaar"), cls: "bg-emerald-50 text-emerald-600" },
+  const statusConfig: Record<StatusCategory, { label: string; cls: string; bar: string }> = {
+    todo: { label: t("To Do", "Por hacer", "Te doen"), cls: "bg-gray-100 text-gray-600", bar: "bg-gray-400" },
+    in_progress: { label: t("Working", "En progreso", "Bezig"), cls: "bg-sky-50 text-sky-700", bar: "bg-sky-500" },
+    waiting: { label: t("Waiting", "Esperando", "Wachten"), cls: "bg-amber-50 text-amber-700", bar: "bg-amber-500" },
+    check: { label: t("Check", "Control", "Controle"), cls: "bg-emerald-50 text-emerald-700", bar: "bg-emerald-500" },
+    done: { label: t("Done", "Completado", "Klaar"), cls: "bg-emerald-50 text-emerald-600", bar: "bg-emerald-500" },
   };
 
   const status = statusConfig[category];
   const jobType = JOB_TYPE_CONFIG[repair.jobType];
-
   const unitLine = [repair.unitBrand, repair.unitModel].filter(Boolean).join(" ");
   const displayTitle = repair.title || unitLine || repair.publicCode || "—";
 
+  // Left accent color based on status
+  const accentColor: Record<StatusCategory, string> = {
+    todo: "border-l-gray-300",
+    in_progress: "border-l-sky-500",
+    waiting: "border-l-amber-400",
+    check: "border-l-emerald-500",
+    done: "border-l-emerald-300",
+  };
+
   return (
     <Link href={`/garage/repairs/${repair.id}`} className="block">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-200 p-5 sm:p-6 cursor-pointer">
-        {/* Title + chevron */}
-        <div className="flex items-start justify-between gap-4">
+      <div className={`bg-white rounded-2xl border border-gray-100 border-l-4 ${accentColor[category]} shadow-sm active:scale-[0.99] transition-all duration-200 p-5 cursor-pointer`}>
+        {/* Top: Title + chevron */}
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 leading-snug truncate">
+            <h3 className="text-[17px] font-bold text-gray-900 leading-snug truncate">
               {displayTitle}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5 truncate">
+            <p className="text-sm text-gray-400 mt-0.5 truncate">
               {[
                 repair.unitRegistration,
                 repair.customerName,
@@ -597,39 +581,38 @@ function WorkCard({
           <ChevronRight className="h-5 w-5 text-gray-300 shrink-0 mt-1" />
         </div>
 
-        {/* Badges */}
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
-          <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium ${status.cls}`}>
+        {/* Badges row */}
+        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+          <span className={`inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-bold ${status.cls}`}>
             {status.label}
           </span>
           {jobType && (
-            <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium ${jobType.cls}`}>
+            <span className={`inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-medium ${jobType.cls}`}>
               {t(jobType.label[0], jobType.label[1], jobType.label[2])}
             </span>
           )}
           {repair.priority === "urgent" && (
-            <span className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold bg-red-50 text-red-600">
-              {t("Urgent", "Urgente", "Spoed")}
+            <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-bold bg-red-50 text-red-600 border border-red-100">
+              ⚡ {t("Urgent", "Urgente", "Spoed")}
             </span>
           )}
           {repair.priority === "high" && (
-            <span className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold bg-orange-50 text-orange-600">
+            <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-bold bg-orange-50 text-orange-600">
               {t("High", "Alto", "Hoog")}
             </span>
           )}
           {repair.tasks.problem > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600">
-              <AlertTriangle className="h-3 w-3" />
-              {repair.tasks.problem}
+            <span className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold bg-red-50 text-red-600 border border-red-100">
+              ⚠ {repair.tasks.problem}
             </span>
           )}
           {repair.parts.pending > 0 && (
-            <span className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium bg-purple-50 text-purple-600">
+            <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-medium bg-purple-50 text-purple-600">
               📦 {repair.parts.received}/{repair.parts.total}
             </span>
           )}
           {activeTimers.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600">
+            <span className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-600">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -639,22 +622,20 @@ function WorkCard({
           )}
         </div>
 
-        {/* Progress */}
+        {/* Progress bar */}
         {repair.tasks.total > 0 && (
-          <div className="mt-4">
+          <div className="mt-3.5">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium text-gray-500">
+              <span className="text-xs font-semibold text-gray-400">
                 {repair.tasks.done}/{repair.tasks.total} {t("tasks", "tareas", "taken")}
               </span>
-              <span className={`text-sm font-semibold tabular-nums ${progress === 100 ? "text-emerald-600" : "text-gray-400"}`}>
+              <span className={`text-xs font-bold tabular-nums ${progress === 100 ? "text-emerald-600" : "text-gray-400"}`}>
                 {progress}%
               </span>
             </div>
-            <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ease-out ${
-                  progress === 100 ? "bg-emerald-500" : "bg-sky-500"
-                }`}
+                className={`h-full rounded-full transition-all duration-500 ease-out ${status.bar}`}
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -667,7 +648,7 @@ function WorkCard({
             {repair.workers.slice(0, 4).map((name, i) => (
               <span
                 key={i}
-                className="flex items-center justify-center h-7 w-7 rounded-full bg-gray-100 text-[11px] font-semibold text-gray-500"
+                className="flex items-center justify-center h-7 w-7 rounded-full bg-gray-100 text-[11px] font-bold text-gray-500"
                 title={name}
               >
                 {name.charAt(0).toUpperCase()}

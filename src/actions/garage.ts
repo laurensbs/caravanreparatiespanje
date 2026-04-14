@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
+import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -837,6 +838,7 @@ export async function approveGarageTask(taskId: string) {
 }
 
 export async function getRepairTasks(repairJobId: string) {
+  await requireAnyAuth();
   return db
     .select()
     .from(repairTasks)
@@ -870,6 +872,7 @@ export async function updateRepairTaskPricing(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getRepairWorkers(repairJobId: string) {
+  await requireAnyAuth();
   return db
     .select({
       id: repairWorkers.id,
@@ -946,6 +949,7 @@ export async function updateWorkerNote(workerId: string, note: string) {
 
 /** Get all active users (for worker assignment dropdown) */
 export async function getActiveUsers() {
+  await requireAnyAuth();
   return db
     .select({ id: users.id, name: users.name, role: users.role })
     .from(users)
@@ -1064,6 +1068,7 @@ export async function addFinding(
 }
 
 export async function getRepairFindings(repairJobId: string) {
+  await requireAnyAuth();
   return db
     .select({
       id: repairFindings.id,
@@ -1226,6 +1231,7 @@ export async function resolveBlocker(blockerId: string) {
 }
 
 export async function getRepairBlockers(repairJobId: string) {
+  await requireAnyAuth();
   return db
     .select({
       id: repairBlockers.id,

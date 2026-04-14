@@ -875,7 +875,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                           </TableCell>
                           <TableCell>
                             <a
-                              href={`https://app.holded.com/documents/estimate/${q.id}`}
+                              href={`https://app.holded.com/invoicing/estimate/${q.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-primary hover:text-primary transition-colors"

@@ -713,6 +713,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      setEditingDescription(false);
+                    }
+                  }}
                   rows={5}
                   autoFocus
                   className="rounded-xl text-sm border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"

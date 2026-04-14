@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, customers } from "@/lib/db/schema";
+import { repairJobs, customers, quoteOverrides } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, listAllQuotes, payInvoice, sendInvoice, type HoldedInvoice, type HoldedQuote } from "@/lib/holded/invoices";
@@ -209,13 +209,21 @@ export async function getAllQuotes(): Promise<QuoteWithRepair[]> {
 export interface OverdueEstimate extends QuoteWithRepair {
   daysOverdue: number;
   customerEmail?: string;
+  dismissed?: boolean;
+  note?: string | null;
 }
 
 export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEstimate[]> {
   await requireAuth();
-  const [all, allInvoices] = await Promise.all([getAllQuotes(), getAllInvoices()]);
+  const [all, allInvoices, overrides] = await Promise.all([
+    getAllQuotes(),
+    getAllInvoices(),
+    db.select().from(quoteOverrides),
+  ]);
   const now = Date.now();
   const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
+
+  const overrideByQuote = new Map(overrides.map(o => [o.holdedQuoteId, o]));
 
   // Build map: contactId → set of invoice totals (to detect quotes already invoiced separately in Holded)
   const invoicedAmountsByContact = new Map<string, Set<number>>();
@@ -237,12 +245,13 @@ export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEs
 
   return all
     .filter((q) => {
-      // Only unconverted quotes (status 0 = pending)
-      if (q.status === 1) return false; // goedgekeurd/omgezet
-      if (q.status === -1) return false; // geannuleerd door klant
-      if (q.repairHasInvoice) return false; // gekoppelde reparatie heeft al een factuur
+      if (q.status === 1) return false; // approved/converted
+      if (q.status === -1) return false; // cancelled/declined by customer
+      if (q.repairHasInvoice) return false; // linked repair already has a Holded invoice
+      // Exclude if dismissed manually
+      const override = overrideByQuote.get(q.id);
+      if (override?.dismissed) return false;
       // Exclude if the contact already has a Holded invoice for the same amount
-      // (quote was converted outside the repair flow)
       const contactInvoices = invoicedAmountsByContact.get(q.contact);
       if (contactInvoices?.has(q.total)) return false;
       if (!q.date) return false;
@@ -250,10 +259,47 @@ export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEs
       const quoteDate = q.date * 1000;
       return now - quoteDate > thresholdMs;
     })
-    .map((q) => ({
-      ...q,
-      daysOverdue: Math.floor((now - (q.date ?? 0) * 1000) / (24 * 60 * 60 * 1000)),
-      customerEmail: emailByHolded.get(q.contact) ?? undefined,
-    }))
+    .map((q) => {
+      const override = overrideByQuote.get(q.id);
+      return {
+        ...q,
+        daysOverdue: Math.floor((now - (q.date ?? 0) * 1000) / (24 * 60 * 60 * 1000)),
+        customerEmail: emailByHolded.get(q.contact) ?? undefined,
+        note: override?.note ?? null,
+      };
+    })
     .sort((a, b) => b.daysOverdue - a.daysOverdue);
+}
+
+export async function dismissQuote(holdedQuoteId: string): Promise<void> {
+  const session = await requireAuth();
+  await db
+    .insert(quoteOverrides)
+    .values({ holdedQuoteId, dismissed: true, updatedByUserId: session.user.id })
+    .onConflictDoUpdate({
+      target: quoteOverrides.holdedQuoteId,
+      set: { dismissed: true, updatedByUserId: session.user.id, updatedAt: new Date() },
+    });
+  revalidatePath("/invoices");
+}
+
+export async function undismissQuote(holdedQuoteId: string): Promise<void> {
+  await requireAuth();
+  await db
+    .update(quoteOverrides)
+    .set({ dismissed: false, updatedAt: new Date() })
+    .where(eq(quoteOverrides.holdedQuoteId, holdedQuoteId));
+  revalidatePath("/invoices");
+}
+
+export async function setQuoteNote(holdedQuoteId: string, note: string): Promise<void> {
+  const session = await requireAuth();
+  await db
+    .insert(quoteOverrides)
+    .values({ holdedQuoteId, note: note.trim() || null, updatedByUserId: session.user.id })
+    .onConflictDoUpdate({
+      target: quoteOverrides.holdedQuoteId,
+      set: { note: note.trim() || null, updatedByUserId: session.user.id, updatedAt: new Date() },
+    });
+  revalidatePath("/invoices");
 }

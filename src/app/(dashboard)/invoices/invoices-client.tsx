@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock, Phone, Info } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
-import { markInvoicePaid, sendPaymentReminder } from "@/actions/invoices";
+import { markInvoicePaid, sendPaymentReminder, dismissQuote, setQuoteNote } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Invoice {
   id: string;
@@ -61,6 +62,7 @@ interface OverdueEstimate extends Quote {
   daysOverdue: number;
   customerEmail?: string;
   repairHasInvoice?: boolean;
+  note?: string | null;
 }
 
 interface InvoicesClientProps {
@@ -82,6 +84,9 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
   const [dateTo, setDateTo] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmReminder, setConfirmReminder] = useState<string | null>(null);
+  // Quote override state
+  const [noteEditing, setNoteEditing] = useState<string | null>(null); // holdedQuoteId being edited
+  const [noteValue, setNoteValue] = useState("");
 
   const filtered = useMemo(() => {
     let result = invoices;
@@ -817,7 +822,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span>Deze offertes zijn verstuurd aan klanten maar nooit omgezet naar een factuur. Zet ze om in Holded of neem contact op met de klant.</span>
+                <span>These quotes were sent to customers but never converted to invoices. Review each quote and convert it in Holded, or dismiss it if no action is needed.</span>
               </div>
               <div className="rounded-xl border bg-card overflow-hidden">
                 <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
@@ -826,15 +831,17 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                       <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Quote</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
-                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Reden</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Reason</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider w-[80px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredOverdueEstimates.map((q, idx) => (
+                        <>
                         <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                           <TableCell>
                             <a
@@ -849,17 +856,19 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                           </TableCell>
                           <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
                           <TableCell className="text-[12px] text-muted-foreground max-w-[200px]">
-                            {q.repairJobId
-                              ? "Reparatie klaar, offerte niet omgezet naar factuur"
+                            {q.note
+                              ? <span className="italic text-foreground/70">{q.note}</span>
+                              : q.repairJobId
+                              ? "Repair done, quote not converted to invoice"
                               : q.desc
-                              ? `Verzonden: ${q.desc}`
-                              : "Offerte verstuurd, niet omgezet naar factuur"}
+                              ? `Sent: ${q.desc}`
+                              : "Quote sent, not converted to invoice"}
                           </TableCell>
                           <TableCell className="text-[13px] font-medium tabular-nums text-right">
                             €{q.total?.toFixed(2) ?? "0.00"}
                           </TableCell>
                           <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
-                            {q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                            {q.date ? new Date(q.date * 1000).toLocaleDateString("en-GB") : "—"}
                           </TableCell>
                           <TableCell>
                             <Badge
@@ -886,7 +895,80 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                               <span className="text-[11px] text-muted-foreground/50">—</span>
                             )}
                           </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                title="Add note"
+                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                onClick={() => {
+                                  setNoteEditing(noteEditing === q.id ? null : q.id);
+                                  setNoteValue(q.note ?? "");
+                                }}
+                              >
+                                <MessageSquare className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                title="Dismiss — hide from this list"
+                                className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                                onClick={async () => {
+                                  setActionLoading(`dismiss-${q.id}`);
+                                  try {
+                                    await dismissQuote(q.id);
+                                    toast.success(`${q.docNumber} dismissed`);
+                                    router.refresh();
+                                  } catch { toast.error("Failed to dismiss"); }
+                                  finally { setActionLoading(null); }
+                                }}
+                                disabled={actionLoading === `dismiss-${q.id}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </TableCell>
                         </TableRow>
+                        {noteEditing === q.id && (
+                          <TableRow key={`${q.id}-note`}>
+                            <TableCell colSpan={8} className="py-2 px-4 bg-muted/30">
+                              <div className="flex items-end gap-2">
+                                <Textarea
+                                  value={noteValue}
+                                  onChange={e => setNoteValue(e.target.value)}
+                                  placeholder="Add a note about this quote (e.g. customer declined, follow up next month)…"
+                                  className="text-[12px] min-h-[56px] resize-none"
+                                  autoFocus
+                                />
+                                <div className="flex flex-col gap-1">
+                                  <Button
+                                    size="sm"
+                                    className="h-7 text-[11px]"
+                                    onClick={async () => {
+                                      setActionLoading(`note-${q.id}`);
+                                      try {
+                                        await setQuoteNote(q.id, noteValue);
+                                        toast.success("Note saved");
+                                        setNoteEditing(null);
+                                        router.refresh();
+                                      } catch { toast.error("Failed to save note"); }
+                                      finally { setActionLoading(null); }
+                                    }}
+                                    disabled={actionLoading === `note-${q.id}`}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 text-[11px]"
+                                    onClick={() => setNoteEditing(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        </>
                       ))}
                     </TableBody>
                   </Table>

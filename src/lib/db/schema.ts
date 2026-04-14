@@ -1581,3 +1581,23 @@ export const estimateLineItemsRelations = relations(
     }),
   })
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUOTE OVERRIDES (dismiss or add note to uninvoiced Holded quotes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const quoteOverrides = pgTable(
+  "quote_overrides",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    holdedQuoteId: varchar("holded_quote_id", { length: 255 }).notNull().unique(),
+    dismissed: boolean("dismissed").notNull().default(false),
+    note: text("note"),
+    updatedByUserId: uuid("updated_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("quote_overrides_holded_idx").on(table.holdedQuoteId),
+  ]
+);

@@ -887,15 +887,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 Workshop
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
-            <div className="px-6 pb-6 space-y-6">
+            <div className="px-6 pb-7 space-y-7">
 
-              {/* Assigned + Planning */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* ── Primary Actions: Assigned + Planning ── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Assigned workers */}
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2">Assigned</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2.5">Assigned</p>
                   {repairWorkers.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-2">
+                    <div className="flex flex-wrap gap-1.5 mb-2.5">
                       {repairWorkers.map((w) => (
                         <span key={w.id} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 group transition-all duration-150">
                           <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-400">
@@ -950,125 +950,138 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
               </div>
 
-              {/* Time Log */}
-              <div className="pt-2">
-                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-3">Time Log</p>
-                <RepairTimeLog
-                  repairJobId={job.id}
-                  timeEntries={timeEntries}
-                  activeTimers={activeTimers}
-                  activeUsers={activeUsers}
-                />
-              </div>
+              {/* ── Divider ── */}
+              <div className="border-t border-gray-100 dark:border-gray-800" />
 
-              {/* Inspection Flags */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Inspection Flags</p>
-                  {!showAllFlags && (
-                    <button
-                      onClick={() => setShowAllFlags(true)}
-                      className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
-                    >
-                      <Plus className="h-3 w-3" /> Add
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {activeFlags.map((flag) => (
-                    <span
-                      key={flag.label}
-                      className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 border ${
-                        flag.danger
-                          ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
-                          : "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800"
-                      }`}
-                    >
-                      {flag.label}
-                      <button
-                        type="button"
-                        onClick={() => flag.set(false)}
-                        className="ml-1.5 -mr-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-150"
-                        title={`Remove ${flag.label}`}
-                      >
-                        <XIcon className="h-2.5 w-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {customFlags.map((flag) => (
-                    <span
-                      key={flag}
-                      className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800"
-                    >
-                      {flag}
-                      <button
-                        type="button"
-                        onClick={() => setCustomFlags((prev) => prev.filter((f) => f !== flag))}
-                        className="ml-1.5 -mr-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-150"
-                        title={`Remove ${flag}`}
-                      >
-                        <XIcon className="h-2.5 w-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {showAllFlags && inactiveFlags.map((flag) => (
-                    <button
-                      key={flag.label}
-                      type="button"
-                      onClick={() => flag.set(true)}
-                      className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer border bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                    >
-                      {flag.label}
-                    </button>
-                  ))}
-                  {showAllFlags && (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const trimmed = newFlagName.trim();
-                        if (trimmed && !customFlags.includes(trimmed)) {
-                          setCustomFlags((prev) => [...prev, trimmed]);
-                          setNewFlagName("");
-                        }
-                      }}
-                      className="inline-flex items-center"
-                    >
-                      <input
-                        type="text"
-                        value={newFlagName}
-                        onChange={(e) => setNewFlagName(e.target.value)}
-                        placeholder="New flag..."
-                        className="h-8 w-28 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800 focus:border-sky-300 dark:focus:border-sky-700 transition-all duration-150"
-                        maxLength={50}
-                      />
-                    </form>
-                  )}
-                  {showAllFlags && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllFlags(false)}
-                      className="inline-flex items-center rounded-full px-2 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150"
-                    >
-                      <XIcon className="h-3 w-3" />
-                    </button>
-                  )}
-                  {activeFlags.length === 0 && customFlags.length === 0 && !showAllFlags && (
-                    <span className="text-xs text-gray-400 dark:text-gray-500">None</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Tasks */}
-              <div className="pt-2">
+              {/* ── Tasks (main focus) ── */}
+              <div>
                 <RepairTaskList repairJobId={job.id} initialTasks={tasks} defaultHourlyRate={settings.hourlyRate} />
               </div>
 
-              {/* Parts Used */}
+              {/* ── Divider ── */}
+              <div className="border-t border-gray-100 dark:border-gray-800" />
+
+              {/* ── Parts Used ── */}
               <RepairPartsUsed
                 repairJobId={job.id}
                 partRequests={partRequests}
                 defaultMarkup={settings.defaultMarkup}
               />
+
+              {/* ── Divider ── */}
+              <div className="border-t border-gray-100 dark:border-gray-800" />
+
+              {/* ── Secondary Info: Time + Flags side by side ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Time Log */}
+                <div className="rounded-xl bg-gray-50/80 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-3">Time Log</p>
+                  <RepairTimeLog
+                    repairJobId={job.id}
+                    timeEntries={timeEntries}
+                    activeTimers={activeTimers}
+                    activeUsers={activeUsers}
+                  />
+                </div>
+
+                {/* Inspection Flags */}
+                <div className="rounded-xl bg-gray-50/80 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Inspection Flags</p>
+                    {!showAllFlags && (
+                      <button
+                        onClick={() => setShowAllFlags(true)}
+                        className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
+                      >
+                        <Plus className="h-3 w-3" /> Add
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {activeFlags.map((flag) => (
+                      <span
+                        key={flag.label}
+                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 border ${
+                          flag.danger
+                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
+                            : "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800"
+                        }`}
+                      >
+                        {flag.label}
+                        <button
+                          type="button"
+                          onClick={() => flag.set(false)}
+                          className="ml-1.5 -mr-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-150"
+                          title={`Remove ${flag.label}`}
+                        >
+                          <XIcon className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                    {customFlags.map((flag) => (
+                      <span
+                        key={flag}
+                        className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800"
+                      >
+                        {flag}
+                        <button
+                          type="button"
+                          onClick={() => setCustomFlags((prev) => prev.filter((f) => f !== flag))}
+                          className="ml-1.5 -mr-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-150"
+                          title={`Remove ${flag}`}
+                        >
+                          <XIcon className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                    {showAllFlags && inactiveFlags.map((flag) => (
+                      <button
+                        key={flag.label}
+                        type="button"
+                        onClick={() => flag.set(true)}
+                        className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer border bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                      >
+                        {flag.label}
+                      </button>
+                    ))}
+                    {showAllFlags && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const trimmed = newFlagName.trim();
+                          if (trimmed && !customFlags.includes(trimmed)) {
+                            setCustomFlags((prev) => [...prev, trimmed]);
+                            setNewFlagName("");
+                          }
+                        }}
+                        className="inline-flex items-center"
+                      >
+                        <input
+                          type="text"
+                          value={newFlagName}
+                          onChange={(e) => setNewFlagName(e.target.value)}
+                          placeholder="New flag..."
+                          className="h-8 w-28 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800 focus:border-sky-300 dark:focus:border-sky-700 transition-all duration-150"
+                          maxLength={50}
+                        />
+                      </form>
+                    )}
+                    {showAllFlags && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllFlags(false)}
+                        className="inline-flex items-center rounded-full px-2 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150"
+                      >
+                        <XIcon className="h-3 w-3" />
+                      </button>
+                    )}
+                    {activeFlags.length === 0 && customFlags.length === 0 && !showAllFlags && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">None</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
             </div>
             </details>
           </div>

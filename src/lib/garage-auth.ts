@@ -66,11 +66,21 @@ export async function requireGarageAuth(): Promise<void> {
   if (!ok) throw new Error("Garage authentication required");
 }
 
+/** Auth context returned by requireAnyAuth */
+export type AuthContext = {
+  userId: string | null;
+  userName: string;
+};
+
 /** Require either NextAuth session OR valid garage cookie */
-export async function requireAnyAuth(): Promise<void> {
+export async function requireAnyAuth(): Promise<AuthContext> {
   const session = await auth();
-  if (session?.user) return;
+  if (session?.user) {
+    return { userId: session.user.id, userName: session.user.name };
+  }
   const garageOk = await isGarageAuthenticated();
-  if (garageOk) return;
+  if (garageOk) {
+    return { userId: null, userName: "Garage" };
+  }
   throw new Error("Unauthorized");
 }

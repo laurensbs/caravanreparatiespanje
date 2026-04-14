@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { suppliers, parts, partRequests, repairJobs, partCategories } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
+import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, desc, sql, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit";
@@ -357,7 +358,7 @@ export async function removePartRequest(id: string) {
 // === Part Categories ===
 
 export async function getPartCategories() {
-  await requireAuth();
+  await requireAnyAuth();
   return db.select().from(partCategories).orderBy(asc(partCategories.sortOrder), asc(partCategories.label));
 }
 

@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers } from "@/lib/db/schema";
-import { requireAuth, requireRole } from "@/lib/auth-utils";
+import { requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -35,7 +35,7 @@ async function notifyOffice(
 const autoStartStatuses = ["new", "todo", "scheduled"];
 
 export async function garageAutoStart(repairJobId: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [job] = await db
     .select({ status: repairJobs.status })
@@ -51,7 +51,7 @@ export async function garageAutoStart(repairJobId: string) {
 
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "status_changed",
     fieldChanged: "status",
     oldValue: job.status,
@@ -67,7 +67,7 @@ export async function garageAutoStart(repairJobId: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function updateRepairTitle(repairJobId: string, title: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
   const trimmed = title.trim();
   if (!trimmed) throw new Error("Title cannot be empty");
 
@@ -84,7 +84,7 @@ export async function updateRepairTitle(repairJobId: string, title: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function garageMarkDone(repairJobId: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   await db
     .update(repairJobs)
@@ -98,7 +98,7 @@ export async function garageMarkDone(repairJobId: string) {
 
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "status_changed",
     fieldChanged: "status",
     newValue: "completed",
@@ -121,7 +121,7 @@ export async function garageMarkDone(repairJobId: string) {
 }
 
 export async function garageMarkNotDone(repairJobId: string, reason: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
   const trimmed = reason.trim();
   if (!trimmed) throw new Error("Reason is required");
 
@@ -134,7 +134,7 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
   // Log as event (visible in office timeline)
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "status_changed",
     fieldChanged: "status",
     newValue: "blocked",
@@ -144,10 +144,10 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
   // Also add as communication log (visible in office)
   await db.insert(communicationLogs).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     contactMethod: "in_person",
     direction: "inbound",
-    contactPerson: session.user.name ?? "Garage",
+    contactPerson: ctx.userName ?? "Garage",
     summary: `⚠️ Niet klaar: ${trimmed}`,
   });
 
@@ -176,7 +176,7 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getGarageRepairsToday() {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const now = new Date();
   const startOfDay = new Date(now);
@@ -285,7 +285,7 @@ export async function getGarageRepairsToday() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getGarageRepairDetail(id: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [job] = await db
     .select({
@@ -392,8 +392,8 @@ export async function updateTaskStatus(
   problemCategory?: string,
   problemNote?: string
 ) {
-  const session = await requireAuth();
-  const userId = session.user.id;
+  const ctx = await requireAnyAuth();
+  const userId = ctx.userId ?? null;
 
   const [task] = await db
     .select()
@@ -506,14 +506,14 @@ async function autoUpdateRepairStatus(repairJobId: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function addGarageComment(repairJobId: string, summary: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   await db.insert(communicationLogs).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     contactMethod: "in_person",
     direction: "inbound",
-    contactPerson: session.user.name ?? "Garage",
+    contactPerson: ctx.userName ?? "Garage",
     summary,
   });
 
@@ -547,7 +547,7 @@ export async function suggestExtraTask(
   description?: string,
   priority?: string
 ) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   // Get max sort order
   const [maxSort] = await db
@@ -569,7 +569,7 @@ export async function suggestExtraTask(
   // Log event
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "task_suggested",
     comment: `Garage suggested: "${title}"${description ? ` — ${description}` : ""}`,
   });
@@ -594,7 +594,7 @@ export async function suggestExtraTask(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function searchPartsCatalog(query: string, category?: string) {
-  await requireAuth();
+  await requireAnyAuth();
 
   const q = `%${query.toLowerCase()}%`;
   const conditions = [
@@ -648,7 +648,7 @@ export async function garageRequestPart(
     category?: string;
   }
 ) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [request] = await db
     .insert(partRequests)
@@ -659,14 +659,14 @@ export async function garageRequestPart(
       quantity: options?.quantity ?? 1,
       unitCost: options?.unitCost ?? null,
       status: "requested",
-      notes: `Requested by garage (${session.user.name ?? "technician"})`,
+      notes: `Requested by garage (${ctx.userName ?? "technician"})`,
     })
     .returning();
 
   // Log event
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "part_requested",
     comment: `Garage requested part: "${partName}"`,
   });
@@ -695,13 +695,13 @@ export async function garageRequestPart(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function completeFinalCheck(repairJobId: string, notes?: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   await db
     .update(repairJobs)
     .set({
       finalCheckStatus: "passed",
-      finalCheckByUserId: session.user.id,
+      finalCheckByUserId: ctx.userId,
       finalCheckAt: new Date(),
       finalCheckNotes: notes ?? null,
       updatedAt: new Date(),
@@ -710,7 +710,7 @@ export async function completeFinalCheck(repairJobId: string, notes?: string) {
 
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "final_check_passed",
     comment: notes ? `Final check passed. ${notes}` : "Final check passed.",
   });
@@ -719,13 +719,13 @@ export async function completeFinalCheck(repairJobId: string, notes?: string) {
 }
 
 export async function failFinalCheck(repairJobId: string, notes: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   await db
     .update(repairJobs)
     .set({
       finalCheckStatus: "failed",
-      finalCheckByUserId: session.user.id,
+      finalCheckByUserId: ctx.userId,
       finalCheckAt: new Date(),
       finalCheckNotes: notes,
       status: "in_progress",
@@ -747,7 +747,7 @@ export async function failFinalCheck(repairJobId: string, notes: string) {
 
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "final_check_failed",
     comment: `Final check failed: ${notes}`,
   });
@@ -772,7 +772,7 @@ export async function addRepairTask(
     includeInEstimate?: boolean;
   }
 ) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [maxSort] = await db
     .select({ max: sql<number>`coalesce(max(${repairTasks.sortOrder}), 0)` })
@@ -801,7 +801,7 @@ export async function addRepairTask(
 }
 
 export async function deleteRepairTask(taskId: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [task] = await db
     .select({ repairJobId: repairTasks.repairJobId, title: repairTasks.title })
@@ -814,7 +814,7 @@ export async function deleteRepairTask(taskId: string) {
 
   await db.insert(repairJobEvents).values({
     repairJobId: task.repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "task_deleted",
     comment: `Task removed: "${task.title}"`,
   });
@@ -823,13 +823,13 @@ export async function deleteRepairTask(taskId: string) {
 }
 
 export async function approveGarageTask(taskId: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   await db
     .update(repairTasks)
     .set({
       approvedAt: new Date(),
-      approvedByUserId: session.user.id,
+      approvedByUserId: ctx.userId,
       updatedAt: new Date(),
     })
     .where(eq(repairTasks.id, taskId));
@@ -856,7 +856,7 @@ export async function updateRepairTaskPricing(
     includeInEstimate?: boolean;
   }
 ) {
-  await requireAuth();
+  await requireAnyAuth();
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (data.estimatedHours !== undefined) updates.estimatedHours = data.estimatedHours != null ? String(data.estimatedHours) : null;
   if (data.actualHours !== undefined) updates.actualHours = data.actualHours != null ? String(data.actualHours) : null;
@@ -889,8 +889,9 @@ export async function getRepairWorkers(repairJobId: string) {
 
 /** Toggle "I worked on this" — adds or removes the current user */
 export async function toggleMyWorker(repairJobId: string) {
-  const session = await requireAuth();
-  const userId = session.user.id;
+  const ctx = await requireAnyAuth();
+  if (!ctx.userId) throw new Error("User identity required");
+  const userId = ctx.userId;
 
   const existing = await db
     .select({ id: repairWorkers.id })
@@ -913,7 +914,7 @@ export async function toggleMyWorker(repairJobId: string) {
 
 /** Admin/staff: add a worker to a repair */
 export async function addRepairWorker(repairJobId: string, userId: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   // Check not already added
   const existing = await db
@@ -926,7 +927,7 @@ export async function addRepairWorker(repairJobId: string, userId: string) {
   await db.insert(repairWorkers).values({
     repairJobId,
     userId,
-    addedByUserId: session.user.id,
+    addedByUserId: ctx.userId,
   });
 
   revalidatePath(`/repairs/${repairJobId}`);
@@ -934,7 +935,7 @@ export async function addRepairWorker(repairJobId: string, userId: string) {
 
 /** Admin/staff: remove a worker from a repair */
 export async function removeRepairWorker(repairJobId: string, userId: string) {
-  await requireAuth();
+  await requireAnyAuth();
   await db.delete(repairWorkers).where(
     and(eq(repairWorkers.repairJobId, repairJobId), eq(repairWorkers.userId, userId))
   );
@@ -943,7 +944,7 @@ export async function removeRepairWorker(repairJobId: string, userId: string) {
 
 /** Update a worker's note */
 export async function updateWorkerNote(workerId: string, note: string) {
-  await requireAuth();
+  await requireAnyAuth();
   await db.update(repairWorkers).set({ note: note || null }).where(eq(repairWorkers.id, workerId));
 }
 
@@ -971,7 +972,7 @@ export async function addFinding(
     requiresCustomerApproval?: boolean;
   }
 ) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [finding] = await db
     .insert(repairFindings)
@@ -982,14 +983,14 @@ export async function addFinding(
       severity: data.severity as any,
       requiresFollowUp: data.requiresFollowUp ?? false,
       requiresCustomerApproval: data.requiresCustomerApproval ?? false,
-      createdByUserId: session.user.id,
+      createdByUserId: ctx.userId,
     })
     .returning();
 
   // Log timeline event
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "finding_added",
     comment: `${data.severity} finding (${data.category}): ${data.description}`,
   });
@@ -1088,7 +1089,7 @@ export async function getRepairFindings(repairJobId: string) {
 }
 
 export async function resolveFinding(findingId: string) {
-  await requireAuth();
+  await requireAnyAuth();
   await db
     .update(repairFindings)
     .set({ resolvedAt: new Date() })
@@ -1110,7 +1111,7 @@ export async function addBlocker(
   repairJobId: string,
   data: { reason: string; description?: string }
 ) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [blocker] = await db
     .insert(repairBlockers)
@@ -1118,14 +1119,14 @@ export async function addBlocker(
       repairJobId,
       reason: data.reason as any,
       description: data.description ?? null,
-      createdByUserId: session.user.id,
+      createdByUserId: ctx.userId,
     })
     .returning();
 
   // Log timeline event
   await db.insert(repairJobEvents).values({
     repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "blocker_added",
     comment: `Blocker: ${data.reason}${data.description ? ` — ${data.description}` : ""}`,
   });
@@ -1174,7 +1175,7 @@ export async function addBlocker(
 }
 
 export async function resolveBlocker(blockerId: string) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const [blocker] = await db
     .select({
@@ -1191,14 +1192,14 @@ export async function resolveBlocker(blockerId: string) {
     .set({
       active: false,
       resolvedAt: new Date(),
-      resolvedByUserId: session.user.id,
+      resolvedByUserId: ctx.userId,
     })
     .where(eq(repairBlockers.id, blockerId));
 
   // Log event
   await db.insert(repairJobEvents).values({
     repairJobId: blocker.repairJobId,
-    userId: session.user.id,
+    userId: ctx.userId,
     eventType: "blocker_resolved",
     comment: `Blocker resolved: ${blocker.reason}`,
   });
@@ -1253,7 +1254,7 @@ export async function getRepairBlockers(repairJobId: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getGarageQuickStats() {
-  await requireAuth();
+  await requireAnyAuth();
 
   const now = new Date();
 

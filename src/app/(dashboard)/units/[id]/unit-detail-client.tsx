@@ -3,8 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateUnit } from "@/actions/units";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,7 +30,6 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
   const [isPending, startTransition] = useTransition();
   const unit = initialUnit;
 
-  // Edit state per field
   const [editingField, setEditingField] = useState<string | null>(null);
   const [registration, setRegistration] = useState(unit.registration ?? "");
   const [brand, setBrand] = useState(unit.brand ?? "");
@@ -50,7 +47,6 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
     startTransition(async () => {
       try {
         const data: Record<string, any> = { customerId: unit.customerId };
-        // Send current values for all fields, overriding the one being saved
         const fields: Record<string, string> = {
           registration, brand, model, chassisId, length,
           storageLocation, storageType, currentPosition, nfcTag, notes,
@@ -71,29 +67,48 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
     });
   }
 
+  const unitTitle = [unit.brand, unit.model].filter(Boolean).join(" ") || "Unit";
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
-            <Link href="/units"><ArrowLeft className="h-4 w-4" /></Link>
-          </Button>
+    <div className="max-w-7xl mx-auto px-6 py-6 animate-fade-in">
+      {/* ─── Header ─── */}
+      <div className="mb-8">
+        <Link href="/units" className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mb-4">
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Units
+        </Link>
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-lg font-bold tracking-tight">
-              {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unit"}
-            </h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {unit.registration && <span className="font-mono">{unit.registration}</span>}
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{unitTitle}</h1>
+            <div className="flex items-center gap-3 mt-1.5">
+              {unit.registration && (
+                <span className="font-mono text-sm text-gray-500 dark:text-gray-400">{unit.registration}</span>
+              )}
               {unit.customer && (
                 <>
-                  <span>·</span>
-                  <Link href={`/customers/${unit.customer.id}`} className="text-primary hover:underline">{unit.customer.name}</Link>
+                  {unit.registration && <span className="text-gray-300 dark:text-gray-600">·</span>}
+                  <Link href={`/customers/${unit.customer.id}`} className="text-sm text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">
+                    {unit.customer.name}
+                  </Link>
+                </>
+              )}
+              {storageLocation && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                  <span className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                    <MapPin className="h-3 w-3" />
+                    {storageLocation}
+                  </span>
+                </>
+              )}
+              {unit.repairJobs.length > 0 && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{unit.repairJobs.length} repair{unit.repairJobs.length !== 1 ? "s" : ""}</span>
                 </>
               )}
             </div>
-            {/* Tags */}
-            <div className="mt-1.5">
+            <div className="mt-2.5">
               <TagPicker
                 allTags={allTags}
                 activeTags={unit.tags ?? []}
@@ -105,11 +120,18 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Left column — Details + Storage + Notes */}
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="space-y-0 divide-y">
+      {/* ─── Content grid ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* Left column — Info + Storage + Notes */}
+        <div className="lg:col-span-5 space-y-6">
+
+          {/* Unit Info */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="px-5 pt-5 pb-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Unit Details</p>
+            </div>
+            <div className="px-5 pb-5">
               <InlineRow icon={Hash} label="License Plate" value={registration} field="registration" mono
                 editingField={editingField} saving={isPending} onChange={setRegistration} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineRow icon={Truck} label="Brand" value={brand} field="brand"
@@ -123,143 +145,201 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
               <InlineRow icon={Ruler} label="Length" value={length} field="length"
                 editingField={editingField} saving={isPending} onChange={setLength} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               {unit.customer && (
-                <div className="flex items-center justify-between py-2 text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><User className="h-3.5 w-3.5" /> Owner</span>
-                  <Link href={`/customers/${unit.customer.id}`} className="font-medium text-primary hover:underline text-xs">{unit.customer.name}</Link>
+                <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-gray-800">
+                  <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"><User className="h-3.5 w-3.5" /> Owner</span>
+                  <Link href={`/customers/${unit.customer.id}`} className="text-sm font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">{unit.customer.name}</Link>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardContent className="space-y-0 divide-y">
-              <div className="pb-1 pt-0.5">
-                <p className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  <Warehouse className="h-3 w-3" /> Storage & Location
-                </p>
-              </div>
+          {/* Storage & Location */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="px-5 pt-5 pb-1">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <Warehouse className="h-3 w-3" /> Storage & Location
+              </p>
+            </div>
+            <div className="px-5 pb-5">
               <InlineSelectRow icon={MapPin} label="Location" value={storageLocation} field="storageLocation"
                 options={["Cruïllas", "Sant Climent", "Peratallada"]} placeholder="Select location..."
                 editingField={editingField} saving={isPending} onChange={setStorageLocation} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineSelectRow icon={Warehouse} label="Type" value={storageType} field="storageType"
                 options={["Inside", "Outside"]} placeholder="Inside / Outside"
-                editingField={editingField} saving={isPending} onChange={setStorageType} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+                editingField={editingField} saving={isPending} onChange={setStorageType} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)}
+                chip={storageType === "Inside" ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400" : storageType === "Outside" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" : undefined} />
               <InlineRow icon={Navigation} label="Position" value={currentPosition} field="currentPosition"
                 editingField={editingField} saving={isPending} onChange={setCurrentPosition} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
-              <InlineRow icon={Tag} label="NFC Tag" value={nfcTag} field="nfcTag" mono
+              <InlineRow icon={Tag} label="NFC Tag" value={nfcTag} field="nfcTag" mono nfcPill
                 editingField={editingField} saving={isPending} onChange={setNfcTag} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Notes */}
-          <Card>
-            <CardContent>
-              <div className="group/notes">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    <StickyNote className="h-3 w-3" /> Notes
-                  </p>
-                  {editingField !== "notes" && (
-                    <button onClick={() => setEditingField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
-                      <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                    </button>
-                  )}
-                </div>
-                {editingField === "notes" ? (
-                  <div className="space-y-1.5">
-                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="text-sm rounded-lg" autoFocus />
-                    <div className="flex gap-1">
-                      <Button size="sm" className="h-6 text-[11px] rounded-lg" onClick={() => saveField("notes", notes)} disabled={isPending}>Save</Button>
-                      <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={() => { setNotes(unit.notes ?? ""); setEditingField(null); }}>Cancel</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors" onClick={() => setEditingField("notes")}>
-                    {notes || <span className="italic text-xs">Click to add notes</span>}
-                  </p>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="px-5 pt-5 pb-1">
+              <div className="flex items-center justify-between">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <StickyNote className="h-3 w-3" /> Notes
+                </p>
+                {editingField !== "notes" && (
+                  <button onClick={() => setEditingField("notes")} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
+                    <Pencil className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+                  </button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="px-5 pb-5 group">
+              {editingField === "notes" ? (
+                <div className="space-y-2 mt-2">
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="text-sm rounded-xl border-gray-200 dark:border-gray-700 resize-none" autoFocus />
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 text-xs rounded-xl px-3" onClick={() => saveField("notes", notes)} disabled={isPending}>Save</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs rounded-xl" onClick={() => { setNotes(unit.notes ?? ""); setEditingField(null); }}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="mt-2 min-h-[60px] rounded-xl cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 px-3 py-2.5 -mx-3"
+                  onClick={() => setEditingField("notes")}
+                >
+                  {notes ? (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{notes}</p>
+                  ) : (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 italic">Click to add notes</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Right column — Repairs */}
-        <Card className="lg:col-span-2">
-          <CardContent>
-            <div className="flex items-center gap-2 mb-3">
-              <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Repairs ({unit.repairJobs.length})</p>
-            </div>
-            {unit.repairJobs.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No repairs for this unit</p>
-            ) : (
-              <div className="space-y-1.5 max-h-[600px] overflow-y-auto">
-                {unit.repairJobs.map((job, idx) => (
-                  <Link
-                    key={job.id}
-                    href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between rounded-lg border ring-1 ring-border/50 p-2.5 text-sm hover:bg-muted/50 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all animate-slide-up"
-                    style={{ animationDelay: `${idx * 30}ms` }}
-                  >
-                    <div className="min-w-0 mr-2">
-                      <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>
-                      <p className="font-mono text-[11px] text-muted-foreground">{job.publicCode}</p>
-                    </div>
-                    <Badge variant="secondary" className={`${STATUS_COLORS[job.status as RepairStatus]} rounded-full text-[10px] px-2 py-0 shrink-0`}>
-                      {STATUS_LABELS[job.status as RepairStatus]}
-                    </Badge>
-                  </Link>
-                ))}
+        <div className="lg:col-span-7">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="px-5 pt-5 pb-4">
+              <div className="flex items-center gap-2.5">
+                <Wrench className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repairs</p>
+                {unit.repairJobs.length > 0 && (
+                  <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium px-1.5">
+                    {unit.repairJobs.length}
+                  </span>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+
+            <div className="px-5 pb-5">
+              {unit.repairJobs.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 py-10 text-center">
+                  <Wrench className="h-7 w-7 text-gray-300 dark:text-gray-600 mx-auto mb-2.5" />
+                  <p className="text-sm text-gray-400 dark:text-gray-500">No repairs for this unit</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[700px] overflow-y-auto">
+                  {unit.repairJobs.map((job) => (
+                    <Link
+                      key={job.id}
+                      href={`/repairs/${job.id}`}
+                      className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-150 cursor-pointer group"
+                    >
+                      <div className="min-w-0 mr-3">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">{job.title || "Unnamed"}</p>
+                        <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{job.publicCode}</p>
+                      </div>
+                      <StatusBadge status={job.status as RepairStatus} />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function InlineRow({ icon: Icon, label, value, field, mono, type, editingField, saving, onChange, onSave, onEdit, onCancel }: {
-  icon: any; label: string; value: string; field: string; mono?: boolean; type?: string;
+/* ─── Status badge ─── */
+
+const STATUS_BADGE_COLORS: Partial<Record<RepairStatus, string>> = {
+  completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+  invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+  waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  waiting_customer: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  waiting_parts: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
+  in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
+  scheduled: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
+  quote_needed: "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
+  in_inspection: "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
+  ready_for_check: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  rejected: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+  blocked: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+  no_damage: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  archived: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+};
+
+function StatusBadge({ status }: { status: RepairStatus }) {
+  const colorClass = STATUS_BADGE_COLORS[status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium shrink-0 ${colorClass}`}>
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+/* ─── Inline editable row ─── */
+
+function InlineRow({ icon: Icon, label, value, field, mono, type, nfcPill, editingField, saving, onChange, onSave, onEdit, onCancel }: {
+  icon: any; label: string; value: string; field: string; mono?: boolean; type?: string; nfcPill?: boolean;
   editingField: string | null; saving: boolean;
   onChange: (v: string) => void; onSave: (field: string, value: string) => void;
   onEdit: (f: string) => void; onCancel: () => void;
 }) {
   const isEditing = editingField === field;
   return (
-    <div className="group/row flex items-center justify-between py-2 text-sm">
-      <span className="flex items-center gap-2 text-muted-foreground shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
+    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-gray-800 first:border-t-0">
+      <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
       {isEditing ? (
-        <div className="flex items-center gap-1">
-          <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} className={`h-6 w-36 text-xs rounded-md ${mono ? "font-mono" : ""}`} autoFocus
+        <div className="flex items-center gap-1.5">
+          <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} className={`h-7 w-40 text-sm rounded-lg border-gray-200 dark:border-gray-700 ${mono ? "font-mono text-xs" : ""}`} autoFocus
             onKeyDown={(e) => { if (e.key === "Enter") onSave(field, value); if (e.key === "Escape") onCancel(); }} />
-          <button onClick={() => onSave(field, value)} disabled={saving} className="p-0.5 rounded hover:bg-muted"><Check className="h-3 w-3 text-green-600" /></button>
-          <button onClick={onCancel} className="p-0.5 rounded hover:bg-muted"><X className="h-3 w-3 text-muted-foreground" /></button>
+          <button onClick={() => onSave(field, value)} disabled={saving} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /></button>
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" /></button>
         </div>
       ) : (
-        <span className={`flex items-center gap-1 font-medium cursor-pointer hover:text-primary transition-colors ${mono ? "font-mono text-xs" : ""}`} onClick={() => onEdit(field)}>
-          {value || "—"}
-          <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
+        <span
+          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "text-gray-900 dark:text-gray-100 hover:text-sky-700 dark:hover:text-sky-400" : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400"}`}
+          onClick={() => onEdit(field)}
+        >
+          {nfcPill && value ? (
+            <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md px-2 py-0.5 text-xs font-mono">{value}</span>
+          ) : (
+            <span className={`text-sm font-medium ${mono ? "font-mono text-xs" : ""}`}>{value || "—"}</span>
+          )}
+          <Pencil className="h-2.5 w-2.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover/row:opacity-100 transition-opacity" />
         </span>
       )}
     </div>
   );
 }
 
-function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder, editingField, saving, onChange, onSave, onEdit, onCancel }: {
-  icon: any; label: string; value: string; field: string; options: string[]; placeholder?: string;
+/* ─── Inline select row ─── */
+
+function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder, chip, editingField, saving, onChange, onSave, onEdit, onCancel }: {
+  icon: any; label: string; value: string; field: string; options: string[]; placeholder?: string; chip?: string;
   editingField: string | null; saving: boolean;
   onChange: (v: string) => void; onSave: (field: string, value: string) => void;
   onEdit: (f: string) => void; onCancel: () => void;
 }) {
   const isEditing = editingField === field;
   return (
-    <div className="group/row flex items-center justify-between py-2 text-sm">
-      <span className="flex items-center gap-2 text-muted-foreground shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
+    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-gray-800 first:border-t-0">
+      <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
       {isEditing ? (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <Select value={value} onValueChange={(v) => { onChange(v); onSave(field, v); }}>
-            <SelectTrigger className="h-6 w-36 text-xs rounded-md">
+            <SelectTrigger className="h-7 w-40 text-sm rounded-lg border-gray-200 dark:border-gray-700">
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -268,12 +348,19 @@ function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder
               ))}
             </SelectContent>
           </Select>
-          <button onClick={onCancel} className="p-0.5 rounded hover:bg-muted"><X className="h-3 w-3 text-muted-foreground" /></button>
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" /></button>
         </div>
       ) : (
-        <span className="flex items-center gap-1 font-medium cursor-pointer hover:text-primary transition-colors" onClick={() => onEdit(field)}>
-          {value || "—"}
-          <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
+        <span
+          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "hover:text-sky-700 dark:hover:text-sky-400" : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400"}`}
+          onClick={() => onEdit(field)}
+        >
+          {chip && value ? (
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${chip}`}>{value}</span>
+          ) : (
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{value || "—"}</span>
+          )}
+          <Pencil className="h-2.5 w-2.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover/row:opacity-100 transition-opacity" />
         </span>
       )}
     </div>

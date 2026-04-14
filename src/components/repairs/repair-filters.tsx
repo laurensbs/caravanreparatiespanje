@@ -23,13 +23,23 @@ interface TagItem {
   color: string | null;
 }
 
+interface DatasetFacets {
+  invoiceStatuses: string[];
+  responseStatuses: string[];
+  priorities: string[];
+  locationIds: string[];
+  tagIds: string[];
+  hasDateVariation: boolean;
+}
+
 interface RepairFiltersBarProps {
   locations: Location[];
   currentFilters: RepairFilters;
   allTags?: TagItem[];
+  datasetFacets?: DatasetFacets;
 }
 
-export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: RepairFiltersBarProps) {
+export function RepairFiltersBar({ locations, currentFilters, allTags = [], datasetFacets }: RepairFiltersBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -67,6 +77,19 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
   // Advanced filter keys (everything inside the panel)
   const advancedFilterKeys = ["priority", "locationId", "invoiceStatus", "customerResponseStatus", "tagId", "dateFrom", "dateTo"] as const;
   const advancedCount = advancedFilterKeys.filter(k => currentFilters[k]).length;
+
+  // Context-aware filter relevance — hide filters with no variation in dataset
+  const filterRelevance = useMemo(() => {
+    if (!datasetFacets) return { priority: true, location: true, invoice: true, response: true, tags: true, date: true };
+    return {
+      priority: datasetFacets.priorities.length > 1 || !!currentFilters.priority,
+      location: datasetFacets.locationIds.length > 1 || !!currentFilters.locationId,
+      invoice: datasetFacets.invoiceStatuses.length > 1 || !!currentFilters.invoiceStatus,
+      response: datasetFacets.responseStatuses.length > 1 || !!currentFilters.customerResponseStatus,
+      tags: (datasetFacets.tagIds.length > 0 && allTags.length > 0) || !!currentFilters.tagId,
+      date: datasetFacets.hasDateVariation || !!currentFilters.dateFrom || !!currentFilters.dateTo,
+    };
+  }, [datasetFacets, currentFilters, allTags]);
 
   // Build active filter pills
   const activePills = useMemo(() => {
@@ -214,8 +237,10 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
 
             {/* Panel body */}
             <div className="px-6 pb-6 pt-5 space-y-6">
-              {/* Row 1: Priority + Location */}
+              {/* Row 1: Priority + Location (always show) */}
+              {(filterRelevance.priority || filterRelevance.location) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filterRelevance.priority && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Priority</Label>
                   <Select
@@ -233,6 +258,8 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </SelectContent>
                   </Select>
                 </div>
+                )}
+                {filterRelevance.location && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Location</Label>
                   <Select
@@ -250,10 +277,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </SelectContent>
                   </Select>
                 </div>
+                )}
               </div>
+              )}
 
               {/* Row 2: Invoice + Response */}
+              {(filterRelevance.invoice || filterRelevance.response) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filterRelevance.invoice && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Invoice</Label>
                   <Select
@@ -271,6 +302,8 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </SelectContent>
                   </Select>
                 </div>
+                )}
+                {filterRelevance.response && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Response</Label>
                   <Select
@@ -288,11 +321,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </SelectContent>
                   </Select>
                 </div>
+                )}
               </div>
+              )}
 
               {/* Row 3: Tags + Date range */}
+              {(filterRelevance.tags || filterRelevance.date) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {allTags.length > 0 && (
+                {filterRelevance.tags && allTags.length > 0 && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Tag</Label>
                     <Select
@@ -316,7 +352,8 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </Select>
                   </div>
                 )}
-                <div className={allTags.length > 0 ? "space-y-1.5" : "sm:col-span-2 space-y-1.5"}>
+                {filterRelevance.date && (
+                <div className={(filterRelevance.tags && allTags.length > 0) ? "space-y-1.5" : "sm:col-span-2 space-y-1.5"}>
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Date range</Label>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <div className="flex-1 space-y-1">
@@ -340,7 +377,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </div>
                   </div>
                 </div>
+                )}
               </div>
+              )}
+
+              {/* All filters hidden hint */}
+              {!filterRelevance.priority && !filterRelevance.location && !filterRelevance.invoice && !filterRelevance.response && !filterRelevance.tags && !filterRelevance.date && (
+                <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">No additional filters available for this selection.</p>
+              )}
             </div>
           </PopoverContent>
         </Popover>

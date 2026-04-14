@@ -126,6 +126,14 @@ export default async function RepairsPage({ searchParams }: Props) {
         locations={filteredLocations}
         currentFilters={filters}
         allTags={allTags}
+        datasetFacets={{
+          invoiceStatuses: [...new Set(jobs.map(j => j.invoiceStatus))],
+          responseStatuses: [...new Set(jobs.map(j => j.customerResponseStatus))],
+          priorities: [...new Set(jobs.map(j => j.priority))],
+          locationIds: [...new Set(jobs.map(j => j.locationId).filter(Boolean))] as string[],
+          tagIds: [...new Set(jobs.flatMap(j => j.tags?.map((t: { id: string }) => t.id) ?? []))],
+          hasDateVariation: jobs.length > 1 && new Set(jobs.map(j => j.createdAt?.toString().slice(0, 10))).size > 1,
+        }}
       />
 
       <RepairTable jobs={jobs} total={total} filters={filters} />

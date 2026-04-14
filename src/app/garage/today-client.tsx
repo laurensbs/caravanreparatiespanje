@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
 import { WeatherWidget } from "@/components/garage/weather-widget";
 import { signOut } from "next-auth/react";
-import { RefreshCw, ClipboardCheck, ChevronRight, AlertTriangle, Wrench, Search as SearchIcon, CircleCheck } from "lucide-react";
+import { RefreshCw, ClipboardCheck, ChevronRight, AlertTriangle, Wrench, Search as SearchIcon, CircleCheck, CalendarDays, Package, Zap, Plus, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -30,9 +30,17 @@ type RepairItem = {
   workers: string[];
 };
 
+interface QuickStats {
+  tomorrowCount: number;
+  waitingPartsCount: number;
+  urgentCount: number;
+  unassignedCount: number;
+}
+
 interface Props {
   repairs: RepairItem[];
   userName: string;
+  stats: QuickStats;
 }
 
 // ─── Job type badge config ───
@@ -54,7 +62,7 @@ function categorize(r: RepairItem): StatusCategory {
   return "todo";
 }
 
-export function GarageTodayClient({ repairs, userName }: Props) {
+export function GarageTodayClient({ repairs, userName, stats }: Props) {
   const { t, lang } = useLanguage();
   const router = useRouter();
   const [time, setTime] = useState(() => new Date());
@@ -191,7 +199,7 @@ export function GarageTodayClient({ repairs, userName }: Props) {
             t={t}
           />
         ) : (
-          <EmptyState t={t} />
+          <EmptyState t={t} stats={stats} handleRefresh={handleRefresh} refreshing={refreshing} />
         )}
       </div>
     </div>
@@ -202,41 +210,155 @@ export function GarageTodayClient({ repairs, userName }: Props) {
 // EMPTY STATE
 // ══════════════════════════════════════════════════
 
-function EmptyState({ t }: { t: (en: string, es?: string | null, nl?: string | null) => string }) {
+function EmptyState({ t, stats, handleRefresh, refreshing }: {
+  t: (en: string, es?: string | null, nl?: string | null) => string;
+  stats: QuickStats;
+  handleRefresh: () => void;
+  refreshing: boolean;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[65vh] px-6">
-      <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-6">
-        <ClipboardCheck className="h-8 w-8 text-emerald-600" />
-      </div>
-      <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900 text-center">
-        {t("No work today", "Sin trabajo hoy", "Geen werk vandaag")}
-      </h2>
-      <p className="text-lg text-gray-500 mt-3 text-center max-w-md">
-        {t(
-          "Nothing is planned for today.",
-          "No hay nada planificado para hoy.",
-          "Er staat niets gepland voor vandaag."
-        )}
-      </p>
-      <div className="mt-10 space-y-3 max-w-sm w-full">
-        <div className="flex items-center gap-3 text-sm text-gray-400">
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-          {t(
-            "New jobs appear automatically",
-            "Los trabajos nuevos aparecen automáticamente",
-            "Nieuwe opdrachten verschijnen automatisch"
-          )}
+    <div className="flex flex-col items-center min-h-[65vh] px-6 pt-4">
+      {/* ─── Smart context message ─── */}
+      {stats.urgentCount > 0 ? (
+        <div className="w-full max-w-lg mb-8">
+          <div className="flex items-center gap-4 rounded-2xl bg-amber-50 border border-amber-100 px-6 py-5">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <Zap className="h-6 w-6 text-amber-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold text-amber-900">
+                {t(
+                  `${stats.urgentCount} urgent job${stats.urgentCount > 1 ? "s" : ""} pending`,
+                  `${stats.urgentCount} trabajo${stats.urgentCount > 1 ? "s" : ""} urgente${stats.urgentCount > 1 ? "s" : ""} pendiente${stats.urgentCount > 1 ? "s" : ""}`,
+                  `${stats.urgentCount} spoedklus${stats.urgentCount > 1 ? "sen" : ""} wachtend`
+                )}
+              </p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                {t("Not scheduled for today", "No planificados para hoy", "Niet ingepland voor vandaag")}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-sm text-gray-400">
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-          {t(
-            "Use refresh if the schedule just changed",
-            "Usa actualizar si el horario acaba de cambiar",
-            "Gebruik vernieuwen als de planning net is aangepast"
-          )}
+      ) : stats.tomorrowCount > 0 ? (
+        <div className="w-full max-w-lg mb-8">
+          <div className="flex items-center gap-4 rounded-2xl bg-sky-50 border border-sky-100 px-6 py-5">
+            <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
+              <CalendarDays className="h-6 w-6 text-sky-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold text-sky-900">
+                {t(
+                  `Nothing today — but tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""}`,
+                  `Nada hoy — pero mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""}`,
+                  `Niets vandaag — maar morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""}`
+                )}
+              </p>
+              <p className="text-sm text-sky-700 mt-0.5">
+                {t("Enjoy the downtime", "Disfruta del descanso", "Geniet van de rust")}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : stats.unassignedCount > 0 ? (
+        <div className="w-full max-w-lg mb-8">
+          <div className="flex items-center gap-4 rounded-2xl bg-violet-50 border border-violet-100 px-6 py-5">
+            <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+              <ClipboardCheck className="h-6 w-6 text-violet-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold text-violet-900">
+                {t(
+                  `${stats.unassignedCount} unassigned job${stats.unassignedCount > 1 ? "s" : ""} available`,
+                  `${stats.unassignedCount} trabajo${stats.unassignedCount > 1 ? "s" : ""} sin asignar`,
+                  `${stats.unassignedCount} niet-toegewezen klus${stats.unassignedCount > 1 ? "sen" : ""}`
+                )}
+              </p>
+              <p className="text-sm text-violet-700 mt-0.5">
+                {t("Ask the office to assign one", "Pide a la oficina que te asigne uno", "Vraag het kantoor om er een toe te wijzen")}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ─── Main icon + title ─── */}
+      <div className="flex flex-col items-center mt-2 mb-10">
+        <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6">
+          <ClipboardCheck className="h-10 w-10 text-emerald-500" />
+        </div>
+        <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900 text-center">
+          {t("No work scheduled today", "Sin trabajo hoy", "Geen werk vandaag")}
+        </h2>
+        <p className="text-lg text-gray-400 mt-2 text-center">
+          {t("You're all caught up", "Todo al día", "Je bent helemaal bij")} 👌
+        </p>
+      </div>
+
+      {/* ─── Action buttons ─── */}
+      <div className="w-full max-w-lg space-y-3 mb-10">
+        <button
+          onClick={handleRefresh}
+          className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#0CC0DF] text-white text-base font-semibold shadow-sm hover:bg-[#0BB0CC] active:scale-[0.98] transition-all duration-150"
+        >
+          <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
+          {t("Refresh Planning", "Actualizar planificación", "Planning vernieuwen")}
+        </button>
+      </div>
+
+      {/* ─── Quick info strip ─── */}
+      <div className="w-full max-w-lg">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-gray-300" />
+              <span className="text-sm text-gray-500 font-medium">{t("Today", "Hoy", "Vandaag")}</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
+              0 {t("jobs", "trabajos", "klussen")}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-sky-400" />
+              <span className="text-sm text-gray-500 font-medium">{t("Tomorrow", "Mañana", "Morgen")}</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
+              {stats.tomorrowCount} {t("planned", "planificados", "gepland")}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-purple-400" />
+              <span className="text-sm text-gray-500 font-medium">{t("Waiting parts", "Esperando piezas", "Wacht op onderdelen")}</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
+              {stats.waitingPartsCount}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full ${stats.urgentCount > 0 ? "bg-amber-400" : "bg-gray-300"}`} />
+              <span className="text-sm text-gray-500 font-medium">{t("Urgent", "Urgente", "Spoed")}</span>
+            </div>
+            <p className={`text-2xl font-bold mt-1.5 tabular-nums ${stats.urgentCount > 0 ? "text-amber-600" : "text-gray-900"}`}>
+              {stats.urgentCount}
+            </p>
+          </div>
         </div>
       </div>
-      <div className="mt-12 w-full max-w-sm">
+
+      {/* ─── Auto-update indicator ─── */}
+      <div className="flex flex-col items-center gap-1 mt-8 mb-6">
+        <p className="text-xs text-gray-400 font-medium">
+          {t("Jobs update automatically", "Los trabajos se actualizan automáticamente", "Opdrachten worden automatisch bijgewerkt")}
+        </p>
+        <p className="text-xs text-gray-300 tabular-nums">
+          {t("Last updated", "Última actualización", "Laatst bijgewerkt")}: {new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      </div>
+
+      {/* ─── Weather (secondary) ─── */}
+      <div className="w-full max-w-sm">
         <WeatherWidget />
       </div>
     </div>

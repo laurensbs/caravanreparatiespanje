@@ -1185,3 +1185,81 @@ export async function getRepairBlockers(repairJobId: string) {
     .where(eq(repairBlockers.repairJobId, repairJobId))
     .orderBy(desc(repairBlockers.active), desc(repairBlockers.createdAt));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUICK STATS (for empty state / dashboard strip)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getGarageQuickStats() {
+  await requireAuth();
+
+  const now = new Date();
+
+  // Tomorrow range
+  const tomorrowStart = new Date(now);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  tomorrowStart.setHours(0, 0, 0, 0);
+  const tomorrowEnd = new Date(tomorrowStart);
+  tomorrowEnd.setHours(23, 59, 59, 999);
+
+  const [tomorrowJobs] = await db
+    .select({ count: count() })
+    .from(repairJobs)
+    .where(
+      and(
+        isNull(repairJobs.deletedAt),
+        isNull(repairJobs.archivedAt),
+        gte(repairJobs.dueDate, tomorrowStart),
+        lte(repairJobs.dueDate, tomorrowEnd)
+      )
+    );
+
+  // Waiting parts (any active job with pending parts)
+  const [waitingParts] = await db
+    .select({ count: count() })
+    .from(repairJobs)
+    .where(
+      and(
+        isNull(repairJobs.deletedAt),
+        isNull(repairJobs.archivedAt),
+        eq(repairJobs.status, "waiting_parts")
+      )
+    );
+
+  // Urgent/high priority active jobs
+  const [urgentJobs] = await db
+    .select({ count: count() })
+    .from(repairJobs)
+    .where(
+      and(
+        isNull(repairJobs.deletedAt),
+        isNull(repairJobs.archivedAt),
+        inArray(repairJobs.priority, ["urgent", "high"]),
+        inArray(repairJobs.status, [
+          "new", "todo", "scheduled", "in_progress", "waiting_parts", "waiting_customer",
+        ])
+      )
+    );
+
+  // Unassigned active jobs
+  const [unassigned] = await db
+    .select({ count: count() })
+    .from(repairJobs)
+    .where(
+      and(
+        isNull(repairJobs.deletedAt),
+        isNull(repairJobs.archivedAt),
+        isNull(repairJobs.assignedUserId),
+        inArray(repairJobs.status, [
+          "new", "todo", "scheduled", "in_progress",
+        ])
+      )
+    );
+
+  return {
+    tomorrowCount: Number(tomorrowJobs.count),
+    waitingPartsCount: Number(waitingParts.count),
+    urgentCount: Number(urgentJobs.count),
+    unassignedCount: Number(unassigned.count),
+  };
+}

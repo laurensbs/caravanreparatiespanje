@@ -89,7 +89,7 @@ export async function GET(request: Request) {
 
     // Fix status mismatches
     for (const r of allRepairs) {
-      if (!r.holdedInvoiceId || r.invoiceStatus === "warranty") continue;
+      if (!r.holdedInvoiceId || ["warranty", "no_damage", "rejected"].includes(r.invoiceStatus)) continue;
       const inv = invoiceById.get(r.holdedInvoiceId);
       if (!inv) continue;
 

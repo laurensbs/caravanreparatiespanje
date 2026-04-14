@@ -98,7 +98,8 @@ export async function GET(request: Request) {
         const existingRepair = repairByInvoiceId.get(inv.id);
         if (existingRepair) {
           const invDate = new Date(inv.date * 1000);
-          const statusChanged = existingRepair.invoiceStatus !== newStatus && existingRepair.invoiceStatus !== "warranty";
+          const manualOverrides = ["warranty", "no_damage", "rejected"];
+          const statusChanged = existingRepair.invoiceStatus !== newStatus && !manualOverrides.includes(existingRepair.invoiceStatus);
           const dateChanged = existingRepair.holdedInvoiceDate?.getTime() !== invDate.getTime();
 
           // Auto-advance repair status when invoice is sent or paid
@@ -157,9 +158,10 @@ export async function GET(request: Request) {
         const customerRepairs = repairsByCustomer.get(customerId);
         if (!customerRepairs) continue;
 
-        // Only consider repairs without an invoice linked and not warranty
+        // Only consider repairs without an invoice linked and not manual overrides
+        const manualOverrideStatuses = ["warranty", "no_damage", "rejected"];
         const unlinkedRepairs = customerRepairs.filter(
-          r => !r.holdedInvoiceId && r.invoiceStatus !== "warranty"
+          r => !r.holdedInvoiceId && !manualOverrideStatuses.includes(r.invoiceStatus)
         );
         if (unlinkedRepairs.length === 0) continue;
 

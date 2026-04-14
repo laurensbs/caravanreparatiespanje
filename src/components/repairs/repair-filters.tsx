@@ -109,7 +109,8 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
       pills.push({ key: "locationId", label: "Location", value: loc?.name ?? "Selected" });
     }
     if (currentFilters.invoiceStatus) {
-      pills.push({ key: "invoiceStatus", label: "Invoice", value: INVOICE_STATUS_LABELS[currentFilters.invoiceStatus as keyof typeof INVOICE_STATUS_LABELS] ?? currentFilters.invoiceStatus });
+      const label = currentFilters.invoiceStatus === "overdue" ? "Overdue" : INVOICE_STATUS_LABELS[currentFilters.invoiceStatus as keyof typeof INVOICE_STATUS_LABELS] ?? currentFilters.invoiceStatus;
+      pills.push({ key: "invoiceStatus", label: "Invoice", value: label });
     }
     if (currentFilters.customerResponseStatus) {
       pills.push({ key: "customerResponseStatus", label: "Response", value: CUSTOMER_RESPONSE_LABELS[currentFilters.customerResponseStatus as keyof typeof CUSTOMER_RESPONSE_LABELS] ?? currentFilters.customerResponseStatus });
@@ -299,6 +300,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                       {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
                         <SelectItem key={value} value={value}>{label}</SelectItem>
                       ))}
+                      <SelectItem value="overdue" className="text-red-600 dark:text-red-400">Overdue</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -71,11 +71,20 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
   }
 
   if (filters.invoiceStatus) {
-    const invoiceStatuses = filters.invoiceStatus.split(",").filter(Boolean);
-    if (invoiceStatuses.length === 1) {
-      conditions.push(eq(repairJobs.invoiceStatus, invoiceStatuses[0] as any));
-    } else if (invoiceStatuses.length > 1) {
-      conditions.push(inArray(repairJobs.invoiceStatus, invoiceStatuses as any));
+    if (filters.invoiceStatus === "overdue") {
+      // Overdue = sent but not paid, invoice date > 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      conditions.push(eq(repairJobs.invoiceStatus, "sent"));
+      conditions.push(isNotNull(repairJobs.holdedInvoiceDate));
+      conditions.push(lte(repairJobs.holdedInvoiceDate, thirtyDaysAgo));
+    } else {
+      const invoiceStatuses = filters.invoiceStatus.split(",").filter(Boolean);
+      if (invoiceStatuses.length === 1) {
+        conditions.push(eq(repairJobs.invoiceStatus, invoiceStatuses[0] as any));
+      } else if (invoiceStatuses.length > 1) {
+        conditions.push(inArray(repairJobs.invoiceStatus, invoiceStatuses as any));
+      }
     }
   }
 

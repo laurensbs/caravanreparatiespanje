@@ -2246,6 +2246,9 @@ function FinancialWorkflow({
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
+  // Auto-enable our-costs view when invoiced/sent/paid so selling prices are hidden
+  const isInvoiced = ["sent", "paid"].includes(invoiceStatus);
+  const [ourCostsView, setOurCostsView] = useState(isInvoiced);
 
   const hasEstimate = costLines.length > 0 || parseFloat(estimatedCost || "0") > 0;
   const hasQuote = !!job.holdedQuoteId;
@@ -2365,7 +2368,21 @@ function FinancialWorkflow({
         {/* Line items */}
         <div className="border-t border-border/30 pt-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-muted-foreground">Line items</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Line items</span>
+              <button
+                onClick={() => setOurCostsView(!ourCostsView)}
+                className={cn(
+                  "inline-flex items-center h-5 text-[10px] px-1.5 rounded font-medium transition-colors",
+                  ourCostsView
+                    ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                title={ourCostsView ? "Switch to full view" : "Show only our purchase costs"}
+              >
+                Our costs
+              </button>
+            </div>
             <div className="flex items-center gap-1">
               {hasGarageActivity && (
                 <button
@@ -2447,8 +2464,8 @@ function FinancialWorkflow({
                 <span className="flex-1">Description</span>
                 <span className="w-14 text-center">Qty</span>
                 <span className="w-20 text-right">Our cost</span>
-                <span className="w-20 text-right">Sell</span>
-                <span className="w-16 text-right">Total</span>
+                {!ourCostsView && <span className="w-20 text-right">Sell</span>}
+                {!ourCostsView && <span className="w-16 text-right">Total</span>}
                 <span className="w-6" />
               </div>
               {costLines.map((line) => (
@@ -2460,11 +2477,13 @@ function FinancialWorkflow({
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
                     <Input type="number" step="0.01" min="0" value={line.internalCost} onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg text-muted-foreground" />
                   </div>
-                  <div className="relative w-20">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                    <Input type="number" step="0.01" min="0" value={line.unitPrice} onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg" />
-                  </div>
-                  <span className="text-xs font-medium w-16 text-right tabular-nums">€{(parseFloat(line.quantity) * parseFloat(line.unitPrice)).toFixed(2)}</span>
+                  {!ourCostsView && (
+                    <div className="relative w-20">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
+                      <Input type="number" step="0.01" min="0" value={line.unitPrice} onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg" />
+                    </div>
+                  )}
+                  {!ourCostsView && <span className="text-xs font-medium w-16 text-right tabular-nums">€{(parseFloat(line.quantity) * parseFloat(line.unitPrice)).toFixed(2)}</span>}
                   <button className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeCostLine(line.id)}><XIcon className="h-3 w-3" /></button>
                 </div>
               ))}
@@ -2483,18 +2502,27 @@ function FinancialWorkflow({
 
               {/* Totals */}
               <div className="space-y-1 pt-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
-                  <span className="text-xs tabular-nums">€{costLinesTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
-                  <span className="text-xs tabular-nums text-muted-foreground">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
-                  <span className="text-sm font-semibold">Total incl. VAT</span>
-                  <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
-                </div>
+                {ourCostsView ? (
+                  <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
+                    <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">Total our costs</span>
+                    <span className="text-sm font-bold tabular-nums text-violet-700 dark:text-violet-400">€{costLinesInternalTotal.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
+                      <span className="text-xs tabular-nums">€{costLinesTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
+                      <span className="text-xs tabular-nums text-muted-foreground">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
+                      <span className="text-sm font-semibold">Total incl. VAT</span>
+                      <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ) : (

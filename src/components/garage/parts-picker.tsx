@@ -37,7 +37,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Calculate dropdown position
   const updatePosition = useCallback(() => {

@@ -28,8 +28,7 @@ import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
-import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
-import { createPart } from "@/actions/parts";
+import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
 import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction, updateRepairTaskPricing } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent } from "@/actions/estimates";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
@@ -74,15 +73,7 @@ interface CustomerRepairItem {
   completedAt: Date | null;
 }
 
-interface PartRequestItem {
-  id: string;
-  partName: string;
-  quantity: number;
-  status: string;
-  expectedDelivery: Date | string | null;
-  supplierName: string | null;
-  notes: string | null;
-}
+type PartRequestItem = PartRequestRow;
 
 interface UserItem {
   id: string;
@@ -251,12 +242,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     setCostLines(estimateLines);
   }, [estimateLines]);
 
-  // Part requests state
-  const [addingPartName, setAddingPartName] = useState("");
-  const [showAddPart, setShowAddPart] = useState(false);
-  const [partRequestsPending, startPartTransition] = useTransition();
-  const [highlightedPartIdx, setHighlightedPartIdx] = useState(-1);
-  const partDropdownRef = useRef<HTMLDivElement>(null);
+  // General transition for inline actions (blockers, findings, etc.)
+  const [, startPartTransition] = useTransition();
 
   // Push repair context to the global assistant
   useEffect(() => {
@@ -1059,255 +1046,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
 
               {/* Parts Used */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">
-                    Parts Used
-                    {partRequests.length > 0 && (
-                      <span className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        partRequests.every(p => p.status === "received" || p.status === "cancelled")
-                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
-                          : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                      }`}>
-                        {partRequests.filter(p => p.status === "received").length}/{partRequests.filter(p => p.status !== "cancelled").length}
-                      </span>
-                    )}
-                  </p>
-                  {!showAddPart && (
-                    <button
-                      onClick={() => setShowAddPart(true)}
-                      className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
-                    >
-                      <Plus className="h-3 w-3" /> Add
-                    </button>
-                  )}
-                </div>
-
-              {/* Inline add form — smart search */}
-              {showAddPart && (() => {
-                const q = addingPartName.trim().toLowerCase();
-                const matchingParts = q.length >= 1
-                  ? partsList
-                      .filter((p) =>
-                        p.name.toLowerCase().includes(q) ||
-                        (p.partNumber?.toLowerCase().includes(q)) ||
-                        (p.supplierName?.toLowerCase().includes(q))
-                      )
-                      .sort((a, b) => {
-                        const aExact = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-                        const bExact = b.name.toLowerCase().startsWith(q) ? 0 : 1;
-                        return aExact - bExact || a.name.localeCompare(b.name);
-                      })
-                      .slice(0, 10)
-                  : partsList.slice(0, 6);
-                const showDropdown = addingPartName.length >= 1 || document.activeElement?.id === "part-search-input";
-
-                function selectPart(p: PartItem) {
-                  startPartTransition(async () => {
-                    await createPartRequest({ repairJobId: job.id, partName: p.name });
-                    setAddingPartName("");
-                    setHighlightedPartIdx(-1);
-                    router.refresh();
-                  });
-                }
-
-                return (
-                <div className="mb-3 relative">
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                    <Input
-                      id="part-search-input"
-                      value={addingPartName}
-                      onChange={(e) => { setAddingPartName(e.target.value); setHighlightedPartIdx(-1); }}
-                      placeholder="Search parts catalog..."
-                      className="h-11 pl-10 pr-10 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/40 shadow-none"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") { setShowAddPart(false); setAddingPartName(""); setHighlightedPartIdx(-1); return; }
-                        if (e.key === "ArrowDown") { e.preventDefault(); setHighlightedPartIdx((i) => Math.min(i + 1, matchingParts.length - 1)); return; }
-                        if (e.key === "ArrowUp") { e.preventDefault(); setHighlightedPartIdx((i) => Math.max(i - 1, 0)); return; }
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          if (highlightedPartIdx >= 0 && highlightedPartIdx < matchingParts.length) {
-                            selectPart(matchingParts[highlightedPartIdx]);
-                          } else if (addingPartName.trim()) {
-                            startPartTransition(async () => {
-                              await createPartRequest({ repairJobId: job.id, partName: addingPartName });
-                              setAddingPartName("");
-                              setHighlightedPartIdx(-1);
-                              router.refresh();
-                            });
-                          }
-                          return;
-                        }
-                      }}
-                    />
-                    {partRequestsPending && (
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-                        <div className="h-4 w-4 border-2 border-gray-300 border-t-[#0CC0DF] rounded-full animate-spin" />
-                      </div>
-                    )}
-                    {!partRequestsPending && addingPartName && (
-                      <button onClick={() => { setAddingPartName(""); setHighlightedPartIdx(-1); }} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                        <XIcon className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Dropdown results */}
-                  {showDropdown && (
-                    <div ref={partDropdownRef} className="absolute z-30 left-0 right-0 mt-1.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-[#0F172A] shadow-lg overflow-hidden">
-                      {matchingParts.length > 0 ? (
-                        <div className="max-h-[280px] overflow-y-auto py-1">
-                          {matchingParts.map((p, i) => {
-                            const isLow = p.stockQuantity > 0 && p.stockQuantity <= p.minStockLevel;
-                            const isOut = p.minStockLevel > 0 && p.stockQuantity <= 0;
-                            const cost = p.defaultCost ? parseFloat(p.defaultCost) : null;
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => selectPart(p)}
-                                className={`w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-all duration-100 cursor-pointer ${
-                                  i === highlightedPartIdx
-                                    ? "bg-[#0CC0DF]/5 dark:bg-[#0CC0DF]/10"
-                                    : "hover:bg-gray-50 dark:hover:bg-white/[0.04]"
-                                }`}
-                                onMouseEnter={() => setHighlightedPartIdx(i)}
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{p.name}</p>
-                                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                                    {[p.partNumber, p.supplierName].filter(Boolean).join(" · ") || "No part number"}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2.5 shrink-0">
-                                  {cost !== null && (
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">€{cost.toFixed(2)}</span>
-                                  )}
-                                  {p.minStockLevel > 0 && (
-                                    <span className={`h-2 w-2 rounded-full shrink-0 ${
-                                      isOut ? "bg-red-500" : isLow ? "bg-amber-500" : "bg-emerald-500"
-                                    }`} title={isOut ? "Out of stock" : isLow ? "Low stock" : `${p.stockQuantity} in stock`} />
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : addingPartName.trim() ? (
-                        <div className="px-4 py-4 text-center">
-                          <p className="text-sm text-gray-500 dark:text-gray-400">No parts found</p>
-                        </div>
-                      ) : null}
-
-                      {/* Quick actions */}
-                      {addingPartName.trim() && (
-                        <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-2.5 flex items-center gap-3">
-                          <button
-                            onClick={() => {
-                              if (!addingPartName.trim()) return;
-                              startPartTransition(async () => {
-                                await createPartRequest({ repairJobId: job.id, partName: addingPartName });
-                                setAddingPartName("");
-                                setHighlightedPartIdx(-1);
-                                router.refresh();
-                              });
-                            }}
-                            disabled={partRequestsPending}
-                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium disabled:opacity-50 transition-colors"
-                          >
-                            Use as custom part
-                          </button>
-                          <span className="text-gray-200 dark:text-gray-700 text-xs">·</span>
-                          <button
-                            onClick={() => {
-                              if (!addingPartName.trim()) return;
-                              startPartTransition(async () => {
-                                const newPart = await createPart({ name: addingPartName, stockQuantity: 0, minStockLevel: 0 });
-                                await createPartRequest({ repairJobId: job.id, partName: newPart.name });
-                                setAddingPartName("");
-                                setHighlightedPartIdx(-1);
-                                toast.success(`Part "${newPart.name}" added to catalog`);
-                                router.refresh();
-                              });
-                            }}
-                            disabled={partRequestsPending}
-                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium disabled:opacity-50 transition-colors"
-                          >
-                            Add new part to catalog
-                          </button>
-                          <button onClick={() => { setShowAddPart(false); setAddingPartName(""); setHighlightedPartIdx(-1); }} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 ml-auto transition-colors">
-                            <XIcon className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                );
-              })()}
-
-              {/* Parts from cost estimate */}
-              {costLines.filter(l => l.type === "part").length > 0 && partRequests.length === 0 && (
-                <div className="mb-2">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">From Quote</p>
-                  <div className="space-y-1">
-                    {costLines.filter(l => l.type === "part").map((l) => (
-                      <div key={l.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800">
-                        <span className="truncate font-medium text-gray-700 dark:text-gray-300">{l.description}</span>
-                        <span className="text-gray-400 shrink-0 ml-2">×{l.quantity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Part requests */}
-              {partRequests.length > 0 ? (
-                <div className="space-y-1.5">
-                  {partRequests.map((pr) => (
-                    <div key={pr.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800 transition-all duration-150 hover:bg-gray-100 dark:hover:bg-white/10">
-                      <span className="truncate font-medium text-gray-700 dark:text-gray-300 mr-2">
-                        {pr.partName}
-                        {pr.quantity > 1 && <span className="text-gray-400 dark:text-gray-500"> ×{pr.quantity}</span>}
-                      </span>
-                      <Select
-                        value={pr.status}
-                        onValueChange={(newStatus) => {
-                          startPartTransition(async () => {
-                            await updatePartRequestStatus(pr.id, newStatus as any);
-                            router.refresh();
-                          });
-                        }}
-                      >
-                        <SelectTrigger className={`h-6 w-[100px] text-[10px] font-semibold rounded-full border-0 ${
-                          pr.status === "received" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" :
-                          pr.status === "shipped" ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" :
-                          pr.status === "ordered" ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" :
-                          pr.status === "cancelled" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" :
-                          "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                        }`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="requested">⏳ Requested</SelectItem>
-                          <SelectItem value="ordered">📋 Ordered</SelectItem>
-                          <SelectItem value="shipped">🚚 Shipped</SelectItem>
-                          <SelectItem value="received">✓ Received</SelectItem>
-                          <SelectItem value="cancelled">✗ Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </div>
-              ) : !showAddPart && costLines.filter(l => l.type === "part").length === 0 ? (
-                <div className="rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-dashed border-gray-200 dark:border-gray-700 px-4 py-4 text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No parts used yet.</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Add from quote or manually.</p>
-                </div>
-              ) : null}
-              </div>
+              <RepairPartsUsed
+                repairJobId={job.id}
+                partRequests={partRequests}
+                defaultMarkup={settings.defaultMarkup}
+              />
             </div>
             </details>
           </div>

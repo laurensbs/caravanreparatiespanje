@@ -191,20 +191,29 @@ export async function getPartRequests(repairJobId?: string) {
     .select({
       id: partRequests.id,
       repairJobId: partRequests.repairJobId,
+      partId: partRequests.partId,
       partName: partRequests.partName,
       partNumber: parts.partNumber,
+      category: parts.category,
       supplierName: suppliers.name,
+      supplierId: partRequests.supplierId,
       quantity: partRequests.quantity,
+      unitCost: partRequests.unitCost,
+      totalCost: partRequests.totalCost,
+      sellPrice: partRequests.sellPrice,
+      markupPercent: partRequests.markupPercent,
       status: partRequests.status,
+      orderReference: partRequests.orderReference,
       expectedDelivery: partRequests.expectedDelivery,
       receivedDate: partRequests.receivedDate,
       notes: partRequests.notes,
       jobTitle: repairJobs.title,
       jobRef: repairJobs.publicCode,
+      stockQuantity: parts.stockQuantity,
     })
     .from(partRequests)
     .leftJoin(parts, eq(partRequests.partId, parts.id))
-    .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
+    .leftJoin(suppliers, eq(partRequests.supplierId, suppliers.id))
     .leftJoin(repairJobs, eq(partRequests.repairJobId, repairJobs.id))
     .where(repairJobId ? eq(partRequests.repairJobId, repairJobId) : undefined)
     .orderBy(desc(partRequests.createdAt));
@@ -215,16 +224,53 @@ export async function createPartRequest(data: {
   partId?: string;
   partName?: string;
   quantity?: number;
+  unitCost?: string;
+  sellPrice?: string;
+  markupPercent?: string;
+  supplierId?: string;
   notes?: string;
 }) {
   await requireRole("staff");
+
+  const unitCost = data.unitCost ?? null;
+  const qty = data.quantity ?? 1;
+  const totalCost = unitCost ? String(parseFloat(unitCost) * qty) : null;
+
+  // If same catalog part already exists for this job, increase quantity
+  if (data.partId) {
+    const [existing] = await db
+      .select({ id: partRequests.id, quantity: partRequests.quantity })
+      .from(partRequests)
+      .where(
+        sql`${partRequests.repairJobId} = ${data.repairJobId} AND ${partRequests.partId} = ${data.partId} AND ${partRequests.status} != 'cancelled'`
+      )
+      .limit(1);
+
+    if (existing) {
+      const newQty = existing.quantity + qty;
+      const newTotal = unitCost ? String(parseFloat(unitCost) * newQty) : null;
+      await db
+        .update(partRequests)
+        .set({ quantity: newQty, totalCost: newTotal, updatedAt: new Date() })
+        .where(eq(partRequests.id, existing.id));
+      revalidatePath(`/repairs/${data.repairJobId}`);
+      revalidatePath("/parts");
+      return existing;
+    }
+  }
+
   const [request] = await db
     .insert(partRequests)
     .values({
       repairJobId: data.repairJobId,
       partId: data.partId ?? null,
       partName: data.partName ?? "TBD",
-      quantity: data.quantity ?? 1,
+      quantity: qty,
+      unitCost,
+      totalCost,
+      sellPrice: data.sellPrice ?? null,
+      markupPercent: data.markupPercent ?? null,
+      supplierId: data.supplierId ?? null,
       status: "requested",
       notes: data.notes ?? null,
     })
@@ -240,10 +286,71 @@ export async function updatePartRequestStatus(
   status: "requested" | "ordered" | "shipped" | "received" | "cancelled"
 ) {
   await requireRole("staff");
-  const updateData: Record<string, unknown> = { status };
+  const updateData: Record<string, unknown> = { status, updatedAt: new Date() };
   if (status === "received") updateData.receivedDate = new Date();
 
-  await db.update(partRequests).set(updateData).where(eq(partRequests.id, id));
+  const [pr] = await db
+    .update(partRequests)
+    .set(updateData)
+    .where(eq(partRequests.id, id))
+    .returning({ repairJobId: partRequests.repairJobId });
+
+  revalidatePath("/parts");
+  if (pr) revalidatePath(`/repairs/${pr.repairJobId}`);
+}
+
+export async function updatePartRequest(
+  id: string,
+  data: {
+    quantity?: number;
+    unitCost?: string;
+    sellPrice?: string;
+    markupPercent?: string;
+    notes?: string;
+    orderReference?: string;
+  }
+) {
+  await requireRole("staff");
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+
+  if (data.quantity !== undefined) updates.quantity = data.quantity;
+  if (data.unitCost !== undefined) updates.unitCost = data.unitCost || null;
+  if (data.sellPrice !== undefined) updates.sellPrice = data.sellPrice || null;
+  if (data.markupPercent !== undefined) updates.markupPercent = data.markupPercent || null;
+  if (data.notes !== undefined) updates.notes = data.notes || null;
+  if (data.orderReference !== undefined) updates.orderReference = data.orderReference || null;
+
+  // Recalc totals
+  if (data.quantity !== undefined || data.unitCost !== undefined) {
+    const [existing] = await db
+      .select({ quantity: partRequests.quantity, unitCost: partRequests.unitCost })
+      .from(partRequests)
+      .where(eq(partRequests.id, id));
+    if (existing) {
+      const qty = data.quantity ?? existing.quantity;
+      const cost = data.unitCost ?? existing.unitCost;
+      updates.totalCost = cost ? String(parseFloat(cost) * qty) : null;
+    }
+  }
+
+  const [pr] = await db
+    .update(partRequests)
+    .set(updates)
+    .where(eq(partRequests.id, id))
+    .returning({ repairJobId: partRequests.repairJobId });
+
+  if (pr) revalidatePath(`/repairs/${pr.repairJobId}`);
+  revalidatePath("/parts");
+}
+
+export async function removePartRequest(id: string) {
+  await requireRole("staff");
+  const [pr] = await db
+    .delete(partRequests)
+    .where(eq(partRequests.id, id))
+    .returning({ repairJobId: partRequests.repairJobId });
+
+  if (pr) revalidatePath(`/repairs/${pr.repairJobId}`);
   revalidatePath("/parts");
 }
 
@@ -280,4 +387,100 @@ export async function deletePartCategory(id: string) {
   await requireRole("admin");
   await db.delete(partCategories).where(eq(partCategories.id, id));
   revalidatePath("/parts");
+}
+
+// === Search & Suggestions ===
+
+export async function searchParts(query: string) {
+  await requireAuth();
+  const q = `%${query.toLowerCase()}%`;
+
+  return db
+    .select({
+      id: parts.id,
+      name: parts.name,
+      partNumber: parts.partNumber,
+      category: parts.category,
+      defaultCost: parts.defaultCost,
+      markupPercent: parts.markupPercent,
+      stockQuantity: parts.stockQuantity,
+      minStockLevel: parts.minStockLevel,
+      supplierName: suppliers.name,
+      supplierId: parts.supplierId,
+    })
+    .from(parts)
+    .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
+    .where(
+      sql`(lower(${parts.name}) like ${q} or lower(${parts.partNumber}) like ${q} or lower(${suppliers.name}) like ${q} or lower(${parts.category}) like ${q})`
+    )
+    .orderBy(
+      sql`CASE
+        WHEN lower(${parts.name}) = ${query.toLowerCase()} THEN 0
+        WHEN lower(${parts.partNumber}) = ${query.toLowerCase()} THEN 0
+        WHEN lower(${parts.name}) like ${query.toLowerCase() + "%"} THEN 1
+        ELSE 2
+      END`,
+      parts.name
+    )
+    .limit(10);
+}
+
+export async function suggestPartsForJob(repairJobId: string) {
+  await requireAuth();
+
+  const [job] = await db
+    .select({ title: repairJobs.title, description: repairJobs.descriptionNormalized })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId));
+
+  if (!job) return [];
+
+  const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
+
+  // Extract keywords to match against part categories and names
+  const keywordMap: Record<string, string[]> = {
+    tyre: ["tyre", "tire", "band", "neumático", "valve", "ventiel"],
+    window: ["window", "raam", "ventana", "rooflight", "claraboya", "dakraam"],
+    seal: ["seal", "afdichting", "junta", "rubber", "rail"],
+    light: ["light", "lamp", "licht", "luz", "bulb", "led"],
+    brake: ["brake", "rem", "freno"],
+    door: ["door", "deur", "puerta", "lock", "slot", "cerradura"],
+    water: ["water", "agua", "leak", "lek", "fuga", "damp", "vocht"],
+    electric: ["electric", "elektrisch", "eléctrico", "cable", "kabel", "fuse", "zekering"],
+    hinge: ["hinge", "scharnier", "bisagra"],
+  };
+
+  const matchedCategories = new Set<string>();
+  for (const [category, keywords] of Object.entries(keywordMap)) {
+    if (keywords.some((kw) => text.includes(kw))) {
+      matchedCategories.add(category);
+    }
+  }
+
+  if (matchedCategories.size === 0) return [];
+
+  // Build OR conditions for matching categories/names
+  const patterns = [...matchedCategories].map((cat) => `%${cat}%`);
+  const conditions = patterns
+    .map((p) => sql`(lower(${parts.name}) like ${p} or lower(${parts.category}) like ${p})`)
+    .reduce((a, b) => sql`${a} or ${b}`);
+
+  return db
+    .select({
+      id: parts.id,
+      name: parts.name,
+      partNumber: parts.partNumber,
+      category: parts.category,
+      defaultCost: parts.defaultCost,
+      markupPercent: parts.markupPercent,
+      stockQuantity: parts.stockQuantity,
+      minStockLevel: parts.minStockLevel,
+      supplierName: suppliers.name,
+      supplierId: parts.supplierId,
+    })
+    .from(parts)
+    .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
+    .where(conditions)
+    .orderBy(parts.name)
+    .limit(6);
 }

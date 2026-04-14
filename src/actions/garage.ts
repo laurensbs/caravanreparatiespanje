@@ -589,18 +589,74 @@ export async function suggestExtraTask(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SEARCH PARTS CATALOG (for garage picker)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function searchPartsCatalog(query: string, category?: string) {
+  await requireAuth();
+
+  const q = `%${query.toLowerCase()}%`;
+  const conditions = [
+    sql`(lower(${parts.name}) like ${q} or lower(${parts.partNumber}) like ${q} or lower(${suppliers.name}) like ${q})`,
+  ];
+  if (category) {
+    conditions.push(sql`${parts.category} = ${category}`);
+  }
+
+  const results = await db
+    .select({
+      id: parts.id,
+      name: parts.name,
+      partNumber: parts.partNumber,
+      category: parts.category,
+      defaultCost: parts.defaultCost,
+      markupPercent: parts.markupPercent,
+      stockQuantity: parts.stockQuantity,
+      supplierName: suppliers.name,
+      supplierId: parts.supplierId,
+    })
+    .from(parts)
+    .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
+    .where(and(...conditions))
+    .orderBy(
+      // exact match first, then starts-with, then partial
+      sql`CASE
+        WHEN lower(${parts.name}) = ${query.toLowerCase()} THEN 0
+        WHEN lower(${parts.partNumber}) = ${query.toLowerCase()} THEN 0
+        WHEN lower(${parts.name}) like ${query.toLowerCase() + "%"} THEN 1
+        ELSE 2
+      END`,
+      parts.name
+    )
+    .limit(10);
+
+  return results;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // REQUEST PART (from garage — creates a part request + notifies office)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function garageRequestPart(repairJobId: string, partName: string) {
+export async function garageRequestPart(
+  repairJobId: string,
+  partName: string,
+  options?: {
+    partId?: string;
+    quantity?: number;
+    unitCost?: string;
+    category?: string;
+  }
+) {
   const session = await requireAuth();
 
   const [request] = await db
     .insert(partRequests)
     .values({
       repairJobId,
+      partId: options?.partId ?? null,
       partName,
-      quantity: 1,
+      quantity: options?.quantity ?? 1,
+      unitCost: options?.unitCost ?? null,
       status: "requested",
       notes: `Requested by garage (${session.user.name ?? "technician"})`,
     })

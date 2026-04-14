@@ -10,8 +10,8 @@ import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
-import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, garageRequestPart, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
-import { createPartCategory, deletePartCategory } from "@/actions/parts";
+import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
+import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { toast } from "sonner";
@@ -125,13 +125,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
 
-  // Request part
-  const [showRequestPart, setShowRequestPart] = useState(false);
-  const [requestPartName, setRequestPartName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
   const doneCount = repair.tasks.filter((t) => t.status === "done").length;
@@ -207,41 +200,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       setSuggestDesc("");
       setShowSuggest(false);
       toast.success(t("Task suggested", "Tarea sugerida", "Taak voorgesteld"));
-      router.refresh();
-    });
-  }
-
-  function handleRequestPart() {
-    if (!requestPartName.trim()) return;
-    const label = selectedCategory
-      ? `[${partCategories.find(c => c.key === selectedCategory)?.label ?? selectedCategory}] ${requestPartName}`
-      : requestPartName;
-    startTransition(async () => {
-      await garageRequestPart(repair.id, label);
-      setRequestPartName("");
-      setSelectedCategory(null);
-      setShowRequestPart(false);
-      toast.success(t("Part requested", "Pieza solicitada", "Onderdeel aangevraagd"));
-      router.refresh();
-    });
-  }
-
-  function handleAddCategory() {
-    if (!newCategoryName.trim()) return;
-    startTransition(async () => {
-      await createPartCategory({ key: newCategoryName.trim(), label: newCategoryName.trim() });
-      setNewCategoryName("");
-      setShowAddCategory(false);
-      toast.success(t("Category added", "Categoría añadida", "Categorie toegevoegd"));
-      router.refresh();
-    });
-  }
-
-  function handleDeleteCategory(id: string) {
-    startTransition(async () => {
-      await deletePartCategory(id);
-      setSelectedCategory(null);
-      toast.success(t("Category deleted", "Categoría eliminada", "Categorie verwijderd"));
       router.refresh();
     });
   }
@@ -498,7 +456,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         )}
 
         {/* Parts status */}
-        {(repair.partRequests.length > 0 || repair.partsRequiredFlag) && (
+        {(repair.partRequests.length > 0 || repair.partsRequiredFlag || isActive) && (
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
@@ -554,110 +512,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 {t("Parts required — none ordered yet", "Se necesitan piezas — ninguna pedida", "Onderdelen nodig — nog niet besteld")}
               </p>
             )}
-            {/* Technician can request a part */}
-            {isActive && !showRequestPart && (
-              <button
-                onClick={() => setShowRequestPart(true)}
-                className="mt-3 w-full rounded-xl border border-dashed border-orange-300/60 p-3 text-sm text-orange-500 font-bold active:bg-orange-50/60 transition-colors"
-              >
-                + {t("Request Part", "Solicitar Pieza", "Onderdeel Aanvragen")}
-              </button>
-            )}
-            {showRequestPart && (
-              <div className="mt-3 space-y-2.5">
-                {/* Category chips */}
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory(null)}
-                    className={`inline-flex items-center h-8 px-3 rounded-xl text-xs font-semibold transition-colors ${
-                      !selectedCategory
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-500 active:bg-gray-200"
-                    }`}
-                  >
-                    {t("All", "Todos", "Alle")}
-                  </button>
-                  {partCategories.filter(c => c.active).map((cat) => (
-                    <button
-                      key={cat.key}
-                      type="button"
-                      onClick={() => setSelectedCategory(selectedCategory === cat.key ? null : cat.key)}
-                      className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold transition-colors ${
-                        selectedCategory === cat.key
-                          ? `${cat.color}`
-                          : "bg-gray-100 text-gray-500 active:bg-gray-200"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                  {/* Add category inline */}
-                  {!showAddCategory ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddCategory(true)}
-                      className="inline-flex items-center h-8 px-2.5 rounded-xl text-xs text-gray-400 border border-dashed border-gray-200 active:bg-gray-100 transition-colors"
-                    >
-                      +
-                    </button>
-                  ) : (
-                    <div className="inline-flex items-center gap-1">
-                      <input
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        placeholder={t("Name...", "Nombre...", "Naam...")}
-                        className="h-8 w-28 rounded-xl border border-gray-200 px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-300"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleAddCategory();
-                          if (e.key === "Escape") { setShowAddCategory(false); setNewCategoryName(""); }
-                        }}
-                      />
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-xl" onClick={() => { setShowAddCategory(false); setNewCategoryName(""); }}>
-                        ✕
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Delete selected category */}
-                {selectedCategory && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const cat = partCategories.find(c => c.key === selectedCategory);
-                      if (cat && confirm(t(`Delete "${cat.label}"?`, `¿Eliminar "${cat.label}"?`, `"${cat.label}" verwijderen?`))) {
-                        handleDeleteCategory(cat.id);
-                      }
-                    }}
-                    className="text-[11px] text-red-500/70 hover:text-red-600 transition-colors"
-                  >
-                    {t("Delete this category", "Eliminar categoría", "Categorie verwijderen")}
-                  </button>
-                )}
-
-                <input
-                  value={requestPartName}
-                  onChange={(e) => setRequestPartName(e.target.value)}
-                  placeholder={selectedCategory
-                    ? t("Part name...", "Nombre de pieza...", "Naam onderdeel...")
-                    : t("Part name (or pick a category first)...", "Nombre de pieza (o elija categoría)...", "Naam onderdeel (of kies eerst categorie)...")}
-                  className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRequestPart();
-                    if (e.key === "Escape") setShowRequestPart(false);
-                  }}
-                />
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => { setShowRequestPart(false); setSelectedCategory(null); }} className="flex-1 h-11 rounded-xl">
-                    {t("Cancel", "Cancelar", "Annuleren")}
-                  </Button>
-                  <Button onClick={handleRequestPart} disabled={!requestPartName.trim() || isPending} className="flex-1 h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
-                    {t("Request", "Solicitar", "Aanvragen")}
-                  </Button>
-                </div>
+            {/* Parts search / picker */}
+            {isActive && (
+              <div className="mt-3">
+                <GaragePartsPicker repairJobId={repair.id} t={t} />
               </div>
             )}
           </div>

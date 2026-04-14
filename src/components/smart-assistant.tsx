@@ -6,11 +6,13 @@ import {
   X, ChevronRight, ArrowLeft,
   Wrench, Receipt, Users, FileText, Package, Lightbulb, HelpCircle,
   Zap, CheckCircle2, ArrowRight, Send, RotateCcw, Sparkles, Bot,
-  ExternalLink, Truck, ClipboardList,
+  ExternalLink, Truck, ClipboardList, Search, Plus, AlertCircle,
+  ArrowUpRight, BarChart3, Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { useAssistantContext, type AssistantPage, type AssistantAction, type RepairContext } from "@/components/assistant-context";
+import { useRouter } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -43,12 +45,29 @@ interface ChatMessage {
   faqId?: string;
   relatedIds?: string[];
   quickAction?: { label: string; href: string };
+  action?: AssistantAction;
   timestamp: number;
 }
 
-interface RepairContext {
-  job?: any;
-  settings?: any;
+// ─── Intent system ────────────────────────────────────────────
+
+type IntentType = "question" | "navigate" | "action" | "debug";
+
+interface Intent {
+  type: IntentType;
+  action?: AssistantAction;
+  response?: string;
+  faq?: FaqItem;
+}
+
+interface QuickActionDef {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  description?: string;
+  intent: Intent;
+  pages?: AssistantPage[];
+  keywords: string[];
 }
 
 // ─── Category configuration ─────────────────────────────────
@@ -600,6 +619,223 @@ function searchFaq(query: string, allItems: FaqItem[], threshold = 8): { faq: Fa
     .sort((a, b) => b.score - a.score);
 }
 
+// ─── Quick actions (action-first, not question-first) ─────────
+
+const QUICK_ACTIONS: QuickActionDef[] = [
+  {
+    id: "qa-new-work-order",
+    label: "Create work order",
+    icon: <Plus className="h-3.5 w-3.5" />,
+    intent: { type: "action", action: { type: "open-modal", modal: "new-work-order" } },
+    keywords: ["create", "new", "work order", "add", "make", "job"],
+    pages: ["dashboard", "repairs", "repair-detail", "customers"],
+  },
+  {
+    id: "qa-urgent-jobs",
+    label: "Show urgent jobs",
+    icon: <AlertCircle className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate-filter", href: "/repairs", filters: { priority: "urgent" } } },
+    keywords: ["urgent", "show", "jobs", "priority", "important"],
+    pages: ["dashboard", "repairs"],
+  },
+  {
+    id: "qa-waiting-parts",
+    label: "Waiting for parts",
+    icon: <Package className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate-filter", href: "/repairs", filters: { status: "waiting_parts" } } },
+    keywords: ["waiting", "parts", "stuck", "pending", "blocked"],
+  },
+  {
+    id: "qa-kanban",
+    label: "Open kanban board",
+    icon: <BarChart3 className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate", href: "/repairs/board" } },
+    keywords: ["kanban", "board", "visual", "overview", "columns"],
+  },
+  {
+    id: "qa-contacts",
+    label: "Go to contacts",
+    icon: <Users className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate", href: "/customers" } },
+    keywords: ["contacts", "customers", "clients"],
+  },
+  {
+    id: "qa-parts",
+    label: "Go to parts",
+    icon: <Package className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate", href: "/parts" } },
+    keywords: ["parts", "catalog", "materials"],
+  },
+  {
+    id: "qa-invoices",
+    label: "Go to invoices",
+    icon: <Receipt className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate", href: "/invoices" } },
+    keywords: ["invoices", "billing", "payments", "unpaid"],
+  },
+  {
+    id: "qa-garage",
+    label: "Open garage",
+    icon: <Truck className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate", href: "/garage" } },
+    keywords: ["garage", "workshop", "technician", "portal"],
+  },
+  {
+    id: "qa-search",
+    label: "Quick search (⌘K)",
+    icon: <Search className="h-3.5 w-3.5" />,
+    intent: { type: "action", action: { type: "open-command-palette" } },
+    keywords: ["search", "find", "quick", "cmd", "command"],
+  },
+  {
+    id: "qa-explain-status",
+    label: "Explain statuses",
+    icon: <HelpCircle className="h-3.5 w-3.5" />,
+    intent: { type: "question", faq: FAQ_ITEMS.find((f) => f.id === "work-order-statuses") },
+    keywords: ["status", "explain", "meaning", "what"],
+  },
+  {
+    id: "qa-new-wax",
+    label: "New wax job",
+    icon: <Sparkles className="h-3.5 w-3.5" />,
+    intent: { type: "action", action: { type: "open-modal", modal: "new-work-order", prefill: { jobType: "wax" } } },
+    keywords: ["wax", "treatment", "new", "create"],
+  },
+  {
+    id: "qa-in-progress",
+    label: "In-progress jobs",
+    icon: <Wrench className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate-filter", href: "/repairs", filters: { status: "in_progress" } } },
+    keywords: ["in progress", "active", "working", "current"],
+  },
+  {
+    id: "qa-unpaid",
+    label: "Unpaid invoices",
+    icon: <Receipt className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate-filter", href: "/invoices", filters: { status: "unpaid" } } },
+    keywords: ["unpaid", "overdue", "outstanding", "money", "owing"],
+  },
+  {
+    id: "qa-settings",
+    label: "Settings",
+    icon: <Settings className="h-3.5 w-3.5" />,
+    intent: { type: "navigate", action: { type: "navigate", href: "/settings" } },
+    keywords: ["settings", "config", "pricing", "markup"],
+  },
+];
+
+// ─── Intent detection ─────────────────────────────────────────
+
+const NAV_PATTERNS: [RegExp, AssistantAction][] = [
+  [/^(?:go to|open|show|navigate to)\s+(?:work\s*orders?|repairs?|jobs?)$/i, { type: "navigate", href: "/repairs" }],
+  [/^(?:go to|open|show)\s+(?:kanban|board)$/i, { type: "navigate", href: "/repairs/board" }],
+  [/^(?:go to|open|show)\s+(?:contacts?|customers?)$/i, { type: "navigate", href: "/customers" }],
+  [/^(?:go to|open|show)\s+(?:parts?|catalog)$/i, { type: "navigate", href: "/parts" }],
+  [/^(?:go to|open|show)\s+(?:invoices?|billing)$/i, { type: "navigate", href: "/invoices" }],
+  [/^(?:go to|open|show)\s+(?:settings?|config)$/i, { type: "navigate", href: "/settings" }],
+  [/^(?:go to|open|show)\s+(?:garage|workshop)$/i, { type: "navigate", href: "/garage" }],
+  [/^(?:go to|open|show)\s+(?:planning|calendar|schedule)$/i, { type: "navigate", href: "/planning" }],
+  [/^(?:go to|open|show)\s+(?:audit|log)$/i, { type: "navigate", href: "/audit" }],
+  [/^(?:go to|open|show)\s+(?:dashboard|home)$/i, { type: "navigate", href: "/" }],
+  [/^(?:show|open|go to)\s+urgent\s+(?:jobs|repairs|work\s*orders)?$/i, { type: "navigate-filter", href: "/repairs", filters: { priority: "urgent" } }],
+  [/^(?:show|open|go to)\s+(?:waiting|blocked)\s+(?:parts?|jobs|repairs)?$/i, { type: "navigate-filter", href: "/repairs", filters: { status: "waiting_parts" } }],
+  [/^(?:show|open|go to)\s+in.?progress\s+(?:jobs|repairs|work\s*orders)?$/i, { type: "navigate-filter", href: "/repairs", filters: { status: "in_progress" } }],
+  [/^(?:show|open|go to)\s+completed?\s+(?:jobs|repairs|work\s*orders)?$/i, { type: "navigate-filter", href: "/repairs", filters: { status: "completed" } }],
+  [/^(?:show|open|go to)\s+new\s+(?:jobs|repairs|work\s*orders)$/i, { type: "navigate-filter", href: "/repairs", filters: { status: "new" } }],
+  [/^(?:show|open|go to)\s+unpaid\s+(?:invoices?)?$/i, { type: "navigate-filter", href: "/invoices", filters: { status: "unpaid" } }],
+];
+
+const ACTION_PATTERNS: [RegExp, (match: RegExpExecArray) => AssistantAction | null][] = [
+  [/^(?:create|new|add)\s+(?:work\s*order|repair|job)(?:\s+(?:for|:)\s+(.+))?$/i, (m) => ({
+    type: "open-modal" as const, modal: "new-work-order" as const, prefill: m[1] ? { title: m[1] } : undefined,
+  })],
+  [/^(?:create|new|add)\s+wax\s+(?:job|treatment|work\s*order)(?:\s+(?:for|:)\s+(.+))?$/i, (m) => ({
+    type: "open-modal" as const, modal: "new-work-order" as const, prefill: { jobType: "wax", ...(m[1] ? { title: m[1] } : {}) },
+  })],
+  [/^(?:create|new|add)\s+(?:maintenance|service)\s+(?:job|work\s*order)(?:\s+(?:for|:)\s+(.+))?$/i, (m) => ({
+    type: "open-modal" as const, modal: "new-work-order" as const, prefill: { jobType: "maintenance", ...(m[1] ? { title: m[1] } : {}) },
+  })],
+  [/^(?:create|new|add)\s+inspection(?:\s+(?:for|:)\s+(.+))?$/i, (m) => ({
+    type: "open-modal" as const, modal: "new-work-order" as const, prefill: { jobType: "inspection", ...(m[1] ? { title: m[1] } : {}) },
+  })],
+  [/^(?:search|find)\b/i, () => ({ type: "open-command-palette" as const })],
+];
+
+const DEBUG_PATTERNS: [RegExp, (ctx?: RepairContext) => string][] = [
+  [/why\s+(?:is\s+(?:this|it)?\s+)?not\s+invoiced/i, (ctx) => {
+    const job = ctx?.job;
+    if (!job) return "I can't see which work order you mean. Open a work order first, then ask again.";
+    if (job.holdedInvoiceId) return "This work order **does** have an invoice (Holded ID: " + job.holdedInvoiceId + "). Check the Invoices page for its status.";
+    if (!job.estimatedCost || parseFloat(job.estimatedCost) === 0) return "This work order has **no cost estimate** yet. Build an estimate first (add parts + labour), then create the invoice.";
+    if (!job.holdedQuoteId) return "There's a cost estimate but **no quote** was created yet. Create a quote first, then after the work is done, create the invoice.";
+    if (["new", "assessing", "waiting_approval"].includes(job.status)) return "The work order is still in **" + job.status.replace(/_/g, " ") + "** status. It needs to reach **Completed** before you should invoice.";
+    return "The estimate and quote are ready. You can create the invoice now — go to the sidebar and click **'Create Invoice'**.";
+  }],
+  [/why\s+(?:is\s+(?:this|it)?\s+)?(?:stuck|waiting|blocked)/i, (ctx) => {
+    const job = ctx?.job;
+    if (!job) return "Open a work order first so I can check its status.";
+    if (job.status === "waiting_parts") return "This job is in **Waiting Parts** status. Check the parts section — are all parts received? Once parts arrive, update the status.";
+    if (job.status === "waiting_customer") return "Waiting on the **customer**. Was a quote sent? Check the communication log for the last contact.";
+    const daysSince = Math.floor((Date.now() - new Date(job.updatedAt).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince > 7) return "This job hasn't been updated in **" + daysSince + " days**. It might need a status update or follow-up.";
+    return "The status is **" + (job.status || "unknown").replace(/_/g, " ") + "**. Check if there are unfinished tasks, missing parts, or pending approvals.";
+  }],
+  [/why\s+(?:is\s+(?:this|it)?\s+)?not\s+paid/i, (ctx) => {
+    const job = ctx?.job;
+    if (!job) return "Open a work order to check its payment status.";
+    if (!job.holdedInvoiceId) return "No invoice has been created yet. Create the invoice first, then send it to the customer.";
+    if (job.invoiceStatus === "paid") return "This invoice **is** marked as paid!";
+    return "The invoice has been created but payment hasn't been recorded yet.\n\nPayments sync from Holded every **30 minutes**. For cash/immediate payments, go to the **Invoices** page and click the 'Unpaid' badge.";
+  }],
+];
+
+function detectIntent(query: string, context?: RepairContext): Intent {
+  const q = query.trim();
+
+  for (const [pattern, action] of NAV_PATTERNS) {
+    if (pattern.test(q)) return { type: "navigate", action };
+  }
+  for (const [pattern, factory] of ACTION_PATTERNS) {
+    const match = pattern.exec(q);
+    if (match) {
+      const action = factory(match);
+      if (action) return { type: "action", action };
+    }
+  }
+  for (const [pattern, handler] of DEBUG_PATTERNS) {
+    if (pattern.test(q)) return { type: "debug", response: handler(context) };
+  }
+
+  const results = searchFaq(q, FAQ_ITEMS);
+  if (results.length > 0 && results[0].score >= 20) {
+    return { type: "question", faq: results[0].faq };
+  }
+  return { type: "question" };
+}
+
+// ─── Search quick actions ─────────────────────────────────────
+
+function searchQuickActions(query: string, page: AssistantPage): QuickActionDef[] {
+  if (!query.trim()) return [];
+  const q = query.toLowerCase();
+  const tokens = tokenize(q);
+
+  return QUICK_ACTIONS.map((qa) => {
+    let score = 0;
+    if (qa.label.toLowerCase().includes(q)) score += 100;
+    for (const t of tokens) {
+      if (qa.label.toLowerCase().includes(t)) score += 30;
+      if (qa.keywords.some((k) => k.includes(t))) score += 20;
+    }
+    if (qa.pages?.includes(page)) score += 5;
+    return { qa, score };
+  })
+    .filter((r) => r.score > 15)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map((r) => r.qa);
+}
+
 // ─── Dynamic work order context tips ──────────────────────────
 
 function getWorkOrderTips(context?: RepairContext): FaqItem[] {
@@ -741,10 +977,6 @@ function RenderMarkdown({ text }: { text: string }) {
 
 // ─── Component ────────────────────────────────────────────────
 
-export type AssistantPage =
-  | "dashboard" | "repairs" | "repair-detail" | "repair-new"
-  | "customers" | "parts" | "invoices" | "units" | "settings";
-
 const PAGE_LABELS: Record<AssistantPage, string> = {
   "dashboard": "Dashboard",
   "repairs": "Work Orders",
@@ -755,6 +987,9 @@ const PAGE_LABELS: Record<AssistantPage, string> = {
   "invoices": "Invoices",
   "units": "Units",
   "settings": "Settings",
+  "planning": "Planning",
+  "audit": "Audit Log",
+  "feedback": "Feedback",
 };
 
 const PAGE_RELEVANT_CATEGORIES: Record<AssistantPage, FaqCategory[]> = {
@@ -767,18 +1002,24 @@ const PAGE_RELEVANT_CATEGORIES: Record<AssistantPage, FaqCategory[]> = {
   "invoices": ["quotes-invoices", "holded"],
   "units": ["getting-started"],
   "settings": ["parts-pricing", "tips"],
+  "planning": ["work-orders"],
+  "audit": ["tips"],
+  "feedback": ["tips"],
 };
 
-const PAGE_QUICK_SUGGESTIONS: Record<AssistantPage, string[]> = {
-  "dashboard": ["What are the work order types?", "How does the garage portal work?", "Where to start?"],
-  "repairs": ["How do I filter by type?", "What do statuses mean?", "Is there a kanban board?"],
-  "repair-detail": ["How to build an estimate?", "How to create a quote?", "How do wax treatments work?"],
-  "repair-new": ["What are the work order types?", "How do wax tasks auto-generate?"],
-  "customers": ["Where do customers come from?", "Why is email important?"],
-  "parts": ["How does markup work?", "How does the catalog work?", "How do garage part requests work?"],
-  "invoices": ["How does payment tracking work?", "How to mark as paid?", "Why no amounts?"],
-  "units": ["What is this system?", "How to navigate?"],
-  "settings": ["Where is the hourly rate?", "How do locations work?"],
+const PAGE_QUICK_ACTIONS: Record<AssistantPage, string[]> = {
+  "dashboard": ["qa-new-work-order", "qa-urgent-jobs", "qa-kanban", "qa-search"],
+  "repairs": ["qa-new-work-order", "qa-urgent-jobs", "qa-waiting-parts", "qa-kanban"],
+  "repair-detail": ["qa-new-work-order", "qa-explain-status", "qa-parts"],
+  "repair-new": ["qa-explain-status", "qa-new-wax"],
+  "customers": ["qa-contacts", "qa-search"],
+  "parts": ["qa-parts", "qa-search"],
+  "invoices": ["qa-unpaid", "qa-invoices"],
+  "units": ["qa-search"],
+  "settings": ["qa-settings"],
+  "planning": ["qa-new-work-order", "qa-kanban"],
+  "audit": ["qa-search"],
+  "feedback": ["qa-search"],
 };
 
 interface SmartAssistantProps {
@@ -787,7 +1028,8 @@ interface SmartAssistantProps {
 }
 
 export function SmartAssistant({ page, context }: SmartAssistantProps) {
-  const [open, setOpen] = useState(false);
+  const { open, setOpen, dispatchAction } = useAssistantContext();
+  const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -798,11 +1040,14 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
   // Listen for toggle event from header button
   useEffect(() => {
     function handleToggle() {
-      setOpen((prev) => !prev);
+  // Backward compat: listen for legacy window event too
+  useEffect(() => {
+    function handleToggle() {
+      setOpen(!open);
     }
     window.addEventListener("toggle-assistant", handleToggle);
     return () => window.removeEventListener("toggle-assistant", handleToggle);
-  }, []);
+  }, [open, setOpen]);
 
   const workOrderTips = useMemo(
     () => (page === "repair-detail" ? getWorkOrderTips(context) : []),
@@ -817,6 +1062,12 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [page],
   );
+
+  // Input suggestions (live as you type)
+  const inputSuggestions = useMemo(() => {
+    if (!inputValue.trim() || inputValue.length < 2) return [];
+    return searchQuickActions(inputValue, page);
+  }, [inputValue, page]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -839,7 +1090,22 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, selectedCategory]);
+  }, [open, selectedCategory, setOpen]);
+
+  // Execute an action
+  const executeAction = useCallback((action: AssistantAction) => {
+    setOpen(false);
+    if (action.type === "navigate") {
+      router.push(action.href);
+    } else if (action.type === "navigate-filter") {
+      const params = new URLSearchParams(action.filters);
+      router.push(action.href + "?" + params.toString());
+    } else if (action.type === "open-command-palette") {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+    } else {
+      dispatchAction(action);
+    }
+  }, [router, setOpen, dispatchAction]);
 
   const answerQuestion = useCallback((query: string, faqOverride?: FaqItem) => {
     const userMsg: ChatMessage = {
@@ -853,43 +1119,100 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     setIsTyping(true);
 
     setTimeout(() => {
-      let faq = faqOverride;
-      let bestAnswer: string;
-      let relatedIds: string[] | undefined;
-      let quickAction: { label: string; href: string } | undefined;
-      let faqId: string | undefined;
+      // Direct FAQ override (from clicking a topic)
+      if (faqOverride) {
+        const assistantMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: faqOverride.answer,
+          faqId: faqOverride.id,
+          relatedIds: faqOverride.relatedIds,
+          quickAction: faqOverride.quickAction,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        setIsTyping(false);
+        return;
+      }
 
-      if (!faq) {
-        const results = searchFaq(query, FAQ_ITEMS);
-        if (results.length > 0) {
-          faq = results[0].faq;
+      const intent = detectIntent(query, context);
+
+      if (intent.type === "navigate" && intent.action) {
+        const msg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Taking you there now →",
+          action: intent.action,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, msg]);
+        setIsTyping(false);
+        setTimeout(() => executeAction(intent.action!), 400);
+        return;
+      }
+
+      if (intent.type === "action" && intent.action) {
+        let actionLabel = "Done.";
+        if (intent.action.type === "open-modal") {
+          const prefill = intent.action.prefill;
+          actionLabel = "Opening new work order" + (prefill?.title ? ": **" + prefill.title + "**" : "") + (prefill?.jobType ? " (type: " + prefill.jobType + ")" : "") + "…";
+        } else if (intent.action.type === "open-command-palette") {
+          actionLabel = "Opening search…";
         }
+        const msg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: actionLabel,
+          action: intent.action,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, msg]);
+        setIsTyping(false);
+        setTimeout(() => executeAction(intent.action!), 400);
+        return;
       }
 
-      if (faq) {
-        bestAnswer = faq.answer;
-        relatedIds = faq.relatedIds;
-        quickAction = faq.quickAction;
-        faqId = faq.id;
-      } else {
-        const suggested = relevantFaq.slice(0, 3);
-        bestAnswer = "I'm not sure about that specific question. Here are some things I can help with:\n\n" + suggested.map((f) => "\u2022 **" + f.question + "**").join("\n") + "\n\nTry clicking one of the suggestions, or rephrase your question.";
-        relatedIds = suggested.map((f) => f.id);
+      if (intent.type === "debug" && intent.response) {
+        const msg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: intent.response,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, msg]);
+        setIsTyping(false);
+        return;
       }
 
-      const assistantMsg: ChatMessage = {
+      // FAQ answer
+      if (intent.faq) {
+        const msg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: intent.faq.answer,
+          faqId: intent.faq.id,
+          relatedIds: intent.faq.relatedIds,
+          quickAction: intent.faq.quickAction,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, msg]);
+        setIsTyping(false);
+        return;
+      }
+
+      // Fallback
+      const suggested = relevantFaq.slice(0, 3);
+      const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: bestAnswer,
-        faqId,
-        relatedIds,
-        quickAction,
+        content: "I'm not sure about that. Try one of these:\n\n" + suggested.map((f) => "• **" + f.question + "**").join("\n") + "\n\nOr try a command like **\"show urgent jobs\"** or **\"create work order\"**.",
+        relatedIds: suggested.map((f) => f.id),
         timestamp: Date.now(),
       };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, msg]);
       setIsTyping(false);
-    }, 300 + Math.random() * 400);
-  }, [relevantFaq]);
+    }, 200 + Math.random() * 200);
+  }, [context, relevantFaq, executeAction]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -897,8 +1220,24 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     answerQuestion(inputValue.trim());
   }
 
-  function handleQuickQuestion(question: string) {
-    answerQuestion(question);
+  function handleQuickActionClick(qa: QuickActionDef) {
+    if (qa.intent === "explain") {
+      // FAQ-style — ask the question
+      answerQuestion(qa.label);
+    } else {
+      // Action — execute directly
+      const intent = detectIntent(qa.label);
+      if (intent) {
+        executeAction(intent.action);
+      } else {
+        answerQuestion(qa.label);
+      }
+    }
+  }
+
+  function handleSuggestionClick(qa: QuickActionDef) {
+    setInputValue("");
+    handleQuickActionClick(qa);
   }
 
   function handleRelatedClick(faqId: string) {
@@ -923,7 +1262,9 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     setInputValue("");
   }
 
-  const quickSuggestions = PAGE_QUICK_SUGGESTIONS[page] ?? [];
+  const pageQuickActions = (PAGE_QUICK_ACTIONS[page] ?? [])
+    .map((id) => QUICK_ACTIONS.find((qa) => qa.id === id))
+    .filter((qa): qa is QuickActionDef => !!qa);
   const showHome = messages.length === 0 && !selectedCategory;
 
   return (
@@ -1030,20 +1371,21 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                   </div>
                 )}
 
-                {quickSuggestions.length > 0 && (
+                {pageQuickActions.length > 0 && (
                   <div>
                     <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
-                      Quick questions
+                      Quick actions
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {quickSuggestions.map((q) => (
+                      {pageQuickActions.map((qa) => (
                         <button
-                          key={q}
+                          key={qa.id}
                           type="button"
-                          onClick={() => handleQuickQuestion(q)}
-                          className="text-[11px] px-2.5 py-1.5 rounded-full border border-gray-100 dark:border-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-accent hover:border-gray-200 transition-all text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
+                          onClick={() => handleQuickActionClick(qa)}
+                          className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full border border-gray-100 dark:border-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-accent hover:border-gray-200 transition-all text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
                         >
-                          {q}
+                          {qa.icon}
+                          {qa.label}
                         </button>
                       ))}
                     </div>
@@ -1102,7 +1444,18 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                           <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-gray-50 dark:bg-muted/60 text-[12px] leading-relaxed text-gray-600 dark:text-muted-foreground">
                             <RenderMarkdown text={msg.content} />
 
-                            {msg.quickAction && (
+                            {msg.action && (msg.action.type === "navigate" || msg.action.type === "navigate-filter") && (
+                              <button
+                                type="button"
+                                onClick={() => executeAction(msg.action!)}
+                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[#0CC0DF] hover:underline"
+                              >
+                                <ArrowUpRight className="h-3 w-3" />
+                                Go
+                              </button>
+                            )}
+
+                            {msg.quickAction && !msg.action && (
                               <Link
                                 href={msg.quickAction.href}
                                 className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[#0CC0DF] hover:underline"
@@ -1159,14 +1512,30 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
 
           {/* Input area */}
           {!selectedCategory && (
-            <form onSubmit={handleSubmit} className="px-3 py-2.5 border-t border-gray-100 dark:border-border bg-white dark:bg-card shrink-0">
-              <div className="flex items-center gap-2">
-                <Input
+            <form onSubmit={handleSubmit} className="border-t border-gray-100 dark:border-border bg-white dark:bg-card shrink-0">
+              {/* Live suggestion chips */}
+              {inputSuggestions.length > 0 && (
+                <div className="px-3 pt-2 flex flex-wrap gap-1">
+                  {inputSuggestions.map((qa) => (
+                    <button
+                      key={qa.id}
+                      type="button"
+                      onClick={() => handleSuggestionClick(qa)}
+                      className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-[#0CC0DF]/20 bg-[#0CC0DF]/5 text-[#0CC0DF] hover:bg-[#0CC0DF]/10 transition-all"
+                    >
+                      {qa.icon}
+                      {qa.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2 px-3 py-2.5">
+                <input
                   ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask me anything..."
-                  className="h-9 text-xs rounded-xl flex-1 border-gray-200 dark:border-border focus-visible:ring-[#0CC0DF]/30"
+                  placeholder="Ask or do anything…"
+                  className="h-9 text-xs rounded-xl flex-1 border border-gray-200 dark:border-border px-3 bg-transparent focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/30 disabled:opacity-50"
                   disabled={isTyping}
                 />
                 <Button

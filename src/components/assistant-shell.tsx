@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { SmartAssistant, type AssistantPage } from "@/components/smart-assistant";
-import { useAssistantContext } from "@/components/assistant-context";
+import { SmartAssistant } from "@/components/smart-assistant";
+import { useAssistantContext, type AssistantPage } from "@/components/assistant-context";
 
 function getPageFromPathname(pathname: string): AssistantPage {
   if (pathname === "/") return "dashboard";
@@ -14,6 +14,9 @@ function getPageFromPathname(pathname: string): AssistantPage {
   if (pathname.startsWith("/parts")) return "parts";
   if (pathname.startsWith("/invoices")) return "invoices";
   if (pathname.startsWith("/settings")) return "settings";
+  if (pathname.startsWith("/planning")) return "planning";
+  if (pathname.startsWith("/audit")) return "audit";
+  if (pathname.startsWith("/feedback")) return "feedback";
   return "dashboard";
 }
 

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReminderPanel } from "@/components/reminder-panel";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandPalette } from "@/components/command-palette";
+import { useAssistantContext } from "@/components/assistant-context";
 import type { UserRole } from "@/types";
 
 interface HeaderProps {
@@ -26,6 +27,7 @@ interface HeaderProps {
 
 export function Header({ userName, userEmail, userRole }: HeaderProps) {
   const router = useRouter();
+  const { toggle } = useAssistantContext();
 
   return (
     <>
@@ -57,7 +59,7 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
             size="icon"
             className="h-8 w-8 rounded-lg text-muted-foreground hover:text-blue-600"
             title="Smart Assistant"
-            onClick={() => window.dispatchEvent(new Event("toggle-assistant"))}
+            onClick={() => toggle()}
           >
             <MessageCircleQuestion className="h-4 w-4" />
           </Button>

@@ -2247,8 +2247,8 @@ function FinancialWorkflow({
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
   // Auto-enable our-costs view when invoiced/sent/paid so selling prices are hidden
-  const isInvoiced = ["sent", "paid"].includes(invoiceStatus);
-  const [ourCostsView, setOurCostsView] = useState(isInvoiced);
+  const isInvoiced = ["sent", "paid", "our_costs"].includes(invoiceStatus);
+  const [ourCostsView, setOurCostsView] = useState(invoiceStatus === "our_costs" || isInvoiced);
 
   const hasEstimate = costLines.length > 0 || parseFloat(estimatedCost || "0") > 0;
   const hasQuote = !!job.holdedQuoteId;

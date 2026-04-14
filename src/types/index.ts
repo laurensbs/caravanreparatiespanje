@@ -59,6 +59,7 @@ export type InvoiceStatus =
   | "sent"
   | "paid"
   | "warranty"
+  | "our_costs"
   | "rejected"
   | "no_damage";
 
@@ -235,6 +236,7 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   sent: "Sent",
   paid: "Paid",
   warranty: "Warranty / Internal",
+  our_costs: "Our Costs",
   rejected: "Rejected by Client",
   no_damage: "No Damage",
 };

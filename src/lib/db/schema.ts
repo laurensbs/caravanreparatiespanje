@@ -68,6 +68,7 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "sent",
   "paid",
   "warranty",
+  "our_costs",
   "rejected",
   "no_damage",
 ]);

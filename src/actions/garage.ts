@@ -89,8 +89,7 @@ export async function garageMarkDone(repairJobId: string) {
   await db
     .update(repairJobs)
     .set({
-      status: "completed",
-      completedAt: new Date(),
+      status: "ready_for_check",
       finalCheckStatus: "pending",
       updatedAt: new Date(),
     })
@@ -101,8 +100,8 @@ export async function garageMarkDone(repairJobId: string) {
     userId: ctx.userId,
     eventType: "status_changed",
     fieldChanged: "status",
-    newValue: "completed",
-    comment: "Marked as done by garage",
+    newValue: "ready_for_check",
+    comment: "Marked as ready for check by garage",
   });
 
   // Notify office
@@ -112,8 +111,8 @@ export async function garageMarkDone(repairJobId: string) {
     .where(eq(repairJobs.id, repairJobId));
   await notifyOffice(
     repairJobId,
-    `✅ Garage klaar — ${jobInfo?.publicCode ?? ""}`,
-    "Reparatie is door de garage als klaar gemeld",
+    `🔍 Klaar voor controle — ${jobInfo?.publicCode ?? ""}`,
+    "Reparatie is door de garage als klaar gemeld en wacht op controle",
     "garage_done"
   );
 

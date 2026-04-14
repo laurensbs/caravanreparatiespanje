@@ -9,7 +9,7 @@ import { getParts, getPartCategories } from "@/actions/parts";
 import { getAllUnits } from "@/actions/units";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
-  Wrench, AlertTriangle, ArrowRight, PhoneOff, TrendingUp,
+  Wrench, AlertTriangle, ArrowRight, PhoneOff, TrendingUp, ClipboardCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
@@ -37,6 +37,7 @@ export default async function DashboardPage() {
 
   const heroCards = [
     { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5 text-gray-400 dark:text-muted-foreground" />, href: "/repairs", bg: "bg-white dark:bg-card border border-gray-100 dark:border-border" },
+    { label: "Ready for Check", value: stats?.readyForCheck ?? 0, icon: <ClipboardCheck className="h-5 w-5 text-amber-500" />, href: "/repairs?status=ready_for_check", bg: "bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20" },
     { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5 text-sky-500" />, href: "/repairs?status=in_progress", bg: "bg-sky-50 dark:bg-sky-500/10 border border-sky-100 dark:border-sky-500/20" },
     { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5 text-red-500" />, href: "/repairs?priority=urgent", bg: "bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20" },
     { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5 text-amber-500" />, href: "/repairs?customerResponseStatus=no_response", bg: "bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20" },
@@ -61,7 +62,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── KPI Cards ──────────────────────────────────────── */}
-      <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
         {heroCards.map((kpi) => (
           <Link key={kpi.label} href={kpi.href}>
             <div className={`rounded-2xl shadow-sm p-6 transition-all duration-150 hover:shadow-md cursor-pointer ${kpi.bg}`}>

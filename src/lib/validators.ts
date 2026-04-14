@@ -20,7 +20,7 @@ export const repairJobSchema = z.object({
   status: z.enum([
     "new", "todo", "in_inspection", "no_damage", "quote_needed", "waiting_approval",
     "waiting_customer", "waiting_parts", "scheduled", "in_progress",
-    "blocked", "completed", "invoiced", "rejected", "archived",
+    "blocked", "ready_for_check", "completed", "invoiced", "rejected", "archived",
   ]).optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   businessProcessType: z.enum([
@@ -111,7 +111,7 @@ export const bulkUpdateSchema = z.object({
   status: z.enum([
     "new", "todo", "in_inspection", "no_damage", "quote_needed", "waiting_approval",
     "waiting_customer", "waiting_parts", "scheduled", "in_progress",
-    "blocked", "completed", "invoiced", "rejected", "archived",
+    "blocked", "ready_for_check", "completed", "invoiced", "rejected", "archived",
   ]).optional(),
   locationId: z.string().uuid().nullable().optional(),
   assignedUserId: z.string().uuid().nullable().optional(),

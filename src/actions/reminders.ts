@@ -125,6 +125,13 @@ export async function autoGenerateReminder(
         "Repair is completed. Create and send the final invoice via Holded.",
     },
     {
+      condition: (status) => status === "ready_for_check",
+      type: "review_completion",
+      title: "Review garage completion",
+      description:
+        "Garage has marked this repair as done. Review the work and approve or send back.",
+    },
+    {
       condition: (status) => status === "waiting_parts",
       type: "check_delivery",
       title: "Check parts delivery status",

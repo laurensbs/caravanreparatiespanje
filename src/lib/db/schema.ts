@@ -40,6 +40,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
   "scheduled",
   "in_progress",
   "blocked",
+  "ready_for_check",
   "completed",
   "invoiced",
   "rejected",

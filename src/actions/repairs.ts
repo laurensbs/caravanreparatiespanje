@@ -501,6 +501,9 @@ export async function getDashboardStats() {
         completed: count(
           sql`CASE WHEN ${repairJobs.status} = 'completed' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
+        readyForCheck: count(
+          sql`CASE WHEN ${repairJobs.status} = 'ready_for_check' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
+        ),
         urgent: count(
           sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
@@ -965,4 +968,63 @@ export async function getDashboardSuggestions() {
     completedRevenue: parseFloat(completedRevenue[0]?.total ?? "0"),
     scheduledThisWeek: scheduledThisWeek[0]?.count ?? 0,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN REVIEW: approve or send back "ready for check" repairs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function adminApproveRepair(repairJobId: string) {
+  const session = await requireAuth();
+
+  await db
+    .update(repairJobs)
+    .set({
+      status: "completed",
+      completedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "status_changed",
+    fieldChanged: "status",
+    newValue: "completed",
+    comment: `Approved and completed by ${session.user.name ?? "admin"}`,
+  });
+
+  revalidatePath("/");
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { success: true };
+}
+
+export async function adminSendBackRepair(repairJobId: string, note?: string) {
+  const session = await requireAuth();
+
+  await db
+    .update(repairJobs)
+    .set({
+      status: "in_progress",
+      completedAt: null,
+      finalCheckStatus: "pending",
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "status_changed",
+    fieldChanged: "status",
+    newValue: "in_progress",
+    comment: note
+      ? `Sent back to garage by ${session.user.name ?? "admin"}: ${note}`
+      : `Sent back to garage by ${session.user.name ?? "admin"}`,
+  });
+
+  revalidatePath("/");
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { success: true };
 }

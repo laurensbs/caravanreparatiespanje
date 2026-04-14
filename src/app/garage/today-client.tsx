@@ -65,6 +65,7 @@ type StatusCategory = "todo" | "in_progress" | "waiting" | "check" | "done";
 
 function categorize(r: RepairItem): StatusCategory {
   if ((r.status === "completed" && r.finalCheckStatus !== "pending") || r.status === "invoiced") return "done";
+  if (r.status === "ready_for_check") return "check";
   if (r.status === "completed" && r.finalCheckStatus === "pending") return "check";
   if (["waiting_customer", "waiting_parts", "blocked"].includes(r.status)) return "waiting";
   if (r.status === "in_progress") return "in_progress";

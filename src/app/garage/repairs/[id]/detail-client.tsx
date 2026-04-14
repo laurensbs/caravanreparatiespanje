@@ -172,7 +172,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   function handleMarkDone() {
     startTransition(async () => {
       await garageMarkDone(repair.id);
-      toast.success(t("Marked as done", "Marcado como hecho", "Klaar gemeld"));
+      toast.success(t("Sent for review", "Enviado para revisión", "Klaar gemeld voor controle"));
       router.refresh();
     });
   }
@@ -736,13 +736,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             <button
               onClick={handleMarkDone}
               disabled={isPending}
-              className="flex-1 rounded-2xl bg-emerald-600 text-white p-4 text-sm font-bold active:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm"
+              className="flex-1 rounded-2xl bg-amber-500 text-white p-4 text-sm font-bold active:bg-amber-600 transition-all disabled:opacity-50 shadow-sm"
             >
-              ✓ {t("Done", "Listo", "Klaar")}
+              🔍 {t("Ready for Check", "Listo para Revisión", "Klaar voor Controle")}
             </button>
             <button
               onClick={() => setShowNotDone(true)}
-              className="flex-1 rounded-2xl bg-amber-500 text-white p-4 text-sm font-bold active:bg-amber-600 transition-all shadow-sm"
+              className="flex-1 rounded-2xl border border-gray-200 bg-white text-gray-700 p-4 text-sm font-bold active:bg-gray-50 transition-all shadow-sm"
             >
               ✗ {t("Not Done", "No Listo", "Niet Klaar")}
             </button>

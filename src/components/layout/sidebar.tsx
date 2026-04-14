@@ -161,17 +161,16 @@ export function Sidebar({ userRole }: SidebarProps) {
       )}
     >
       <div className={cn(
-        "flex items-center border-b border-white/10 transition-all duration-300",
-        collapsed ? "h-12 justify-center px-2" : "h-12 gap-3 px-4"
+        "flex items-center justify-center border-b border-white/10 transition-all duration-300",
+        collapsed ? "h-14 px-2" : "h-16 px-4"
       )}>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden shrink-0 bg-white/10">
-          <Image src="/favicon.png" alt="Logo" width={32} height={32} className="object-contain" />
-        </div>
-        {!collapsed && (
-          <div className="min-w-0 overflow-hidden">
-            <h1 className="text-sm font-semibold tracking-tight text-white whitespace-nowrap">Caravan Admin</h1>
-          </div>
-        )}
+        <Image
+          src="/favicon.png"
+          alt="Logo"
+          width={collapsed ? 36 : 120}
+          height={collapsed ? 24 : 80}
+          className="object-contain transition-all duration-300"
+        />
       </div>
 
       <nav className={cn(

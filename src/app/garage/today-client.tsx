@@ -216,52 +216,45 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
   handleRefresh: () => void;
   refreshing: boolean;
 }) {
+  const hasPending = stats.urgentCount > 0 || stats.unassignedCount > 0;
+
   return (
-    <div className="flex flex-col items-center min-h-[65vh] px-6 pt-4">
-      {/* ─── Smart context message ─── */}
+    <div className="max-w-lg mx-auto px-6 pb-10 space-y-5 pt-2">
+      {/* ─── Urgent / pending banner ─── */}
       {stats.urgentCount > 0 ? (
-        <div className="w-full max-w-lg mb-8">
-          <div className="flex items-center gap-4 rounded-2xl bg-amber-50 border border-amber-100 px-6 py-5">
+        <button
+          onClick={handleRefresh}
+          className="w-full text-left rounded-2xl bg-amber-50 border border-amber-200 px-5 py-5 active:scale-[0.98] transition-all duration-150"
+        >
+          <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
               <Zap className="h-6 w-6 text-amber-600" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-base font-semibold text-amber-900">
-                {t(
-                  `${stats.urgentCount} urgent job${stats.urgentCount > 1 ? "s" : ""} pending`,
-                  `${stats.urgentCount} trabajo${stats.urgentCount > 1 ? "s" : ""} urgente${stats.urgentCount > 1 ? "s" : ""} pendiente${stats.urgentCount > 1 ? "s" : ""}`,
-                  `${stats.urgentCount} spoedklus${stats.urgentCount > 1 ? "sen" : ""} wachtend`
+                ⚠️ {t(
+                  "Pending jobs need attention",
+                  "Trabajos pendientes necesitan atención",
+                  "Openstaande klussen vereisen aandacht"
                 )}
               </p>
               <p className="text-sm text-amber-700 mt-0.5">
-                {t("Not scheduled for today", "No planificados para hoy", "Niet ingepland voor vandaag")}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : stats.tomorrowCount > 0 ? (
-        <div className="w-full max-w-lg mb-8">
-          <div className="flex items-center gap-4 rounded-2xl bg-sky-50 border border-sky-100 px-6 py-5">
-            <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-              <CalendarDays className="h-6 w-6 text-sky-600" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-semibold text-sky-900">
                 {t(
-                  `Nothing today — but tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""}`,
-                  `Nada hoy — pero mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""}`,
-                  `Niets vandaag — maar morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""}`
+                  `${stats.urgentCount} urgent — not scheduled for today`,
+                  `${stats.urgentCount} urgente${stats.urgentCount > 1 ? "s" : ""} — no planificado${stats.urgentCount > 1 ? "s" : ""} para hoy`,
+                  `${stats.urgentCount} spoed — niet ingepland voor vandaag`
                 )}
               </p>
-              <p className="text-sm text-sky-700 mt-0.5">
-                {t("Enjoy the downtime", "Disfruta del descanso", "Geniet van de rust")}
-              </p>
             </div>
+            <RefreshCw className={`h-5 w-5 text-amber-400 shrink-0 ${refreshing ? "animate-spin" : ""}`} />
           </div>
-        </div>
+        </button>
       ) : stats.unassignedCount > 0 ? (
-        <div className="w-full max-w-lg mb-8">
-          <div className="flex items-center gap-4 rounded-2xl bg-violet-50 border border-violet-100 px-6 py-5">
+        <button
+          onClick={handleRefresh}
+          className="w-full text-left rounded-2xl bg-violet-50 border border-violet-100 px-5 py-5 active:scale-[0.98] transition-all duration-150"
+        >
+          <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
               <ClipboardCheck className="h-6 w-6 text-violet-600" />
             </div>
@@ -274,28 +267,39 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
                 )}
               </p>
               <p className="text-sm text-violet-700 mt-0.5">
-                {t("Ask the office to assign one", "Pide a la oficina que te asigne uno", "Vraag het kantoor om er een toe te wijzen")}
+                {t("Ask the office to schedule one", "Pide a la oficina que planifique uno", "Vraag het kantoor om er een in te plannen")}
               </p>
             </div>
+            <RefreshCw className={`h-5 w-5 text-violet-400 shrink-0 ${refreshing ? "animate-spin" : ""}`} />
           </div>
-        </div>
+        </button>
       ) : null}
 
-      {/* ─── Main icon + title ─── */}
-      <div className="flex flex-col items-center mt-2 mb-10">
-        <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6">
-          <ClipboardCheck className="h-10 w-10 text-emerald-500" />
+      {/* ─── Calm state (only when truly nothing pending) ─── */}
+      {!hasPending && (
+        <div className="flex items-center gap-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 px-5 py-5">
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+            <ClipboardCheck className="h-6 w-6 text-emerald-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-semibold text-gray-900">
+              {t("No work scheduled today", "Sin trabajo hoy", "Geen werk vandaag")}
+            </p>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {stats.tomorrowCount > 0
+                ? t(
+                    `Tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""} planned`,
+                    `Mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""} planificado${stats.tomorrowCount > 1 ? "s" : ""}`,
+                    `Morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland`
+                  )
+                : t("You're all caught up 👌", "Todo al día 👌", "Je bent helemaal bij 👌")}
+            </p>
+          </div>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900 text-center">
-          {t("No work scheduled today", "Sin trabajo hoy", "Geen werk vandaag")}
-        </h2>
-        <p className="text-lg text-gray-400 mt-2 text-center">
-          {t("You're all caught up", "Todo al día", "Je bent helemaal bij")} 👌
-        </p>
-      </div>
+      )}
 
       {/* ─── Action buttons ─── */}
-      <div className="w-full max-w-lg space-y-3 mb-10">
+      <div className="space-y-3">
         <button
           onClick={handleRefresh}
           className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#0CC0DF] text-white text-base font-semibold shadow-sm hover:bg-[#0BB0CC] active:scale-[0.98] transition-all duration-150"
@@ -305,50 +309,62 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
         </button>
       </div>
 
-      {/* ─── Quick info strip ─── */}
-      <div className="w-full max-w-lg">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-gray-300" />
-              <span className="text-sm text-gray-500 font-medium">{t("Today", "Hoy", "Vandaag")}</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
-              0 {t("jobs", "trabajos", "klussen")}
-            </p>
+      {/* ─── Stats grid ─── */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={handleRefresh}
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-gray-300" />
+            <span className="text-sm text-gray-500 font-medium">{t("Today", "Hoy", "Vandaag")}</span>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-sky-400" />
-              <span className="text-sm text-gray-500 font-medium">{t("Tomorrow", "Mañana", "Morgen")}</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
-              {stats.tomorrowCount} {t("planned", "planificados", "gepland")}
-            </p>
+          <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
+            0 {t("jobs", "trabajos", "klussen")}
+          </p>
+        </button>
+        <button
+          onClick={handleRefresh}
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-sky-400" />
+            <span className="text-sm text-gray-500 font-medium">{t("Tomorrow", "Mañana", "Morgen")}</span>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-purple-400" />
-              <span className="text-sm text-gray-500 font-medium">{t("Waiting parts", "Esperando piezas", "Wacht op onderdelen")}</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
-              {stats.waitingPartsCount}
-            </p>
+          <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
+            {stats.tomorrowCount} {t("planned", "planificados", "gepland")}
+          </p>
+        </button>
+        <button
+          onClick={handleRefresh}
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-purple-400" />
+            <span className="text-sm text-gray-500 font-medium">{t("Waiting parts", "Esperando piezas", "Wacht op onderdelen")}</span>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${stats.urgentCount > 0 ? "bg-amber-400" : "bg-gray-300"}`} />
-              <span className="text-sm text-gray-500 font-medium">{t("Urgent", "Urgente", "Spoed")}</span>
-            </div>
-            <p className={`text-2xl font-bold mt-1.5 tabular-nums ${stats.urgentCount > 0 ? "text-amber-600" : "text-gray-900"}`}>
-              {stats.urgentCount}
-            </p>
+          <p className="text-2xl font-bold text-gray-900 mt-1.5 tabular-nums">
+            {stats.waitingPartsCount}
+          </p>
+        </button>
+        <button
+          onClick={handleRefresh}
+          className={`bg-white rounded-2xl border shadow-sm px-5 py-4 text-left active:scale-[0.97] transition-all duration-150 hover:shadow-md ${
+            stats.urgentCount > 0 ? "border-amber-200 bg-amber-50/40" : "border-gray-100"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full ${stats.urgentCount > 0 ? "bg-amber-400" : "bg-gray-300"}`} />
+            <span className="text-sm text-gray-500 font-medium">{t("Urgent", "Urgente", "Spoed")}</span>
           </div>
-        </div>
+          <p className={`text-2xl font-bold mt-1.5 tabular-nums ${stats.urgentCount > 0 ? "text-amber-600" : "text-gray-900"}`}>
+            {stats.urgentCount}
+          </p>
+        </button>
       </div>
 
       {/* ─── Auto-update indicator ─── */}
-      <div className="flex flex-col items-center gap-1 mt-8 mb-6">
+      <div className="flex flex-col items-center gap-1 pt-4">
         <p className="text-xs text-gray-400 font-medium">
           {t("Jobs update automatically", "Los trabajos se actualizan automáticamente", "Opdrachten worden automatisch bijgewerkt")}
         </p>
@@ -358,7 +374,7 @@ function EmptyState({ t, stats, handleRefresh, refreshing }: {
       </div>
 
       {/* ─── Weather (secondary) ─── */}
-      <div className="w-full max-w-sm">
+      <div className="mx-auto max-w-sm pt-2">
         <WeatherWidget />
       </div>
     </div>

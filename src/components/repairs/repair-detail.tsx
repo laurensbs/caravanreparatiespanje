@@ -29,6 +29,7 @@ import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
+import { RepairTimeLog } from "@/components/repairs/repair-time-log";
 import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction, updateRepairTaskPricing } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent } from "@/actions/estimates";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
@@ -136,9 +137,11 @@ interface RepairDetailProps {
   estimateLines?: EstimateLineItem[];
   partCategories?: PartCategory[];
   photos?: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string }[];
+  timeEntries?: any[];
+  activeTimers?: any[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], partCategories = [], photos = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -941,6 +944,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <div>
                   <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={status} onStatusChange={setStatus} />
                 </div>
+              </div>
+
+              {/* Time Log */}
+              <div className="pt-2">
+                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-3">Time Log</p>
+                <RepairTimeLog
+                  repairJobId={job.id}
+                  timeEntries={timeEntries}
+                  activeTimers={activeTimers}
+                  activeUsers={activeUsers}
+                />
               </div>
 
               {/* Inspection Flags */}

@@ -8,6 +8,7 @@ import { getAllCustomers } from "@/actions/customers";
 import { getRepairTasks, getRepairWorkers, getActiveUsers, getRepairFindings, getRepairBlockers } from "@/actions/garage";
 import { getEstimateLineItems } from "@/actions/estimates";
 import { getRepairPhotos } from "@/actions/photos";
+import { getJobTimeEntries, getJobActiveTimers } from "@/actions/time-entries";
 import { notFound } from "next/navigation";
 import { RepairDetail } from "@/components/repairs/repair-detail";
 import type { Metadata } from "next";
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
@@ -45,6 +46,8 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getEstimateLineItems(id),
     getPartCategories(),
     getRepairPhotos(id),
+    getJobTimeEntries(id),
+    getJobActiveTimers(id),
   ]);
   if (!job) notFound();
 
@@ -72,6 +75,8 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       estimateLines={estimateLines}
       partCategories={partCategories}
       photos={photos}
+      timeEntries={timeEntries}
+      activeTimers={activeTimers}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

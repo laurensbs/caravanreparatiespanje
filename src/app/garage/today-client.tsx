@@ -37,10 +37,19 @@ interface QuickStats {
   unassignedCount: number;
 }
 
+type ActiveTimerItem = {
+  id: string;
+  repairJobId: string;
+  userId: string;
+  userName: string | null;
+  startedAt: Date | string;
+};
+
 interface Props {
   repairs: RepairItem[];
   userName: string;
   stats: QuickStats;
+  activeTimers?: ActiveTimerItem[];
 }
 
 // ─── Job type badge config ───
@@ -62,7 +71,7 @@ function categorize(r: RepairItem): StatusCategory {
   return "todo";
 }
 
-export function GarageTodayClient({ repairs, userName, stats }: Props) {
+export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] }: Props) {
   const { t, lang } = useLanguage();
   const router = useRouter();
   const [time, setTime] = useState(() => new Date());
@@ -197,6 +206,7 @@ export function GarageTodayClient({ repairs, userName, stats }: Props) {
             urgentCount={urgentCount}
             problemCount={problemCount}
             t={t}
+            activeTimers={activeTimers}
           />
         ) : (
           <EmptyState t={t} stats={stats} handleRefresh={handleRefresh} refreshing={refreshing} />
@@ -393,6 +403,7 @@ function WorkState({
   urgentCount,
   problemCount,
   t,
+  activeTimers = [],
 }: {
   counts: Record<StatusCategory, number>;
   displayRepairs: RepairItem[];
@@ -401,6 +412,7 @@ function WorkState({
   urgentCount: number;
   problemCount: number;
   t: (en: string, es?: string | null, nl?: string | null) => string;
+  activeTimers?: ActiveTimerItem[];
 }) {
   const summaryCards: { key: StatusCategory; label: string; count: number; color: string; activeColor: string; icon: React.ReactNode }[] = [
     {
@@ -518,7 +530,7 @@ function WorkState({
       {/* Work cards */}
       <div className="space-y-3">
         {displayRepairs.map((repair) => (
-          <WorkCard key={repair.id} repair={repair} t={t} />
+          <WorkCard key={repair.id} repair={repair} t={t} activeTimers={activeTimers.filter(at => at.repairJobId === repair.id)} />
         ))}
       </div>
 
@@ -537,9 +549,11 @@ function WorkState({
 function WorkCard({
   repair,
   t,
+  activeTimers = [],
 }: {
   repair: RepairItem;
   t: (en: string, es?: string | null, nl?: string | null) => string;
+  activeTimers?: ActiveTimerItem[];
 }) {
   const category = categorize(repair);
   const progress = repair.tasks.total > 0
@@ -611,6 +625,15 @@ function WorkCard({
           {repair.parts.pending > 0 && (
             <span className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium bg-purple-50 text-purple-600">
               📦 {repair.parts.received}/{repair.parts.total}
+            </span>
+          )}
+          {activeTimers.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              </span>
+              ⏱ {activeTimers.map(t => (t.userName ?? "?").split(" ")[0]).join(", ")}
             </span>
           )}
         </div>

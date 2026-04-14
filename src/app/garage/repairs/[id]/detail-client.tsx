@@ -12,6 +12,7 @@ import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
 import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
+import { GarageTimer } from "@/components/garage/timer";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { toast } from "sonner";
@@ -99,9 +100,15 @@ interface Props {
   currentUserId: string;
   currentUserName: string;
   partCategories: { id: string; key: string; label: string; icon: string; color: string; sortOrder: number; active: boolean }[];
+  activeTimers: {
+    id: string;
+    userId: string;
+    userName: string | null;
+    startedAt: Date | string;
+  }[];
 }
 
-export function GarageRepairDetailClient({ repair, currentUserId, currentUserName, partCategories }: Props) {
+export function GarageRepairDetailClient({ repair, currentUserId, currentUserName, partCategories, activeTimers }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
   const [problemTaskId, setProblemTaskId] = useState<string | null>(null);
@@ -565,6 +572,17 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             </div>
           )}
         </div>
+
+        {/* Timer */}
+        {isActive && (
+          <GarageTimer
+            repairJobId={repair.id}
+            currentUserId={currentUserId}
+            currentUserName={currentUserName}
+            activeTimers={activeTimers}
+            t={t}
+          />
+        )}
 
         {/* Workers — "I worked on this" */}
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">

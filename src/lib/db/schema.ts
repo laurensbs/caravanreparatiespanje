@@ -1604,3 +1604,53 @@ export const quoteOverrides = pgTable(
     index("quote_overrides_holded_idx").on(table.holdedQuoteId),
   ]
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TIME ENTRIES (time registration / timer)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const timeEntrySourceEnum = pgEnum("time_entry_source", [
+  "garage_timer",
+  "manual",
+]);
+
+export const timeEntries = pgTable(
+  "time_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    durationMinutes: integer("duration_minutes"),
+    roundedMinutes: integer("rounded_minutes"),
+    source: timeEntrySourceEnum("source").notNull().default("garage_timer"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("time_entries_job_idx").on(table.repairJobId),
+    index("time_entries_user_idx").on(table.userId),
+    index("time_entries_active_idx").on(table.userId, table.endedAt),
+  ]
+);
+
+export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
+  repairJob: one(repairJobs, {
+    fields: [timeEntries.repairJobId],
+    references: [repairJobs.id],
+  }),
+  user: one(users, {
+    fields: [timeEntries.userId],
+    references: [users.id],
+  }),
+}));

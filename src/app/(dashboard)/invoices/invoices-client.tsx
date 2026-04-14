@@ -817,7 +817,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span>These quotes were sent to customers but never converted to invoices. Consider converting them in Holded or following up with the customer.</span>
+                <span>Deze offertes zijn verstuurd aan klanten maar nooit omgezet naar een factuur. Zet ze om in Holded of neem contact op met de klant.</span>
               </div>
               <div className="rounded-xl border bg-card overflow-hidden">
                 <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">

@@ -213,9 +213,17 @@ export interface OverdueEstimate extends QuoteWithRepair {
 
 export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEstimate[]> {
   await requireAuth();
-  const all = await getAllQuotes();
+  const [all, allInvoices] = await Promise.all([getAllQuotes(), getAllInvoices()]);
   const now = Date.now();
   const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
+
+  // Build map: contactId → set of invoice totals (to detect quotes already invoiced separately in Holded)
+  const invoicedAmountsByContact = new Map<string, Set<number>>();
+  for (const inv of allInvoices) {
+    if (!inv.contact) continue;
+    if (!invoicedAmountsByContact.has(inv.contact)) invoicedAmountsByContact.set(inv.contact, new Set());
+    invoicedAmountsByContact.get(inv.contact)!.add(inv.total);
+  }
 
   // Get customer emails
   const dbCustomers = await db
@@ -230,9 +238,13 @@ export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEs
   return all
     .filter((q) => {
       // Only unconverted quotes (status 0 = pending)
-      if (q.status === 1) return false; // approved/converted
-      if (q.status === -1) return false; // cancelled/declined by customer
-      if (q.repairHasInvoice) return false; // linked repair already has a Holded invoice
+      if (q.status === 1) return false; // goedgekeurd/omgezet
+      if (q.status === -1) return false; // geannuleerd door klant
+      if (q.repairHasInvoice) return false; // gekoppelde reparatie heeft al een factuur
+      // Exclude if the contact already has a Holded invoice for the same amount
+      // (quote was converted outside the repair flow)
+      const contactInvoices = invoicedAmountsByContact.get(q.contact);
+      if (contactInvoices?.has(q.total)) return false;
       if (!q.date) return false;
       if (q.total <= 0) return false;
       const quoteDate = q.date * 1000;

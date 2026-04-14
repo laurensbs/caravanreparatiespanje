@@ -22,6 +22,7 @@ import type {
   repairFindings,
   repairBlockers,
   estimateLineItems,
+  dismissedWorkshopItems,
 } from "@/lib/db/schema";
 
 export type UserRole = "admin" | "manager" | "staff" | "technician" | "viewer";
@@ -130,6 +131,7 @@ export type RepairPhoto = typeof repairPhotos.$inferSelect;
 export type RepairFinding = typeof repairFindings.$inferSelect;
 export type RepairBlocker = typeof repairBlockers.$inferSelect;
 export type EstimateLineItem = typeof estimateLineItems.$inferSelect;
+export type DismissedWorkshopItem = typeof dismissedWorkshopItems.$inferSelect;
 
 export type EstimateLineType = "labour" | "part" | "custom";
 export type EstimateLineSource = "task" | "part_request" | "manual";

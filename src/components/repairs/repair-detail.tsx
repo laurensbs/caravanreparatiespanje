@@ -18,7 +18,7 @@ import {
   FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS,
   JOB_TYPE_LABELS, JOB_TYPE_COLORS,
 } from "@/types";
-import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, JobType } from "@/types";
+import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, DismissedWorkshopItem, JobType } from "@/types";
 import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -31,7 +31,7 @@ import { deleteRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
 import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction, updateRepairTaskPricing } from "@/actions/garage";
-import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent } from "@/actions/estimates";
+import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent, restoreWorkshopItem, restoreAllWorkshopItems } from "@/actions/estimates";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
@@ -135,13 +135,14 @@ interface RepairDetailProps {
   findings?: FindingItem[];
   blockers?: BlockerItem[];
   estimateLines?: EstimateLineItem[];
+  dismissedWorkshopItems?: DismissedWorkshopItem[];
   partCategories?: PartCategory[];
   photos?: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string }[];
   timeEntries?: any[];
   activeTimers?: any[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -1181,6 +1182,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               tasks={tasks}
               partRequests={partRequests}
               findings={findings}
+              initialDismissed={initialDismissed}
             />
           </div>
 
@@ -2033,6 +2035,7 @@ function FinancialWorkflow({
   addPartLine, removeCostLine, updateCostLine, handleGenerateFromWork,
   handleDiscountChange, router,
   tasks, partRequests, findings,
+  initialDismissed,
 }: {
   job: any;
   estimatedCost: string;
@@ -2071,13 +2074,18 @@ function FinancialWorkflow({
   tasks: RepairTask[];
   partRequests: PartRequestItem[];
   findings: FindingItem[];
+  initialDismissed: DismissedWorkshopItem[];
 }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
-  // Auto-enable our-costs view when invoiced/sent/paid so selling prices are hidden
+  const [dismissed, setDismissed] = useState<DismissedWorkshopItem[]>(initialDismissed);
+  const [showDismissed, setShowDismissed] = useState(false);
   const isInvoiced = ["sent", "paid", "our_costs"].includes(invoiceStatus);
   const [ourCostsView, setOurCostsView] = useState(invoiceStatus === "our_costs" || isInvoiced);
+
+  // Keep dismissed in sync with prop
+  useEffect(() => { setDismissed(initialDismissed); }, [initialDismissed]);
 
   const hasEstimate = costLines.length > 0 || parseFloat(estimatedCost || "0") > 0;
   const hasQuote = !!job.holdedQuoteId;
@@ -2087,13 +2095,21 @@ function FinancialWorkflow({
   const invoiceSent = !!job.holdedInvoiceSentAt;
   const hasUnsentDoc = (job.holdedQuoteId && !quoteSent) || (job.holdedInvoiceId && !invoiceSent);
 
-  // Only show Generate button if the garage has actually added tasks or part requests
-  const completedTasks = tasks.filter(t => t.status === "done");
-  const hasGarageActivity = completedTasks.length > 0 || partRequests.length > 0;
-  const unresolvedFindings = findings.filter(f => !f.resolvedAt);
-  const garageActivityCount = completedTasks.length + partRequests.length + unresolvedFindings.length;
+  // Calculate pending workshop items (not yet imported AND not dismissed)
+  const dismissedSet = new Set(dismissed.map(d => `${d.sourceType}:${d.sourceId}`));
+  const importedSourceIds = new Set(costLines.filter(l => l.sourceType !== "manual" && l.sourceId).map(l => `${l.sourceType}:${l.sourceId}`));
 
-  // Unsent document warning — beforeunload
+  const completedTasks = tasks.filter(t => t.status === "done");
+  const billableTasks = completedTasks.filter(t => t.billable && parseFloat(t.estimatedHours ?? "0") > 0);
+  const activeParts = partRequests.filter(p => p.status !== "cancelled");
+
+  const pendingTasks = billableTasks.filter(t => !importedSourceIds.has(`task:${t.id}`) && !dismissedSet.has(`task:${t.id}`));
+  const pendingParts = activeParts.filter(p => !importedSourceIds.has(`part_request:${p.id}`) && !dismissedSet.has(`part_request:${p.id}`));
+  const pendingImportCount = pendingTasks.length + pendingParts.length;
+  const hasWorkshopPending = pendingImportCount > 0;
+  const dismissedCount = dismissed.length;
+
+  // Unsent doc warning
   useEffect(() => {
     if (!hasUnsentDoc) return;
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
@@ -2106,340 +2122,412 @@ function FinancialWorkflow({
     try { await fn(); } catch (e: any) { toast.error(e.message ?? "Action failed"); } finally { setLoading(null); }
   }
 
-  // Determine active workflow step: 0=estimate, 1=quote, 2=invoice, 3=paid
+  async function handleRestore(dismissedId: string) {
+    setDismissed(prev => prev.filter(d => d.id !== dismissedId));
+    await restoreWorkshopItem(dismissedId);
+    router.refresh();
+  }
+
+  async function handleRestoreAll() {
+    setDismissed([]);
+    await restoreAllWorkshopItems(job.id);
+    router.refresh();
+  }
+
   const activeStep = isPaid ? 3 : hasInvoice ? 2 : hasQuote ? 1 : 0;
 
-  // Source badge helper
   function sourceBadge(line: EstimateLineItem) {
-    if (line.sourceType === "task") return <span className="text-[9px] px-1 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">task</span>;
-    if (line.sourceType === "part_request") return <span className="text-[9px] px-1 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400">part</span>;
-    return <span className="text-[9px] px-1 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">manual</span>;
+    if (line.sourceType === "task") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400 font-medium">Workshop</span>;
+    if (line.sourceType === "part_request") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400 font-medium">Part</span>;
+    return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 font-medium">Manual</span>;
   }
 
   return (
-    <div className="divide-y divide-border/30">
+    <div className="p-6 space-y-6">
 
-      {/* ─── Step indicator ─── */}
-      <div className="px-6 py-3 flex items-center gap-0">
+      {/* ─── Step tabs ─── */}
+      <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1">
         {[
           { label: "Estimate", step: 0 },
           { label: "Quote", step: 1 },
           { label: "Invoice", step: 2 },
           { label: "Paid", step: 3 },
-        ].map((s, i, arr) => (
-          <div key={s.label} className="flex items-center">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              activeStep > s.step ? "text-emerald-600 dark:text-emerald-400" :
-              activeStep === s.step ? "text-foreground bg-muted" :
-              "text-muted-foreground/30"
-            }`}>
-              {activeStep > s.step && <CheckCircle className="h-3 w-3" />}
-              {s.label}
-            </div>
-            {i < arr.length - 1 && (
-              <div className={`w-6 h-px mx-0.5 ${activeStep > s.step ? "bg-emerald-300 dark:bg-emerald-700" : "bg-border/40"}`} />
-            )}
+        ].map((s) => (
+          <div key={s.label} className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
+            activeStep > s.step ? "text-emerald-600 dark:text-emerald-400" :
+            activeStep === s.step ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm" :
+            "text-gray-400 dark:text-gray-500"
+          )}>
+            {activeStep > s.step && <CheckCircle className="h-3 w-3" />}
+            {s.label}
           </div>
         ))}
       </div>
 
-      {/* ─── Garage activity notification ─── */}
-      {hasGarageActivity && !hasEstimate && (
-        <div className="mx-4 mb-0 mt-0 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40 px-3.5 py-2.5 text-[12px] text-blue-800 dark:text-blue-300">
-          <RefreshCw className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <div>
-            <p className="font-medium leading-snug">Werkplaats heeft werk klaarstaan</p>
-            <p className="text-blue-600/80 dark:text-blue-400/70 text-[11px] mt-0.5">
-              {completedTasks.length > 0 && `${completedTasks.length} afgeronde taak${completedTasks.length !== 1 ? "en" : ""}`}
-              {completedTasks.length > 0 && partRequests.length > 0 && " · "}
-              {partRequests.length > 0 && `${partRequests.length} onderdeel${partRequests.length !== 1 ? "en" : ""} aangevraagd`}
-              {unresolvedFindings.length > 0 && ` · ${unresolvedFindings.length} bevinding${unresolvedFindings.length !== 1 ? "en" : ""}`}
-              {" — klik 'Ophalen uit werkplaats' om de calculatie te genereren."}
-            </p>
+      {/* ─── Workshop sync banner ─── */}
+      {hasWorkshopPending && (
+        <div className="rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/60 px-4 py-4">
+          <div className="flex items-start gap-3">
+            <div className="p-1.5 rounded-lg bg-sky-100 dark:bg-sky-900/50 shrink-0 mt-0.5">
+              <RefreshCw className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
+                {pendingImportCount} item{pendingImportCount !== 1 ? "s" : ""} available from workshop
+              </p>
+              <p className="text-sm text-sky-700 dark:text-sky-400/80 mt-0.5">
+                {pendingTasks.length > 0 && `${pendingTasks.length} task${pendingTasks.length !== 1 ? "s" : ""}`}
+                {pendingTasks.length > 0 && pendingParts.length > 0 && ", "}
+                {pendingParts.length > 0 && `${pendingParts.length} part${pendingParts.length !== 1 ? "s" : ""}`}
+                {" can be added to this estimate."}
+              </p>
+            </div>
+            <button
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0CC0DF] text-white text-sm font-medium shadow-sm hover:bg-[#0bb0cc] transition-colors disabled:opacity-50"
+              onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
+              disabled={!!loading}
+            >
+              {loading === "generate" ? <Spinner className="h-3.5 w-3.5" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Import
+            </button>
           </div>
         </div>
       )}
 
-      {/* ─── STEP 1: Estimate ─── */}
-      <div className="px-6 py-5 space-y-5">
-        {/* Auto-calculated pricing summary */}
-        <div className="flex items-center gap-6 text-xs">
-          <span className="text-muted-foreground">Estimated{costLines.length > 0 && <span className="opacity-40 ml-0.5">· auto</span>}</span>
-          <span className="font-bold tabular-nums text-sm">€{costLines.length > 0 ? costLinesTotalInclTax.toFixed(2) : parseFloat(estimatedCost || "0").toFixed(2)}</span>
-          <span className="text-muted-foreground/60">·</span>
-          <span className="text-muted-foreground">Our Cost</span>
-          <span className="tabular-nums text-muted-foreground">€{costLines.length > 0 ? costLinesInternalTotal.toFixed(2) : parseFloat(internalCost || "0").toFixed(2)}</span>
-          <span className="text-muted-foreground/60">·</span>
-          <span className="text-muted-foreground/50">Margin</span>
-          <span className="tabular-nums text-muted-foreground/60">{costLinesInternalTotal > 0 ? `€${(costLinesTotal - costLinesInternalTotal).toFixed(2)} (${Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100)}%)` : costLinesTotal > 0 ? `€${costLinesTotal.toFixed(2)}` : "—"}</span>
+      {/* ─── Totals row ─── */}
+      <div className="flex items-baseline gap-10">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Estimated</p>
+          <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tabular-nums mt-0.5">
+            €{costLines.length > 0 ? costLinesTotalInclTax.toFixed(2) : parseFloat(estimatedCost || "0").toFixed(2)}
+          </p>
         </div>
-
-        {/* Warranty toggle */}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox
-            checked={warrantyFlag}
-            onCheckedChange={(checked) => {
-              const val = checked === true;
-              setWarrantyFlag(val);
-              if (val) {
-                setInvoiceStatus("warranty");
-                if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                  setStatus("completed");
-                }
-              } else if (!val && invoiceStatus === "warranty") {
-                setInvoiceStatus("not_invoiced");
-              }
-            }}
-          />
-          <span className="text-xs text-muted-foreground">Warranty / internal cost</span>
-        </label>
-
-        {/* Line items */}
-        <div className="border-t border-border/30 pt-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Line items</span>
-              <button
-                onClick={() => setOurCostsView(!ourCostsView)}
-                className={cn(
-                  "inline-flex items-center h-5 text-[10px] px-1.5 rounded font-medium transition-colors",
-                  ourCostsView
-                    ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-                title={ourCostsView ? "Switch to full view" : "Show only our purchase costs"}
-              >
-                Our costs
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-              {hasGarageActivity && (
-                <button
-                  className="inline-flex items-center h-6 text-[11px] px-2 rounded-md text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 transition-colors relative"
-                  onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
-                  disabled={!!loading}
-                  title={`Ophalen uit werkplaats (${completedTasks.length} taken, ${partRequests.length} onderdelen)`}
-                >
-                  {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3 mr-0.5" />}
-                  Ophalen uit werkplaats
-                  <span className="ml-1 inline-flex items-center justify-center h-3.5 min-w-[14px] rounded-full bg-blue-600 text-white text-[9px] font-bold px-0.5">
-                    {garageActivityCount}
-                  </span>
-                </button>
-              )}
-              <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>Labour</button>
-              <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addCustomLine}>Custom</button>
-              <button className="inline-flex items-center h-6 text-[11px] px-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>Part</button>
-            </div>
-          </div>
-
-          {showPartPicker && (
-            <div className="mb-3 border border-border/50 rounded-lg p-2 bg-background/50">
-              <Input placeholder="Search parts..." value={partSearch} onChange={(e) => setPartSearch(e.target.value)} className="h-7 text-xs rounded-lg mb-2" autoFocus />
-              {/* Category tabs */}
-              <div className="flex flex-wrap gap-1 mb-2">
-                <button
-                  type="button"
-                  onClick={() => setPartCategory(null)}
-                  className={cn(
-                    "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium transition-colors",
-                    !partCategory ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  All
-                </button>
-                {partCategories.filter(c => c.active).map((cat) => {
-                  const CatIcon = ICON_MAP[cat.icon] ?? Package;
-                  return (
-                    <button
-                      key={cat.key}
-                      type="button"
-                      onClick={() => setPartCategory(partCategory === cat.key ? null : cat.key)}
-                      className={cn(
-                        "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium transition-colors",
-                        partCategory === cat.key ? `${cat.color}` : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                      )}
-                    >
-                      <CatIcon className="h-3 w-3" />
-                      {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="max-h-48 overflow-y-auto space-y-0.5">
-                {filteredParts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-2 text-center">No parts found</p>
-                ) : (
-                  filteredParts.map((p) => {
-                    const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
-                    const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
-                    const sellPrice = baseCost * (1 + markup / 100);
-                    return (
-                      <button key={p.id} type="button" onClick={() => addPartLine(p)} className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors flex justify-between items-center">
-                        <span className="truncate">{p.name}{p.partNumber && <span className="text-muted-foreground ml-1">({p.partNumber})</span>}</span>
-                        <span className="text-muted-foreground shrink-0 ml-2">€{sellPrice.toFixed(2)}{baseCost > 0 && <span className="text-[10px] ml-1 opacity-60">+{markup}%</span>}</span>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {costLines.length > 0 ? (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider pb-1 border-b border-border/30">
-                <span className="w-14 shrink-0">Source</span>
-                <span className="flex-1">Description</span>
-                <span className="w-14 text-center">Qty</span>
-                <span className="w-20 text-right">Our cost</span>
-                {!ourCostsView && <span className="w-20 text-right">Sell</span>}
-                {!ourCostsView && <span className="w-16 text-right">Total</span>}
-                <span className="w-6" />
-              </div>
-              {costLines.map((line) => (
-                <div key={line.id} className="flex items-center gap-2">
-                  <span className="w-14 shrink-0">{sourceBadge(line)}</span>
-                  <Input value={line.description} onChange={(e) => updateCostLine(line.id, "description", e.target.value)} placeholder={line.type === "labour" ? "Labour description" : "Description"} className="h-7 text-xs rounded-lg flex-1" />
-                  <Input type="number" min="0.25" step={line.type === "labour" ? "0.25" : "1"} value={line.quantity} onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)} className="h-7 text-xs rounded-lg w-14 text-center" />
-                  <div className="relative w-20">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                    <Input type="number" step="0.01" min="0" value={line.internalCost} onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg text-muted-foreground" />
-                  </div>
-                  {!ourCostsView && (
-                    <div className="relative w-20">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">€</span>
-                      <Input type="number" step="0.01" min="0" value={line.unitPrice} onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg" />
-                    </div>
-                  )}
-                  {!ourCostsView && <span className="text-xs font-medium w-16 text-right tabular-nums">€{(parseFloat(line.quantity) * parseFloat(line.unitPrice)).toFixed(2)}</span>}
-                  <button className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeCostLine(line.id)}><XIcon className="h-3 w-3" /></button>
-                </div>
-              ))}
-
-              {/* Discount */}
-              <div className="flex items-center justify-between pt-2 border-t border-border/30 gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Discount</span>
-                  <div className="relative w-16">
-                    <Input type="number" min="0" max="100" step="1" value={discountPercent} onChange={(e) => handleDiscountChange(parseFloat(e.target.value) || 0)} className="h-6 text-xs pr-5 text-right rounded-lg" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">%</span>
-                  </div>
-                </div>
-                {discountPercent > 0 && <span className="text-xs text-destructive tabular-nums">-€{discountAmount.toFixed(2)}</span>}
-              </div>
-
-              {/* Totals */}
-              <div className="space-y-1 pt-1">
-                {ourCostsView ? (
-                  <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
-                    <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">Total our costs</span>
-                    <span className="text-sm font-bold tabular-nums text-violet-700 dark:text-violet-400">€{costLinesInternalTotal.toFixed(2)}</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Subtotal excl. VAT</span>
-                      <span className="text-xs tabular-nums">€{costLinesTotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">VAT ({settings.defaultTax}%)</span>
-                      <span className="text-xs tabular-nums text-muted-foreground">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
-                      <span className="text-sm font-semibold">Total incl. VAT</span>
-                      <span className="text-sm font-bold tabular-nums">€{costLinesTotalInclTax.toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="py-4 text-center">
-              <p className="text-xs text-muted-foreground">Nog geen regels</p>
-              <div className="flex items-center justify-center gap-1.5 mt-2">
-                {hasGarageActivity && (
-                  <button
-                    className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors gap-1"
-                    onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
-                    disabled={!!loading}
-                  >
-                    {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3" />}
-                    Ophalen uit werkplaats
-                    <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-white/30 text-white text-[9px] font-bold px-0.5">
-                      {garageActivityCount}
-                    </span>
-                  </button>
-                )}
-                <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={addLabourLine}>+ Labour</button>
-                <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
-              </div>
-            </div>
-          )}
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Our Cost</p>
+          <p className="text-lg font-medium text-gray-700 dark:text-gray-300 tabular-nums mt-0.5">
+            €{costLines.length > 0 ? costLinesInternalTotal.toFixed(2) : parseFloat(internalCost || "0").toFixed(2)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Margin</p>
+          <p className="text-lg font-medium text-gray-700 dark:text-gray-300 tabular-nums mt-0.5">
+            {costLinesInternalTotal > 0 ? `€${(costLinesTotal - costLinesInternalTotal).toFixed(2)}` : costLinesTotal > 0 ? `€${costLinesTotal.toFixed(2)}` : "—"}
+            {costLinesInternalTotal > 0 && <span className="text-sm text-gray-400 dark:text-gray-500 ml-1">({Math.round((costLinesTotal - costLinesInternalTotal) / costLinesInternalTotal * 100)}%)</span>}
+          </p>
         </div>
       </div>
 
-      {/* ─── STEP 2: Quote ─── */}
+      {/* ─── Warranty toggle ─── */}
+      <label className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-gray-50 dark:bg-gray-900/50 px-3 py-2">
+        <Checkbox
+          checked={warrantyFlag}
+          onCheckedChange={(checked) => {
+            const val = checked === true;
+            setWarrantyFlag(val);
+            if (val) {
+              setInvoiceStatus("warranty");
+              if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
+                setStatus("completed");
+              }
+            } else if (!val && invoiceStatus === "warranty") {
+              setInvoiceStatus("not_invoiced");
+            }
+          }}
+        />
+        <span className="text-sm text-gray-700 dark:text-gray-300">Warranty / internal cost</span>
+      </label>
+
+      {/* ─── Line items section ─── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Line items</h3>
+            <button
+              onClick={() => setOurCostsView(!ourCostsView)}
+              className={cn(
+                "inline-flex items-center h-6 text-[11px] px-2 rounded-lg font-medium transition-colors",
+                ourCostsView
+                  ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
+                  : "text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800"
+              )}
+            >
+              Our costs
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {hasWorkshopPending && costLines.length > 0 && (
+              <button
+                className="inline-flex items-center gap-1 h-7 text-xs px-2.5 rounded-xl text-sky-600 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/50 transition-colors font-medium"
+                onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
+                disabled={!!loading}
+              >
+                {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3" />}
+                Sync workshop
+                <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300 text-[9px] font-bold px-1">{pendingImportCount}</span>
+              </button>
+            )}
+            <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={addLabourLine}>+ Labour</button>
+            <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={addCustomLine}>+ Custom</button>
+            <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
+          </div>
+        </div>
+
+        {showPartPicker && (
+          <div className="mb-4 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 bg-gray-50/50 dark:bg-gray-900/30">
+            <Input placeholder="Search parts..." value={partSearch} onChange={(e) => setPartSearch(e.target.value)} className="h-8 text-sm rounded-xl mb-2" autoFocus />
+            <div className="flex flex-wrap gap-1 mb-2">
+              <button
+                type="button"
+                onClick={() => setPartCategory(null)}
+                className={cn(
+                  "inline-flex items-center gap-1 h-6 px-2.5 rounded-lg text-[11px] font-medium transition-colors",
+                  !partCategory ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900" : "bg-gray-100 text-gray-600 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                )}
+              >
+                All
+              </button>
+              {partCategories.filter(c => c.active).map((cat) => {
+                const CatIcon = ICON_MAP[cat.icon] ?? Package;
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => setPartCategory(partCategory === cat.key ? null : cat.key)}
+                    className={cn(
+                      "inline-flex items-center gap-1 h-6 px-2.5 rounded-lg text-[11px] font-medium transition-colors",
+                      partCategory === cat.key ? `${cat.color}` : "bg-gray-100 text-gray-600 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                    )}
+                  >
+                    <CatIcon className="h-3 w-3" />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="max-h-48 overflow-y-auto space-y-0.5">
+              {filteredParts.length === 0 ? (
+                <p className="text-sm text-gray-400 py-3 text-center">No parts found</p>
+              ) : (
+                filteredParts.map((p) => {
+                  const baseCost = p.defaultCost ? parseFloat(p.defaultCost) : 0;
+                  const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
+                  const sellPrice = baseCost * (1 + markup / 100);
+                  return (
+                    <button key={p.id} type="button" onClick={() => addPartLine(p)} className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-white dark:hover:bg-gray-800 transition-colors flex justify-between items-center">
+                      <span className="truncate">{p.name}{p.partNumber && <span className="text-gray-400 ml-1">({p.partNumber})</span>}</span>
+                      <span className="text-gray-500 shrink-0 ml-2 tabular-nums">€{sellPrice.toFixed(2)}{baseCost > 0 && <span className="text-[10px] ml-1 text-gray-400">+{markup}%</span>}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {costLines.length > 0 ? (
+          <div className="space-y-2">
+            {/* Column headers */}
+            <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider px-4 pb-1">
+              <span className="w-16 shrink-0">Source</span>
+              <span className="flex-1">Description</span>
+              <span className="w-14 text-center">Qty</span>
+              <span className="w-20 text-right">Our cost</span>
+              {!ourCostsView && <span className="w-20 text-right">Sell</span>}
+              {!ourCostsView && <span className="w-16 text-right">Total</span>}
+              <span className="w-7" />
+            </div>
+
+            {/* Line item rows */}
+            {costLines.map((line) => (
+              <div key={line.id} className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                <span className="w-16 shrink-0">{sourceBadge(line)}</span>
+                <Input value={line.description} onChange={(e) => updateCostLine(line.id, "description", e.target.value)} placeholder={line.type === "labour" ? "Labour description" : "Description"} className="h-7 text-xs rounded-lg flex-1 border-gray-200 dark:border-gray-700" />
+                <Input type="number" min="0.25" step={line.type === "labour" ? "0.25" : "1"} value={line.quantity} onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)} className="h-7 text-xs rounded-lg w-14 text-center border-gray-200 dark:border-gray-700" />
+                <div className="relative w-20">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">€</span>
+                  <Input type="number" step="0.01" min="0" value={line.internalCost} onChange={(e) => updateCostLine(line.id, "internalCost", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg text-gray-500 border-gray-200 dark:border-gray-700" />
+                </div>
+                {!ourCostsView && (
+                  <div className="relative w-20">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">€</span>
+                    <Input type="number" step="0.01" min="0" value={line.unitPrice} onChange={(e) => updateCostLine(line.id, "unitPrice", parseFloat(e.target.value) || 0)} className="h-7 text-xs pl-5 pr-2 text-right rounded-lg border-gray-200 dark:border-gray-700" />
+                  </div>
+                )}
+                {!ourCostsView && <span className="text-xs font-medium w-16 text-right tabular-nums text-gray-900 dark:text-gray-100">€{(parseFloat(line.quantity) * parseFloat(line.unitPrice)).toFixed(2)}</span>}
+                <button className="h-7 w-7 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-300 hover:text-red-500 transition-colors" onClick={() => removeCostLine(line.id)}><XIcon className="h-3 w-3" /></button>
+              </div>
+            ))}
+
+            {/* Discount */}
+            <div className="flex items-center justify-between pt-3 gap-2 px-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Discount</span>
+                <div className="relative w-16">
+                  <Input type="number" min="0" max="100" step="1" value={discountPercent} onChange={(e) => handleDiscountChange(parseFloat(e.target.value) || 0)} className="h-6 text-xs pr-5 text-right rounded-lg border-gray-200 dark:border-gray-700" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">%</span>
+                </div>
+              </div>
+              {discountPercent > 0 && <span className="text-xs text-red-500 tabular-nums font-medium">-€{discountAmount.toFixed(2)}</span>}
+            </div>
+
+            {/* Summary totals */}
+            <div className="rounded-xl bg-gray-50 dark:bg-gray-900/40 px-4 py-3 space-y-1.5 mt-2">
+              {ourCostsView ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">Total our costs</span>
+                  <span className="text-sm font-bold tabular-nums text-violet-700 dark:text-violet-400">€{costLinesInternalTotal.toFixed(2)}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Subtotal excl. VAT</span>
+                    <span className="text-xs tabular-nums text-gray-700 dark:text-gray-300">€{costLinesTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">VAT ({settings.defaultTax}%)</span>
+                    <span className="text-xs tabular-nums text-gray-400 dark:text-gray-500">€{(costLinesTotal * settings.defaultTax / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total incl. VAT</span>
+                    <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-gray-100">€{costLinesTotalInclTax.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ─── Empty state ─── */
+          <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30 py-10 text-center">
+            <Receipt className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nog geen regels</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
+              Voeg handmatig arbeid of onderdelen toe, of haal items op uit de werkplaats.
+            </p>
+            <div className="flex items-center justify-center gap-2 mt-4">
+              {hasWorkshopPending ? (
+                <button
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0CC0DF] text-white text-sm font-medium shadow-sm hover:bg-[#0bb0cc] transition-colors disabled:opacity-50"
+                  onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
+                  disabled={!!loading}
+                >
+                  {loading === "generate" ? <Spinner className="h-3.5 w-3.5" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  Ophalen uit werkplaats
+                  <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-white/20 text-white text-[10px] font-bold px-1">{pendingImportCount}</span>
+                </button>
+              ) : null}
+              <button className="inline-flex items-center h-9 text-sm px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={addLabourLine}>+ Labour</button>
+              <button className="inline-flex items-center h-9 text-sm px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
+            </div>
+          </div>
+        )}
+
+        {/* Dismissed items management */}
+        {dismissedCount > 0 && (
+          <div className="mt-3">
+            <button
+              className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              onClick={() => setShowDismissed(!showDismissed)}
+            >
+              {dismissedCount} workshop item{dismissedCount !== 1 ? "s" : ""} hidden {showDismissed ? "▴" : "▾"}
+            </button>
+            {showDismissed && (
+              <div className="mt-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3 space-y-1.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Dismissed items</span>
+                  <button
+                    className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-medium transition-colors"
+                    onClick={handleRestoreAll}
+                  >
+                    Restore all
+                  </button>
+                </div>
+                {dismissed.map((d) => {
+                  const sourceLabel = d.sourceType === "task"
+                    ? billableTasks.find(t => t.id === d.sourceId)?.title ?? "Task"
+                    : activeParts.find(p => p.id === d.sourceId)?.partName ?? "Part";
+                  return (
+                    <div key={d.id} className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 py-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 font-medium shrink-0">{d.sourceType === "task" ? "Task" : "Part"}</span>
+                        <span className="truncate">{sourceLabel}</span>
+                      </div>
+                      <button
+                        className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-medium shrink-0 transition-colors"
+                        onClick={() => handleRestore(d.id)}
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Quote section ─── */}
       {(costLines.length > 0 || hasQuote) && (
-      <div className="px-6 py-3 space-y-2">
+      <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-foreground">Quote</p>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Quote</h3>
           {hasQuote && (
             <div className="flex items-center gap-2">
-              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">
+              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#0CC0DF] hover:underline">
                 {job.holdedQuoteNum} ↗
               </a>
               {quoteSent ? (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">Sent</Badge>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 font-medium">Sent</span>
               ) : (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">Not sent</Badge>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 font-medium">Not sent</span>
               )}
             </div>
           )}
         </div>
 
         {hasQuote ? (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}>
+              <Button variant="outline" size="sm" className="flex-1 text-xs rounded-xl" onClick={() => window.open(`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`, "_blank")}>
                 View PDF
               </Button>
               {job.customer?.email && (
-                <Button variant={quoteSent ? "outline" : "default"} size="sm" className="flex-1 text-xs" disabled={loading === "send-quote"}
+                <Button variant={quoteSent ? "outline" : "default"} size="sm" className="flex-1 text-xs rounded-xl" disabled={loading === "send-quote"}
                   onClick={() => handleAction("send-quote", async () => { await sendHoldedQuote(job.id); toast.success("Quote sent to " + job.customer.email); router.refresh(); })}>
                   {loading === "send-quote" ? <Spinner className="mr-1" /> : null}{quoteSent ? "Resend" : "Email Quote"}
                 </Button>
               )}
-              <a href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+              <a href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
                 Holded ↗
               </a>
             </div>
             {confirmDeleteQuote ? (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
-                <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">Delete quote {job.holdedQuoteNum}?</span>
-                <Button variant="destructive" size="sm" className="h-6 text-[11px] px-2" disabled={loading === "delete-quote"}
+              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950/50">
+                <span className="text-xs text-red-700 dark:text-red-400 flex-1">Delete quote {job.holdedQuoteNum}?</span>
+                <Button variant="destructive" size="sm" className="h-7 text-xs px-3 rounded-xl" disabled={loading === "delete-quote"}
                   onClick={() => handleAction("delete-quote", async () => { await deleteHoldedQuote(job.id); toast.success("Quote deleted"); setConfirmDeleteQuote(false); router.refresh(); })}>
                   {loading === "delete-quote" ? <Spinner /> : "Delete"}
                 </Button>
-                <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteQuote(false)}>Cancel</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs px-3 rounded-xl" onClick={() => setConfirmDeleteQuote(false)}>Cancel</Button>
               </div>
             ) : (
-              <button className="text-[11px] text-muted-foreground/50 hover:text-destructive transition-colors" onClick={() => setConfirmDeleteQuote(true)}>Delete quote</button>
+              <button className="text-[11px] text-gray-400 hover:text-red-500 transition-colors" onClick={() => setConfirmDeleteQuote(true)}>Delete quote</button>
             )}
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button variant="default" size="sm" className="flex-1 text-xs"
+            <Button variant="default" size="sm" className="flex-1 text-xs rounded-xl"
               disabled={!job.customer || costLines.length === 0 || !!loading}
               onClick={() => handleAction("create-quote", async () => {
                 const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 })), discountPercent);
                 toast.success(`Quote ${result.quoteNum} created`);
                 router.refresh();
               })}>
-              {loading === "create-quote" ? <Spinner className="mr-1" /> : null}Send Quote (through Holded)
+              {loading === "create-quote" ? <Spinner className="mr-1" /> : null}Create Quote
             </Button>
             {job.customer?.email && (
-              <Button variant="outline" size="sm" className="flex-1 text-xs"
+              <Button variant="outline" size="sm" className="flex-1 text-xs rounded-xl"
                 disabled={!job.customer || costLines.length === 0 || !!loading}
                 onClick={() => handleAction("create-send-quote", async () => {
                   const result = await createHoldedQuote(job.id, costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 })), discountPercent);
@@ -2447,70 +2535,70 @@ function FinancialWorkflow({
                   toast.success(`Quote ${result.quoteNum} created & sent`);
                   router.refresh();
                 })}>
-                {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}Send & Email Quote
+                {loading === "create-send-quote" ? <Spinner className="mr-1" /> : null}Create & Email
               </Button>
             )}
-            {!job.customer && <p className="text-[11px] text-muted-foreground">Link a contact first</p>}
+            {!job.customer && <p className="text-xs text-gray-400">Link a contact first</p>}
           </div>
         )}
       </div>
       )}
 
-      {/* ─── STEP 3: Invoice ─── */}
+      {/* ─── Invoice section ─── */}
       {(hasQuote || hasInvoice) && (
-      <div className="px-6 py-3 space-y-2">
+      <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-foreground">Invoice</p>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Invoice</h3>
           {hasInvoice && (
             <div className="flex items-center gap-2">
-              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">
+              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#0CC0DF] hover:underline">
                 {job.holdedInvoiceNum} ↗
               </a>
               {invoiceSent ? (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">Sent</Badge>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 font-medium">Sent</span>
               ) : (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">Not sent</Badge>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 font-medium">Not sent</span>
               )}
               {isPaid && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800">Paid</Badge>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 font-medium">Paid</span>
               )}
             </div>
           )}
         </div>
 
         {hasInvoice ? (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}>
+              <Button variant="outline" size="sm" className="flex-1 text-xs rounded-xl" onClick={() => window.open(`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`, "_blank")}>
                 View PDF
               </Button>
               {job.customer?.email && (
-                <Button variant={invoiceSent ? "outline" : "default"} size="sm" className="flex-1 text-xs" disabled={loading === "send-invoice"}
+                <Button variant={invoiceSent ? "outline" : "default"} size="sm" className="flex-1 text-xs rounded-xl" disabled={loading === "send-invoice"}
                   onClick={() => handleAction("send-invoice", async () => { await sendHoldedInvoice(job.id); toast.success("Invoice sent to " + job.customer.email); router.refresh(); })}>
                   {loading === "send-invoice" ? <Spinner className="mr-1" /> : null}{invoiceSent ? "Resend" : "Email Invoice"}
                 </Button>
               )}
-              <a href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+              <a href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
                 Holded ↗
               </a>
             </div>
             {job.invoiceStatus !== "paid" && (
               confirmDeleteInvoice ? (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 dark:border-red-900 dark:bg-red-950/50">
-                  <span className="text-[11px] text-red-700 dark:text-red-400 flex-1">Delete invoice {job.holdedInvoiceNum}?</span>
-                  <Button variant="destructive" size="sm" className="h-6 text-[11px] px-2" disabled={loading === "delete-invoice"}
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950/50">
+                  <span className="text-xs text-red-700 dark:text-red-400 flex-1">Delete invoice {job.holdedInvoiceNum}?</span>
+                  <Button variant="destructive" size="sm" className="h-7 text-xs px-3 rounded-xl" disabled={loading === "delete-invoice"}
                     onClick={() => handleAction("delete-invoice", async () => { await deleteHoldedInvoice(job.id); toast.success("Invoice deleted"); setConfirmDeleteInvoice(false); router.refresh(); })}>
                     {loading === "delete-invoice" ? <Spinner /> : "Delete"}
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteInvoice(false)}>Cancel</Button>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs px-3 rounded-xl" onClick={() => setConfirmDeleteInvoice(false)}>Cancel</Button>
                 </div>
               ) : (
-                <button className="text-[11px] text-muted-foreground/50 hover:text-destructive transition-colors" onClick={() => setConfirmDeleteInvoice(true)}>Delete invoice</button>
+                <button className="text-[11px] text-gray-400 hover:text-red-500 transition-colors" onClick={() => setConfirmDeleteInvoice(true)}>Delete invoice</button>
               )
             )}
           </div>
         ) : (
-          <Button variant="default" size="sm" className="w-full text-xs"
+          <Button variant="default" size="sm" className="w-full text-xs rounded-xl"
             disabled={!job.customer || costLines.length === 0 || !!loading}
             onClick={() => handleAction("create-invoice", async () => {
               const items = costLines.map(l => ({ name: l.description || "Line item", units: parseFloat(l.quantity), subtotal: parseFloat(l.unitPrice) * parseFloat(l.quantity), tax: settings.defaultTax, discount: 0 }));
@@ -2518,7 +2606,7 @@ function FinancialWorkflow({
               toast.success(`Invoice ${result.invoiceNum} created`);
               router.refresh();
             })}>
-            {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}Send Invoice (through Holded)
+            {loading === "create-invoice" ? <Spinner className="mr-1" /> : null}Create Invoice
           </Button>
         )}
       </div>
@@ -2526,8 +2614,8 @@ function FinancialWorkflow({
 
       {/* Unsent warning */}
       {hasUnsentDoc && (
-        <div className="px-6 py-3">
-          <div className="flex items-center gap-2 rounded-lg border border-amber-200/60 bg-amber-50/50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+        <div className="pt-4">
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             <span>
               {job.holdedQuoteId && !quoteSent && job.holdedInvoiceId && !invoiceSent ? "Quote and invoice not yet emailed" :
@@ -2539,8 +2627,8 @@ function FinancialWorkflow({
 
       {/* Verify links */}
       {(job.holdedInvoiceId || job.holdedQuoteId) && (
-        <div className="px-6 py-2">
-          <button className="w-full text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors py-1"
+        <div className="pt-2">
+          <button className="w-full text-[11px] text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors py-1"
             onClick={() => handleAction("verify", async () => {
               const result = await verifyHoldedDocuments(job.id);
               if (result.fixed) { toast.success(result.issues.join(". ")); router.refresh(); }

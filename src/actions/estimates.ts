@@ -7,9 +7,10 @@ import {
   partRequests,
   repairJobs,
   parts,
+  dismissedWorkshopItems,
 } from "@/lib/db/schema";
-import { requireRole } from "@/lib/auth-utils";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { requireRole, requireAuth } from "@/lib/auth-utils";
+import { eq, and, asc, desc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,6 +36,13 @@ export async function generateEstimateFromWork(
   defaultMarkup: number = 25,
 ) {
   await requireRole("staff");
+
+  // Fetch dismissed items so we skip them
+  const dismissed = await db
+    .select({ sourceType: dismissedWorkshopItems.sourceType, sourceId: dismissedWorkshopItems.sourceId })
+    .from(dismissedWorkshopItems)
+    .where(eq(dismissedWorkshopItems.repairJobId, repairJobId));
+  const dismissedSet = new Set(dismissed.map((d) => `${d.sourceType}:${d.sourceId}`));
 
   // Get all billable tasks that are included in estimate
   const taskRows = await db
@@ -91,9 +99,10 @@ export async function generateEstimateFromWork(
       ),
     );
 
-  // Generate labour lines from tasks
+  // Generate labour lines from tasks (skip dismissed)
   const labourLines = taskRows
     .filter((t) => {
+      if (dismissedSet.has(`task:${t.id}`)) return false;
       const hours = t.estimatedHours ? parseFloat(t.estimatedHours) : 0;
       return hours > 0;
     })
@@ -113,26 +122,28 @@ export async function generateEstimateFromWork(
       };
     });
 
-  // Generate part lines from part requests
-  const partLines = activeParts.map((p, i) => {
-    const cost = p.unitCost ? parseFloat(p.unitCost) : 0;
-    const markup = p.markupPercent ? parseFloat(p.markupPercent) : defaultMarkup;
-    let sell = p.sellPrice ? parseFloat(p.sellPrice) : 0;
-    if (!sell && cost > 0) {
-      sell = cost * (1 + markup / 100);
-    }
-    return {
-      repairJobId,
-      type: "part" as const,
-      sourceType: "part_request" as const,
-      sourceId: p.id,
-      description: p.partName,
-      quantity: String(p.quantity),
-      unitPrice: String(sell.toFixed(2)),
-      internalCost: String(cost),
-      sortOrder: labourLines.length + i,
-    };
-  });
+  // Generate part lines from part requests (skip dismissed)
+  const partLines = activeParts
+    .filter((p) => !dismissedSet.has(`part_request:${p.id}`))
+    .map((p, i) => {
+      const cost = p.unitCost ? parseFloat(p.unitCost) : 0;
+      const markup = p.markupPercent ? parseFloat(p.markupPercent) : defaultMarkup;
+      let sell = p.sellPrice ? parseFloat(p.sellPrice) : 0;
+      if (!sell && cost > 0) {
+        sell = cost * (1 + markup / 100);
+      }
+      return {
+        repairJobId,
+        type: "part" as const,
+        sourceType: "part_request" as const,
+        sourceId: p.id,
+        description: p.partName,
+        quantity: String(p.quantity),
+        unitPrice: String(sell.toFixed(2)),
+        internalCost: String(cost),
+        sortOrder: labourLines.length + i,
+      };
+    });
 
   const allLines = [...labourLines, ...partLines];
 
@@ -253,13 +264,27 @@ export async function updateEstimateLineItem(
 }
 
 export async function removeEstimateLineItem(lineId: string) {
-  await requireRole("staff");
+  const session = await requireAuth();
 
   const [line] = await db
-    .select({ repairJobId: estimateLineItems.repairJobId })
+    .select({
+      repairJobId: estimateLineItems.repairJobId,
+      sourceType: estimateLineItems.sourceType,
+      sourceId: estimateLineItems.sourceId,
+    })
     .from(estimateLineItems)
     .where(eq(estimateLineItems.id, lineId));
   if (!line) throw new Error("Line item not found");
+
+  // Auto-dismiss workshop-sourced items so they don't reappear on next sync
+  if (line.sourceType !== "manual" && line.sourceId) {
+    await db.insert(dismissedWorkshopItems).values({
+      repairJobId: line.repairJobId,
+      sourceType: line.sourceType,
+      sourceId: line.sourceId,
+      dismissedBy: session.user?.id ?? null,
+    });
+  }
 
   await db.delete(estimateLineItems).where(eq(estimateLineItems.id, lineId));
 
@@ -274,5 +299,31 @@ export async function updateDiscountPercent(repairJobId: string, percent: number
     .set({ discountPercent: String(Math.max(0, Math.min(100, percent))), updatedAt: new Date() })
     .where(eq(repairJobs.id, repairJobId));
   await syncEstimateTotals(repairJobId);
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DISMISSED WORKSHOP ITEMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getDismissedWorkshopItems(repairJobId: string) {
+  return db
+    .select()
+    .from(dismissedWorkshopItems)
+    .where(eq(dismissedWorkshopItems.repairJobId, repairJobId));
+}
+
+export async function restoreWorkshopItem(dismissedId: string) {
+  await requireRole("staff");
+  await db
+    .delete(dismissedWorkshopItems)
+    .where(eq(dismissedWorkshopItems.id, dismissedId));
+}
+
+export async function restoreAllWorkshopItems(repairJobId: string) {
+  await requireRole("staff");
+  await db
+    .delete(dismissedWorkshopItems)
+    .where(eq(dismissedWorkshopItems.repairJobId, repairJobId));
   revalidatePath(`/repairs/${repairJobId}`);
 }

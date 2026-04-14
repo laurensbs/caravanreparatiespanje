@@ -6,7 +6,7 @@ import { getTags, getRepairTags } from "@/actions/tags";
 import { getUsers } from "@/actions/users";
 import { getAllCustomers } from "@/actions/customers";
 import { getRepairTasks, getRepairWorkers, getActiveUsers, getRepairFindings, getRepairBlockers } from "@/actions/garage";
-import { getEstimateLineItems } from "@/actions/estimates";
+import { getEstimateLineItems, getDismissedWorkshopItems } from "@/actions/estimates";
 import { getRepairPhotos } from "@/actions/photos";
 import { getJobTimeEntries, getJobActiveTimers } from "@/actions/time-entries";
 import { notFound } from "next/navigation";
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers, dismissedWorkshopItems] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
@@ -48,6 +48,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getRepairPhotos(id),
     getJobTimeEntries(id),
     getJobActiveTimers(id),
+    getDismissedWorkshopItems(id),
   ]);
   if (!job) notFound();
 
@@ -73,6 +74,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       findings={findings}
       blockers={blockers}
       estimateLines={estimateLines}
+      dismissedWorkshopItems={dismissedWorkshopItems}
       partCategories={partCategories}
       photos={photos}
       timeEntries={timeEntries}

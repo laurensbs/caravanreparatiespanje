@@ -1585,6 +1585,46 @@ export const estimateLineItemsRelations = relations(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DISMISSED WORKSHOP ITEMS (track manually removed workshop-sourced items)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const dismissedWorkshopItems = pgTable(
+  "dismissed_workshop_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    sourceType: estimateLineSourceEnum("source_type").notNull(),
+    sourceId: uuid("source_id").notNull(),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    dismissedBy: uuid("dismissed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+  },
+  (table) => [
+    index("dismissed_workshop_items_job_idx").on(table.repairJobId),
+    index("dismissed_workshop_items_source_idx").on(
+      table.repairJobId,
+      table.sourceType,
+      table.sourceId,
+    ),
+  ],
+);
+
+export const dismissedWorkshopItemsRelations = relations(
+  dismissedWorkshopItems,
+  ({ one }) => ({
+    repairJob: one(repairJobs, {
+      fields: [dismissedWorkshopItems.repairJobId],
+      references: [repairJobs.id],
+    }),
+  }),
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // QUOTE OVERRIDES (dismiss or add note to uninvoiced Holded quotes)
 // ─────────────────────────────────────────────────────────────────────────────
 

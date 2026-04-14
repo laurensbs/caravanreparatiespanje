@@ -6,6 +6,8 @@ import {
   getContact,
   createContact,
   updateContact as updateHoldedContact,
+  createProduct,
+  updateProduct as updateHoldedProduct,
   type HoldedContact,
   type HoldedProduct,
 } from "@/lib/holded/invoices";
@@ -433,6 +435,52 @@ export async function pushSupplierToHolded(supplierId: string): Promise<void> {
       .update(suppliers)
       .set({ holdedContactId: result.id, updatedAt: new Date() })
       .where(eq(suppliers.id, supplierId));
+  }
+}
+
+// ─── Push a single part to Holded ───
+
+export async function pushPartToHolded(partId: string): Promise<void> {
+  if (!isHoldedConfigured()) return;
+
+  const [part] = await db
+    .select()
+    .from(parts)
+    .where(eq(parts.id, partId))
+    .limit(1);
+  if (!part) return;
+
+  const cost = part.defaultCost ? parseFloat(part.defaultCost) : undefined;
+  const markup = part.markupPercent ? parseFloat(part.markupPercent) : 25;
+  const price = cost != null ? cost * (1 + markup / 100) : undefined;
+
+  if (part.holdedProductId) {
+    // Update existing Holded product
+    await updateHoldedProduct(part.holdedProductId, {
+      name: part.name,
+      sku: part.partNumber,
+      desc: part.description,
+      cost,
+      price,
+      stock: part.stockQuantity ?? undefined,
+    });
+  } else {
+    // Create new product in Holded & link
+    const result = await createProduct({
+      name: part.name,
+      sku: part.partNumber,
+      desc: part.description,
+      cost,
+      price,
+      stock: part.stockQuantity ?? undefined,
+    });
+    await db
+      .update(parts)
+      .set({
+        holdedProductId: result.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(parts.id, partId));
   }
 }
 

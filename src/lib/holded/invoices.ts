@@ -416,6 +416,54 @@ export async function getProduct(productId: string): Promise<HoldedProduct> {
   return holdedFetch<HoldedProduct>(`/products/${productId}`);
 }
 
+export async function createProduct(data: {
+  name: string;
+  sku?: string | null;
+  desc?: string | null;
+  price?: number;
+  cost?: number;
+  tax?: number;
+  stock?: number;
+}): Promise<{ id: string }> {
+  const body: Record<string, unknown> = { name: data.name };
+  if (data.sku) body.sku = data.sku;
+  if (data.desc) body.desc = data.desc;
+  if (data.price != null) body.price = data.price;
+  if (data.cost != null) body.cost = data.cost;
+  if (data.tax != null) body.tax = data.tax;
+  if (data.stock != null) body.stock = data.stock;
+  return holdedFetch<{ id: string }>("/products", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateProduct(
+  productId: string,
+  data: {
+    name?: string;
+    sku?: string | null;
+    desc?: string | null;
+    price?: number;
+    cost?: number;
+    tax?: number;
+    stock?: number;
+  },
+): Promise<void> {
+  const body: Record<string, unknown> = {};
+  if (data.name !== undefined) body.name = data.name;
+  if (data.sku !== undefined) body.sku = data.sku ?? undefined;
+  if (data.desc !== undefined) body.desc = data.desc ?? undefined;
+  if (data.price != null) body.price = data.price;
+  if (data.cost != null) body.cost = data.cost;
+  if (data.tax != null) body.tax = data.tax;
+  if (data.stock != null) body.stock = data.stock;
+  await holdedFetch(`/products/${productId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function deleteContact(contactId: string): Promise<void> {
   await holdedFetch(`/contacts/${contactId}`, { method: "DELETE" });
 }

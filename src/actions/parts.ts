@@ -131,6 +131,12 @@ export async function createPart(data: {
     .returning();
 
   revalidatePath("/parts");
+
+  // Sync to Holded in background
+  import("@/lib/holded/sync").then(({ pushPartToHolded }) =>
+    pushPartToHolded(part.id).catch(() => {})
+  );
+
   return part;
 }
 
@@ -155,6 +161,11 @@ export async function updatePart(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(parts.id, id));
   revalidatePath("/parts");
+
+  // Sync to Holded in background
+  import("@/lib/holded/sync").then(({ pushPartToHolded }) =>
+    pushPartToHolded(id).catch(() => {})
+  );
 }
 
 export async function adjustPartStock(partId: string, delta: number, reason?: string) {

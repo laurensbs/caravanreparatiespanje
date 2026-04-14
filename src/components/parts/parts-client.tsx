@@ -9,8 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -293,10 +291,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
               Add Part
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingPart ? "Edit Part" : "Add Part"}</DialogTitle>
-            </DialogHeader>
+          <DialogContent className="sm:max-w-2xl p-0 gap-0 border-gray-100 dark:border-white/10">
             <PartForm
               part={editingPart}
               suppliers={suppliers}
@@ -306,6 +301,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                 setDialogOpen(false);
                 router.refresh();
               }}
+              onCancel={() => setDialogOpen(false)}
             />
           </DialogContent>
         </Dialog>
@@ -430,12 +426,14 @@ function PartForm({
   categories,
   defaultMarkup,
   onDone,
+  onCancel,
 }: {
   part: Part | null;
   suppliers: Supplier[];
   categories: PartCategory[];
   defaultMarkup: number;
   onDone: () => void;
+  onCancel: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(part?.name ?? "");
@@ -448,6 +446,7 @@ function PartForm({
   const [orderUrl, setOrderUrl] = useState(part?.orderUrl ?? "");
   const [stockQuantity, setStockQuantity] = useState(String(part?.stockQuantity ?? 0));
   const [minStockLevel, setMinStockLevel] = useState(String(part?.minStockLevel ?? 0));
+  const [nameError, setNameError] = useState("");
 
   const effectiveMarkup = markupPercent ? parseFloat(markupPercent) : defaultMarkup;
   const cost = defaultCost ? parseFloat(defaultCost) : NaN;
@@ -458,9 +457,15 @@ function PartForm({
     label: s.name,
   }));
 
+  const isEditing = !!part;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setNameError("Part name is required");
+      return;
+    }
+    setNameError("");
     startTransition(async () => {
       if (part) {
         await updatePart(part.id, {
@@ -493,96 +498,169 @@ function PartForm({
     });
   }
 
+  const fieldInput = "w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 px-4 focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40 transition-all duration-150 shadow-none";
+  const fieldLabel = "text-sm font-medium text-gray-700 dark:text-slate-300";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name *</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Window Seal 60cm" required />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="partNumber">Part Number</Label>
-          <Input id="partNumber" value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="e.g. WS-060" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Select value={category || "none"} onValueChange={(v) => setCategory(v === "none" ? "" : v)}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No category</SelectItem>
-              {categories.filter(c => c.active).map((cat) => {
-                const CatIcon = ICON_MAP[cat.icon] ?? Package;
-                return (
-                  <SelectItem key={cat.key} value={cat.key}>
-                    <span className="flex items-center gap-1.5">
-                      <CatIcon className="h-3.5 w-3.5" />
-                      {cat.label}
-                    </span>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+    <form onSubmit={handleSubmit}>
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 sm:px-8 sm:pt-8">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 tracking-tight">
+              {isEditing ? "Edit part" : "Add part"}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              {isEditing ? "Update this part's details" : "Create a new part and sync it to Holded"}
+            </p>
+          </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="cost">Part Cost (€)</Label>
-          <Input id="cost" value={defaultCost} onChange={(e) => setDefaultCost(e.target.value)} placeholder="0.00" type="number" step="0.01" min="0" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="markup">Markup %</Label>
+
+      {/* Body — scrollable */}
+      <div className="px-6 pb-6 sm:px-8 space-y-5 max-h-[60vh] overflow-y-auto">
+        {/* Name (full width) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="name" className={fieldLabel}>Name</Label>
           <Input
-            id="markup"
-            value={markupPercent}
-            onChange={(e) => setMarkupPercent(e.target.value)}
-            placeholder={`${defaultMarkup}% (default)`}
-            type="number"
-            step="1"
-            min="0"
+            id="name"
+            value={name}
+            onChange={(e) => { setName(e.target.value); if (nameError) setNameError(""); }}
+            placeholder="e.g. Window seal 60 cm"
+            className={cn(fieldInput, nameError && "border-red-300 dark:border-red-500/40 focus:ring-red-200 focus:border-red-400")}
+            autoFocus
+          />
+          {nameError && <p className="text-xs text-red-600 dark:text-red-400">{nameError}</p>}
+        </div>
+
+        {/* Part Number + Category */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="partNumber" className={fieldLabel}>Part number</Label>
+            <Input id="partNumber" value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="e.g. WS-060" className={fieldInput} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="category" className={fieldLabel}>Category</Label>
+            <Select value={category || "none"} onValueChange={(v) => setCategory(v === "none" ? "" : v)}>
+              <SelectTrigger className={fieldInput}>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No category</SelectItem>
+                {categories.filter(c => c.active).map((cat) => {
+                  const CatIcon = ICON_MAP[cat.icon] ?? Package;
+                  return (
+                    <SelectItem key={cat.key} value={cat.key}>
+                      <span className="flex items-center gap-1.5">
+                        <CatIcon className="h-3.5 w-3.5" />
+                        {cat.label}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Cost + Markup */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="cost" className={fieldLabel}>Cost (€)</Label>
+            <Input id="cost" value={defaultCost} onChange={(e) => setDefaultCost(e.target.value)} placeholder="0.00" type="number" step="0.01" min="0" className={fieldInput} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="markup" className={fieldLabel}>Markup %</Label>
+            <Input
+              id="markup"
+              value={markupPercent}
+              onChange={(e) => setMarkupPercent(e.target.value)}
+              placeholder={`${defaultMarkup}% (default)`}
+              type="number"
+              step="1"
+              min="0"
+              className={fieldInput}
+            />
+          </div>
+        </div>
+
+        {/* Calculated price */}
+        {!isNaN(ourPrice) && (
+          <div className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02] px-4 py-3">
+            <span className="text-sm font-medium text-gray-900 dark:text-slate-100">Our Price: €{ourPrice.toFixed(2)}</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">({effectiveMarkup}% markup)</span>
+          </div>
+        )}
+
+        {/* Stock + Min Stock */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="stock" className={fieldLabel}>Stock quantity</Label>
+            <Input id="stock" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} type="number" min="0" placeholder="0" className={fieldInput} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="minStock" className={fieldLabel}>Minimum stock</Label>
+            <Input id="minStock" value={minStockLevel} onChange={(e) => setMinStockLevel(e.target.value)} type="number" min="0" placeholder="0" className={fieldInput} />
+          </div>
+        </div>
+
+        {/* Supplier (full width) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="supplier" className={fieldLabel}>Supplier</Label>
+          <SearchableSelect
+            options={supplierOptions}
+            value={supplierId}
+            onValueChange={setSupplierId}
+            placeholder="Type to search suppliers..."
+            emptyLabel="No supplier"
+          />
+        </div>
+
+        {/* Order URL (full width) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="orderUrl" className={fieldLabel}>Order URL</Label>
+          <Input id="orderUrl" value={orderUrl} onChange={(e) => setOrderUrl(e.target.value)} placeholder="https://supplier.com/product/..." className={fieldInput} />
+        </div>
+
+        {/* Description (full width) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="description" className={fieldLabel}>Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional internal description"
+            rows={3}
+            className="w-full min-h-[96px] text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 px-4 py-3 focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40 transition-all duration-150 shadow-none resize-none"
           />
         </div>
       </div>
-      {!isNaN(ourPrice) && (
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
-          <span className="text-sm font-medium">Our Price: €{ourPrice.toFixed(2)}</span>
-          <span className="text-xs text-muted-foreground">({effectiveMarkup}% markup)</span>
+
+      {/* Footer */}
+      <div className="px-6 py-4 sm:px-8 border-t border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3">
+        {!isEditing && (
+          <p className="text-xs text-gray-400 dark:text-slate-500 hidden sm:block">
+            New parts are also synced to Holded.
+          </p>
+        )}
+        <div className={cn("flex items-center gap-3", isEditing && "ml-auto")}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors px-1"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isPending || !name.trim()}
+            className="inline-flex items-center justify-center rounded-xl bg-[#0CC0DF] text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-[#0ab5d2] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+          >
+            {isPending
+              ? (isEditing ? "Saving…" : "Creating…")
+              : (isEditing ? "Save changes" : "Create part")}
+          </button>
         </div>
-      )}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="stock">Stock Quantity</Label>
-          <Input id="stock" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} type="number" min="0" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="minStock">Min. Stock Level</Label>
-          <Input id="minStock" value={minStockLevel} onChange={(e) => setMinStockLevel(e.target.value)} type="number" min="0" placeholder="0 = no tracking" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="supplier">Supplier</Label>
-        <SearchableSelect
-          options={supplierOptions}
-          value={supplierId}
-          onValueChange={setSupplierId}
-          placeholder="Type to search suppliers..."
-          emptyLabel="No supplier"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="orderUrl">Order URL</Label>
-        <Input id="orderUrl" value={orderUrl} onChange={(e) => setOrderUrl(e.target.value)} placeholder="https://supplier.com/product/..." />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description..." rows={2} />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isPending || !name.trim()}>
-          {isPending ? "Saving..." : part ? "Update" : "Create"}
-        </Button>
       </div>
     </form>
   );

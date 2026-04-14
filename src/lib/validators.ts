@@ -18,7 +18,7 @@ export const repairJobSchema = z.object({
   extraNotesRaw: z.string().nullable().optional(),
   internalComments: z.string().nullable().optional(),
   status: z.enum([
-    "new", "todo", "in_inspection", "quote_needed", "waiting_approval",
+    "new", "todo", "in_inspection", "no_damage", "quote_needed", "waiting_approval",
     "waiting_customer", "waiting_parts", "scheduled", "in_progress",
     "blocked", "completed", "invoiced", "rejected", "archived",
   ]).optional(),
@@ -109,9 +109,9 @@ export const userSchema = z.object({
 export const bulkUpdateSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
   status: z.enum([
-    "new", "todo", "in_inspection", "quote_needed", "waiting_approval",
+    "new", "todo", "in_inspection", "no_damage", "quote_needed", "waiting_approval",
     "waiting_customer", "waiting_parts", "scheduled", "in_progress",
-    "blocked", "completed", "invoiced", "archived",
+    "blocked", "completed", "invoiced", "rejected", "archived",
   ]).optional(),
   locationId: z.string().uuid().nullable().optional(),
   assignedUserId: z.string().uuid().nullable().optional(),

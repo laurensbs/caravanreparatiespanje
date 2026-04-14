@@ -7,6 +7,7 @@ import { WeatherWidget } from "@/components/garage/weather-widget";
 import { signOut } from "next-auth/react";
 import { RefreshCw, ClipboardCheck, ChevronRight, AlertTriangle, Wrench, Search as SearchIcon, CircleCheck } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 type RepairItem = {
   id: string;
@@ -142,16 +143,19 @@ export function GarageTodayClient({ repairs, userName }: Props) {
       <header className="px-6 sm:px-8 pt-6 pb-5">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">
-                {greeting}, {firstName}
-              </p>
-              <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mt-1 tracking-tight">
-                {displayDate}
-              </h1>
-              <p className="text-xl text-gray-400 font-medium tabular-nums mt-0.5">
-                {clock}
-              </p>
+            <div className="flex items-center gap-3">
+              <Image src="/favicon.png" alt="Logo" width={44} height={44} className="rounded-xl object-contain shrink-0" />
+              <div>
+                <p className="text-sm text-gray-500 font-medium">
+                  {greeting}, {firstName}
+                </p>
+                <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mt-1 tracking-tight">
+                  {displayDate}
+                </h1>
+                <p className="text-xl text-gray-400 font-medium tabular-nums mt-0.5">
+                  {clock}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <LanguageToggle />

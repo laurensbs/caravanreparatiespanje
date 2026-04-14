@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -161,10 +162,10 @@ export function Sidebar({ userRole }: SidebarProps) {
     >
       <div className={cn(
         "flex items-center border-b border-white/10 transition-all duration-300",
-        collapsed ? "h-12 justify-center px-2" : "h-12 gap-3 px-5"
+        collapsed ? "h-12 justify-center px-2" : "h-12 gap-3 px-4"
       )}>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 shrink-0">
-          <ClipboardList className="h-4 w-4 text-white" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden shrink-0 bg-white/10">
+          <Image src="/favicon.png" alt="Logo" width={32} height={32} className="object-contain" />
         </div>
         {!collapsed && (
           <div className="min-w-0 overflow-hidden">

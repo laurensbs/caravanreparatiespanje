@@ -191,12 +191,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
           </PopoverTrigger>
           <PopoverContent
             align="end"
-            sideOffset={8}
-            className="w-[420px] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0F172A] shadow-lg dark:shadow-black/40 p-0"
+            sideOffset={10}
+            className="w-[720px] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0F172A] shadow-xl dark:shadow-black/50 p-0 z-40"
           >
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Advanced Filters</h3>
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/[0.06]">
+              <h3 className="text-[13px] font-semibold text-gray-900 dark:text-slate-100 tracking-tight">Advanced Filters</h3>
               {advancedCount > 0 && (
                 <button
                   onClick={() => {
@@ -213,9 +213,9 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
             </div>
 
             {/* Panel body */}
-            <div className="px-5 pb-5 space-y-5">
+            <div className="px-6 pb-6 pt-5 space-y-6">
               {/* Row 1: Priority + Location */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Priority</Label>
                   <Select
@@ -253,7 +253,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
               </div>
 
               {/* Row 2: Invoice + Response */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Invoice</Label>
                   <Select
@@ -291,7 +291,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
               </div>
 
               {/* Row 3: Tags + Date range */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {allTags.length > 0 && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Tag</Label>
@@ -316,22 +316,28 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [] }: Re
                     </Select>
                   </div>
                 )}
-                <div className={allTags.length > 0 ? "space-y-1.5" : "col-span-2 space-y-1.5"}>
+                <div className={allTags.length > 0 ? "space-y-1.5" : "sm:col-span-2 space-y-1.5"}>
                   <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Date range</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="date"
-                      className="flex-1 h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
-                      value={currentFilters.dateFrom ?? ""}
-                      onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
-                    />
-                    <span className="text-gray-300 dark:text-slate-600 text-xs">–</span>
-                    <Input
-                      type="date"
-                      className="flex-1 h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
-                      value={currentFilters.dateTo ?? ""}
-                      onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
-                    />
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div className="flex-1 space-y-1">
+                      <span className="text-[11px] text-gray-400 dark:text-slate-500">From</span>
+                      <Input
+                        type="date"
+                        className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
+                        value={currentFilters.dateFrom ?? ""}
+                        onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+                      />
+                    </div>
+                    <span className="hidden sm:block text-gray-300 dark:text-slate-600 text-xs mt-5">–</span>
+                    <div className="flex-1 space-y-1">
+                      <span className="text-[11px] text-gray-400 dark:text-slate-500">To</span>
+                      <Input
+                        type="date"
+                        className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
+                        value={currentFilters.dateTo ?? ""}
+                        onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

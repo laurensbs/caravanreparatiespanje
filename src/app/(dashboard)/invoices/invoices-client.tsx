@@ -60,6 +60,7 @@ interface OverdueInvoice extends Invoice {
 interface OverdueEstimate extends Quote {
   daysOverdue: number;
   customerEmail?: string;
+  repairHasInvoice?: boolean;
 }
 
 interface InvoicesClientProps {
@@ -830,21 +831,14 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredOverdueEstimates.map((q, idx) => (
                         <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
                           <TableCell>
-                            <a
-                              href={`https://app.holded.com/documents/estimate/${q.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
-                            >
-                              {q.docNumber || "—"}
-                              <ExternalLink className="h-2.5 w-2.5" />
-                            </a>
+                            <span className="font-medium text-[13px]">{q.docNumber || "—"}</span>
                           </TableCell>
                           <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
                           <TableCell className="text-[12px] text-muted-foreground max-w-[200px] truncate">{q.desc || "—"}</TableCell>
@@ -878,6 +872,17 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                             ) : (
                               <span className="text-[11px] text-muted-foreground/50">—</span>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              href={`https://app.holded.com/documents/estimate/${q.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Holded
+                            </a>
                           </TableCell>
                         </TableRow>
                       ))}

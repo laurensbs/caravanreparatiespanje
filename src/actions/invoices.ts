@@ -151,6 +151,7 @@ export async function sendPaymentReminder(invoiceId: string, emails: string[]) {
 export interface QuoteWithRepair extends HoldedQuote {
   repairJobId?: string;
   repairPublicCode?: string;
+  repairHasInvoice?: boolean;
   customerName?: string;
 }
 
@@ -197,6 +198,7 @@ export async function getAllQuotes(): Promise<QuoteWithRepair[]> {
       ...q,
       repairJobId: repair?.id,
       repairPublicCode: repair?.publicCode ?? undefined,
+      repairHasInvoice: repair?.hasInvoice ?? false,
       customerName: customerByHolded.get(q.contact) ?? q.contactName,
     };
   }).sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
@@ -230,6 +232,7 @@ export async function getOverdueEstimates(thresholdDays = 30): Promise<OverdueEs
       // Only unconverted quotes (status 0 = pending)
       if (q.status === 1) return false; // approved/converted
       if (q.status === -1) return false; // cancelled/declined by customer
+      if (q.repairHasInvoice) return false; // linked repair already has a Holded invoice
       if (!q.date) return false;
       if (q.total <= 0) return false;
       const quoteDate = q.date * 1000;

@@ -4,20 +4,20 @@ import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
   FileText, Wrench, Receipt, Send, CheckCircle2, ChevronDown, ChevronUp,
-  X, ArrowRight, HelpCircle, Lightbulb, BookOpen, Play, ChevronRight,
-  MousePointerClick,
+  X, ArrowRight, Lightbulb, BookOpen, Play, ChevronRight,
+  MousePointerClick, Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
 // ─── Workflow steps ──────────────────────────────────────────
 
-export type WorkflowStep = "quote" | "repair" | "invoice" | "send" | "paid";
+export type WorkflowStep = "estimate" | "quote" | "work" | "invoice" | "paid";
 
 const STEPS: { key: WorkflowStep; label: string; icon: React.ReactNode }[] = [
-  { key: "quote", label: "Quote", icon: <FileText className="h-3.5 w-3.5" /> },
-  { key: "repair", label: "Repair", icon: <Wrench className="h-3.5 w-3.5" /> },
+  { key: "estimate", label: "Estimate", icon: <FileText className="h-3.5 w-3.5" /> },
+  { key: "quote", label: "Quote", icon: <Send className="h-3.5 w-3.5" /> },
+  { key: "work", label: "Work", icon: <Wrench className="h-3.5 w-3.5" /> },
   { key: "invoice", label: "Invoice", icon: <Receipt className="h-3.5 w-3.5" /> },
-  { key: "send", label: "Send", icon: <Send className="h-3.5 w-3.5" /> },
   { key: "paid", label: "Paid", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
 ];
 
@@ -41,243 +41,309 @@ interface Tutorial {
 
 const TUTORIALS: Tutorial[] = [
   {
-    id: "first-repair",
-    title: "Your first repair: from start to invoice",
-    description: "Complete walkthrough: create a repair, build a cost estimate, send a quote, and create an invoice.",
+    id: "first-work-order",
+    title: "Your first work order",
+    description: "Create a work order, build a cost estimate, send a quote, and invoice — end to end.",
     duration: "5 min",
     difficulty: "beginner",
     pages: ["dashboard", "repairs", "repair-new", "repair-detail"],
     steps: [
       {
-        title: "Create a new repair",
-        description: "Click '+ New Repair' in the top right corner. Fill in the customer name, unit (caravan), and a description of the problem.",
-        action: "Click on 'Repairs' in the sidebar, then '+ New Repair'",
+        title: "Create a new work order",
+        description: "Click '+ New Work Order' in the top-right corner. Choose the type (Repair, Wax Treatment, Maintenance, or Inspection), select a customer, pick a unit, and describe the job.",
+        action: "Click '+ New Work Order' → fill in the form → Create",
       },
       {
-        title: "Add tags to categorise the repair",
-        description: "On the repair detail page, use the tag picker in the status bar. Click '+' to assign existing tags or create new ones on the fly — pick a name and colour directly in the dropdown.",
-        action: "Click the '+' button next to the status badges",
+        title: "Add tags to categorise",
+        description: "On the work order detail page, click the '+' in the status bar to open the tag picker. Select existing tags or create new ones with a custom name and colour.",
+        action: "Click '+' next to the status badges",
       },
       {
-        title: "Add parts to the cost estimate",
-        description: "Scroll to 'Cost Estimate' and click '+ Add Line'. Select a part from the catalog — markup is applied automatically. Use the category tabs to filter parts by type.",
+        title: "Build the cost estimate",
+        description: "Scroll to 'Cost Estimate'. Click '+ Add Line' to add parts from the catalog — markup is applied automatically. Use category tabs to filter parts (Tyres, Lights, Seals, etc.).",
         action: "Click '+ Add Line' in the Cost Estimate section",
       },
       {
         title: "Add labour hours",
-        description: "Click '+ Labour' to add work hours. The hourly rate is set in Settings → Pricing. Labour is automatically calculated based on hours × rate.",
+        description: "Click '+ Labour' to add work hours. The hourly rate comes from Settings → Pricing and is calculated automatically.",
         action: "Click '+ Labour' in the Cost Estimate section",
       },
       {
-        title: "Create a quote in Holded",
-        description: "In the right sidebar under 'Holded Documents', click 'Create Quote'. This sends the cost estimate to Holded as a professional quote.",
-        action: "Click 'Create Quote' in the right sidebar",
+        title: "Create a quote via Holded",
+        description: "In the right sidebar under 'Holded Documents', click 'Create Quote'. This sends your cost estimate to Holded as a professional quote with your company branding.",
+        action: "Click 'Create Quote' in the sidebar",
       },
       {
-        title: "Send the quote to the customer",
-        description: "After the quote is created, PDF and Email buttons appear. Click 'Email' to send the quote directly to the customer's email address via Holded.",
+        title: "Email the quote to the customer",
+        description: "After the quote is created, PDF and Email buttons appear. Click 'Email' to send the quote directly to the customer via Holded.",
         action: "Click 'Email' next to the quote",
       },
       {
-        title: "Do the repair work",
-        description: "Set the status to 'In Progress'. If you find extra issues during the repair, add more lines to the cost estimate — the amounts update automatically.",
-        action: "Change status dropdown to 'In Progress'",
+        title: "Do the work",
+        description: "Set the status to 'In Progress'. If you discover extra issues, add more lines to the cost estimate — amounts update automatically.",
+        action: "Change status to 'In Progress'",
       },
       {
         title: "Create an invoice",
-        description: "When the repair is done, set status to 'Completed'. Then click 'Create Invoice' in the sidebar. This converts your cost estimate into a Holded invoice.",
-        action: "Click 'Create Invoice' in the right sidebar",
+        description: "When done, set status to 'Completed'. Click 'Create Invoice' in the sidebar — converts your estimate to a Holded invoice.",
+        action: "Click 'Create Invoice' in the sidebar",
       },
       {
-        title: "Send the invoice",
-        description: "Click 'Email' next to the invoice to send it to the customer. Payment is tracked automatically — when the customer pays in Holded, the status updates here too.",
+        title: "Send the invoice and track payment",
+        description: "Click 'Email' to send the invoice. Payment is tracked automatically — when paid in Holded, the status updates here within 30 minutes.",
         action: "Click 'Email' next to the invoice",
+      },
+    ],
+  },
+  {
+    id: "work-order-types",
+    title: "Work order types explained",
+    description: "Understand the four types: Repair, Wax Treatment, Maintenance, and Inspection.",
+    duration: "3 min",
+    difficulty: "beginner",
+    pages: ["dashboard", "repairs", "repair-new"],
+    steps: [
+      {
+        title: "Repair — standard damage fix",
+        description: "The default type. Use for any damage repair: water damage, structural issues, bodywork, etc. Follows the full workflow: estimate → quote → work → invoice → paid.",
+        action: "Select 'Repair' when creating a new work order",
+      },
+      {
+        title: "Wax Treatment — auto-generated tasks",
+        description: "Select 'Wax Treatment' to create a wax job. The system automatically adds pre-configured wax tasks to save setup time. Great for seasonal caravan care.",
+        action: "Select 'Wax Treatment' — tasks auto-populate",
+      },
+      {
+        title: "Maintenance — regular service",
+        description: "For scheduled maintenance: annual checkups, seal replacements, general servicing. Same workflow as repairs, but categorised separately for clear tracking.",
+        action: "Select 'Maintenance' for service jobs",
+      },
+      {
+        title: "Inspection — pre-sale or insurance",
+        description: "For inspection-only work: pre-sale checks, insurance assessments, condition reports. Tag with 'Pre-Sale Inspection' or custom tags for easy filtering.",
+        action: "Select 'Inspection' for assessment jobs",
+      },
+      {
+        title: "Filter by type",
+        description: "On the work orders overview, use the 'Type' filter to show only specific types. Each type has a colour-coded badge for quick identification. Combine with status and tag filters.",
+        action: "Use the Type filter on the Work Orders page",
+      },
+    ],
+  },
+  {
+    id: "garage-connection",
+    title: "How the garage portal works",
+    description: "How technicians use the garage view, and how it connects to the office.",
+    duration: "4 min",
+    difficulty: "beginner",
+    pages: ["dashboard", "repairs", "repair-detail"],
+    steps: [
+      {
+        title: "What technicians see",
+        description: "The garage portal (/garage) is a mobile-optimised view. Technicians see today's assigned work orders with tasks, findings, and part requests — focused on doing the work.",
+        action: "Visit /garage to see the technician view",
+      },
+      {
+        title: "Tasks flow from office to garage",
+        description: "When you create a work order and assign tasks, they appear in the garage. Technicians check off tasks as they complete them. For wax jobs, tasks are pre-populated automatically.",
+      },
+      {
+        title: "Findings flow from garage to office",
+        description: "Technicians report findings during work: unexpected damage, extra issues, things needing approval. Each finding has a category, severity, and approval flag. You see these immediately in the office.",
+        action: "Tap '+ Finding' in the garage to report an issue",
+      },
+      {
+        title: "Part requests with categories",
+        description: "Technicians request parts by category (Tyres, Lights, Seals, etc.). Category chips appear instantly for quick selection. The office sees requests immediately and can action them.",
+        action: "Tap '+ Request Part' → select category → type part name",
+      },
+      {
+        title: "Real-time sync",
+        description: "Everything syncs in real time. When the office adds a task, the garage sees it. When the garage reports a finding, the office sees it. No refresh needed.",
       },
     ],
   },
   {
     id: "manage-customers",
     title: "Managing customers & contacts",
-    description: "How customers sync with Holded, adding new contacts, and linking them to repairs.",
+    description: "How customers sync with Holded, adding new contacts, and linking them to work orders.",
     duration: "3 min",
     difficulty: "beginner",
     pages: ["customers", "dashboard"],
     steps: [
       {
-        title: "All customers sync from Holded",
-        description: "Every 6 hours, all contacts from your Holded account are automatically synced to this system. You don't need to add them manually — they appear here automatically.",
-        action: "Go to 'Contacts' in the sidebar to see all customers",
+        title: "Customers sync from Holded",
+        description: "Every 6 hours, all contacts from your Holded account sync here automatically. You don't need to add them manually — they appear here automatically.",
+        action: "Go to 'Contacts' in the sidebar",
       },
       {
         title: "Add a new customer",
-        description: "Click '+ New Customer' in the Contacts page. Fill in name, email, and phone. When you create a quote or invoice for this customer, they are automatically synced to Holded.",
-        action: "Click '+ New Customer' on the Contacts page",
+        description: "Click '+ New Customer' on the Contacts page. Fill in name, email, and phone. When you create a quote or invoice for them, they're automatically synced to Holded.",
+        action: "Click '+ New Customer'",
       },
       {
-        title: "Link a customer to a repair",
-        description: "When creating a new repair, select the customer from the dropdown. Their details (email for invoicing, address) are used automatically for quotes and invoices.",
-        action: "Use the customer dropdown when creating a repair",
+        title: "Link to a work order",
+        description: "When creating a work order, select the customer from the dropdown. Their email is used for sending quotes and invoices via Holded.",
+        action: "Use the customer dropdown when creating a work order",
       },
       {
-        title: "Customer email is important",
-        description: "Make sure every customer has an email address — this is where quotes and invoices are sent. Without an email, you can still create documents but can't send them directly.",
-        action: "Edit a customer to add their email address",
+        title: "Email is essential",
+        description: "Make sure every customer has an email address — it's required for sending quotes and invoices. Without email, you can still create documents but can't email them.",
+        action: "Edit a customer to add their email",
       },
     ],
   },
   {
     id: "parts-pricing",
-    title: "Parts catalog & pricing strategy",
-    description: "Set up your parts with cost prices, markup, and categories. The customer never sees your purchase price.",
+    title: "Parts catalog & pricing",
+    description: "Set up parts with cost prices, markup, and categories. Customers never see your purchase price.",
     duration: "3 min",
     difficulty: "beginner",
     pages: ["parts", "repair-detail"],
     steps: [
       {
         title: "Add parts to the catalog",
-        description: "Go to 'Parts' in the sidebar. Click '+ New Part'. Enter the name, your cost price (what you pay the supplier), and optionally a supplier and SKU number.",
+        description: "Go to 'Parts' in the sidebar. Click '+ New Part'. Enter the name, cost price (what you pay), and optionally supplier and SKU number.",
         action: "Click '+ New Part' on the Parts page",
       },
       {
-        title: "Organise parts with categories",
-        description: "Parts are grouped by categories like Lights, Tyres, Seals, etc. Use the filter tabs on the parts page to browse by category. You can add new categories directly from the filter bar.",
-        action: "Click '+ Add Category' on the Parts page filter bar",
+        title: "Organise with categories",
+        description: "Parts are grouped by categories (Lights, Tyres, Seals, etc.). Use filter tabs to browse by category. Add new categories directly from the filter bar.",
+        action: "Click '+ Add Category' on the Parts page",
       },
       {
-        title: "Set the markup percentage",
-        description: "Each part can have its own markup %. If left empty, the default markup from Settings → Pricing is used. Example: cost €10 with 40% markup = selling price €14.",
-        action: "Edit a part and set the 'Markup %' field",
+        title: "Set markup percentage",
+        description: "Each part can have its own markup %. If left empty, the default from Settings → Pricing is used. Example: cost €10, markup 40% = selling price €14.",
+        action: "Edit a part to set 'Markup %'",
       },
       {
-        title: "Use parts in a repair estimate",
-        description: "In a repair's cost estimate, click '+ Add Line' and select a part from the catalog. Use the category tabs to filter quickly. The selling price (cost + markup) is filled in automatically.",
-        action: "Add a line to a repair's cost estimate",
+        title: "Use in cost estimates",
+        description: "In any work order's cost estimate, click '+ Add Line' → select a part from the catalog. Category tabs help filter quickly. The selling price fills automatically.",
+        action: "Add a line to a cost estimate",
       },
       {
-        title: "Customer sees selling price only",
-        description: "The quote and invoice always show the selling price (after markup). The customer never sees your purchase price. Your margin is fully protected.",
+        title: "Protected margins",
+        description: "Quotes and invoices always show selling prices (cost + markup). The customer never sees your cost price — your margin is fully protected.",
       },
     ],
   },
   {
     id: "tags-filters",
-    title: "Using tags & filters",
-    description: "Organise repairs with tags, create new ones inline, and filter your overview.",
+    title: "Tags, filters & finding things",
+    description: "Organise with tags, use the 2-layer filter system, and find anything fast.",
     duration: "2 min",
     difficulty: "beginner",
     pages: ["repairs", "repair-detail"],
     steps: [
       {
-        title: "Assign tags to repairs",
-        description: "On any repair detail page, click the '+' button in the status bar to open the tag picker. Select a tag to assign it. Click the × on a tag to remove it.",
-        action: "Click '+' next to the status badges on a repair",
+        title: "Assign tags to work orders",
+        description: "On any work order, click '+' in the status bar to open the tag picker. Tags help categorise: 'Warranty', 'Insurance', 'Pre-Sale', or custom labels.",
+        action: "Click '+' next to the status badges",
       },
       {
-        title: "Create new tags on the fly",
-        description: "In the tag picker dropdown, click 'New tag…' at the bottom. Type a name, pick a colour, and click Create. The tag is instantly available to assign.",
-        action: "Click 'New tag…' in the tag picker dropdown",
+        title: "Create tags on the fly",
+        description: "In the tag picker, click 'New tag…' at the bottom. Type a name, pick a colour, click Create. Instantly available everywhere.",
+        action: "Click 'New tag…' in the dropdown",
       },
       {
-        title: "Delete tags you no longer need",
-        description: "Hover over any tag in the picker dropdown — a trash icon appears on the right. Click it to permanently remove the tag from all repairs.",
-        action: "Hover over a tag in the dropdown and click the trash icon",
+        title: "Quick filters (always visible)",
+        description: "The top bar always shows: search, status filter, type filter, and a 'Filters' button for more options. These handle 90% of daily filtering.",
+        action: "Use the quick filter bar on Work Orders page",
       },
       {
-        title: "Filter repairs by tag",
-        description: "On the repairs overview page, use the filter bar to select one or more tags. Only repairs with those tags will be shown.",
-        action: "Use the tag filter on the Repairs page",
+        title: "Advanced filters (popover panel)",
+        description: "Click the 'Filters' button to open the advanced panel: priority, location, invoice status, response time, tags, and date range. Active filters show as removable pills.",
+        action: "Click 'Filters' → set advanced options",
       },
     ],
   },
   {
-    id: "garage-workflow",
-    title: "Garage technician workflow",
-    description: "How technicians use the garage view, request parts with categories, and report findings.",
-    duration: "3 min",
-    difficulty: "beginner",
-    pages: ["repair-detail", "repairs"],
-    steps: [
-      {
-        title: "Open a repair in the garage",
-        description: "Technicians access repairs via the garage URL. Each repair shows tasks, findings, and part requests — optimised for mobile use.",
-        action: "Open a repair from the garage overview",
-      },
-      {
-        title: "Request a part with a category",
-        description: "Tap '+ Request Part' and category chips appear immediately. Select a category (Tyres, Lights, Seals, etc.) to prefix the request, then type the specific part name.",
-        action: "Tap '+ Request Part' in the parts section",
-      },
-      {
-        title: "Add or manage categories",
-        description: "In the part request picker, tap '+' at the end of the category chips to create a new category. Select a category and tap 'Delete this category' to remove it.",
-        action: "Tap '+' next to the category chips",
-      },
-      {
-        title: "Report findings during repair",
-        description: "Found an issue? Tap '+ Finding' to log it with category, severity, and whether customer approval is needed. The office sees it immediately.",
-        action: "Tap '+ Finding' in the findings section",
-      },
-    ],
-  },
-  {
-    id: "holded-workflow",
+    id: "holded-integration",
     title: "How Holded integration works",
-    description: "Understand the sync between this system and Holded: quotes, invoices, contacts, and payments.",
+    description: "Quotes, invoices, contacts, and payments — all synced with Holded automatically.",
     duration: "4 min",
     difficulty: "intermediate",
     pages: ["dashboard", "repair-detail", "invoices"],
     steps: [
       {
-        title: "This system talks to Holded automatically",
-        description: "When you create a quote or invoice here, it's instantly created in Holded. You don't need to enter anything twice. Holded generates the official document numbers.",
+        title: "Instant quote & invoice creation",
+        description: "When you click 'Create Quote' or 'Create Invoice' on a work order, it's instantly created in Holded with your company details and branding. No double entry.",
       },
       {
         title: "Contacts sync both ways",
-        description: "When you add a customer here, they're pushed to Holded. When a contact exists in Holded, it's pulled into this system. The sync runs automatically every 6 hours.",
+        description: "Add a customer here → pushed to Holded. Customer exists in Holded → pulled here. Automatic sync every 6 hours. One source of truth.",
       },
       {
-        title: "Quotes and invoices via Holded",
-        description: "Click 'Create Quote' on a repair → a Holded estimate is created. Click 'Email' → the quote is sent via Holded's email system with professional formatting and your company details.",
-        action: "Try creating a quote on any repair with a cost estimate",
+        title: "Email via Holded",
+        description: "Click 'Email' on a quote or invoice → sent via Holded's email system with professional formatting. PDF download is also available for manual sending.",
+        action: "Click 'Email' on any quote or invoice",
       },
       {
-        title: "Payments sync automatically",
-        description: "When a customer pays an invoice in Holded (bank transfer, iDEAL, etc.), the payment status is synced back here every 30 minutes. You never need to update it manually.",
+        title: "Automatic payment tracking",
+        description: "When a customer pays (bank transfer, iDEAL, etc.), Holded marks it paid. Every 30 minutes, payment status syncs here. No manual tracking.",
       },
       {
-        title: "Opening documents in Holded",
-        description: "Every quote and invoice has an 'Open in Holded' link. Use this if you need to make manual changes in Holded. Changes to payment status sync back automatically.",
-        action: "Click 'Open in Holded' on any quote or invoice",
+        title: "Open in Holded anytime",
+        description: "Every document has an 'Open in Holded' link for the full accounting view, PDF layout, or manual edits. Changes sync back automatically.",
+        action: "Click 'Open in Holded' on any document",
       },
     ],
   },
   {
-    id: "invoices-overview",
+    id: "invoices-payments",
     title: "Tracking invoices & payments",
-    description: "Use the invoices page to track what's paid, what's pending, and send reminders.",
+    description: "Monitor payment status, send reminders, and mark invoices as paid.",
     duration: "2 min",
     difficulty: "beginner",
     pages: ["invoices"],
     steps: [
       {
         title: "View all invoices",
-        description: "The Invoices page shows all invoices from Holded. Green = paid, yellow = partially paid, red = unpaid.",
+        description: "The Invoices page shows all invoices from Holded. Green = paid, yellow = partial, red = unpaid. Filter by status to see what needs attention.",
         action: "Go to 'Invoices' in the sidebar",
       },
       {
         title: "Filter by payment status",
-        description: "Use the filter buttons (All / Unpaid / Partial / Paid) to quickly see which customers still need to pay.",
-        action: "Click 'Unpaid' to see outstanding invoices",
+        description: "Use the status buttons (All / Unpaid / Partial / Paid) for a quick overview of outstanding amounts.",
+        action: "Click 'Unpaid' to see what's due",
       },
       {
-        title: "Download PDF or email invoice",
-        description: "Each invoice row has PDF and Email buttons. Download a PDF for your records, or send/resend the invoice to the customer.",
-        action: "Click the PDF or Email icon on any invoice row",
+        title: "Download or email invoices",
+        description: "Each invoice has PDF and Email buttons. Download for your records or resend to customers who haven't received it.",
+        action: "Click PDF or Email on any invoice row",
       },
       {
         title: "Mark as paid manually",
-        description: "If a customer pays cash or bank transfer and Holded hasn't synced yet, click the status badge to mark it as paid. This updates Holded too.",
+        description: "Customer paid cash? Click the red 'Unpaid' badge to mark it paid immediately. Updates both this system and Holded.",
         action: "Click the status badge on an unpaid invoice",
+      },
+    ],
+  },
+  {
+    id: "wax-workflow",
+    title: "Wax treatment workflow",
+    description: "How wax jobs work with auto-generated tasks and streamlined processing.",
+    duration: "2 min",
+    difficulty: "beginner",
+    pages: ["repairs", "repair-new", "repair-detail"],
+    steps: [
+      {
+        title: "Create a wax work order",
+        description: "Click '+ New Work Order' and select 'Wax Treatment' as the type. Fill in the customer and unit as normal.",
+        action: "Select 'Wax Treatment' in the new work order form",
+      },
+      {
+        title: "Auto-generated tasks",
+        description: "When a wax job is created, standard wax tasks are added automatically — cleaning, preparation, wax application, buffing, inspection. No manual setup needed.",
+      },
+      {
+        title: "Garage technicians follow the tasks",
+        description: "In the garage portal, technicians see the pre-populated task list. They check off each step as completed. Findings can still be reported if issues arise.",
+      },
+      {
+        title: "Invoice the standard wax price",
+        description: "Build a cost estimate (or use a standard wax price), create the invoice via Holded, and send it. Same workflow as any other work order.",
+        action: "Create Invoice → Email to customer",
       },
     ],
   },
@@ -308,65 +374,65 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
   switch (page) {
     case "dashboard":
       return {
-        title: "Welcome to your repair management system",
+        title: "Your work order management hub",
         steps: [
-          "Create a new repair from the button top-right — this is your starting point.",
-          "Build a cost estimate with parts + labour hours, then create a Quote in Holded.",
-          "Send the quote to the customer directly from this system.",
-          "When done, convert to an Invoice, send it, and payment syncs automatically from Holded.",
+          "Create a new work order — choose the type: Repair, Wax, Maintenance, or Inspection.",
+          "Build a cost estimate with parts (auto-markup) + labour hours.",
+          "Send a quote to the customer via Holded, then do the work.",
+          "Create an invoice when done — payment syncs automatically from Holded.",
         ],
-        tip: "This system replaces your Excel sheet. Everything follows: Quote → Repair → Invoice → Send → Paid. All synced with Holded.",
+        tip: "Everything follows: Estimate → Quote → Work → Invoice → Paid. All synced with Holded in real time.",
         quickActions: [
-          { label: "Create Repair", href: "/repairs/new" },
-          { label: "View Repairs", href: "/repairs" },
+          { label: "New Work Order", href: "/repairs/new" },
+          { label: "Work Orders", href: "/repairs" },
           { label: "Invoices", href: "/invoices" },
         ],
       };
 
     case "repairs":
       return {
-        title: "Your repairs overview",
+        title: "All work orders",
         steps: [
-          "Each repair follows: Quote → Repair → Invoice → Paid.",
-          "Click on any repair to see its details, add parts, manage tags, and create quotes & invoices.",
-          "Use filters and tags to organise — create new tags directly from any repair detail page.",
-          "Payment updates automatically from Holded — no manual tracking needed.",
+          "Each work order follows: Estimate → Quote → Work → Invoice → Paid.",
+          "Filter by status, type (Repair, Wax, Maintenance, Inspection), tags, and more.",
+          "Click any work order to manage it: parts, estimate, quotes, invoices.",
+          "Use the Kanban board view for a visual overview by status.",
         ],
-        tip: "Start a new repair top-right. Use tags to categorise repairs (e.g. Pre-Sale Inspection, Warranty). You can create and delete tags directly from the tag picker on any repair.",
-        activeStep: "repair",
+        tip: "Use the quick filters on top for daily work. Click 'Filters' for advanced options like priority, location, date range, and tags.",
+        activeStep: "work",
         quickActions: [
-          { label: "New Repair", href: "/repairs/new" },
+          { label: "New Work Order", href: "/repairs/new" },
           { label: "Kanban Board", href: "/repairs/board" },
         ],
       };
 
     case "repair-new":
       return {
-        title: "Creating a new repair",
+        title: "Creating a new work order",
         steps: [
-          "Fill in customer, unit (caravan), and description of the issue.",
-          "After creating, go to the repair detail to add tags, parts, and build a cost estimate.",
-          "Then create a Quote in Holded from the sidebar — you can email it directly to the customer.",
-          "Once approved, start the repair work. When done, create an invoice.",
+          "Choose the type: Repair, Wax Treatment, Maintenance, or Inspection.",
+          "Select a customer and unit (caravan). Describe the work needed.",
+          "For wax jobs, standard tasks are auto-generated after creation.",
+          "After creating, go to the detail page to build a cost estimate and create a quote.",
         ],
-        tip: "You can always add or change parts later — the quote/invoice amounts update automatically. Use tags to label repairs for easy filtering.",
-        activeStep: "quote",
+        tip: "Wax treatments auto-populate tasks. For all types, you can always add more parts and adjust the estimate later.",
+        activeStep: "estimate",
       };
 
     case "repair-detail": {
       const job = context?.job;
       if (!job) {
         return {
-          title: "Repair workflow",
+          title: "Work order workflow",
           steps: [
-            "1. Add tags to categorise this repair — create new ones directly from the '+' button.",
+            "1. Add tags to categorise this job — create new tags directly from the '+' button.",
             "2. Build cost estimate: add parts (with markup) + labour hours. Filter parts by category.",
-            "3. Create Quote → sends to Holded, you can email it to the customer directly.",
-            "4. Do the repair. Found extra issues? Update the estimate — amounts adjust automatically.",
+            "3. Create Quote → sends to Holded, email it to the customer directly.",
+            "4. Do the work. Found extra issues? Update the estimate — amounts adjust automatically.",
             "5. Create Invoice → converts your estimate to a Holded invoice. Send it via email.",
           ],
-          tip: "Everything happens from this page. Tags, parts, quotes, invoices — all managed inline without leaving the repair.",
-          activeStep: "quote",
+          tip: "Everything happens from this page. Parts, quotes, invoices, communication log — all inline.",
+          activeStep: "estimate",
         };
       }
 
@@ -378,59 +444,57 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
 
       if (isPaid) {
         return {
-          title: "This repair is fully completed and paid",
+          title: "Completed and paid",
           steps: [
-            "✅ Quote was created and sent to customer.",
-            "✅ Repair work completed.",
+            "✅ Cost estimate built and quote sent.",
+            "✅ Work completed.",
             "✅ Invoice created and sent.",
-            "✅ Payment received — automatically synced from Holded.",
+            "✅ Payment received — synced from Holded.",
           ],
-          tip: "Nothing more to do here. You can review the history in the timeline below.",
+          tip: "This work order is fully done. Review the timeline below for the full history.",
           activeStep: "paid",
         };
       }
 
       if (hasInvoice) {
         return {
-          title: "Invoice created — waiting for payment",
+          title: "Invoice sent — waiting for payment",
           steps: [
-            "✅ Quote sent and approved.",
-            "✅ Repair work completed.",
-            "✅ Invoice created in Holded.",
-            "→ Send the invoice using the Email button in the sidebar on the right.",
-            "Payment is marked automatically when the customer pays in Holded.",
+            "✅ Quote approved, work completed, invoice created.",
+            "→ Send the invoice via the Email button in the sidebar.",
+            "Payment is tracked automatically — syncs from Holded every 30 minutes.",
+            "Need to mark paid now? Go to Invoices page → click the 'Unpaid' badge.",
           ],
-          tip: "Download the PDF or email the invoice from the sidebar. Payment syncs every 30 minutes from Holded.",
-          activeStep: "send",
+          tip: "Download the PDF or email the invoice from the sidebar. Cash payment? Mark it paid manually on the Invoices page.",
+          activeStep: "paid",
         };
       }
 
       if (isCompleted && !hasInvoice) {
         return {
-          title: "Repair done — time to invoice",
+          title: "Work done — time to invoice",
           steps: [
-            "✅ Quote sent to customer.",
-            "✅ Repair work completed.",
-            "→ Review the cost estimate. Found extra issues? Update the lines now.",
-            "→ Click 'Create Invoice' in the sidebar (right side) to generate a Holded invoice.",
-            "Then send it to the customer via the Email button.",
+            "✅ Quote sent, work completed.",
+            "→ Review the cost estimate. Need to adjust for extra work? Update lines now.",
+            "→ Click 'Create Invoice' in the sidebar to generate a Holded invoice.",
+            "Then email it to the customer.",
           ],
-          tip: "If you changed parts or added labour during the repair, update the estimate before creating the invoice.",
+          tip: "Make sure the estimate reflects all work done before creating the invoice.",
           activeStep: "invoice",
         };
       }
 
       if (hasQuote && !isCompleted) {
         return {
-          title: "Quote sent — do the repair",
+          title: "Quote sent — do the work",
           steps: [
-            "✅ Quote created and sent to the customer via Holded.",
-            "→ Perform the repair work. Update status to 'In Progress' at the top of the page.",
-            "Found extra problems? Add parts or labour to the cost estimate — the invoice will reflect changes.",
-            "When finished, set status to 'Completed', then create the invoice from the sidebar.",
+            "✅ Quote created and sent via Holded.",
+            "→ Set status to 'In Progress' and start the work.",
+            "Found extra issues? Add parts or labour to the estimate — it updates automatically.",
+            "When finished: set 'Completed' → Create Invoice → Send.",
           ],
-          tip: "It's normal to find extra issues. Add them to the estimate — the final invoice amount updates automatically.",
-          activeStep: "repair",
+          tip: "It's normal to find extra issues during work. Add them to the estimate — the invoice will reflect everything.",
+          activeStep: "work",
         };
       }
 
@@ -438,39 +502,39 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         return {
           title: "Estimate ready — create a quote",
           steps: [
-            "✅ Cost estimate built with parts and/or labour.",
-            "→ Click 'Create Quote' in the sidebar on the right to send it to Holded.",
-            "Then click 'Email' to send the quote directly to the customer from this system.",
-            "Once approved, start the repair work.",
+            "✅ Cost estimate built with parts and labour.",
+            "→ Click 'Create Quote' in the sidebar to send to Holded.",
+            "Then click 'Email' to send the quote to the customer.",
+            "Once approved, start the work.",
           ],
-          tip: "The quote includes your line items with markup. The customer sees the final price, not your cost price.",
+          tip: "The quote shows selling prices (with markup). Your cost prices are never visible to the customer.",
           activeStep: "quote",
         };
       }
 
       return {
-        title: "Start by building a cost estimate",
+        title: "Start with a cost estimate",
         steps: [
-          "→ Add parts from your catalog using '+ Add Line' below (markup is applied automatically).",
-          "→ Add labour hours with '+ Labour' (rate: €" + (context?.settings?.hourlyRate ?? "42.50") + "/hr excl. VAT).",
-          "→ Optional: add a discount percentage for the customer.",
-          "Then create a Quote in Holded from the sidebar and send it to the customer.",
+          "→ Add parts from the catalog using '+ Add Line' — markup is applied automatically.",
+          "→ Add labour hours with '+ Labour' (rate from Settings → Pricing).",
+          "→ Optional: set a discount percentage for the customer.",
+          "Then create a Quote in Holded and send it to the customer.",
         ],
-        tip: "This replaces your Excel sheet. Parts, labour, markup, and VAT are all calculated automatically. The customer only sees the final price.",
-        activeStep: "quote",
+        tip: "Parts, labour, markup, and VAT — all calculated automatically. The customer only sees the final selling price.",
+        activeStep: "estimate",
       };
     }
 
     case "customers":
       return {
-        title: "Your contacts & customers",
+        title: "Contacts & customers",
         steps: [
-          "All customers from Holded are automatically synced here every 6 hours.",
-          "When you create a quote or invoice, the customer is synced to Holded both ways.",
-          "Add email addresses so invoices and quotes can be sent directly from this system.",
-          "Click on a customer to see their full repair history and linked invoices.",
+          "Customers from Holded sync here every 6 hours — no manual import needed.",
+          "Add new customers manually. They're pushed to Holded when you create a quote or invoice.",
+          "Every customer needs an email address for receiving quotes and invoices.",
+          "Click a customer to see their full work order history and linked documents.",
         ],
-        tip: "Customers sync automatically from Holded. You can also add them manually — they'll be created in Holded too.",
+        tip: "The sync is bidirectional — add customers in either system and they appear in both.",
         quickActions: [
           { label: "New Customer", href: "/customers/new" },
         ],
@@ -480,38 +544,38 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
       return {
         title: "Parts catalog & pricing",
         steps: [
-          "Add parts with their cost price (what you pay the supplier).",
-          "Organise parts into categories — filter by category using the tabs at the top.",
-          "Set a markup % per part — or use the default markup from Settings → Pricing.",
-          "When you add a part to a repair estimate, the selling price is calculated automatically.",
-          "In the garage, technicians can request parts by category — categories you create here show up there too.",
+          "Add parts with cost prices (what you pay the supplier).",
+          "Organise into categories — filter by category using the tabs at the top.",
+          "Set markup % per part, or use the default from Settings → Pricing.",
+          "When added to a cost estimate, the selling price is calculated automatically.",
+          "Garage technicians request parts by category — your categories appear there too.",
         ],
-        tip: "Your margin is protected: quotes and invoices show selling prices (cost + markup), never your purchase price. Manage categories directly from the filter bar.",
+        tip: "Quotes and invoices show selling prices only. Your cost prices and margins are fully protected.",
       };
 
     case "invoices":
       return {
-        title: "All invoices synced from Holded",
+        title: "Invoices — synced from Holded",
         steps: [
-          "Invoices are created from repair detail pages and synced to Holded instantly.",
-          "Green = paid, yellow = partially paid, red = unpaid. Filter to find what needs attention.",
-          "PDF download and email send are available per invoice — directly from this page.",
+          "Invoices are created from work order detail pages and synced to Holded instantly.",
+          "Green = paid, yellow = partial, red = unpaid. Filter to see what needs attention.",
+          "PDF download and email available per invoice — directly from this page.",
           "Payment status syncs automatically every 30 minutes from Holded.",
         ],
-        tip: "When a customer pays in Holded (bank, iDEAL, etc.), the status updates here automatically. You can also mark invoices paid manually.",
+        tip: "Cash payment? Click the 'Unpaid' badge to mark it paid immediately — updates Holded too.",
         activeStep: "paid",
       };
 
     case "quotes":
       return {
-        title: "All quotes synced from Holded",
+        title: "Quotes — synced from Holded",
         steps: [
-          "Quotes are created from repair detail pages — build a cost estimate first, then click 'Create Quote'.",
-          "Each quote syncs to Holded instantly. You can email it to the customer from the repair page.",
-          "When a customer approves, start the repair. When done, convert to an invoice.",
+          "Quotes are created from work order detail pages — build a cost estimate first.",
+          "Each quote syncs to Holded instantly. Email it to the customer from the work order page.",
+          "When approved, start the work. When done, convert to an invoice.",
           "Quote status syncs automatically from Holded.",
         ],
-        tip: "Quotes show the selling price (cost + markup). Your purchase prices are never visible to the customer.",
+        tip: "Quotes show selling prices (cost + markup). Your purchase prices are never visible to the customer.",
         activeStep: "quote",
       };
 
@@ -520,10 +584,10 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
         title: "Caravans & units",
         steps: [
           "Register each caravan/unit with brand, model, and registration number.",
-          "Link units to repairs to track the full service history per vehicle.",
-          "When creating a repair, select the customer's unit to auto-fill details.",
+          "Link units to work orders to track the full service history per vehicle.",
+          "When creating a work order, select the customer's unit to auto-fill details.",
         ],
-        tip: "One unit can have multiple repairs over time — the full history is visible on the unit page.",
+        tip: "One unit can have multiple work orders over time — the full history is visible on the unit page.",
         quickActions: [
           { label: "New Unit", href: "/units/new" },
         ],
@@ -533,10 +597,11 @@ function getGuideContent(page: GuidePage, context?: any): GuideContent {
       return {
         title: "How this system works",
         steps: [
-          "Quote → Repair → Invoice → Send → Paid — that's the flow.",
+          "Estimate → Quote → Work → Invoice → Paid — that's the flow.",
+          "Choose work order type: Repair, Wax, Maintenance, or Inspection.",
           "Everything syncs with Holded automatically.",
         ],
-        tip: "Click on any repair to see the full workflow.",
+        tip: "Click any work order to see the full workflow.",
       };
   }
 }
@@ -562,43 +627,51 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
   }, [tutorial.id, onClose]);
 
   return (
-    <div className="bg-white dark:bg-card rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden">
+      {/* Compact header */}
       <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">
-          {tutorial.title}
-        </span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-          <X className="h-4 w-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0CC0DF]/10">
+            <BookOpen className="h-3 w-3 text-[#0CC0DF]" />
+          </div>
+          <span className="text-[13px] font-semibold text-gray-900 dark:text-foreground leading-tight">
+            {tutorial.title}
+          </span>
+        </div>
+        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 dark:text-muted-foreground dark:hover:text-foreground transition-colors p-1 -mr-1">
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
+      {/* Progress dots */}
       <div className="px-5 pb-3">
         <div className="flex gap-1">
           {tutorial.steps.map((_, i) => (
             <div
               key={i}
               className={cn(
-                "h-1 flex-1 rounded-full transition-colors",
-                i <= currentStep ? "bg-[#0CC0DF]" : "bg-gray-200 dark:bg-muted",
+                "h-[3px] flex-1 rounded-full transition-all duration-300",
+                i <= currentStep ? "bg-[#0CC0DF]" : "bg-gray-100 dark:bg-muted",
               )}
             />
           ))}
         </div>
-        <p className="text-xs text-gray-400 dark:text-muted-foreground mt-1.5">
+        <p className="text-[10px] text-gray-400 dark:text-muted-foreground mt-1.5 tracking-wide">
           Step {currentStep + 1} of {tutorial.steps.length}
         </p>
       </div>
 
-      <div className="px-5 pb-4 border-t border-gray-100 dark:border-border pt-3">
-        <div className="mb-3">
-          <p className="text-sm font-medium text-gray-900 dark:text-foreground">{step.title}</p>
-          <p className="text-sm text-gray-500 dark:text-muted-foreground leading-relaxed mt-1">{step.description}</p>
+      {/* Step content */}
+      <div className="px-5 pb-5 border-t border-gray-50 dark:border-border pt-4">
+        <div className="mb-4">
+          <p className="text-[13px] font-medium text-gray-900 dark:text-foreground leading-snug">{step.title}</p>
+          <p className="text-[12.5px] text-gray-500 dark:text-muted-foreground leading-relaxed mt-1.5">{step.description}</p>
         </div>
 
         {step.action && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-muted mb-4">
-            <MousePointerClick className="h-3.5 w-3.5 mt-0.5 text-gray-400 dark:text-muted-foreground shrink-0" />
-            <p className="text-xs text-gray-600 dark:text-muted-foreground leading-relaxed font-medium">
+          <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-muted/50 mb-4 border border-gray-100/80 dark:border-border/50">
+            <MousePointerClick className="h-3.5 w-3.5 mt-0.5 text-[#0CC0DF] shrink-0" />
+            <p className="text-[11.5px] text-gray-600 dark:text-muted-foreground leading-relaxed font-medium">
               {step.action}
             </p>
           </div>
@@ -606,23 +679,23 @@ function TutorialViewer({ tutorial, onClose }: { tutorial: Tutorial; onClose: ()
 
         <div className="flex items-center justify-between">
           <button
-            className="text-sm text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors disabled:opacity-30"
+            className="text-[12px] text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors disabled:opacity-20"
             disabled={isFirst}
             onClick={() => setCurrentStep(currentStep - 1)}
           >
-            ← Previous
+            ← Back
           </button>
           {isLast ? (
             <button
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-[#0CC0DF] hover:bg-[#0bb0cc] rounded-lg px-4 py-2 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#0CC0DF] hover:bg-[#0ab0cc] rounded-xl px-4 py-2 transition-all duration-150 active:scale-[0.97]"
               onClick={completeTutorial}
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Complete
+              Done
             </button>
           ) : (
             <button
-              className="text-sm font-medium text-gray-900 dark:text-foreground hover:text-[#0CC0DF] transition-colors"
+              className="text-[12px] font-medium text-gray-900 dark:text-foreground hover:text-[#0CC0DF] transition-colors"
               onClick={() => setCurrentStep(currentStep + 1)}
             >
               Next →
@@ -655,17 +728,22 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
   const allTutorials = [...relevant, ...others];
 
   return (
-    <div className="bg-white dark:bg-card rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">
-          Tutorials
-        </span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-          <X className="h-4 w-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0CC0DF]/10">
+            <BookOpen className="h-3 w-3 text-[#0CC0DF]" />
+          </div>
+          <span className="text-[13px] font-semibold text-gray-900 dark:text-foreground">
+            Tutorials
+          </span>
+        </div>
+        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 dark:text-muted-foreground dark:hover:text-foreground transition-colors p-1 -mr-1">
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="px-5 pb-4 space-y-1">
+      <div className="px-3 pb-4 space-y-0.5">
         {allTutorials.map((tutorial) => {
           const isCompleted = completedIds.includes(tutorial.id);
           const isRelevant = relevant.includes(tutorial);
@@ -673,30 +751,30 @@ function TutorialList({ page, onSelectTutorial, onClose }: {
             <button
               key={tutorial.id}
               onClick={() => onSelectTutorial(tutorial)}
-              className="w-full text-left rounded-xl px-4 py-3 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent"
+              className="w-full text-left rounded-xl px-3 py-2.5 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   {isCompleted ? (
-                    <CheckCircle2 className="h-4 w-4 text-gray-400 shrink-0" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-gray-300 dark:text-muted-foreground/40 shrink-0" />
                   ) : (
-                    <Play className="h-4 w-4 text-gray-400 shrink-0" />
+                    <Play className="h-3.5 w-3.5 text-gray-400 dark:text-muted-foreground shrink-0 group-hover:text-[#0CC0DF] transition-colors" />
                   )}
                   <span className={cn(
-                    "text-sm font-medium",
-                    isCompleted ? "text-gray-400 dark:text-muted-foreground" : "text-gray-900 dark:text-foreground",
+                    "text-[12.5px] font-medium leading-snug",
+                    isCompleted ? "text-gray-400 dark:text-muted-foreground/60" : "text-gray-700 dark:text-foreground",
                   )}>
                     {tutorial.title}
                   </span>
                 </div>
-                <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+                <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-muted-foreground/30 shrink-0 group-hover:text-gray-400 transition-colors" />
               </div>
-              <div className="flex items-center gap-3 mt-1 pl-[26px]">
-                <span className="text-xs text-gray-400">{tutorial.duration}</span>
-                <span className="text-xs text-gray-400">{tutorial.steps.length} steps</span>
+              <div className="flex items-center gap-3 mt-0.5 pl-[22px]">
+                <span className="text-[10px] text-gray-400 dark:text-muted-foreground/60">{tutorial.duration}</span>
+                <span className="text-[10px] text-gray-400 dark:text-muted-foreground/60">{tutorial.steps.length} steps</span>
                 {isRelevant && !isCompleted && (
-                  <span className="text-xs text-gray-500 font-medium">
-                    for this page
+                  <span className="text-[10px] text-[#0CC0DF] font-medium">
+                    relevant
                   </span>
                 )}
               </div>
@@ -787,18 +865,18 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
         <button
           type="button"
           onClick={handleRestore}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-[#0CC0DF] dark:text-muted-foreground dark:hover:text-[#0CC0DF] transition-colors"
         >
-          <HelpCircle className="h-3.5 w-3.5" />
+          <Sparkles className="h-3 w-3" />
           Show guide
         </button>
-        <span className="text-gray-300 dark:text-muted-foreground/50">·</span>
+        <span className="text-gray-200 dark:text-muted-foreground/30">·</span>
         <button
           type="button"
           onClick={() => { setDismissed(false); setShowTutorials(true); }}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-[#0CC0DF] dark:text-muted-foreground dark:hover:text-[#0CC0DF] transition-colors"
         >
-          <BookOpen className="h-3.5 w-3.5" />
+          <BookOpen className="h-3 w-3" />
           Tutorials
         </button>
       </div>
@@ -808,40 +886,45 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
   return (
     <div
       className={cn(
-        "bg-white dark:bg-card rounded-xl shadow-sm overflow-hidden transition-all",
+        "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden transition-all",
         className,
       )}
     >
       {/* Header with workflow steps */}
       <div className="px-5 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-gray-900 dark:text-foreground">
-            {guide.title}
-          </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0CC0DF]/10">
+              <Sparkles className="h-3 w-3 text-[#0CC0DF]" />
+            </div>
+            <span className="text-[13px] font-semibold text-gray-900 dark:text-foreground leading-tight">
+              {guide.title}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <button
-              className="text-xs text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors flex items-center gap-1"
+              className="text-[10.5px] text-gray-400 hover:text-[#0CC0DF] dark:text-muted-foreground dark:hover:text-[#0CC0DF] transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-accent"
               onClick={() => setShowTutorials(true)}
             >
-              <BookOpen className="h-3.5 w-3.5" />
+              <BookOpen className="h-3 w-3" />
               Tutorials
             </button>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
+              className="text-gray-300 hover:text-gray-500 dark:text-muted-foreground dark:hover:text-foreground transition-colors p-1 rounded-lg hover:bg-gray-50 dark:hover:bg-accent"
               onClick={() => setExpanded(!expanded)}
             >
-              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             </button>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
+              className="text-gray-300 hover:text-gray-500 dark:text-muted-foreground dark:hover:text-foreground transition-colors p-1 rounded-lg hover:bg-gray-50 dark:hover:bg-accent"
               onClick={handleDismiss}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Workflow progress bar */}
+        {/* Workflow progress — Mollie-style minimal pills */}
         <div className="flex items-center gap-0">
           {STEPS.map((step, i) => {
             const isActive = i === activeStepIndex;
@@ -851,20 +934,20 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
               <div key={step.key} className="flex items-center">
                 <div
                   className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    isActive && "bg-gray-100 dark:bg-muted text-gray-900 dark:text-foreground",
+                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all",
+                    isActive && "bg-[#0CC0DF]/10 text-[#0CC0DF]",
                     isCompleted && "text-[#0CC0DF]",
-                    isFuture && "text-gray-300 dark:text-muted-foreground/40",
+                    isFuture && "text-gray-300 dark:text-muted-foreground/30",
                     !isActive && !isCompleted && !isFuture && "text-gray-400 dark:text-muted-foreground",
                   )}
                 >
-                  {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.icon}
+                  {isCompleted ? <CheckCircle2 className="h-3 w-3" /> : step.icon}
                   <span className="hidden sm:inline">{step.label}</span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <ArrowRight className={cn(
-                    "h-3 w-3 mx-0.5 shrink-0",
-                    isCompleted ? "text-[#0CC0DF]/40" : "text-gray-200 dark:text-muted-foreground/30",
+                    "h-2.5 w-2.5 mx-0.5 shrink-0",
+                    isCompleted ? "text-[#0CC0DF]/30" : "text-gray-200 dark:text-muted-foreground/20",
                   )} />
                 )}
               </div>
@@ -875,11 +958,11 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
 
       {/* Expandable content */}
       {expanded && (
-        <div className="px-5 pb-4 border-t border-gray-100 dark:border-border pt-3">
+        <div className="px-5 pb-4 border-t border-gray-50 dark:border-border pt-3.5">
           <div className="space-y-2 mb-3">
             {guide.steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-muted-foreground leading-relaxed">
-                <span className="mt-0.5 shrink-0 w-4 text-center text-gray-300 dark:text-muted-foreground/50 font-medium text-xs">
+              <div key={i} className="flex items-start gap-2.5 text-[12.5px] text-gray-600 dark:text-muted-foreground leading-relaxed">
+                <span className="mt-0.5 shrink-0 w-4 text-center text-gray-300 dark:text-muted-foreground/40 font-medium text-[11px]">
                   {step.startsWith("✅") || step.startsWith("→") ? "" : `${i + 1}.`}
                 </span>
                 <span>{step}</span>
@@ -887,23 +970,23 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             ))}
           </div>
 
-          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-muted mb-3">
-            <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-gray-400 dark:text-muted-foreground shrink-0" />
-            <p className="text-xs text-gray-500 dark:text-muted-foreground leading-relaxed">
+          <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-[#0CC0DF]/5 dark:bg-[#0CC0DF]/5 mb-3 border border-[#0CC0DF]/10">
+            <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-[#0CC0DF] shrink-0" />
+            <p className="text-[11.5px] text-gray-500 dark:text-muted-foreground leading-relaxed">
               {guide.tip}
             </p>
           </div>
 
           {/* Quick actions */}
           {guide.quickActions && guide.quickActions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {guide.quickActions.map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg border border-gray-100 dark:border-border bg-white dark:bg-card text-gray-500 dark:text-muted-foreground hover:text-[#0CC0DF] hover:border-[#0CC0DF]/30 dark:hover:text-[#0CC0DF] transition-all"
                 >
-                  <ArrowRight className="h-3 w-3" />
+                  <ArrowRight className="h-2.5 w-2.5" />
                   {action.label}
                 </Link>
               ))}
@@ -915,20 +998,20 @@ export function WorkflowGuide({ page, context, className, defaultExpanded = fals
             const relevantTutorials = TUTORIALS.filter(t => t.pages.includes(page));
             if (relevantTutorials.length === 0) return null;
             return (
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-border">
-                <p className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-2">
+              <div className="mt-3 pt-3 border-t border-gray-50 dark:border-border">
+                <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-2">
                   Tutorials for this page
                 </p>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {relevantTutorials.map((tutorial) => (
                     <button
                       key={tutorial.id}
                       onClick={() => setActiveTutorial(tutorial)}
-                      className="w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-accent transition-all group"
                     >
-                      <Play className="h-3.5 w-3.5 text-gray-400 dark:text-muted-foreground shrink-0" />
-                      <span className="text-sm text-gray-600 dark:text-muted-foreground">{tutorial.title}</span>
-                      <span className="text-xs text-gray-400 dark:text-muted-foreground ml-auto shrink-0">{tutorial.duration}</span>
+                      <Play className="h-3 w-3 text-gray-400 dark:text-muted-foreground shrink-0 group-hover:text-[#0CC0DF] transition-colors" />
+                      <span className="text-[12px] text-gray-600 dark:text-muted-foreground group-hover:text-gray-900 dark:group-hover:text-foreground transition-colors">{tutorial.title}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-muted-foreground/60 ml-auto shrink-0">{tutorial.duration}</span>
                     </button>
                   ))}
                 </div>

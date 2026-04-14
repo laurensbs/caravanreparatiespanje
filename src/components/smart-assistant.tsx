@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
-  MessageCircleQuestion, X, ChevronRight, ArrowLeft, Search,
+  X, ChevronRight, ArrowLeft,
   Wrench, Receipt, Users, FileText, Package, Lightbulb, HelpCircle,
   Zap, CheckCircle2, ArrowRight, Send, RotateCcw, Sparkles, Bot,
-  ExternalLink,
+  ExternalLink, Truck, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +28,12 @@ interface FaqItem {
 
 type FaqCategory =
   | "getting-started"
-  | "repairs"
+  | "work-orders"
   | "quotes-invoices"
   | "holded"
   | "parts-pricing"
   | "customers"
-  | "excel-migration"
+  | "garage"
   | "tips";
 
 interface ChatMessage {
@@ -51,17 +51,49 @@ interface RepairContext {
   settings?: any;
 }
 
-// ─── Category config ──────────────────────────────────────────
+// ─── Category configuration ─────────────────────────────────
 
-const CATEGORY_CONFIG: Record<FaqCategory, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
-  "getting-started": { label: "Getting Started", icon: <Zap className="h-3.5 w-3.5" />, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30" },
-  "repairs": { label: "Repairs", icon: <Wrench className="h-3.5 w-3.5" />, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30" },
-  "quotes-invoices": { label: "Quotes & Invoices", icon: <Receipt className="h-3.5 w-3.5" />, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/30" },
-  "holded": { label: "Holded Integration", icon: <ArrowRight className="h-3.5 w-3.5" />, color: "text-sky-500", bg: "bg-sky-50 dark:bg-sky-950/30" },
-  "parts-pricing": { label: "Parts & Pricing", icon: <Package className="h-3.5 w-3.5" />, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-  "customers": { label: "Customers", icon: <Users className="h-3.5 w-3.5" />, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-950/30" },
-  "excel-migration": { label: "From Excel to This", icon: <FileText className="h-3.5 w-3.5" />, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30" },
-  "tips": { label: "Tips & Tricks", icon: <Lightbulb className="h-3.5 w-3.5" />, color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30" },
+const CATEGORY_CONFIG: Record<FaqCategory, { label: string; icon: React.ReactNode; color: string }> = {
+  "getting-started": {
+    label: "Getting Started",
+    icon: <Zap className="h-3.5 w-3.5" />,
+    color: "text-[#0CC0DF]",
+  },
+  "work-orders": {
+    label: "Work Orders",
+    icon: <ClipboardList className="h-3.5 w-3.5" />,
+    color: "text-blue-500",
+  },
+  "quotes-invoices": {
+    label: "Quotes & Invoices",
+    icon: <Receipt className="h-3.5 w-3.5" />,
+    color: "text-emerald-500",
+  },
+  "holded": {
+    label: "Holded Integration",
+    icon: <Zap className="h-3.5 w-3.5" />,
+    color: "text-violet-500",
+  },
+  "parts-pricing": {
+    label: "Parts & Pricing",
+    icon: <Package className="h-3.5 w-3.5" />,
+    color: "text-orange-500",
+  },
+  "customers": {
+    label: "Customers",
+    icon: <Users className="h-3.5 w-3.5" />,
+    color: "text-pink-500",
+  },
+  "garage": {
+    label: "Garage Portal",
+    icon: <Truck className="h-3.5 w-3.5" />,
+    color: "text-amber-500",
+  },
+  "tips": {
+    label: "Tips & Tricks",
+    icon: <Lightbulb className="h-3.5 w-3.5" />,
+    color: "text-yellow-500",
+  },
 };
 
 // ─── FAQ data ─────────────────────────────────────────────────
@@ -70,133 +102,174 @@ const FAQ_ITEMS: FaqItem[] = [
   // ── Getting Started ────────────────────────────────
   {
     id: "what-is-this",
-    question: "What is this system and how does it replace my Excel?",
-    answer: "This is your new repair management system. It replaces the Excel spreadsheet you used before. Instead of manually tracking repairs, customers, parts, and invoices in separate Excel tabs, everything is now in one place — connected and automated.\n\nThe main flow is: Create a repair → Build a cost estimate (parts + labour) → Create a quote → Send it to the customer → Do the repair → Create an invoice → Get paid.\n\nThe big difference from Excel: amounts are calculated automatically, documents sync to Holded, and payment tracking happens without manual work.",
+    question: "What is this system?",
+    answer: "This is your **work order management system** for caravan repairs, wax treatments, maintenance, and inspections.\n\nIt replaces Excel spreadsheets with a professional workflow:\n• **Estimate** → **Quote** → **Work** → **Invoice** → **Paid**\n\nEverything syncs with **Holded** (quotes, invoices, contacts, payments).\n\nTechnicians use the **garage portal** to manage tasks, report findings, and request parts.",
     category: "getting-started",
-    keywords: ["start", "begin", "excel", "what", "how", "system", "replace", "new"],
-    synonyms: ["what is this", "what does this do", "explain system", "how does this work", "replace excel", "instead of excel"],
-    relatedIds: ["main-workflow", "excel-vs-this", "where-to-start"],
+    keywords: ["what", "system", "about", "this", "overview", "explain"],
+    synonyms: ["what is this", "what does this do", "about this system", "how does this work"],
+    relatedIds: ["main-workflow", "what-are-work-order-types"],
+    pages: ["dashboard"],
   },
   {
     id: "main-workflow",
-    question: "What is the main workflow? How do I go from start to finish?",
-    answer: "Every repair follows this flow:\n\n1. **Create a repair** — Click '+ New Repair', fill in customer, unit (caravan), and problem description.\n2. **Build cost estimate** — Add parts from catalog (markup applied automatically) and labour hours.\n3. **Create a Quote** — Click 'Create Quote' in the sidebar → it's created in Holded instantly.\n4. **Send the Quote** — Click 'Email' to send the quote to the customer.\n5. **Do the repair** — Change status to 'In Progress'. Add extra parts if you find more issues.\n6. **Create Invoice** — When done, set status to 'Completed', then 'Create Invoice'.\n7. **Send Invoice** — Click 'Email' to send it.\n8. **Payment** — When the customer pays in Holded, the status updates here automatically (every 30 min).\n\nYou can see which step each repair is at from the workflow bar at the top of every page.",
+    question: "What is the main workflow?",
+    answer: "Every work order follows these steps:\n\n1. **Create** a work order (choose type: Repair, Wax, Maintenance, or Inspection).\n2. **Estimate** — add parts (auto-markup) and labour hours.\n3. **Quote** — create in Holded, email to customer for approval.\n4. **Work** — do the job. Update estimate if you find extra issues.\n5. **Invoice** — create in Holded when work is done.\n6. **Paid** — payment syncs automatically from Holded.\n\nFor **wax treatments**, tasks are auto-generated. All types follow the same invoice workflow.",
     category: "getting-started",
-    keywords: ["workflow", "flow", "steps", "process", "start", "finish", "how", "order"],
-    synonyms: ["how does it work", "what are the steps", "walk me through", "step by step", "from beginning to end"],
-    relatedIds: ["create-repair", "create-quote", "create-invoice", "payment-tracking"],
-    pages: ["dashboard", "repairs", "repair-detail"],
+    keywords: ["workflow", "flow", "steps", "process", "how", "main"],
+    synonyms: ["how does it work", "main flow", "step by step", "process flow"],
+    relatedIds: ["what-is-this", "what-are-work-order-types", "holded-connection"],
+    pages: ["dashboard"],
   },
   {
     id: "where-to-start",
-    question: "I just logged in — where do I start?",
-    answer: "Start at the **Dashboard** (you're probably here already). You'll see:\n\n• **KPI cards** at the top — how many active, in progress, waiting, etc.\n• **Recent Activity** — your latest repairs.\n• A **guide** below the KPIs explaining what to do.\n\nTo create your first repair: click **'+ New Repair'** in the top right. Pick the customer, caravan, and describe the issue. Then go to the repair detail page to add parts and build a cost estimate.\n\nTip: The sidebar on the left is your navigation. Repairs, Contacts, Parts, Invoices — everything is there.",
+    question: "Where do I start?",
+    answer: "Start by creating your first work order:\n\n1. Click **'+ New Work Order'** (top-right).\n2. Choose the type (Repair is the default).\n3. Select a customer and unit.\n4. Add a description.\n\nThen on the detail page:\n• Add parts → add labour → **Create Quote** → email it.\n• Do the work → **Create Invoice** → send it.\n\nPayment tracks automatically via Holded.",
     category: "getting-started",
-    keywords: ["start", "begin", "first", "login", "where", "new", "just"],
-    synonyms: ["what do i do first", "where to begin", "first time", "getting started", "logged in now what"],
-    relatedIds: ["navigation", "create-repair", "main-workflow"],
+    keywords: ["start", "begin", "first", "new", "how to"],
+    synonyms: ["how to start", "first steps", "getting started", "begin using"],
+    relatedIds: ["main-workflow", "create-work-order"],
     pages: ["dashboard"],
-    quickAction: { label: "Create your first repair", href: "/repairs/new" },
+    quickAction: { label: "Create Work Order", href: "/repairs/new" },
   },
   {
     id: "navigation",
     question: "How do I navigate the system?",
-    answer: "Use the **sidebar on the left**:\n\n• **Dashboard** — Overview of all repairs and stats.\n• **Repairs** — All repairs, filterable by status/priority/location.\n• **Contacts** — All customers, synced from Holded.\n• **Units** — Caravans/vehicles registered in the system.\n• **Parts** — Your parts catalog with cost prices and markup.\n• **Invoices** — All invoices from Holded with payment status.\n• **Settings** — Locations, tags, users, pricing.\n\nYou can collapse the sidebar by clicking the arrow at the bottom.\n\nTip: Press **Cmd+K** (Mac) or **Ctrl+K** (Windows) to quickly search for anything.",
+    answer: "The sidebar has everything grouped:\n\n**Work**\n• **Work Orders** — all jobs (with filters, kanban board)\n• **Planning** — schedule and calendar views\n\n**Business**\n• **Contacts** — all customers (synced with Holded)\n• **Parts** — your parts catalog with markup pricing\n• **Units** — caravans and vehicles\n• **Invoices** — payment tracking\n\n**Quick search:** Press **Cmd+K** from anywhere to search for work orders, customers, parts, or pages.\n\nThe **garage portal** (/garage) is separate for technicians.",
     category: "getting-started",
-    keywords: ["navigate", "sidebar", "menu", "find", "where", "pages", "go"],
-    synonyms: ["how to get to", "where is", "find page", "move around", "go to"],
-    relatedIds: ["quick-search", "repair-filters"],
+    keywords: ["navigate", "sidebar", "menu", "pages", "find", "where"],
+    synonyms: ["where is everything", "how to find", "menu items", "sidebar navigation"],
+    relatedIds: ["quick-search", "what-is-this"],
   },
 
-  // ── Repairs ────────────────────────────────────────
+  // ── Work Orders ────────────────────────────────────
   {
-    id: "create-repair",
-    question: "How do I create a new repair?",
-    answer: "Two ways:\n\n1. **From the Dashboard** — Click '+ New Repair' in the top right.\n2. **From Repairs page** — Same button, top right.\n\nFill in:\n• **Customer** — Select from the dropdown (they come from Holded).\n• **Unit** — The caravan/vehicle being repaired.\n• **Title** — Brief description (e.g. 'Leaking window').\n• **Description** — Full details of the problem.\n• **Location** — Which workshop (Cruïllas, Peratallada, Sant Climent).\n• **Priority** — Normal, High, or Urgent.\n\nAfter creating, you'll land on the repair detail page where you build the cost estimate.",
-    category: "repairs",
-    keywords: ["create", "new", "repair", "add", "make", "start"],
-    synonyms: ["new job", "add repair", "start a repair", "make new repair", "begin repair"],
-    relatedIds: ["cost-estimate", "repair-statuses", "main-workflow"],
-    pages: ["repairs", "repair-new", "dashboard"],
-    quickAction: { label: "New Repair", href: "/repairs/new" },
+    id: "create-work-order",
+    question: "How do I create a work order?",
+    answer: "Click **'+ New Work Order'** in the top-right corner.\n\nFill in:\n• **Type** — Repair, Wax Treatment, Maintenance, or Inspection.\n• **Customer** — select from the dropdown (synced from Holded).\n• **Unit** — the caravan/vehicle being worked on.\n• **Description** — what needs to be done.\n• **Location** — which workshop.\n• **Priority** — Normal, High, or Urgent.\n\nFor **Wax Treatments**, standard tasks are auto-generated after creation.",
+    category: "work-orders",
+    keywords: ["create", "new", "work order", "add", "make"],
+    synonyms: ["new work order", "add a job", "create repair", "start new job"],
+    relatedIds: ["what-are-work-order-types", "wax-auto-tasks", "main-workflow"],
+    pages: ["repair-new", "repairs"],
+    quickAction: { label: "New Work Order", href: "/repairs/new" },
   },
   {
-    id: "repair-statuses",
-    question: "What do the repair statuses mean?",
-    answer: "Each repair goes through these statuses:\n\n• **New** — Just created, not started yet.\n• **To Do** — Acknowledged, in the queue.\n• **Scheduled** — Has a planned date.\n• **In Progress** — Currently being worked on.\n• **Waiting Parts** — Repair paused, waiting for parts to arrive.\n• **Waiting Customer** — Waiting for the customer to respond.\n• **Blocked** — Can't proceed for some reason.\n• **Completed** — Repair work done, ready for invoicing.\n• **Invoiced** — Invoice created in Holded.\n• **Archived** — Closed/finished.\n\nTip: Click the status dropdown at the top of any repair to change it.",
-    category: "repairs",
-    keywords: ["status", "statuses", "meaning", "new", "progress", "waiting", "completed", "todo", "blocked"],
-    synonyms: ["what does status mean", "repair stages", "change status", "status options"],
-    relatedIds: ["edit-repair", "create-repair"],
+    id: "what-are-work-order-types",
+    question: "What are the work order types?",
+    answer: "There are **four types** of work orders:\n\n• **Repair** — Standard damage fix (water damage, bodywork, structural). The default type.\n• **Wax Treatment** — Caravan waxing with auto-generated tasks. Great for seasonal maintenance.\n• **Maintenance** — Scheduled service jobs: annual checkups, seal replacements, general servicing.\n• **Inspection** — Pre-sale checks, insurance assessments, condition reports.\n\nEach type has a **colour-coded badge** on the work order card. You can **filter by type** on the overview page.\n\nAll types follow the same invoice workflow: estimate → quote → work → invoice → paid.",
+    category: "work-orders",
+    keywords: ["types", "repair", "wax", "maintenance", "inspection", "kind", "category"],
+    synonyms: ["job types", "work order types", "what kinds", "type of work", "wax treatment", "inspection type"],
+    relatedIds: ["create-work-order", "wax-auto-tasks", "type-filter"],
+    pages: ["repairs", "repair-new"],
+  },
+  {
+    id: "wax-auto-tasks",
+    question: "How do wax treatments work?",
+    answer: "When you create a work order with type **'Wax Treatment'**:\n\n1. Standard wax tasks are **automatically added** — cleaning, preparation, wax application, buffing, inspection.\n2. These tasks appear in the **garage portal** for technicians.\n3. Technicians check off each step as they complete it.\n4. You can still add custom tasks or modify the auto-generated ones.\n\nThe invoice workflow is the same: build estimate → create invoice → send → paid.\n\nThis saves setup time — no need to manually list every wax step.",
+    category: "work-orders",
+    keywords: ["wax", "treatment", "auto", "tasks", "automatic", "generated"],
+    synonyms: ["wax job", "wax tasks", "auto generate", "wax workflow", "caravan wax"],
+    relatedIds: ["what-are-work-order-types", "garage-tasks", "create-work-order"],
+    pages: ["repair-new", "repair-detail"],
+  },
+  {
+    id: "work-order-statuses",
+    question: "What do the statuses mean?",
+    answer: "Work orders move through these statuses:\n\n• **New** — Just created, not started.\n• **Assessing** — Being evaluated.\n• **Waiting Approval** — Quote sent, waiting for customer.\n• **Approved** — Customer approved, ready to start.\n• **In Progress** — Work is being done.\n• **Waiting Parts** — Paused, waiting for parts to arrive.\n• **Waiting Customer** — Waiting for customer response.\n• **Completed** — Work done, ready to invoice.\n• **Invoiced** — Invoice created.\n• **Archived** — Done and filed away.\n• **Rejected** — Customer declined.\n• **No Damage** — Inspection found nothing.\n\nUse the **Kanban board** to see all work orders grouped by status.",
+    category: "work-orders",
+    keywords: ["status", "statuses", "new", "in progress", "completed", "waiting", "meaning"],
+    synonyms: ["what are statuses", "repair status", "status meaning", "job status"],
+    relatedIds: ["create-work-order", "kanban-board"],
     pages: ["repairs", "repair-detail"],
+  },
+  {
+    id: "type-filter",
+    question: "How do I filter by work order type?",
+    answer: "On the **Work Orders** page, the quick filter bar at the top has a **'Type'** dropdown.\n\nSelect one or more types to filter:\n• Repair\n• Wax Treatment\n• Maintenance\n• Inspection\n\nCombine with **status**, **search**, and **advanced filters** (priority, location, tags, date range) for precise results.\n\nActive filters show as **removable pills** below the filter bar.",
+    category: "work-orders",
+    keywords: ["filter", "type", "find", "search", "show", "only"],
+    synonyms: ["filter by type", "show only repairs", "find wax jobs", "type filter"],
+    relatedIds: ["what-are-work-order-types", "work-order-filters", "advanced-filters"],
+    pages: ["repairs"],
   },
   {
     id: "cost-estimate",
     question: "How do I build a cost estimate?",
-    answer: "On the repair detail page, scroll down to the **Cost Estimate** section:\n\n1. **Add parts** — Click '+ Add Line'. Select a part from your catalog → the selling price (cost + markup) is filled in automatically.\n2. **Add labour** — Click '+ Labour'. Enter hours worked. Hourly rate comes from Settings → Pricing.\n3. **Custom lines** — Add custom items with a description and price.\n4. **Discount** — Optionally set a discount percentage.\n\nThe total is calculated automatically: parts + labour – discount + VAT.\n\nThe customer only sees the selling price (after markup). Your purchase price stays private.",
-    category: "repairs",
-    keywords: ["cost", "estimate", "build", "parts", "labour", "price", "total", "calculate"],
-    synonyms: ["add cost", "price a repair", "how much to charge", "build estimate", "cost breakdown"],
-    relatedIds: ["add-parts-repair", "markup-explained", "hourly-rate", "create-quote"],
+    answer: "On the work order detail page, scroll to **'Cost Estimate'**:\n\n1. **'+ Add Line'** — select a part from the catalog. Category tabs help filter. Selling price (cost + markup) fills automatically.\n2. **'+ Labour'** — add work hours. Rate comes from Settings → Pricing.\n3. **Custom line** — your own description and price.\n4. **Discount %** — set at the bottom if needed.\n\nTotal = (parts + labour - discount) + VAT.\n\nThis estimate becomes the basis for quotes and invoices.",
+    category: "work-orders",
+    keywords: ["estimate", "cost", "build", "add", "parts", "labour", "price"],
+    synonyms: ["build estimate", "cost estimate", "add parts to estimate", "pricing"],
+    relatedIds: ["add-parts-work-order", "hourly-rate", "create-quote"],
     pages: ["repair-detail"],
   },
   {
-    id: "edit-repair",
-    question: "How do I edit a repair's details?",
-    answer: "On the repair detail page:\n\n• **Title** — Click it to edit inline.\n• **Description** — Click 'Edit' next to it.\n• **Status, Priority** — Use the dropdowns at the top.\n• **Cost estimate** — Add/remove/edit lines directly.\n• **Notes** — Use the internal notes field.\n\nAfter making changes, click **'Save'** (top right) to save everything.\n\nTip: The timeline at the bottom shows the history of all changes.",
-    category: "repairs",
-    keywords: ["edit", "change", "update", "modify", "title", "description", "save"],
-    synonyms: ["change repair", "update details", "modify repair", "fix details"],
-    relatedIds: ["repair-statuses", "cost-estimate"],
+    id: "edit-work-order",
+    question: "How do I edit a work order?",
+    answer: "Everything is editable from the **work order detail page**:\n\n• **Status** — dropdown at the top.\n• **Priority** — dropdown next to status.\n• **Description** — click to edit inline.\n• **Tags** — '+' button in the status bar.\n• **Cost estimate** — add/remove/edit lines anytime.\n• **Internal notes** — for office-only information.\n\nChanges to the estimate automatically update linked quotes (before they're sent) and invoices (before they're created).",
+    category: "work-orders",
+    keywords: ["edit", "change", "modify", "update", "work order"],
+    synonyms: ["change work order", "update job", "modify repair", "edit details"],
+    relatedIds: ["cost-estimate", "work-order-statuses"],
     pages: ["repair-detail"],
   },
   {
-    id: "repair-filters",
-    question: "How do I find a specific repair?",
-    answer: "On the **Repairs** page:\n\n• **Search bar** — Type a customer name, repair code, or description.\n• **Status filter** — Filter by Todo, In Progress, Waiting, etc.\n• **Location filter** — Filter by workshop.\n• **Priority filter** — Find urgent repairs.\n\nOr use **Cmd+K / Ctrl+K** from anywhere for global search.\n\nTip: Dashboard KPI cards are clickable — click 'Urgent' to see urgent repairs.",
-    category: "repairs",
-    keywords: ["find", "search", "filter", "specific", "looking", "where", "repair"],
-    synonyms: ["look for repair", "search repair", "find a job", "locate repair", "which repair"],
-    relatedIds: ["quick-search", "kanban-board"],
+    id: "work-order-filters",
+    question: "What filters are available?",
+    answer: "The work orders page has a **2-layer filter system**:\n\n**Quick bar** (always visible):\n• **Search** — by code, customer name, title.\n• **Status** — filter by status.\n• **Type** — Repair, Wax, Maintenance, Inspection.\n• **Filters button** — opens advanced panel.\n\n**Advanced panel** (popover):\n• Priority (Normal / High / Urgent)\n• Location (workshop)\n• Invoice status (Unpaid / Paid)\n• Response time\n• Tags\n• Date range\n\nActive filters show as **removable pills** with 'Clear all'.",
+    category: "work-orders",
+    keywords: ["filters", "search", "find", "overview", "sort"],
+    synonyms: ["how to filter", "search work orders", "find jobs", "filter options"],
+    relatedIds: ["type-filter", "quick-search", "kanban-board"],
     pages: ["repairs"],
   },
+  {
+    id: "delete-work-order",
+    question: "Can I delete a work order?",
+    answer: "Yes — on the work order detail page, scroll to the bottom → **delete button**.\n\nNote:\n• Removes from this system permanently.\n• Quotes/invoices already in Holded still exist there.\n• Cannot be undone.\n\n**Better alternative:** Set status to **'Archived'** — hides from active views but preserves the full history.",
+    category: "work-orders",
+    keywords: ["delete", "remove", "work order", "undo", "archive", "get rid"],
+    synonyms: ["remove work order", "delete a job", "get rid of", "erase"],
+    relatedIds: ["work-order-statuses", "edit-work-order"],
+    pages: ["repair-detail"],
+  },
 
-  // ── Quotes & Invoices ──────────────────────────────
+  // ── Quotes & Invoices ─────────────────────────────
   {
     id: "create-quote",
     question: "How do I create and send a quote?",
-    answer: "From the **repair detail page**:\n\n1. First, build your cost estimate (parts + labour).\n2. In the **right sidebar**, under 'Holded Documents', click **'Create Quote'**.\n3. The quote is instantly created in Holded with all your line items.\n4. Two buttons appear: **PDF** (download) and **Email** (send to customer).\n5. Click **'Email'** to send the quote to the customer's email address.\n\nThe quote shows selling prices (after markup), VAT, and total. Your purchase prices are never visible.\n\nTip: If the customer doesn't have an email, add it in their contact page first.",
+    answer: "On the work order detail page:\n\n1. Build a **cost estimate** (parts + labour).\n2. In the right sidebar, click **'Create Quote'**.\n3. A Holded quote is created instantly with your company branding.\n4. Click **'Email'** to send the quote to the customer.\n5. Or click **'PDF'** to download and send manually.\n\nThe quote shows **selling prices** (cost + markup) — never your purchase price.",
     category: "quotes-invoices",
-    keywords: ["quote", "create", "send", "email", "pdf", "offerte", "estimate"],
-    synonyms: ["make quote", "send quote", "offerte maken", "price quote", "send estimate", "email quote"],
-    relatedIds: ["cost-estimate", "create-invoice", "quote-vs-invoice", "customer-email-important"],
+    keywords: ["quote", "create", "send", "offerte", "estimate"],
+    synonyms: ["make a quote", "send quote", "create offerte", "quote customer"],
+    relatedIds: ["create-invoice", "cost-estimate", "holded-connection"],
     pages: ["repair-detail"],
   },
   {
     id: "create-invoice",
     question: "How do I create and send an invoice?",
-    answer: "From the **repair detail page**:\n\n1. Make sure your cost estimate is complete.\n2. Set the repair status to **'Completed'** (or you can do it before).\n3. In the **right sidebar**, click **'Create Invoice'**.\n4. The invoice is created in Holded instantly.\n5. Click **'Email'** to send the invoice to the customer.\n\nThe invoice amounts come from your cost estimate. If you need to change something, update the estimate first, then create a new invoice.\n\nPayment tracking is automatic — when the customer pays in Holded, it updates here within 30 minutes.",
+    answer: "When work is completed:\n\n1. Set status to **'Completed'** on the work order.\n2. In the right sidebar, click **'Create Invoice'**.\n3. A Holded invoice is created from your cost estimate.\n4. Click **'Email'** to send the invoice to the customer.\n\nPayment is tracked automatically — when the customer pays in Holded, the status updates here within 30 minutes.\n\nFor immediate cash payments: go to Invoices → click 'Unpaid' badge.",
     category: "quotes-invoices",
-    keywords: ["invoice", "create", "send", "factuur", "bill", "payment"],
-    synonyms: ["make invoice", "send invoice", "factuur maken", "bill customer", "create bill"],
-    relatedIds: ["cost-estimate", "create-quote", "payment-tracking", "mark-paid-manually"],
-    pages: ["repair-detail", "invoices"],
+    keywords: ["invoice", "create", "send", "bill", "factuur"],
+    synonyms: ["make invoice", "send invoice", "bill customer", "invoice creation", "create factuur"],
+    relatedIds: ["create-quote", "payment-tracking", "mark-paid-manually"],
+    pages: ["repair-detail"],
   },
   {
     id: "invoice-page",
-    question: "What is the Invoices page for?",
-    answer: "The **Invoices** page shows all invoices from Holded in one overview:\n\n• **Green** = Paid\n• **Yellow** = Partially paid\n• **Red** = Unpaid (click to mark as paid)\n\nYou can:\n• Filter by status (Paid / Unpaid / Partial)\n• Search by invoice number or customer name\n• Filter by date range\n• Download PDFs\n• Resend invoices via email\n\nPayment status syncs automatically from Holded every 30 minutes.",
+    question: "What does the Invoices page show?",
+    answer: "The Invoices page shows **all invoices from Holded**:\n\n• **Green badge** — Paid.\n• **Yellow badge** — Partially paid.\n• **Red badge** — Unpaid.\n\nFor each invoice: customer name, document number, linked work order, status, and PDF/Email actions.\n\nFilter by status (Unpaid / Partial / Paid) to see what needs attention.\n\nNote: Amounts are in Holded — this page focuses on status tracking.",
     category: "quotes-invoices",
-    keywords: ["invoices", "page", "overview", "paid", "unpaid", "payment", "list"],
-    synonyms: ["invoice overview", "see all invoices", "check payments", "invoice list"],
-    relatedIds: ["mark-paid-manually", "payment-tracking", "no-amounts-visible"],
+    keywords: ["invoices", "page", "overview", "list", "show"],
+    synonyms: ["invoices page", "invoice overview", "all invoices", "invoice list"],
+    relatedIds: ["payment-tracking", "mark-paid-manually", "no-amounts"],
     pages: ["invoices"],
     quickAction: { label: "Go to Invoices", href: "/invoices" },
   },
   {
     id: "quote-vs-invoice",
-    question: "What's the difference between a quote and an invoice?",
-    answer: "• A **quote** (offerte) is sent BEFORE the work — so the customer can approve the cost.\n• An **invoice** (factuur) is sent AFTER the work — so the customer pays.\n\nBoth are created in Holded from the same cost estimate. The typical flow:\n1. Build estimate → Create quote → Send to customer\n2. Customer approves → Do the repair\n3. Repair done → Create invoice → Send to customer → Get paid\n\nIf you find extra issues during the repair, update the cost estimate. The invoice will reflect the latest amounts.",
+    question: "What's the difference between a quote and invoice?",
+    answer: "**Quote** (offerte):\n• Sent **before** the work starts.\n• Customer approves or rejects.\n• Shows the estimated cost.\n\n**Invoice** (factuur):\n• Sent **after** the work is done.\n• The actual bill for the customer to pay.\n• Based on the final cost estimate.\n\nBoth are created in **Holded** and can be emailed or downloaded as PDF.",
     category: "quotes-invoices",
     keywords: ["quote", "invoice", "difference", "offerte", "factuur", "versus", "vs"],
     synonyms: ["quote or invoice", "offerte vs factuur", "when quote when invoice", "difference between"],
@@ -206,9 +279,9 @@ const FAQ_ITEMS: FaqItem[] = [
 
   // ── Holded Integration ─────────────────────────────
   {
-    id: "what-is-holded",
+    id: "holded-connection",
     question: "What is Holded and how does it connect?",
-    answer: "**Holded** is the accounting/invoicing system used by the business. This repair system connects to Holded via API:\n\n• **Quotes** — Created here → appear instantly in Holded.\n• **Invoices** — Created here → appear instantly in Holded.\n• **Contacts** — Synced both ways every 6 hours.\n• **Payments** — When a customer pays in Holded, the status syncs back here every 30 min.\n\nYou do NOT need to log into Holded for quotes/invoices — you do everything from here. But you CAN open Holded for official documents or manual edits.\n\nEvery quote and invoice has an 'Open in Holded' link.",
+    answer: "**Holded** is the accounting/invoicing system. This system connects to Holded via API:\n\n• **Quotes** — Created here → appear instantly in Holded.\n• **Invoices** — Created here → appear instantly in Holded.\n• **Contacts** — Synced both ways every 6 hours.\n• **Payments** — When paid in Holded → status syncs here every 30 min.\n\nYou do NOT need to log into Holded for quotes/invoices — everything happens from here. But every document has an **'Open in Holded'** link for the full view.",
     category: "holded",
     keywords: ["holded", "what", "connect", "sync", "integration", "accounting"],
     synonyms: ["what is holded", "holded connection", "how holded works", "accounting system"],
@@ -217,29 +290,29 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: "holded-sync",
     question: "How does the sync with Holded work?",
-    answer: "The sync is automatic:\n\n• **Quotes & Invoices** — Created **instantly** when you click the button. No delay.\n• **Contacts** — Synced every **6 hours** in both directions.\n• **Payments** — Synced every **30 minutes**. When a customer pays in Holded, it shows here as 'Paid'.\n\nYou can also mark an invoice as paid manually for immediate updates.\n\nThe sync runs automatically in the background — you don't need to do anything.",
+    answer: "The sync is automatic:\n\n• **Quotes & Invoices** — Created **instantly** when you click the button. No delay.\n• **Contacts** — Synced every **6 hours** in both directions.\n• **Payments** — Synced every **30 minutes**. When a customer pays in Holded, it shows here as 'Paid'.\n\nYou can also mark an invoice as paid manually for immediate updates.\n\nThe sync runs in the background — you don't need to do anything.",
     category: "holded",
-    keywords: ["sync", "automatic", "how", "when", "contacts", "payments", "cron", "frequency"],
-    synonyms: ["when does it sync", "sync frequency", "how often", "automatic update", "real time"],
-    relatedIds: ["what-is-holded", "customer-sync", "payment-tracking"],
+    keywords: ["sync", "automatic", "how", "when", "contacts", "payments", "frequency"],
+    synonyms: ["when does it sync", "sync frequency", "how often", "automatic update"],
+    relatedIds: ["holded-connection", "customer-sync", "payment-tracking"],
   },
   {
     id: "holded-link",
-    question: "Can I still open things in Holded directly?",
-    answer: "Yes! Every quote and invoice has an **'Open in Holded'** button/link. This opens the document directly in the Holded web app.\n\nUse this when you need to:\n• See the official PDF layout\n• Add payment information manually\n• Make edits that are only available in Holded\n• Check the full accounting view\n\nChanges to payment status in Holded sync back here automatically.",
+    question: "Can I open things in Holded directly?",
+    answer: "Yes! Every quote and invoice has an **'Open in Holded'** link.\n\nUse this when you need to:\n• See the official PDF layout.\n• Add payment information manually.\n• Make edits only available in Holded.\n• Check the full accounting view.\n\nChanges to payment status in Holded sync back here automatically.",
     category: "holded",
     keywords: ["holded", "open", "link", "directly", "website", "view"],
     synonyms: ["go to holded", "open in holded", "view in holded", "holded website"],
-    relatedIds: ["what-is-holded", "holded-sync"],
+    relatedIds: ["holded-connection", "holded-sync"],
     pages: ["repair-detail", "invoices"],
   },
   {
     id: "payment-tracking",
     question: "How does payment tracking work?",
-    answer: "Payment tracking is mostly **automatic**:\n\n1. You create and send an invoice from this system.\n2. The customer pays via bank transfer, iDEAL, or another method in Holded.\n3. Every **30 minutes**, this system checks Holded for payment updates.\n4. When paid, the invoice shows as **green/Paid** here.\n\nIf you need to mark something paid immediately (e.g. cash):\n• On the **Invoices page** — click the red 'Unpaid' badge\n• This marks it as paid in both systems.\n\nNo more manual Excel tracking!",
+    answer: "Payment tracking is mostly **automatic**:\n\n1. You create and send an invoice from this system.\n2. The customer pays via bank transfer, iDEAL, or another method.\n3. Every **30 minutes**, this system checks Holded for payment updates.\n4. When paid, the invoice shows **green/Paid** here.\n\nFor immediate updates (cash, etc.):\n• On the **Invoices page** → click the red 'Unpaid' badge.\n• Marks it paid in both systems.\n\nNo more manual Excel tracking!",
     category: "holded",
-    keywords: ["payment", "paid", "tracking", "automatic", "bank", "cash", "money", "received"],
-    synonyms: ["has customer paid", "payment status", "check payment", "when paid updates", "cash payment"],
+    keywords: ["payment", "paid", "tracking", "automatic", "bank", "cash", "money"],
+    synonyms: ["has customer paid", "payment status", "check payment", "when paid updates"],
     relatedIds: ["mark-paid-manually", "holded-sync", "invoice-page"],
     pages: ["invoices"],
   },
@@ -248,31 +321,31 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: "how-parts-work",
     question: "How does the parts catalog work?",
-    answer: "The **Parts** page is your catalog of all parts/materials:\n\n• Each part has a **cost price** (what you pay the supplier).\n• Each part can have a **markup %** (how much you charge on top).\n• If no markup is set, the **default markup** from Settings → Pricing is used.\n\n**Example:** Part costs €10, markup 40% → selling price €14.\n\nWhen adding a part to a repair estimate, the **selling price** is filled in automatically. The customer only sees this.\n\nYou can also add a **supplier** and **SKU number** for your records.",
+    answer: "The **Parts** page is your catalog of all parts/materials:\n\n• Each part has a **cost price** (what you pay the supplier).\n• Each part can have a **markup %** (how much you charge on top).\n• If no markup is set, the **default markup** from Settings → Pricing is used.\n\n**Example:** Part costs €10, markup 40% → selling price €14.\n\nWhen adding a part to a cost estimate, the **selling price** fills automatically.\n\nParts are organised by **categories** (Tyres, Lights, Seals, etc.) — same categories appear in the garage for technician part requests.",
     category: "parts-pricing",
     keywords: ["parts", "catalog", "cost", "price", "how", "supplier"],
     synonyms: ["parts list", "part prices", "add new part", "parts page"],
-    relatedIds: ["markup-explained", "add-parts-repair", "hourly-rate"],
+    relatedIds: ["markup-explained", "add-parts-work-order", "hourly-rate"],
     pages: ["parts"],
     quickAction: { label: "Go to Parts", href: "/parts" },
   },
   {
     id: "markup-explained",
     question: "How does markup work? Will the customer see my cost price?",
-    answer: "**No, the customer never sees your cost price.** Here's how markup works:\n\n• You set the **cost price** (what you pay) per part.\n• You set a **markup percentage** per part (or use the default from Settings).\n• **Selling price** = cost × (1 + markup/100).\n\n**Example:** Cost €50, markup 40% → Selling price €70. Your margin: €20.\n\nQuotes and invoices always show the **selling price**. Your cost price and markup are only visible to you.\n\nLabour uses a flat hourly rate from Settings → Pricing.",
+    answer: "**No, the customer never sees your cost price.** Here's how markup works:\n\n• You set the **cost price** (what you pay) per part.\n• You set a **markup %** per part (or use the default from Settings).\n• **Selling price** = cost × (1 + markup/100).\n\n**Example:** Cost €50, markup 40% → Selling price €70. Your margin: €20.\n\nQuotes and invoices always show the **selling price**. Your cost price and markup are only visible to you.\n\nLabour uses a flat hourly rate from Settings → Pricing.",
     category: "parts-pricing",
     keywords: ["markup", "cost", "selling", "margin", "customer", "see", "price", "profit"],
-    synonyms: ["does customer see price", "hide cost", "my margin", "profit margin", "selling price"],
-    relatedIds: ["how-parts-work", "add-parts-repair", "hourly-rate"],
+    synonyms: ["does customer see price", "hide cost", "my margin", "profit margin"],
+    relatedIds: ["how-parts-work", "add-parts-work-order", "hourly-rate"],
     pages: ["parts", "repair-detail"],
   },
   {
-    id: "add-parts-repair",
-    question: "How do I add parts to a repair?",
-    answer: "On the repair detail page, in the **Cost Estimate** section:\n\n1. Click **'+ Add Line'**.\n2. Select a part from the dropdown — selling price fills automatically.\n3. Set the **quantity**.\n4. Line total: quantity × selling price.\n\nAlso:\n• **'+ Labour'** — add work hours.\n• **Custom line** — your own description and price.\n• **Discount %** — at the bottom.\n\nThe total (lines + VAT) is what appears on quotes and invoices.",
+    id: "add-parts-work-order",
+    question: "How do I add parts to a work order?",
+    answer: "On the work order detail page, in the **Cost Estimate** section:\n\n1. Click **'+ Add Line'**.\n2. Select a part from the dropdown — use **category tabs** to filter.\n3. Set the **quantity**.\n4. Line total: quantity × selling price.\n\nAlso:\n• **'+ Labour'** — add work hours.\n• **Custom line** — your own description and price.\n• **Discount %** — set at the bottom.\n\nThe total (lines + VAT) is what appears on quotes and invoices.",
     category: "parts-pricing",
-    keywords: ["add", "parts", "repair", "estimate", "line", "labour"],
-    synonyms: ["put parts in repair", "add items", "add to estimate", "part to repair"],
+    keywords: ["add", "parts", "work order", "estimate", "line", "labour"],
+    synonyms: ["put parts in", "add items", "add to estimate", "part to work order"],
     relatedIds: ["cost-estimate", "markup-explained", "discount"],
     pages: ["repair-detail"],
   },
@@ -285,25 +358,25 @@ const FAQ_ITEMS: FaqItem[] = [
     synonyms: ["labour rate", "work rate", "charge per hour", "price per hour"],
     relatedIds: ["how-parts-work", "cost-estimate"],
     pages: ["settings"],
-    quickAction: { label: "Go to Pricing Settings", href: "/settings" },
+    quickAction: { label: "Go to Settings", href: "/settings" },
   },
 
   // ── Customers ──────────────────────────────────────
   {
     id: "customer-sync",
     question: "Where do customers come from?",
-    answer: "Customers come from **two sources**:\n\n1. **Holded** — Every 6 hours, all contacts from Holded sync here automatically.\n2. **Manual** — Add via Contacts → '+ New Customer'. They're pushed to Holded when you create a quote/invoice.\n\nNo need to maintain customers in two places — the sync handles it.\n\nImportant: Make sure every customer has an **email address** for sending quotes and invoices.",
+    answer: "Customers come from **two sources**:\n\n1. **Holded** — Every 6 hours, all contacts from Holded sync here automatically.\n2. **Manual** — Add via Contacts → '+ New Customer'. They're pushed to Holded when you create a quote/invoice.\n\nNo need to maintain customers in two places — the sync handles it.\n\nMake sure every customer has an **email address** for sending quotes and invoices.",
     category: "customers",
     keywords: ["customer", "contact", "where", "come", "sync", "add", "new"],
-    synonyms: ["add customer", "new customer", "where are customers", "customer list", "contacts"],
+    synonyms: ["add customer", "new customer", "where are customers", "customer list"],
     relatedIds: ["customer-email-important", "holded-sync"],
     pages: ["customers"],
     quickAction: { label: "View Contacts", href: "/customers" },
   },
   {
     id: "customer-email-important",
-    question: "Why does the system keep asking for customer email?",
-    answer: "Email is how quotes and invoices are delivered. When you click 'Email', Holded sends to that address.\n\n**Without email:**\n• You can still create quotes and invoices\n• You can download PDFs\n• But you CAN'T email them from the system\n\nTo add email: **Contacts** → click customer → edit email.\n\nThe system warns you when a customer is missing their email.",
+    question: "Why does the system need customer email?",
+    answer: "Email is how quotes and invoices are delivered. When you click 'Email', Holded sends to that address.\n\n**Without email:**\n• You can still create quotes and invoices.\n• You can download PDFs.\n• But you **can't email** them from the system.\n\nTo add email: **Contacts** → click customer → edit email.\n\nThe system warns you when a customer is missing their email.",
     category: "customers",
     keywords: ["email", "why", "important", "customer", "send", "missing", "no email"],
     synonyms: ["customer email", "missing email", "need email", "add email", "why email"],
@@ -311,127 +384,168 @@ const FAQ_ITEMS: FaqItem[] = [
     pages: ["customers", "repair-detail"],
   },
 
-  // ── Excel Migration ────────────────────────────────
+  // ── Garage Portal ──────────────────────────────────
   {
-    id: "excel-vs-this",
-    question: "What did I use to do in Excel, and where is it now?",
-    answer: "Here's the mapping from your Excel workflow:\n\n• **Repair tracking rows** → Repairs page (with statuses, filters)\n• **Customer list** → Contacts (synced with Holded)\n• **Parts/price list** → Parts catalog (with automatic markup)\n• **Cost calculations** → Cost Estimate on each repair (auto-calculated)\n• **Manual invoice creation** → Create Invoice button (creates in Holded)\n• **Payment tracking columns** → Automatic from Holded every 30 min\n• **Status columns** → Status dropdown with workflow guide\n\nBiggest wins: no manual calculations, no copy-paste to Holded, payments track themselves, everything is searchable.",
-    category: "excel-migration",
-    keywords: ["excel", "used", "before", "old", "spreadsheet", "migration", "where", "replace"],
-    synonyms: ["excel comparison", "how is this different", "my excel", "old system", "what changed"],
-    relatedIds: ["what-is-this", "main-workflow", "data-safe"],
+    id: "garage-overview",
+    question: "What is the garage portal?",
+    answer: "The **garage portal** (/garage) is a separate, mobile-optimised view for technicians.\n\nTechnicians see:\n• **Today's work orders** — assigned to their location.\n• **Tasks** — checklist items to complete (auto-generated for wax jobs).\n• **Findings** — report unexpected issues with category and severity.\n• **Part requests** — request parts by category.\n\nThe garage portal is **read-focused** — technicians do the work, the office manages quotes and invoices.",
+    category: "garage",
+    keywords: ["garage", "portal", "technician", "mobile", "what"],
+    synonyms: ["garage view", "technician view", "workshop portal", "garage page"],
+    relatedIds: ["garage-tasks", "garage-findings", "garage-parts"],
+    pages: ["dashboard", "repairs"],
   },
   {
-    id: "no-amounts-visible",
-    question: "Why can't I see amounts on the invoices page?",
-    answer: "The invoices page shows **counts and statuses** instead of amounts. This keeps the overview clean and focused: which invoices are paid and which need attention.\n\nTo see full invoice details:\n• Click the **invoice number** → opens in Holded\n• Or go to the **repair detail page** (linked in the 'Repair' column)\n\nAll amounts are always available in Holded. This system focuses on workflow and tracking.",
-    category: "excel-migration",
-    keywords: ["amounts", "money", "total", "see", "where", "numbers", "invoices", "hidden"],
-    synonyms: ["where are the amounts", "no money visible", "totals missing", "can't see money", "invoice amounts"],
-    relatedIds: ["invoice-page", "holded-link"],
-    pages: ["invoices"],
+    id: "garage-tasks",
+    question: "How do tasks work in the garage?",
+    answer: "Tasks are the **to-do list** for a work order:\n\n• Created by the office when setting up the work order.\n• For **wax jobs**, tasks are auto-generated (cleaning, prep, application, buffing, inspection).\n• Technicians see tasks in the garage portal and **check them off** as completed.\n• Progress is visible in real time from the office.\n\nYou can add, edit, or remove tasks at any time from the work order detail page.",
+    category: "garage",
+    keywords: ["tasks", "garage", "checklist", "todo", "complete"],
+    synonyms: ["garage tasks", "task list", "check off", "technician tasks"],
+    relatedIds: ["wax-auto-tasks", "garage-overview"],
+    pages: ["repair-detail"],
   },
   {
-    id: "data-safe",
-    question: "Is my data safe? Where is it stored?",
-    answer: "Your data is in **two secure places**:\n\n1. **This system's database** — Neon (PostgreSQL cloud). Repairs, customers, parts, estimates, notes, audit logs.\n2. **Holded** — All official documents (quotes, invoices, contacts).\n\nHosted on **Vercel** — professional cloud platform.\n\nAutomatic backups on both Neon and Holded. Much safer than a local Excel file!",
-    category: "excel-migration",
-    keywords: ["data", "safe", "backup", "stored", "where", "secure", "lost"],
-    synonyms: ["data safety", "is it backed up", "lose data", "where stored", "database"],
-    relatedIds: ["what-is-holded"],
+    id: "garage-findings",
+    question: "How do technicians report findings?",
+    answer: "In the garage portal, technicians tap **'+ Finding'** to report issues:\n\n• **Category** — type of issue (structural, water damage, etc.).\n• **Severity** — how serious it is.\n• **Approval needed** — flag if customer approval is required before fixing.\n• **Description** — details about what was found.\n\nFindings appear **immediately** on the work order in the office. You can then:\n• Add the fix to the cost estimate.\n• Contact the customer for approval.\n• Update the quote if needed.",
+    category: "garage",
+    keywords: ["findings", "report", "issue", "technician", "damage", "found"],
+    synonyms: ["report finding", "found issue", "unexpected damage", "technician report"],
+    relatedIds: ["garage-overview", "garage-tasks"],
+    pages: ["repair-detail"],
+  },
+  {
+    id: "garage-parts",
+    question: "How do technicians request parts?",
+    answer: "In the garage portal, technicians tap **'+ Request Part'**:\n\n1. **Category chips** appear instantly (Tyres, Lights, Seals, etc.).\n2. Select a category to prefix the request.\n3. Type the specific part name.\n\nThe office sees requests immediately and can:\n• Check stock or order the part.\n• Add it to the cost estimate.\n\nCategories are shared between the parts catalog and the garage — create categories on the Parts page and they appear in the garage too.",
+    category: "garage",
+    keywords: ["parts", "request", "garage", "technician", "category", "order"],
+    synonyms: ["request part", "need part", "order part", "part request garage"],
+    relatedIds: ["how-parts-work", "garage-overview"],
+    pages: ["repair-detail", "parts"],
+  },
+  {
+    id: "office-vs-garage",
+    question: "What's visible in the office vs the garage?",
+    answer: "**Office** (this app) — full management:\n• Create & edit work orders, set status/priority.\n• Build cost estimates, create quotes & invoices.\n• Manage customers, parts catalog, pricing.\n• View findings and part requests from the garage.\n• Full filter system, kanban board, invoices page.\n\n**Garage portal** — work execution:\n• Today's assigned work orders.\n• Task checklists (check off completed items).\n• Report findings (issues, damage).\n• Request parts by category.\n• Mobile-optimised, focused interface.\n\nEverything syncs in **real time** between office and garage.",
+    category: "garage",
+    keywords: ["office", "garage", "difference", "visible", "see", "who"],
+    synonyms: ["what can garage see", "office vs garage", "workshop view", "who sees what"],
+    relatedIds: ["garage-overview", "what-is-this"],
+    pages: ["dashboard"],
   },
 
   // ── Tips & Tricks ──────────────────────────────────
   {
     id: "quick-search",
     question: "How do I quickly find anything?",
-    answer: "Press **Cmd+K** (Mac) or **Ctrl+K** (Windows) from anywhere.\n\nSearch for:\n• Repairs (by code, customer name, title)\n• Customers\n• Parts\n• Pages\n\nIt's the fastest way to navigate the system.",
+    answer: "Press **Cmd+K** (Mac) or **Ctrl+K** (Windows) from anywhere.\n\nSearch for:\n• Work orders (by code, customer name, title).\n• Customers.\n• Parts.\n• Pages.\n\nIt's the fastest way to navigate the system.",
     category: "tips",
     keywords: ["search", "find", "quick", "fast", "cmd", "ctrl", "k", "shortcut"],
     synonyms: ["keyboard shortcut", "find something", "search everything", "command k"],
-    relatedIds: ["navigation", "repair-filters"],
+    relatedIds: ["navigation", "work-order-filters"],
   },
   {
     id: "kanban-board",
-    question: "Is there a visual overview of all repairs?",
-    answer: "Yes! Go to **Repairs** → click **'Board'** (or go to /repairs/board).\n\nThis shows a **Kanban board** with repairs grouped by status in columns. See at a glance what's new, in progress, waiting, and completed.\n\nGreat for daily planning.",
+    question: "Is there a visual overview of work orders?",
+    answer: "Yes! Go to **Work Orders** → click **'Board'** (or go to /repairs/board).\n\nThis shows a **Kanban board** with work orders grouped by status in columns. See at a glance what's new, in progress, waiting, and completed.\n\nGreat for daily planning and team coordination.",
     category: "tips",
     keywords: ["board", "kanban", "visual", "overview", "columns", "drag"],
-    synonyms: ["board view", "visual view", "column view", "drag and drop", "overview board"],
-    relatedIds: ["repair-statuses", "repair-filters"],
+    synonyms: ["board view", "visual view", "column view", "overview board"],
+    relatedIds: ["work-order-statuses", "work-order-filters"],
     pages: ["repairs"],
     quickAction: { label: "Open Kanban Board", href: "/repairs/board" },
   },
   {
     id: "communication-log",
-    question: "How do I track communications with a customer?",
-    answer: "On each **repair detail page**, there's a **Communication Log**:\n\n• Log phone calls, emails, and messages.\n• Each entry is timestamped and saved.\n• Creates a full history of all contact about this repair.\n\nUse it to track: when you called, what was discussed, what was agreed.",
+    question: "How do I track communications?",
+    answer: "On each **work order detail page**, there's a **Communication Log**:\n\n• Log phone calls, emails, and messages.\n• Each entry is timestamped.\n• Creates a full history of all contact about this job.\n\nUse it to track: when you called, what was discussed, what was agreed.",
     category: "tips",
-    keywords: ["communication", "log", "phone", "call", "email", "track", "history", "message"],
+    keywords: ["communication", "log", "phone", "call", "email", "track", "history"],
     synonyms: ["log a call", "track phone call", "note a conversation", "record communication"],
-    relatedIds: ["edit-repair"],
+    relatedIds: ["edit-work-order"],
     pages: ["repair-detail"],
   },
   {
     id: "mark-paid-manually",
     question: "How do I manually mark an invoice as paid?",
-    answer: "On the **Invoices** page:\n\n• Find the invoice (red 'Unpaid' badge).\n• **Click the 'Unpaid' badge** → marks it as paid.\n• Updates both this system AND Holded.\n\nUse for: cash payments, bank transfer that hasn't synced yet, or immediate updates.\n\nNormally: payments sync from Holded automatically every 30 min.",
+    answer: "On the **Invoices** page:\n\n• Find the invoice (red 'Unpaid' badge).\n• **Click the 'Unpaid' badge** → marks it as paid.\n• Updates both this system AND Holded.\n\nUse for: cash payments, bank transfers that haven't synced yet, or immediate updates.\n\nNormally: payments sync from Holded automatically every 30 min.",
     category: "tips",
     keywords: ["mark", "paid", "manually", "cash", "update", "status", "unpaid"],
-    synonyms: ["customer paid cash", "manually pay", "set as paid", "click unpaid", "force paid"],
+    synonyms: ["customer paid cash", "manually pay", "set as paid", "force paid"],
     relatedIds: ["payment-tracking", "invoice-page"],
     pages: ["invoices"],
   },
   {
     id: "discount",
     question: "How do I apply a discount?",
-    answer: "In the repair's **Cost Estimate** section, at the bottom: **Discount %** field.\n\nSet a percentage (e.g. 10%) → applied to total before VAT.\n\nExample: Estimate €500, discount 10% = €450 + VAT.\n\nThe discount shows on both the quote and invoice.",
+    answer: "In the work order's **Cost Estimate** section, at the bottom: **Discount %** field.\n\nSet a percentage (e.g. 10%) → applied to total before VAT.\n\nExample: Estimate €500, discount 10% = €450 + VAT.\n\nThe discount shows on both the quote and invoice.",
     category: "tips",
     keywords: ["discount", "percentage", "reduce", "price", "lower", "korting"],
-    synonyms: ["give discount", "reduce price", "lower price", "apply discount", "korting geven"],
+    synonyms: ["give discount", "reduce price", "lower price", "apply discount"],
     relatedIds: ["cost-estimate", "create-quote"],
-    pages: ["repair-detail"],
-  },
-  {
-    id: "delete-repair",
-    question: "Can I delete a repair?",
-    answer: "Yes, but carefully. On the repair detail page, scroll to bottom — **delete button**.\n\nNote:\n• Removes from this system permanently.\n• Quotes/invoices already in Holded still exist there.\n• Cannot be undone.\n\n**Better alternative:** Set status to **'Archived'** — hides from the active list but keeps history.",
-    category: "tips",
-    keywords: ["delete", "remove", "repair", "undo", "archive", "get rid"],
-    synonyms: ["remove repair", "delete a job", "get rid of repair", "erase repair"],
-    relatedIds: ["repair-statuses", "edit-repair"],
     pages: ["repair-detail"],
   },
   {
     id: "multiple-locations",
     question: "How do workshops/locations work?",
-    answer: "The system supports multiple workshop locations (Cruïllas, Peratallada, Sant Climent, etc.).\n\n• Each repair is assigned to a **location** when created.\n• The Dashboard shows a **By Location** breakdown.\n• You can filter repairs by location on the Repairs page.\n\nManage locations in **Settings → Locations**.",
+    answer: "The system supports **multiple workshop locations**.\n\n• Each work order is assigned to a **location** when created.\n• The Dashboard shows a **By Location** breakdown.\n• Filter work orders by location on the overview page.\n• The garage portal shows work orders for each location.\n\nManage locations in **Settings → Locations**.",
     category: "tips",
-    keywords: ["location", "workshop", "locations", "cruillas", "peratallada", "sant climent"],
+    keywords: ["location", "workshop", "locations", "where"],
     synonyms: ["which workshop", "where is it", "different locations", "workshop locations"],
-    relatedIds: ["create-repair", "repair-filters"],
+    relatedIds: ["create-work-order", "work-order-filters"],
     pages: ["settings"],
     quickAction: { label: "Manage Locations", href: "/settings/locations" },
   },
   {
     id: "priority-levels",
     question: "What are the priority levels?",
-    answer: "Repairs have three priority levels:\n\n• **Normal** — Standard queue.\n• **High** — Needs attention soon.\n• **Urgent** — Drop everything, fix this first.\n\nUrgent repairs show a red badge everywhere and appear in the Dashboard's 'Urgent' count.\n\nChange priority in the repair detail page via the dropdown.",
+    answer: "Work orders have three priority levels:\n\n• **Normal** — Standard queue.\n• **High** — Needs attention soon.\n• **Urgent** — Drop everything, fix this first.\n\nUrgent work orders show a **red badge** everywhere and appear in the Dashboard's 'Urgent' count.\n\nChange priority in the work order detail page via the dropdown.",
     category: "tips",
     keywords: ["priority", "urgent", "high", "normal", "important"],
-    synonyms: ["set priority", "urgent repair", "important repair", "priority levels"],
-    relatedIds: ["create-repair", "repair-statuses"],
+    synonyms: ["set priority", "urgent work order", "important job", "priority levels"],
+    relatedIds: ["create-work-order", "work-order-statuses"],
     pages: ["repair-detail", "repairs"],
   },
   {
     id: "vat-tax",
     question: "How is VAT/tax handled?",
-    answer: "VAT is applied automatically:\n\n• The default tax rate is set in **Settings → Pricing** (typically 21% IVA).\n• Cost estimates show subtotal + VAT separately.\n• Quotes and invoices include VAT automatically via Holded.\n\nAll selling prices in the estimate are excl. VAT. VAT is added on the total.",
+    answer: "VAT is applied automatically:\n\n• The default tax rate is set in **Settings → Pricing** (typically 21% IVA).\n• Cost estimates show subtotal + VAT separately.\n• Quotes and invoices include VAT automatically via Holded.\n\nAll selling prices in the estimate are **excl. VAT**. VAT is added on the total.",
     category: "tips",
     keywords: ["vat", "tax", "iva", "btw", "21", "percent"],
-    synonyms: ["how much tax", "iva percentage", "btw rate", "tax rate", "vat included"],
+    synonyms: ["how much tax", "iva percentage", "tax rate", "vat included"],
     relatedIds: ["cost-estimate", "hourly-rate"],
     pages: ["repair-detail", "settings"],
+  },
+  {
+    id: "no-amounts",
+    question: "Why can't I see amounts on the invoices page?",
+    answer: "The invoices page shows **statuses** rather than amounts. This keeps the overview clean and focused on: which are paid, which need attention.\n\nTo see full amounts:\n• Click the **invoice number** → opens in Holded.\n• Or go to the **work order detail** (linked in the table).\n\nAll amounts are always available in Holded. This system focuses on workflow tracking.",
+    category: "tips",
+    keywords: ["amounts", "money", "total", "see", "where", "numbers", "invoices"],
+    synonyms: ["where are the amounts", "no money visible", "totals missing", "invoice amounts"],
+    relatedIds: ["invoice-page", "holded-link"],
+    pages: ["invoices"],
+  },
+  {
+    id: "data-safe",
+    question: "Is my data safe?",
+    answer: "Your data is in **two secure places**:\n\n1. **This system** — Neon (PostgreSQL cloud). Work orders, customers, parts, estimates, notes, audit logs.\n2. **Holded** — All official documents (quotes, invoices, contacts).\n\nHosted on **Vercel** — professional cloud platform.\n\nAutomatic backups on both. Much safer than a local Excel file!",
+    category: "tips",
+    keywords: ["data", "safe", "backup", "stored", "where", "secure", "lost"],
+    synonyms: ["data safety", "is it backed up", "lose data", "where stored"],
+    relatedIds: ["holded-connection"],
+  },
+  {
+    id: "advanced-filters",
+    question: "How do advanced filters work?",
+    answer: "Click the **'Filters'** button on the Work Orders page to open the advanced panel:\n\n• **Priority** — Normal / High / Urgent.\n• **Location** — filter by workshop.\n• **Invoice status** — show only paid or unpaid.\n• **Response time** — how quickly the job was started.\n• **Tags** — filter by assigned tags.\n• **Date range** — filter by creation date.\n\nActive filters show as **pills** below the filter bar. Click × to remove individual filters, or 'Clear all' to reset.\n\nCombine with the quick filters (search, status, type) for precise results.",
+    category: "tips",
+    keywords: ["advanced", "filters", "panel", "popover", "priority", "date"],
+    synonyms: ["filter panel", "more filters", "advanced search", "filter options"],
+    relatedIds: ["work-order-filters", "type-filter"],
+    pages: ["repairs"],
   },
 ];
 
@@ -486,9 +600,9 @@ function searchFaq(query: string, allItems: FaqItem[], threshold = 8): { faq: Fa
     .sort((a, b) => b.score - a.score);
 }
 
-// ─── Dynamic repair context tips ──────────────────────────────
+// ─── Dynamic work order context tips ──────────────────────────
 
-function getRepairTips(context?: RepairContext): FaqItem[] {
+function getWorkOrderTips(context?: RepairContext): FaqItem[] {
   const job = context?.job;
   if (!job) return [];
 
@@ -502,52 +616,53 @@ function getRepairTips(context?: RepairContext): FaqItem[] {
     (Date.now() - new Date(job.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
   );
   const customerName = job.customer?.name || job.customerName || "the customer";
+  const jobType = job.jobType || "repair";
 
   if (!hasEstimate && !hasInvoice) {
     tips.push({
       id: "tip-no-estimate",
-      question: "\ud83d\udca1 Next step: Build cost estimate for " + customerName,
-      answer: "This repair for **" + customerName + "** needs a cost estimate.\n\nScroll down to the **Cost Estimate** section and:\n1. Click **'+ Add Line'** to add parts from your catalog (markup applied automatically).\n2. Click **'+ Labour'** to add work hours.\n3. Optionally set a discount %.\n\nOnce the estimate is ready, you can create a quote to send to the customer for approval.",
+      question: "Next step: Build cost estimate for " + customerName,
+      answer: "This " + jobType + " for **" + customerName + "** needs a cost estimate.\n\nScroll to the **Cost Estimate** section:\n1. Click **'+ Add Line'** to add parts (markup applied automatically).\n2. Click **'+ Labour'** to add work hours.\n3. Optionally set a discount %.\n\nOnce ready, create a quote to send to the customer.",
       category: "tips",
       keywords: [],
     });
   } else if (hasEstimate && !hasQuote && !hasInvoice) {
     tips.push({
       id: "tip-ready-for-quote",
-      question: "\ud83d\udca1 Next step: Create a quote for " + customerName,
-      answer: "Your cost estimate is ready (\u20ac" + parseFloat(job.estimatedCost).toFixed(2) + ").\n\nClick **'Create Quote'** in the right sidebar to generate a Holded quote. Then click **'Email'** to send it to " + customerName + " for approval.\n\n" + (job.customer?.email ? "The quote will be sent to: **" + job.customer.email + "**" : "\u26a0\ufe0f " + customerName + " has no email address. Add it in their contact page first."),
+      question: "Next step: Create a quote for " + customerName,
+      answer: "Your cost estimate is ready (\u20ac" + parseFloat(job.estimatedCost).toFixed(2) + ").\n\nClick **'Create Quote'** in the right sidebar to generate a Holded quote. Then click **'Email'** to send it to " + customerName + ".\n\n" + (job.customer?.email ? "The quote will be sent to: **" + job.customer.email + "**" : "\u26a0\ufe0f " + customerName + " has no email. Add it in their contact page first."),
       category: "tips",
       keywords: [],
     });
   } else if (hasQuote && !hasInvoice && isActive) {
     tips.push({
-      id: "tip-doing-repair",
-      question: "\ud83d\udca1 Quote sent \u2014 repair in progress",
-      answer: "The quote for **" + customerName + "** was sent.\n\nIf you find extra issues during the repair, add more lines to the cost estimate \u2014 amounts update automatically.\n\nWhen finished:\n1. Change status to **'Completed'**.\n2. Click **'Create Invoice'** in the right sidebar.\n3. Send the invoice via email.",
+      id: "tip-doing-work",
+      question: "Quote sent — " + jobType + " in progress",
+      answer: "The quote for **" + customerName + "** was sent.\n\nIf you find extra issues during the work, add more lines to the cost estimate.\n\nWhen finished:\n1. Change status to **'Completed'**.\n2. Click **'Create Invoice'** in the sidebar.\n3. Send the invoice via email.",
       category: "tips",
       keywords: [],
     });
   } else if (hasQuote && !hasInvoice && !isActive) {
     tips.push({
       id: "tip-ready-for-invoice",
-      question: "\ud83d\udca1 Next step: Create invoice for " + customerName,
-      answer: "The repair for **" + customerName + "** is completed. Time to invoice!\n\nClick **'Create Invoice'** in the right sidebar. This converts your cost estimate into a Holded invoice.\n\nThen click **'Email'** to send it to the customer.",
+      question: "Next step: Create invoice for " + customerName,
+      answer: "The " + jobType + " for **" + customerName + "** is completed. Time to invoice!\n\nClick **'Create Invoice'** in the sidebar. Then click **'Email'** to send it.",
       category: "tips",
       keywords: [],
     });
   } else if (hasInvoice && !isPaid) {
     tips.push({
       id: "tip-waiting-payment",
-      question: "\ud83d\udca1 Waiting for payment from " + customerName,
-      answer: "The invoice for **" + customerName + "** has been created.\n\nPayment tracking is automatic \u2014 when they pay in Holded, it shows here within 30 minutes.\n\nTo mark as paid manually (e.g. cash): go to the **Invoices** page and click the red 'Unpaid' badge.",
+      question: "Waiting for payment from " + customerName,
+      answer: "The invoice for **" + customerName + "** has been created.\n\nPayment tracking is automatic — when they pay in Holded, it shows here within 30 minutes.\n\nTo mark paid manually (e.g. cash): go to **Invoices** page → click the 'Unpaid' badge.",
       category: "tips",
       keywords: [],
     });
   } else if (isPaid) {
     tips.push({
       id: "tip-all-done",
-      question: "\u2705 Repair completed and paid!",
-      answer: "Everything is done for **" + customerName + "**! Quote sent, repair completed, invoice paid.\n\nYou can archive this repair or keep it as a reference in the system.",
+      question: "Work order completed and paid!",
+      answer: "Everything is done for **" + customerName + "**! Quote sent, work completed, invoice paid.\n\nYou can archive this work order or keep it as reference.",
       category: "tips",
       keywords: [],
     });
@@ -556,8 +671,8 @@ function getRepairTips(context?: RepairContext): FaqItem[] {
   if (job.customer && !job.customer.email && !isPaid) {
     tips.push({
       id: "tip-no-email",
-      question: "\u26a0\ufe0f " + customerName + " has no email address",
-      answer: "**" + customerName + "** doesn't have an email address. You can still create quotes and invoices, but can't email them.\n\nAdd their email: go to **Contacts** \u2192 find " + customerName + " \u2192 edit their email field.",
+      question: customerName + " has no email address",
+      answer: "**" + customerName + "** doesn't have an email address. You can still create documents, but can't email them.\n\nAdd their email: go to **Contacts** \u2192 find " + customerName + " \u2192 edit email.",
       category: "tips",
       keywords: [],
       quickAction: job.customer?.id ? { label: "Edit " + customerName, href: "/customers/" + job.customer.id } : undefined,
@@ -567,8 +682,8 @@ function getRepairTips(context?: RepairContext): FaqItem[] {
   if (daysSinceUpdated >= 7 && isActive) {
     tips.push({
       id: "tip-stale",
-      question: "\u26a0\ufe0f No updates for " + daysSinceUpdated + " days",
-      answer: "This repair hasn't been updated in **" + daysSinceUpdated + " days**.\n\nConsider:\n\u2022 Is the repair still active? Update the status.\n\u2022 Waiting on something? Change status to 'Waiting Parts' or 'Waiting Customer'.\n\u2022 Done? Change to 'Completed' and create the invoice.\n\u2022 No longer needed? Archive it.",
+      question: "No updates for " + daysSinceUpdated + " days",
+      answer: "This work order hasn't been updated in **" + daysSinceUpdated + " days**.\n\nConsider:\n\u2022 Is it still active? Update the status.\n\u2022 Waiting on something? Change to 'Waiting Parts' or 'Waiting Customer'.\n\u2022 Done? Set 'Completed' and create the invoice.\n\u2022 No longer needed? Archive it.",
       category: "tips",
       keywords: [],
     });
@@ -577,8 +692,8 @@ function getRepairTips(context?: RepairContext): FaqItem[] {
   if (job.safetyFlag && isActive) {
     tips.push({
       id: "tip-safety",
-      question: "\ud83d\udd34 Safety concern flagged",
-      answer: "This repair has a **safety flag**. Prioritize the safety-related work first and ensure the customer is informed about any safety risks.",
+      question: "Safety concern flagged",
+      answer: "This work order has a **safety flag**. Prioritize the safety-related work first and ensure the customer is informed about any safety risks.",
       category: "tips",
       keywords: [],
     });
@@ -587,8 +702,8 @@ function getRepairTips(context?: RepairContext): FaqItem[] {
   if (job.waterDamageRiskFlag && isActive) {
     tips.push({
       id: "tip-water",
-      question: "\ud83d\udd34 Water damage risk flagged",
-      answer: "This repair has a **water damage risk flag**. Address this promptly \u2014 water damage tends to get worse quickly. Consider temporary protection if the full repair will take time.",
+      question: "Water damage risk flagged",
+      answer: "This work order has a **water damage risk flag**. Address this promptly — water damage tends to get worse quickly. Consider temporary protection if the full repair will take time.",
       category: "tips",
       keywords: [],
     });
@@ -632,9 +747,9 @@ export type AssistantPage =
 
 const PAGE_LABELS: Record<AssistantPage, string> = {
   "dashboard": "Dashboard",
-  "repairs": "Repairs",
-  "repair-detail": "Repair Detail",
-  "repair-new": "New Repair",
+  "repairs": "Work Orders",
+  "repair-detail": "Work Order Detail",
+  "repair-new": "New Work Order",
   "customers": "Contacts",
   "parts": "Parts",
   "invoices": "Invoices",
@@ -643,25 +758,25 @@ const PAGE_LABELS: Record<AssistantPage, string> = {
 };
 
 const PAGE_RELEVANT_CATEGORIES: Record<AssistantPage, FaqCategory[]> = {
-  "dashboard": ["getting-started", "excel-migration"],
-  "repairs": ["repairs", "getting-started"],
-  "repair-detail": ["repairs", "quotes-invoices", "parts-pricing"],
-  "repair-new": ["repairs", "getting-started"],
+  "dashboard": ["getting-started", "garage"],
+  "repairs": ["work-orders", "getting-started"],
+  "repair-detail": ["work-orders", "quotes-invoices", "parts-pricing"],
+  "repair-new": ["work-orders", "getting-started"],
   "customers": ["customers", "holded"],
-  "parts": ["parts-pricing"],
+  "parts": ["parts-pricing", "garage"],
   "invoices": ["quotes-invoices", "holded"],
   "units": ["getting-started"],
   "settings": ["parts-pricing", "tips"],
 };
 
 const PAGE_QUICK_SUGGESTIONS: Record<AssistantPage, string[]> = {
-  "dashboard": ["How do I create a repair?", "What is the main workflow?", "Where to start?"],
-  "repairs": ["What do statuses mean?", "How to find a repair?", "Kanban board?"],
-  "repair-detail": ["How to build estimate?", "How to create quote?", "How to invoice?"],
-  "repair-new": ["How to create a repair?", "What is the workflow?"],
+  "dashboard": ["What are the work order types?", "How does the garage portal work?", "Where to start?"],
+  "repairs": ["How do I filter by type?", "What do statuses mean?", "Is there a kanban board?"],
+  "repair-detail": ["How to build an estimate?", "How to create a quote?", "How do wax treatments work?"],
+  "repair-new": ["What are the work order types?", "How do wax tasks auto-generate?"],
   "customers": ["Where do customers come from?", "Why is email important?"],
-  "parts": ["How does markup work?", "How does the catalog work?"],
-  "invoices": ["Why no amounts?", "How to mark as paid?", "How does payment work?"],
+  "parts": ["How does markup work?", "How does the catalog work?", "How do garage part requests work?"],
+  "invoices": ["How does payment tracking work?", "How to mark as paid?", "Why no amounts?"],
   "units": ["What is this system?", "How to navigate?"],
   "settings": ["Where is the hourly rate?", "How do locations work?"],
 };
@@ -689,8 +804,8 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     return () => window.removeEventListener("toggle-assistant", handleToggle);
   }, []);
 
-  const repairTips = useMemo(
-    () => (page === "repair-detail" ? getRepairTips(context) : []),
+  const workOrderTips = useMemo(
+    () => (page === "repair-detail" ? getWorkOrderTips(context) : []),
     [page, context],
   );
 
@@ -758,7 +873,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
         faqId = faq.id;
       } else {
         const suggested = relevantFaq.slice(0, 3);
-        bestAnswer = "I'm not sure about that specific question. Here are some things I can help with on this page:\n\n" + suggested.map((f) => "\u2022 **" + f.question + "**").join("\n") + "\n\nTry clicking one of the suggestions below, or rephrase your question.";
+        bestAnswer = "I'm not sure about that specific question. Here are some things I can help with:\n\n" + suggested.map((f) => "\u2022 **" + f.question + "**").join("\n") + "\n\nTry clicking one of the suggestions, or rephrase your question.";
         relatedIds = suggested.map((f) => f.id);
       }
 
@@ -815,9 +930,9 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     <>
       {/* Panel */}
       {open && (
-        <div className="fixed top-14 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-5rem))] flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
-          {/* Header */}
-          <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white shrink-0">
+        <div className="fixed top-14 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-5rem))] flex flex-col rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+          {/* Header — Mollie-style gradient */}
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-border bg-gradient-to-r from-[#0CC0DF] to-[#0AA0C0] shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 {selectedCategory ? (
@@ -830,32 +945,42 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                     <ArrowLeft className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15">
-                    <Sparkles className="h-3.5 w-3.5" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/15">
+                    <Sparkles className="h-3.5 w-3.5 text-white" />
                   </div>
                 )}
                 <div>
-                  <h3 className="text-sm font-semibold">
+                  <h3 className="text-[13px] font-semibold text-white">
                     {selectedCategory ? CATEGORY_CONFIG[selectedCategory].label : "Smart Assistant"}
                   </h3>
-                  <p className="text-[10px] text-white/60">
+                  <p className="text-[10px] text-white/50">
                     {selectedCategory
                       ? FAQ_ITEMS.filter((f) => f.category === selectedCategory).length + " questions"
-                      : "You're on " + PAGE_LABELS[page]}
+                      : PAGE_LABELS[page]}
                   </p>
                 </div>
               </div>
-              {messages.length > 0 && !selectedCategory && (
+              <div className="flex items-center gap-1">
+                {messages.length > 0 && !selectedCategory && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10"
+                    onClick={handleReset}
+                    title="New conversation"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
-                  onClick={handleReset}
-                  title="New conversation"
+                  className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10"
+                  onClick={() => setOpen(false)}
                 >
-                  <RotateCcw className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </Button>
-              )}
+              </div>
             </div>
           </div>
 
@@ -869,34 +994,34 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                     key={faq.id}
                     type="button"
                     onClick={() => handleCategoryFaqClick(faq)}
-                    className="w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/60 transition-colors flex items-start gap-2.5 group"
+                    className="w-full text-left rounded-xl px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-accent transition-colors flex items-start gap-2.5 group"
                   >
-                    <HelpCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                    <span className="text-[12px] font-medium leading-snug group-hover:text-foreground transition-colors">
+                    <HelpCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-gray-300 dark:text-muted-foreground/40" />
+                    <span className="text-[12px] font-medium leading-snug text-gray-600 dark:text-muted-foreground group-hover:text-gray-900 dark:group-hover:text-foreground transition-colors">
                       {faq.question}
                     </span>
-                    <ChevronRight className="h-3 w-3 mt-1 shrink-0 text-muted-foreground/40 ml-auto" />
+                    <ChevronRight className="h-3 w-3 mt-1 shrink-0 text-gray-200 dark:text-muted-foreground/30 ml-auto" />
                   </button>
                 ))}
               </div>
             ) : showHome ? (
               /* Home / empty state */
               <div className="p-3 space-y-3">
-                {repairTips.length > 0 && (
+                {workOrderTips.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5 px-1 flex items-center gap-1">
+                    <p className="text-[10px] font-semibold text-[#0CC0DF] uppercase tracking-wider mb-1.5 px-1 flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
-                      For this repair
+                      For this work order
                     </p>
                     <div className="space-y-1">
-                      {repairTips.map((tip) => (
+                      {workOrderTips.map((tip) => (
                         <button
                           key={tip.id}
                           type="button"
                           onClick={() => handleTipClick(tip)}
-                          className="w-full text-left rounded-lg px-3 py-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors group"
+                          className="w-full text-left rounded-xl px-3 py-2 bg-[#0CC0DF]/5 border border-[#0CC0DF]/10 hover:bg-[#0CC0DF]/10 transition-colors group"
                         >
-                          <p className="text-[12px] font-medium text-blue-800 dark:text-blue-300 leading-snug group-hover:text-blue-900 dark:group-hover:text-blue-200">
+                          <p className="text-[12px] font-medium text-[#0CC0DF] dark:text-[#0CC0DF] leading-snug">
                             {tip.question}
                           </p>
                         </button>
@@ -907,7 +1032,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
 
                 {quickSuggestions.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
                       Quick questions
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -916,7 +1041,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                           key={q}
                           type="button"
                           onClick={() => handleQuickQuestion(q)}
-                          className="text-[11px] px-2.5 py-1.5 rounded-full border bg-card hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground"
+                          className="text-[11px] px-2.5 py-1.5 rounded-full border border-gray-100 dark:border-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-accent hover:border-gray-200 transition-all text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
                         >
                           {q}
                         </button>
@@ -926,7 +1051,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                 )}
 
                 <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
                     Browse by topic
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -939,14 +1064,16 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                             type="button"
                             onClick={() => setSelectedCategory(key)}
                             className={cn(
-                              "flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-muted/60 active:scale-[0.98]",
-                              relevantCategories.includes(key) && "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20",
+                              "flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all hover:bg-gray-50 dark:hover:bg-accent active:scale-[0.98]",
+                              relevantCategories.includes(key)
+                                ? "border-[#0CC0DF]/20 bg-[#0CC0DF]/5"
+                                : "border-gray-100 dark:border-border",
                             )}
                           >
                             <span className={config.color}>{config.icon}</span>
                             <div>
-                              <span className="text-[11px] font-medium block leading-tight">{config.label}</span>
-                              <span className="text-[9px] text-muted-foreground">{count} questions</span>
+                              <span className="text-[11px] font-medium block leading-tight text-gray-700 dark:text-foreground">{config.label}</span>
+                              <span className="text-[9px] text-gray-400 dark:text-muted-foreground/60">{count} questions</span>
                             </div>
                           </button>
                         );
@@ -962,23 +1089,23 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                   <div key={msg.id}>
                     {msg.role === "user" ? (
                       <div className="flex justify-end">
-                        <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 bg-blue-600 text-white">
+                        <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 bg-[#0CC0DF] text-white">
                           <p className="text-[12px] leading-relaxed">{msg.content}</p>
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted shrink-0 mt-0.5">
-                            <Bot className="h-3 w-3 text-muted-foreground" />
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-muted shrink-0 mt-0.5">
+                            <Bot className="h-3 w-3 text-gray-400 dark:text-muted-foreground" />
                           </div>
-                          <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-muted/60 text-[12px] leading-relaxed text-muted-foreground">
+                          <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-gray-50 dark:bg-muted/60 text-[12px] leading-relaxed text-gray-600 dark:text-muted-foreground">
                             <RenderMarkdown text={msg.content} />
 
                             {msg.quickAction && (
                               <Link
                                 href={msg.quickAction.href}
-                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[#0CC0DF] hover:underline"
                               >
                                 <ExternalLink className="h-3 w-3" />
                                 {msg.quickAction.label}
@@ -998,7 +1125,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                                   key={faq.id}
                                   type="button"
                                   onClick={() => handleRelatedClick(faq.id)}
-                                  className="text-[10px] px-2 py-1 rounded-full border text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors max-w-[180px] truncate"
+                                  className="text-[10px] px-2 py-1 rounded-full border border-gray-100 dark:border-border text-gray-500 dark:text-muted-foreground hover:text-[#0CC0DF] hover:border-[#0CC0DF]/30 transition-all max-w-[180px] truncate"
                                 >
                                   {faq.question.length > 35
                                     ? faq.question.slice(0, 35) + "..."
@@ -1014,14 +1141,14 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
 
                 {isTyping && (
                   <div className="flex items-start gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted shrink-0 mt-0.5">
-                      <Bot className="h-3 w-3 text-muted-foreground" />
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-muted shrink-0 mt-0.5">
+                      <Bot className="h-3 w-3 text-gray-400 dark:text-muted-foreground" />
                     </div>
-                    <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-muted/60">
+                    <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-gray-50 dark:bg-muted/60">
                       <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
                       </div>
                     </div>
                   </div>
@@ -1032,20 +1159,20 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
 
           {/* Input area */}
           {!selectedCategory && (
-            <form onSubmit={handleSubmit} className="px-3 py-2.5 border-t bg-card shrink-0">
+            <form onSubmit={handleSubmit} className="px-3 py-2.5 border-t border-gray-100 dark:border-border bg-white dark:bg-card shrink-0">
               <div className="flex items-center gap-2">
                 <Input
                   ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask me anything..."
-                  className="h-9 text-xs rounded-xl flex-1"
+                  className="h-9 text-xs rounded-xl flex-1 border-gray-200 dark:border-border focus-visible:ring-[#0CC0DF]/30"
                   disabled={isTyping}
                 />
                 <Button
                   type="submit"
                   size="icon"
-                  className="h-9 w-9 rounded-xl shrink-0 bg-blue-600 hover:bg-blue-700"
+                  className="h-9 w-9 rounded-xl shrink-0 bg-[#0CC0DF] hover:bg-[#0ab0cc] border-0"
                   disabled={!inputValue.trim() || isTyping}
                 >
                   <Send className="h-3.5 w-3.5" />

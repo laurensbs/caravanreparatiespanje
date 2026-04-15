@@ -23,6 +23,7 @@ import {
   searchParts,
   createPartRequest,
   createPart,
+  createPartCategory,
   updatePartRequest,
   updatePartRequestStatus,
   removePartRequest,
@@ -109,6 +110,10 @@ export function RepairPartsUsed({
   const [showPicker, setShowPicker] = useState(false);
   const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showNewPart, setShowNewPart] = useState(false);
+  const [newPartName, setNewPartName] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -516,7 +521,7 @@ export function RepairPartsUsed({
           )}
         </p>
         <div className="flex items-center gap-2">
-          {!showPicker && (
+          {!showPicker && !showNewPart && (
             <button
               onClick={() => {
                 setShowPicker(true);
@@ -527,16 +532,12 @@ export function RepairPartsUsed({
               <Plus className="h-3 w-3" /> Add
             </button>
           )}
-          {!showPicker && (
+          {!showPicker && !showNewPart && (
             <button
-              onClick={() => {
-                setShowPicker(true);
-                setQuery("");
-                setTimeout(() => inputRef.current?.focus(), 50);
-              }}
-              className="text-[10px] text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150 rounded-md border border-gray-200 dark:border-gray-700 px-1.5 py-0.5"
+              onClick={() => setShowNewPart(true)}
+              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
             >
-              <Package className="h-2.5 w-2.5" /> New
+              <Package className="h-3 w-3" /> New
             </button>
           )}
         </div>
@@ -601,39 +602,121 @@ export function RepairPartsUsed({
           </div>
 
           {/* Category pills */}
-          {partCategories.filter(c => c.active).length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {partCategories.filter(c => c.active).map((cat) => {
-                const Icon = ICON_MAP[cat.icon] ?? Package;
-                const isActive = selectedCategory === cat.key;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(isActive ? null : cat.key);
-                      setHighlightIndex(-1);
-                    }}
-                    className={cn(
-                      "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
-                      isActive
-                        ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
-                        : "bg-gray-50 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                    )}
-                  >
-                    <Icon className="h-2.5 w-2.5" />
-                    {cat.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {partCategories.filter(c => c.active).map((cat) => {
+              const Icon = ICON_MAP[cat.icon] ?? Package;
+              const isActive = selectedCategory === cat.key;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(isActive ? null : cat.key);
+                    setHighlightIndex(-1);
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
+                    isActive
+                      ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                      : "bg-gray-50 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                  )}
+                >
+                  <Icon className="h-2.5 w-2.5" />
+                  {cat.label}
+                </button>
+              );
+            })}
+            {showNewCategory ? (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const trimmed = newCategoryName.trim();
+                  if (!trimmed) return;
+                  try {
+                    await createPartCategory({ key: trimmed, label: trimmed });
+                    toast.success(`Category "${trimmed}" created`);
+                    setNewCategoryName("");
+                    setShowNewCategory(false);
+                    router.refresh();
+                  } catch { toast.error("Failed to create category"); }
+                }}
+                className="inline-flex items-center"
+              >
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Category name..."
+                  className="h-6 w-28 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-2 text-[10px] placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Escape") { setShowNewCategory(false); setNewCategoryName(""); } }}
+                />
+                <button type="button" onClick={() => { setShowNewCategory(false); setNewCategoryName(""); }} className="ml-0.5 p-0.5 rounded text-gray-400 hover:text-gray-600">
+                  <X className="h-3 w-3" />
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowNewCategory(true)}
+                className="inline-flex items-center gap-0.5 h-6 px-2 rounded-md text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-dashed border-gray-200 dark:border-gray-700 transition-all duration-150"
+              >
+                <Plus className="h-2.5 w-2.5" /> Filter
+              </button>
+            )}
+          </div>
 
           {/* Portal */}
           {typeof window !== "undefined" &&
             isOpen &&
             createPortal(dropdown, document.body)}
         </div>
+      )}
+
+      {/* New part inline form */}
+      {showNewPart && (
+        <form
+          className="mb-3 flex gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const trimmed = newPartName.trim();
+            if (!trimmed) return;
+            startTransition(async () => {
+              try {
+                const newPart = await createPart({ name: trimmed, stockQuantity: 0, minStockLevel: 0 });
+                await createPartRequest({ repairJobId, partId: newPart.id, partName: newPart.name });
+                toast.success(`"${trimmed}" created & added`);
+                setNewPartName("");
+                setShowNewPart(false);
+                router.refresh();
+              } catch { toast.error("Failed to create part"); }
+            });
+          }}
+        >
+          <input
+            type="text"
+            value={newPartName}
+            onChange={(e) => setNewPartName(e.target.value)}
+            placeholder="New part name..."
+            className="flex-1 h-9 px-3 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40"
+            autoFocus
+            onKeyDown={(e) => { if (e.key === "Escape") { setShowNewPart(false); setNewPartName(""); } }}
+          />
+          <button
+            type="submit"
+            disabled={isPending || !newPartName.trim()}
+            className="h-9 px-3 text-xs font-medium rounded-lg bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
+          >
+            Create & Add
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowNewPart(false); setNewPartName(""); }}
+            className="h-9 px-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </form>
       )}
 
       {/* Parts list */}

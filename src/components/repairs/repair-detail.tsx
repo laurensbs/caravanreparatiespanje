@@ -41,6 +41,7 @@ import { CustomerSearch } from "@/components/customers/customer-search";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/actions/tags";
@@ -656,9 +657,30 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <JobTypePicker value={jobType} onChange={setJobType} />
-                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${statusBadgeColor}`}>
-                  {STATUS_LABELS[status as RepairStatus]}
-                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 cursor-pointer hover:opacity-80 ${statusBadgeColor}`}>
+                      {STATUS_LABELS[status as RepairStatus]}
+                      <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-48 p-1">
+                    {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                      <button
+                        key={val}
+                        onClick={() => setStatus(val)}
+                        className={cn(
+                          "w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors",
+                          val === status
+                            ? "bg-gray-100 dark:bg-gray-800 font-medium"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
                 {priority !== "normal" && (
                   <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${priorityBadgeColor}`}>
                     {PRIORITY_LABELS[priority as Priority]}
@@ -1793,35 +1815,44 @@ function TimelineCommunicationCard({
 }) {
   const [tab, setTab] = useState<"timeline" | "comms">("comms");
   return (
-    <Card className="rounded-xl" ref={communicationRef}>
-      <CardHeader className="pb-1">
-        <div className="flex items-center gap-2">
+    <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden" ref={communicationRef}>
+      <div className="px-6 pt-5 pb-3">
+        <div className="flex items-center gap-1 bg-gray-100/80 dark:bg-gray-800/50 rounded-xl p-1">
           <button
             type="button"
             onClick={() => setTab("comms")}
-            className={`flex items-center gap-1.5 text-sm font-semibold pb-0.5 border-b-2 transition-colors ${
-              tab === "comms" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-semibold transition-all duration-150",
+              tab === "comms"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+            )}
           >
-            <MessageSquare className="h-4 w-4" />
-            Comms
+            <MessageSquare className="h-3.5 w-3.5" />
+            Customer communication
+            {communicationLogs.length > 0 && (
+              <span className="text-[10px] bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full px-1.5 leading-relaxed">{communicationLogs.length}</span>
+            )}
           </button>
           <button
             type="button"
             onClick={() => setTab("timeline")}
-            className={`flex items-center gap-1.5 text-sm font-semibold pb-0.5 border-b-2 transition-colors ${
-              tab === "timeline" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-semibold transition-all duration-150",
+              tab === "timeline"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+            )}
           >
-            <Clock className="h-4 w-4" />
+            <Clock className="h-3.5 w-3.5" />
             Timeline
             {events.length > 0 && (
-              <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-1.5">{events.length}</span>
+              <span className="text-[10px] bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full px-1.5 leading-relaxed">{events.length}</span>
             )}
           </button>
         </div>
-      </CardHeader>
-      <CardContent className="pt-3">
+      </div>
+      <div className="px-6 pb-5">
         {tab === "comms" ? (
           <CommunicationLogPanel
             repairJobId={repairJobId}
@@ -1831,29 +1862,32 @@ function TimelineCommunicationCard({
         ) : (
           <div className="space-y-0">
             {events.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground py-2">No timeline events yet.</p>
+              <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-6 text-center">
+                <Clock className="mx-auto mb-2 h-5 w-5 text-gray-300 dark:text-gray-600" />
+                <p className="text-xs text-gray-400 dark:text-gray-500">No timeline events yet</p>
+              </div>
             ) : (
               events.map((event: any, idx: number) => (
                 <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
                   {idx < events.length - 1 && (
-                    <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-border" />
+                    <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
                   )}
-                  <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-primary/30 bg-background" />
+                  <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5 text-xs">
-                      <span className="font-medium">{event.userName ?? "System"}</span>
-                      <span className="text-muted-foreground">{event.eventType.replace(/_/g, " ")}</span>
-                      <span className="ml-auto text-[11px] text-muted-foreground/70 whitespace-nowrap">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{event.userName ?? "System"}</span>
+                      <span className="text-gray-400 dark:text-gray-500">{event.eventType.replace(/_/g, " ")}</span>
+                      <span className="ml-auto text-[11px] text-gray-300 dark:text-gray-600 whitespace-nowrap">
                         <SmartDate date={event.createdAt} />
                       </span>
                     </div>
                     {event.fieldChanged && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                         {event.fieldChanged}: {event.oldValue} → {event.newValue}
                       </p>
                     )}
                     {event.comment && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{event.comment}</p>
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{event.comment}</p>
                     )}
                   </div>
                 </div>
@@ -1861,8 +1895,8 @@ function TimelineCommunicationCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -2248,7 +2282,7 @@ function FinancialWorkflow({
   const [dismissed, setDismissed] = useState<DismissedWorkshopItem[]>(initialDismissed);
   const [showDismissed, setShowDismissed] = useState(false);
   const isInvoiced = ["sent", "paid", "our_costs"].includes(invoiceStatus);
-  const [ourCostsView, setOurCostsView] = useState(invoiceStatus === "our_costs" || isInvoiced);
+  const [ourCostsView, setOurCostsView] = useState(true);
 
   // Keep dismissed in sync with prop
   useEffect(() => { setDismissed(initialDismissed); }, [initialDismissed]);
@@ -2384,25 +2418,7 @@ function FinancialWorkflow({
         </div>
       </div>
 
-      {/* ─── Warranty toggle ─── */}
-      <label className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-gray-50 dark:bg-gray-900/50 px-3 py-2">
-        <Checkbox
-          checked={warrantyFlag}
-          onCheckedChange={(checked) => {
-            const val = checked === true;
-            setWarrantyFlag(val);
-            if (val) {
-              setInvoiceStatus("warranty");
-              if (["new", "todo", "in_inspection", "quote_needed", "waiting_approval", "waiting_customer", "waiting_parts", "scheduled", "in_progress", "blocked"].includes(status)) {
-                setStatus("completed");
-              }
-            } else if (!val && invoiceStatus === "warranty") {
-              setInvoiceStatus("not_invoiced");
-            }
-          }}
-        />
-        <span className="text-sm text-gray-700 dark:text-gray-300">Warranty / internal cost</span>
-      </label>
+
 
       {/* ─── Line items section ─── */}
       <div>
@@ -2410,7 +2426,13 @@ function FinancialWorkflow({
           <div className="flex items-center gap-3">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Line items</h3>
             <button
-              onClick={() => setOurCostsView(!ourCostsView)}
+              onClick={() => {
+                const next = !ourCostsView;
+                setOurCostsView(next);
+                if (next && invoiceStatus === "not_invoiced") {
+                  setInvoiceStatus("our_costs");
+                }
+              }}
               className={cn(
                 "inline-flex items-center h-6 text-[11px] px-2 rounded-lg font-medium transition-colors",
                 ourCostsView

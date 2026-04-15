@@ -111,7 +111,7 @@ export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props
           if (open) setContactedAt(toLocalDatetime(new Date()));
         }}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="rounded-xl text-xs h-8 border-gray-200 dark:border-gray-700">
               <Plus className="mr-1 h-3.5 w-3.5" />
               Log Contact
             </Button>
@@ -228,16 +228,16 @@ export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props
       </div>
 
       {logs.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          <MessageSquare className="mx-auto mb-2 h-6 w-6 opacity-30" />
-          <p>No communication logged yet</p>
+        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-8 text-center">
+          <MessageSquare className="mx-auto mb-2 h-5 w-5 text-gray-300 dark:text-gray-600" />
+          <p className="text-xs text-gray-400 dark:text-gray-500">No customer communication logged yet</p>
         </div>
       ) : (
         <div className="space-y-2">
           {logs.map((log) => (
             <div
               key={log.id}
-              className="flex gap-3 rounded-lg border p-3 text-sm"
+              className="flex gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3 text-sm"
             >
               <div className="shrink-0 mt-0.5">
                 <Badge

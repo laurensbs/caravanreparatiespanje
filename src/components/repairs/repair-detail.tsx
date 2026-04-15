@@ -664,20 +664,30 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="w-48 p-1">
-                    {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                      <button
-                        key={val}
-                        onClick={() => setStatus(val)}
-                        className={cn(
-                          "w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors",
-                          val === status
-                            ? "bg-gray-100 dark:bg-gray-800 font-medium"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                        )}
-                      >
-                        {label}
-                      </button>
+                  <PopoverContent align="start" className="w-52 p-2">
+                    {[
+                      { label: "Intake", items: ["new", "todo", "in_inspection", "no_damage"] },
+                      { label: "Quote", items: ["quote_needed", "waiting_approval", "waiting_customer"] },
+                      { label: "Work", items: ["waiting_parts", "scheduled", "in_progress", "blocked", "ready_for_check"] },
+                      { label: "Done", items: ["completed", "invoiced", "rejected", "archived"] },
+                    ].map((group) => (
+                      <div key={group.label} className="mb-1 last:mb-0">
+                        <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-2 pt-1.5 pb-0.5">{group.label}</p>
+                        {group.items.map((val) => (
+                          <button
+                            key={val}
+                            onClick={() => setStatus(val)}
+                            className={cn(
+                              "w-full text-left px-2 py-1 text-[11px] rounded-md transition-colors",
+                              val === status
+                                ? "bg-gray-100 dark:bg-gray-800 font-semibold text-gray-900 dark:text-gray-100"
+                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            )}
+                          >
+                            {STATUS_LABELS[val as RepairStatus]}
+                          </button>
+                        ))}
+                      </div>
                     ))}
                   </PopoverContent>
                 </Popover>
@@ -1202,6 +1212,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 repairJobId={job.id}
                 partRequests={partRequests}
                 defaultMarkup={settings.defaultMarkup}
+                partCategories={partCategories}
               />
 
               {/* ── Divider ── */}
@@ -2440,7 +2451,7 @@ function FinancialWorkflow({
                   : "text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800"
               )}
             >
-              Our costs
+              Everything our costs
             </button>
           </div>
           <div className="flex items-center gap-1.5">
@@ -2567,7 +2578,7 @@ function FinancialWorkflow({
             <div className="rounded-xl bg-gray-50 dark:bg-gray-900/40 px-4 py-3 space-y-1.5 mt-2">
               {ourCostsView ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">Total our costs</span>
+                  <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">Total (our costs)</span>
                   <span className="text-sm font-bold tabular-nums text-violet-700 dark:text-violet-400">€{costLinesInternalTotal.toFixed(2)}</span>
                 </div>
               ) : (

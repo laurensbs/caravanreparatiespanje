@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { suppliers, parts, partRequests, repairJobs, partCategories } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
-import { eq, desc, sql, asc } from "drizzle-orm";
+import { eq, desc, sql, asc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit";
 
@@ -392,9 +392,20 @@ export async function deletePartCategory(id: string) {
 
 // === Search & Suggestions ===
 
-export async function searchParts(query: string) {
+export async function searchParts(query: string, category?: string) {
   await requireAuth();
-  const q = `%${query.toLowerCase()}%`;
+
+  const conditions = [];
+  if (query.trim()) {
+    const q = `%${query.toLowerCase()}%`;
+    conditions.push(
+      sql`(lower(${parts.name}) like ${q} or lower(${parts.partNumber}) like ${q} or lower(${suppliers.name}) like ${q} or lower(${parts.category}) like ${q})`
+    );
+  }
+  if (category) {
+    conditions.push(eq(parts.category, category));
+  }
+  if (conditions.length === 0) return [];
 
   return db
     .select({
@@ -411,19 +422,19 @@ export async function searchParts(query: string) {
     })
     .from(parts)
     .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
-    .where(
-      sql`(lower(${parts.name}) like ${q} or lower(${parts.partNumber}) like ${q} or lower(${suppliers.name}) like ${q} or lower(${parts.category}) like ${q})`
-    )
+    .where(and(...conditions))
     .orderBy(
-      sql`CASE
-        WHEN lower(${parts.name}) = ${query.toLowerCase()} THEN 0
-        WHEN lower(${parts.partNumber}) = ${query.toLowerCase()} THEN 0
-        WHEN lower(${parts.name}) like ${query.toLowerCase() + "%"} THEN 1
-        ELSE 2
-      END`,
+      query.trim()
+        ? sql`CASE
+            WHEN lower(${parts.name}) = ${query.toLowerCase()} THEN 0
+            WHEN lower(${parts.partNumber}) = ${query.toLowerCase()} THEN 0
+            WHEN lower(${parts.name}) like ${query.toLowerCase() + "%"} THEN 1
+            ELSE 2
+          END`
+        : parts.name,
       parts.name
     )
-    .limit(10);
+    .limit(15);
 }
 
 export async function suggestPartsForJob(repairJobId: string) {

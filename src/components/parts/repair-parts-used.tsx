@@ -38,6 +38,9 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
+import { cn } from "@/lib/utils";
+
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
@@ -80,6 +83,7 @@ interface RepairPartsUsedProps {
   repairJobId: string;
   partRequests: PartRequestRow[];
   defaultMarkup: number;
+  partCategories?: PartCategory[];
 }
 
 // ──────────────────────────────────────────────
@@ -90,6 +94,7 @@ export function RepairPartsUsed({
   repairJobId,
   partRequests: initialRequests,
   defaultMarkup,
+  partCategories = [],
 }: RepairPartsUsedProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -103,6 +108,7 @@ export function RepairPartsUsed({
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [showPicker, setShowPicker] = useState(false);
   const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -135,7 +141,7 @@ export function RepairPartsUsed({
 
   // ── Debounced server search ──
   useEffect(() => {
-    if (query.length < 2) {
+    if (query.length < 2 && !selectedCategory) {
       setResults([]);
       if (query.length === 0 && suggestions.length > 0) {
         setIsOpen(true);
@@ -149,7 +155,7 @@ export function RepairPartsUsed({
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        const data = await searchParts(query);
+        const data = await searchParts(query, selectedCategory ?? undefined);
         setResults(data);
         setIsOpen(true);
         setHighlightIndex(-1);
@@ -162,7 +168,7 @@ export function RepairPartsUsed({
     }, 250);
 
     return () => clearTimeout(debounceRef.current);
-  }, [query, updatePosition, suggestions.length]);
+  }, [query, selectedCategory, updatePosition, suggestions.length]);
 
   // ── Reposition on scroll/resize ──
   useEffect(() => {
@@ -348,8 +354,8 @@ export function RepairPartsUsed({
   }
 
   // Which items to show in dropdown
-  const displayItems = query.length >= 2 ? results : suggestions;
-  const showSuggestionsHeader = query.length < 2 && suggestions.length > 0;
+  const displayItems = (query.length >= 2 || selectedCategory) ? results : suggestions;
+  const showSuggestionsHeader = query.length < 2 && !selectedCategory && suggestions.length > 0;
   const showCustomOption = query.trim().length >= 2;
 
   // ── Portal dropdown ──
@@ -579,6 +585,35 @@ export function RepairPartsUsed({
               </button>
             )}
           </div>
+
+          {/* Category pills */}
+          {partCategories.filter(c => c.active).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {partCategories.filter(c => c.active).map((cat) => {
+                const Icon = ICON_MAP[cat.icon] ?? Package;
+                const isActive = selectedCategory === cat.key;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(isActive ? null : cat.key);
+                      setHighlightIndex(-1);
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-medium transition-all duration-150",
+                      isActive
+                        ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                        : "bg-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Portal */}
           {typeof window !== "undefined" &&

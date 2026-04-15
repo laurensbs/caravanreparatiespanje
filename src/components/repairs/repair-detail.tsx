@@ -326,6 +326,33 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     return map[status] ?? "";
   })();
 
+  // Smart context for next action
+  const nextActionContext = (() => {
+    const totalTasks = tasks.length;
+    const doneTasks = tasks.filter(t => t.status === "done").length;
+    const pendingPartReqs = partRequests.filter(p => !["received", "cancelled"].includes(p.status)).length;
+
+    type ActionCtx = { icon: "search" | "clipboard" | "wrench" | "clock" | "package" | "check" | "receipt" | "flag"; subtext: string; cta?: string };
+    const ctx: Partial<Record<string, ActionCtx>> = {
+      new: { icon: "search", subtext: "Review the work order and start inspection" },
+      todo: { icon: "search", subtext: "Review the work order and start inspection" },
+      in_inspection: { icon: "clipboard", subtext: totalTasks > 0 ? `${doneTasks} of ${totalTasks} tasks completed` : "Document findings and create tasks" },
+      no_damage: { icon: "check", subtext: "No damage found — close or reassign" },
+      quote_needed: { icon: "receipt", subtext: "Build estimate and send quote to customer" },
+      waiting_approval: { icon: "clock", subtext: "Customer has not yet responded to quote" },
+      waiting_customer: { icon: "clock", subtext: "Awaiting customer response" },
+      waiting_parts: { icon: "package", subtext: pendingPartReqs > 0 ? `${pendingPartReqs} part${pendingPartReqs !== 1 ? "s" : ""} pending delivery` : "All parts received" },
+      scheduled: { icon: "wrench", subtext: "Job is scheduled — start when ready" },
+      in_progress: { icon: "wrench", subtext: totalTasks > 0 ? `${doneTasks} of ${totalTasks} tasks completed` : "Work in progress" },
+      blocked: { icon: "flag", subtext: job.statusReason || "Resolve the blocker to continue" },
+      ready_for_check: { icon: "check", subtext: "Workshop marked this as done", cta: "Review" },
+      completed: { icon: "receipt", subtext: job.holdedInvoiceId ? "Invoice sent — confirm when paid" : "Create and send the invoice" },
+      invoiced: { icon: "receipt", subtext: "Waiting for payment confirmation" },
+      rejected: { icon: "flag", subtext: "This job was rejected" },
+    };
+    return ctx[status] ?? { icon: "wrench" as const, subtext: "" };
+  })();
+
   // Auto-compute blocker from status/flags
   const computedBlocker = (() => {
     if (status === "waiting_parts") return "Parts not yet delivered";
@@ -753,30 +780,59 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       {(displayNextAction || displayBlocker) && (
         <div className="space-y-3">
           {displayNextAction && (
-            <div className="rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/60 px-6 py-5 transition-all duration-150">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-sky-700/70 dark:text-sky-400/70 font-semibold">Next action</p>
-                  {nextAction ? (
-                    <div className="flex items-center gap-3">
-                      <p className="text-lg font-semibold text-sky-950 dark:text-sky-100">{nextAction}</p>
-                      <button onClick={() => setNextAction("")} className="text-sky-400 dark:text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 p-1 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-all duration-150">
-                        <XIcon className="h-3.5 w-3.5" />
+            <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-5 py-4 shadow-sm transition-all duration-150">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className={cn(
+                    "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+                    status === "blocked" ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
+                      : status === "ready_for_check" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      : ["completed", "invoiced"].includes(status) ? "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400"
+                      : "bg-[#0CC0DF]/10 text-[#0CC0DF]"
+                  )}>
+                    {nextActionContext.icon === "search" && <Search className="h-4 w-4" />}
+                    {nextActionContext.icon === "clipboard" && <ClipboardCheck className="h-4 w-4" />}
+                    {nextActionContext.icon === "wrench" && <Wrench className="h-4 w-4" />}
+                    {nextActionContext.icon === "clock" && <Clock className="h-4 w-4" />}
+                    {nextActionContext.icon === "package" && <Package className="h-4 w-4" />}
+                    {nextActionContext.icon === "check" && <CheckCircle className="h-4 w-4" />}
+                    {nextActionContext.icon === "receipt" && <Receipt className="h-4 w-4" />}
+                    {nextActionContext.icon === "flag" && <Flag className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold mb-0.5">Next action</p>
+                    {nextAction ? (
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{nextAction}</p>
+                        <button onClick={() => setNextAction("")} className="text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0">
+                          <XIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const val = prompt("Next action:", computedNextAction);
+                          if (val !== null) setNextAction(val);
+                        }}
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate block"
+                      >
+                        {computedNextAction}
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        const val = prompt("Next action:", computedNextAction);
-                        if (val !== null) setNextAction(val);
-                      }}
-                      className="text-lg font-semibold text-sky-950 dark:text-sky-100 hover:text-sky-800 dark:hover:text-sky-200 transition-all duration-150"
-                    >
-                      {computedNextAction}
-                      <span className="text-xs text-sky-700/50 dark:text-sky-400/50 font-normal ml-2">auto</span>
-                    </button>
-                  )}
+                    )}
+                    {!nextAction && nextActionContext.subtext && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">{nextActionContext.subtext}</p>
+                    )}
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    const val = prompt("Set next action:", displayNextAction);
+                    if (val !== null) setNextAction(val);
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 font-medium shrink-0 transition-colors"
+                >
+                  Edit
+                </button>
               </div>
             </div>
           )}

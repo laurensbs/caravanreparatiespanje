@@ -8,15 +8,23 @@ import { Input } from "@/components/ui/input";
 import { addRepairTask, deleteRepairTask, approveGarageTask, getRepairTasks } from "@/actions/garage";
 import { TASK_STATUS_LABELS, TASK_STATUS_COLORS } from "@/types";
 import type { RepairTask, RepairTaskStatus } from "@/types";
-import { Plus, Trash2, CheckCircle } from "lucide-react";
+import { Plus, Trash2, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
   repairJobId: string;
   initialTasks: RepairTask[];
+  totalLoggedMinutes?: number;
 }
 
-export function RepairTaskList({ repairJobId, initialTasks }: Props) {
+function formatMinutes(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes = 0 }: Props) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
   const [showAdd, setShowAdd] = useState(false);
@@ -62,15 +70,23 @@ export function RepairTaskList({ repairJobId, initialTasks }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs text-muted-foreground font-medium">
-          Tasks
-          {tasks.length > 0 && (
-            <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-              doneCount === tasks.length
-                ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
-                : "bg-muted text-muted-foreground"
-            }`}>
-              {doneCount}/{tasks.length}
+        <p className="text-xs text-muted-foreground font-medium flex items-center gap-2">
+          <span>
+            Tasks
+            {tasks.length > 0 && (
+              <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                doneCount === tasks.length
+                  ? "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {doneCount}/{tasks.length}
+              </span>
+            )}
+          </span>
+          {totalLoggedMinutes > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 dark:text-gray-500">
+              <Clock className="h-3 w-3" />
+              {formatMinutes(totalLoggedMinutes)}
             </span>
           )}
         </p>

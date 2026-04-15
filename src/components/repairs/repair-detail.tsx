@@ -20,7 +20,7 @@ import {
   JOB_TYPE_LABELS, JOB_TYPE_COLORS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, DismissedWorkshopItem, JobType } from "@/types";
-import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check, Play } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -707,6 +707,75 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
                   </span>
                 )}
+                {job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status) ? (
+                  <Link
+                    href={`/garage/repairs/${job.id}`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-150"
+                  >
+                    <Wrench className="h-3 w-3" />
+                    In Workshop
+                  </Link>
+                ) : (
+                  <>
+                    {job.dueDate && (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400">
+                        <CalendarDays className="h-3 w-3" />
+                        {format(new Date(job.dueDate), "d MMM")}
+                      </span>
+                    )}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-150">
+                          <Play className="h-3 w-3" />
+                          Start / Schedule
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="w-56 p-3 space-y-2">
+                        <button
+                          onClick={async () => {
+                            const today = new Date();
+                            today.setHours(8, 0, 0, 0);
+                            await scheduleRepair(job.id, today.toISOString());
+                            toast.success("Repair started for today");
+                            router.refresh();
+                          }}
+                          className="w-full flex items-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2 px-3 transition-colors hover:bg-foreground/90"
+                        >
+                          <Play className="h-3 w-3" />
+                          Start Repair Now
+                        </button>
+                        <div className="relative">
+                          <button
+                            onClick={() => {
+                              const input = document.getElementById('header-schedule-picker') as HTMLInputElement;
+                              input?.showPicker();
+                            }}
+                            className="w-full flex items-center gap-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2 px-3 transition-colors"
+                          >
+                            <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                            Schedule Repair
+                          </button>
+                          <input
+                            id="header-schedule-picker"
+                            type="date"
+                            className="absolute inset-0 opacity-0 pointer-events-none"
+                            min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
+                            onChange={async (e) => {
+                              if (e.target.value) {
+                                const d = new Date(e.target.value);
+                                d.setHours(8, 0, 0, 0);
+                                await scheduleRepair(job.id, d.toISOString());
+                                toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
+                                router.refresh();
+                              }
+                            }}
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </>
+                )}
                 <TagPicker
                   allTags={allTags}
                   activeTags={repairTags}
@@ -1135,7 +1204,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </summary>
             <div className="px-6 pb-7 space-y-7">
 
-              {/* ── Primary Actions: Assigned + Planning ── */}
+              {/* ── Workers + Planning ── */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Assigned workers */}
                 <div>
@@ -1156,7 +1225,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   )}
                 </div>
 
-                {/* Planning + Send to Garage */}
+                {/* Planning date display only */}
                 <div>
                   <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={status} onStatusChange={setStatus} />
                 </div>
@@ -1167,7 +1236,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* ── Tasks (main focus) ── */}
               <div>
-                <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
+                <RepairTaskList repairJobId={job.id} initialTasks={tasks} totalLoggedMinutes={timeEntries.reduce((acc, e) => acc + (e.roundedMinutes ?? 0), 0)} />
               </div>
 
               {/* ── Divider ── */}
@@ -1184,9 +1253,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {/* ── Divider ── */}
               <div className="border-t border-gray-100 dark:border-gray-800" />
 
-              {/* ── Secondary Info: Time + Flags side by side ── */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {/* Time Log */}
+              {/* ── Secondary Info: Time (conditional) + Flags ── */}
+              <div className={`grid grid-cols-1 ${timeEntries.length > 0 ? "lg:grid-cols-2" : ""} gap-5`}>
+                {/* Time Log — only shown when there are entries */}
+                {timeEntries.length > 0 && (
                 <div className="rounded-xl bg-gray-50/80 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
                   <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-3">Time Log</p>
                   <RepairTimeLog
@@ -1196,6 +1266,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     activeUsers={activeUsers}
                   />
                 </div>
+                )}
 
                 {/* Inspection Flags */}
                 <div className="rounded-xl bg-gray-50/80 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
@@ -1883,7 +1954,6 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const futureRef = useRef<HTMLInputElement>(null);
   const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
 
   const isToday = dueDate && format(new Date(dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -1902,21 +1972,6 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
       router.refresh();
     } catch {
       toast.error("Failed to set planning date");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSendToday() {
-    setSaving(true);
-    try {
-      const today = new Date();
-      today.setHours(8, 0, 0, 0);
-      await scheduleRepair(jobId, today.toISOString());
-      toast.success("Repair started for today");
-      router.refresh();
-    } catch {
-      toast.error("Failed to start repair");
     } finally {
       setSaving(false);
     }
@@ -1982,8 +2037,8 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
         </div>
       )}
 
-      {/* Start Repair / In Workshop status */}
-      {inGarage ? (
+      {/* In Workshop status */}
+      {inGarage && (
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-foreground">
             In Workshop Today
@@ -1995,38 +2050,6 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
           >
             Open →
           </Link>
-        </div>
-      ) : (
-        <div className="flex gap-2">
-          <button
-            onClick={handleSendToday}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-foreground text-background text-xs font-medium py-2 px-2.5 transition-colors hover:bg-foreground/90 disabled:opacity-50"
-          >
-            {saving ? "..." : "Start Repair Now"}
-          </button>
-          <button
-            onClick={() => {
-              if (futureRef.current) {
-                futureRef.current.showPicker();
-              }
-            }}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2 px-2.5 transition-colors disabled:opacity-50 relative overflow-hidden"
-          >
-            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-            Schedule Repair
-            <input
-              ref={futureRef}
-              type="date"
-              className="absolute inset-0 opacity-0 pointer-events-none"
-              disabled={saving}
-              min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
-              onChange={(e) => {
-                if (e.target.value) handleSet(e.target.value);
-              }}
-            />
-          </button>
         </div>
       )}
     </div>

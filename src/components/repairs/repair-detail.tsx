@@ -145,6 +145,56 @@ interface RepairDetailProps {
   garageActivity?: any[];
 }
 
+/* ─── Add Item Dropdown ─── */
+function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void; onCustom: () => void; onPart: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  function pick(fn: () => void) {
+    fn();
+    setOpen(false);
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 h-8 text-sm px-3.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors font-medium shadow-sm"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Add item
+        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-44 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1 animate-fade-in">
+          <button type="button" onClick={() => pick(onLabour)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+            <Clock className="h-3.5 w-3.5 text-gray-400" />
+            Add labour
+          </button>
+          <button type="button" onClick={() => pick(onPart)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+            <Package className="h-3.5 w-3.5 text-gray-400" />
+            Add part
+          </button>
+          <button type="button" onClick={() => pick(onCustom)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+            <Pencil className="h-3.5 w-3.5 text-gray-400" />
+            Add custom
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
@@ -2283,9 +2333,13 @@ function FinancialWorkflow({
                 <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300 text-[9px] font-bold px-1">{pendingImportCount}</span>
               </button>
             )}
-            <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={addLabourLine}>+ Labour</button>
-            <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={addCustomLine}>+ Custom</button>
-            <button className="inline-flex items-center h-7 text-xs px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
+            {costLines.length > 0 && (
+              <AddItemDropdown
+                onLabour={addLabourLine}
+                onCustom={addCustomLine}
+                onPart={() => setShowPartPicker(!showPartPicker)}
+              />
+            )}
           </div>
         </div>
 
@@ -2414,26 +2468,29 @@ function FinancialWorkflow({
           </div>
         ) : (
           /* ─── Empty state ─── */
-          <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30 py-10 text-center">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-900/20 py-10 text-center">
             <Receipt className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nog geen regels</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No line items yet</p>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
-              Voeg handmatig arbeid of onderdelen toe, of haal items op uit de werkplaats.
+              Add labour, parts, or custom costs to create your estimate.
             </p>
             <div className="flex items-center justify-center gap-2 mt-4">
-              {hasWorkshopPending ? (
+              {hasWorkshopPending && (
                 <button
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0CC0DF] text-white text-sm font-medium shadow-sm hover:bg-[#0bb0cc] transition-colors disabled:opacity-50"
                   onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
                   disabled={!!loading}
                 >
                   {loading === "generate" ? <Spinner className="h-3.5 w-3.5" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                  Ophalen uit werkplaats
+                  Sync workshop
                   <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-white/20 text-white text-[10px] font-bold px-1">{pendingImportCount}</span>
                 </button>
-              ) : null}
-              <button className="inline-flex items-center h-9 text-sm px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={addLabourLine}>+ Labour</button>
-              <button className="inline-flex items-center h-9 text-sm px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium" onClick={() => setShowPartPicker(!showPartPicker)}>+ Part</button>
+              )}
+              <AddItemDropdown
+                onLabour={addLabourLine}
+                onCustom={addCustomLine}
+                onPart={() => setShowPartPicker(!showPartPicker)}
+              />
             </div>
           </div>
         )}

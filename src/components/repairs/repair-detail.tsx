@@ -1220,32 +1220,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </summary>
             <div className="px-6 pb-7 space-y-7">
 
-              {/* ── Workers + Planning ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Assigned workers */}
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2.5">Assigned</p>
-                  {repairWorkers.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {repairWorkers.map((w) => (
-                        <span key={w.id} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-                          <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-400">
-                            {w.userName.charAt(0).toUpperCase()}
-                          </span>
-                          {w.userName}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-400">No workers yet</p>
-                  )}
-                </div>
-
-                {/* Planning date display only */}
-                <div>
-                  <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={status} onStatusChange={setStatus} />
-                </div>
-              </div>
+              {/* ── Planning ── */}
+              <PlanningDateRow jobId={job.id} dueDate={job.dueDate} status={status} onStatusChange={setStatus} />
 
               {/* ── Divider ── */}
               <div className="border-t border-gray-100 dark:border-gray-800" />

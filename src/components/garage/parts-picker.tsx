@@ -7,6 +7,54 @@ import { searchPartsCatalog, garageRequestPart } from "@/actions/garage";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+// Multilingual synonym groups for caravan parts search
+const PART_SYNONYMS: string[][] = [
+  ["tyre", "tire", "tyres", "tires", "band", "banden", "neumático", "neumáticos", "rueda"],
+  ["window", "windows", "raam", "ramen", "ventana", "ventanas", "cristal"],
+  ["seal", "seals", "afdichting", "afdichtingen", "sello", "sellado", "junta"],
+  ["light", "lights", "lamp", "lampen", "luz", "luces", "verlichting", "faro"],
+  ["brake", "brakes", "rem", "remmen", "freno", "frenos"],
+  ["airco", "air conditioning", "airconditioning", "aire acondicionado", "klimaat", "climate"],
+  ["battery", "batterij", "accu", "batería"],
+  ["pump", "pomp", "bomba"],
+  ["filter", "filtro"],
+  ["hose", "slang", "manguera"],
+  ["valve", "ventiel", "válvula"],
+  ["bolt", "bout", "bouten", "perno", "tornillo"],
+  ["cable", "kabel", "kabels", "cable"],
+  ["motor", "engine", "motor"],
+  ["door", "deur", "deuren", "puerta"],
+  ["roof", "dak", "techo", "tejado"],
+  ["floor", "vloer", "suelo"],
+  ["awning", "luifel", "toldo"],
+  ["fridge", "refrigerator", "koelkast", "nevera", "frigorífico"],
+  ["heater", "heating", "verwarming", "kachel", "calefacción", "calentador"],
+  ["toilet", "wc", "inodoro"],
+  ["shower", "douche", "ducha"],
+  ["tank", "water tank", "watertank", "tanque", "depósito"],
+  ["antenna", "antenne", "antena"],
+  ["lock", "slot", "cerradura"],
+  ["mirror", "spiegel", "espejo"],
+  ["cushion", "kussen", "cojín"],
+  ["curtain", "gordijn", "cortina"],
+];
+
+/** Expand a search query with synonym matches */
+function expandWithSynonyms(query: string): string[] {
+  const q = query.toLowerCase().trim();
+  const terms = new Set<string>([q]);
+
+  for (const group of PART_SYNONYMS) {
+    if (group.some(syn => q.includes(syn) || syn.includes(q))) {
+      for (const syn of group) {
+        terms.add(syn);
+      }
+    }
+  }
+
+  return Array.from(terms);
+}
+
 type SearchResult = {
   id: string;
   name: string;
@@ -50,7 +98,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
     });
   }, []);
 
-  // Search with debounce
+  // Search with debounce + synonym expansion
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
@@ -62,8 +110,20 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        const data = await searchPartsCatalog(query);
-        setResults(data);
+        // Search original query + all synonyms, deduplicate results
+        const terms = expandWithSynonyms(query);
+        const allResults = await Promise.all(terms.map(term => searchPartsCatalog(term)));
+        const seen = new Set<string>();
+        const deduped: SearchResult[] = [];
+        for (const batch of allResults) {
+          for (const r of batch) {
+            if (!seen.has(r.id)) {
+              seen.add(r.id);
+              deduped.push(r);
+            }
+          }
+        }
+        setResults(deduped.slice(0, 15));
         setIsOpen(true);
         setHighlightIndex(-1);
         updatePosition();

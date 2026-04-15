@@ -1,4 +1,4 @@
-import { getGarageRepairDetail, garageAutoStart, getRepairFindings, getRepairBlockers } from "@/actions/garage";
+import { getGarageRepairDetail, garageAutoStart, getRepairFindings, getRepairBlockers, getActiveUsers } from "@/actions/garage";
 import { getPartCategories } from "@/actions/parts";
 import { getJobActiveTimers } from "@/actions/time-entries";
 import { auth } from "@/lib/auth";
@@ -11,13 +11,14 @@ export default async function GarageRepairDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [repair, session, findings, blockers, partCategories, activeTimers] = await Promise.all([
+  const [repair, session, findings, blockers, partCategories, activeTimers, allUsers] = await Promise.all([
     getGarageRepairDetail(id),
     auth(),
     getRepairFindings(id),
     getRepairBlockers(id),
     getPartCategories(),
     getJobActiveTimers(id),
+    getActiveUsers(),
   ]);
 
   if (!repair) {
@@ -34,6 +35,7 @@ export default async function GarageRepairDetailPage({
       currentUserName={session?.user?.name ?? ""}
       partCategories={partCategories}
       activeTimers={activeTimers}
+      allUsers={allUsers}
     />
   );
 }

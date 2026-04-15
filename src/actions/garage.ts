@@ -903,11 +903,11 @@ export async function getRepairWorkers(repairJobId: string) {
     .orderBy(asc(repairWorkers.createdAt));
 }
 
-/** Toggle "I worked on this" — adds or removes the current user */
-export async function toggleMyWorker(repairJobId: string) {
+/** Toggle worker assignment — adds or removes the specified (or current) user */
+export async function toggleMyWorker(repairJobId: string, targetUserId?: string) {
   const ctx = await requireAnyAuth();
   if (!ctx.userId) throw new Error("User identity required");
-  const userId = ctx.userId;
+  const userId = targetUserId ?? ctx.userId;
 
   const existing = await db
     .select({ id: repairWorkers.id })
@@ -920,7 +920,7 @@ export async function toggleMyWorker(repairJobId: string) {
     await db.insert(repairWorkers).values({
       repairJobId,
       userId,
-      addedByUserId: userId,
+      addedByUserId: ctx.userId,
     });
   }
 

@@ -144,7 +144,7 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
                   });
                 }}
                 disabled={isPending}
-                className="text-[10px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="text-xs px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
               >
                 + {d.title}
               </button>

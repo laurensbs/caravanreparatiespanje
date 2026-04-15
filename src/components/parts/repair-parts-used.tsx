@@ -502,7 +502,7 @@ export function RepairPartsUsed({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">
-          Parts Used
+          Parts
           {totalCount > 0 && (
             <span
               className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -515,24 +515,38 @@ export function RepairPartsUsed({
             </span>
           )}
         </p>
-        {!showPicker && (
-          <button
-            onClick={() => {
-              setShowPicker(true);
-              setTimeout(() => inputRef.current?.focus(), 50);
-            }}
-            className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
-          >
-            <Plus className="h-3 w-3" /> Add
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!showPicker && (
+            <button
+              onClick={() => {
+                setShowPicker(true);
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
+            >
+              <Plus className="h-3 w-3" /> Add
+            </button>
+          )}
+          {!showPicker && (
+            <button
+              onClick={() => {
+                setShowPicker(true);
+                setQuery("");
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="text-[10px] text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150 rounded-md border border-gray-200 dark:border-gray-700 px-1.5 py-0.5"
+            >
+              <Package className="h-2.5 w-2.5" /> New
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search picker */}
       {showPicker && (
         <div className="mb-3">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -551,7 +565,7 @@ export function RepairPartsUsed({
               placeholder="Search parts (name, number, supplier…)"
               disabled={isPending}
               autoFocus
-              className="w-full h-12 pl-10 pr-10 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40 transition-all duration-150 disabled:opacity-50"
+              className="w-full h-9 pl-9 pr-9 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40 transition-all duration-150 disabled:opacity-50"
             />
             {isPending ? (
               <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
@@ -588,7 +602,7 @@ export function RepairPartsUsed({
 
           {/* Category pills */}
           {partCategories.filter(c => c.active).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1 mt-1.5">
               {partCategories.filter(c => c.active).map((cat) => {
                 const Icon = ICON_MAP[cat.icon] ?? Package;
                 const isActive = selectedCategory === cat.key;
@@ -601,13 +615,13 @@ export function RepairPartsUsed({
                       setHighlightIndex(-1);
                     }}
                     className={cn(
-                      "inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-medium transition-all duration-150",
+                      "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
                       isActive
                         ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
-                        : "bg-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                        : "bg-gray-50 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                     )}
                   >
-                    <Icon className="h-3 w-3" />
+                    <Icon className="h-2.5 w-2.5" />
                     {cat.label}
                   </button>
                 );

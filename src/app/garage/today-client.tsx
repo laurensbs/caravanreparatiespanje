@@ -207,11 +207,6 @@ export function GarageTodayClient({
   ).length;
   const problemCount = repairs.reduce((sum, r) => sum + r.tasks.problem, 0);
 
-  // Top jobs for "quick start" section
-  const topJobs = useMemo(() => {
-    return [...grouped.in_progress, ...grouped.todo].slice(0, 3);
-  }, [grouped]);
-
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* ─── HEADER ─── */}
@@ -269,10 +264,8 @@ export function GarageTodayClient({
             problemCount={problemCount}
             t={t}
             activeTimers={activeTimers}
-            topJobs={topJobs}
             lastRefresh={lastRefresh}
-            handleRefresh={handleRefresh}
-            refreshing={refreshing}
+            grouped={grouped}
           />
         ) : (
           <EmptyState
@@ -442,10 +435,8 @@ function WorkState({
   problemCount,
   t,
   activeTimers = [],
-  topJobs,
   lastRefresh,
-  handleRefresh,
-  refreshing,
+  grouped,
 }: {
   counts: Record<StatusCategory, number>;
   displayRepairs: RepairItem[];
@@ -455,136 +446,86 @@ function WorkState({
   problemCount: number;
   t: (en: string, es?: string | null, nl?: string | null) => string;
   activeTimers?: ActiveTimerItem[];
-  topJobs: RepairItem[];
   lastRefresh: Date;
-  handleRefresh: () => void;
-  refreshing: boolean;
+  grouped: Record<StatusCategory, RepairItem[]>;
 }) {
+  // Active job = first in_progress, or first todo if nothing in progress
+  const activeJob = grouped.in_progress[0] ?? null;
+
+  // Remaining jobs = all display repairs minus the active job
+  const remainingRepairs = activeJob
+    ? displayRepairs.filter((r) => r.id !== activeJob.id)
+    : displayRepairs;
+
   const summaryCards: {
     key: StatusCategory;
     label: string;
     count: number;
-    tint: string;
-    activeTint: string;
     icon: React.ReactNode;
   }[] = [
     {
       key: "todo",
-      label: t("To Do", "Por hacer", "Te doen"),
+      label: t("To Do", "Pendiente", "Te doen"),
       count: counts.todo,
-      tint: "bg-white",
-      activeTint: "ring-2 ring-gray-300 bg-gray-50/80",
       icon: <ClipboardCheck className="h-5 w-5 text-gray-400" />,
     },
     {
       key: "in_progress",
       label: t("Working", "En progreso", "Bezig"),
       count: counts.in_progress,
-      tint: "bg-sky-50/40",
-      activeTint: "ring-2 ring-sky-300 bg-sky-50",
       icon: <Wrench className="h-5 w-5 text-sky-500" />,
     },
     {
       key: "waiting",
       label: t("Waiting", "Esperando", "Wachten"),
       count: counts.waiting,
-      tint: "bg-amber-50/40",
-      activeTint: "ring-2 ring-amber-300 bg-amber-50",
       icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
     },
     {
       key: "check",
-      label: t("Check", "Control", "Controle"),
+      label: t("Check", "Revisión", "Nacontrole"),
       count: counts.check,
-      tint: "bg-emerald-50/40",
-      activeTint: "ring-2 ring-emerald-300 bg-emerald-50",
       icon: <SearchIcon className="h-5 w-5 text-emerald-500" />,
     },
   ];
 
   return (
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pb-10 space-y-5">
-      {/* ── Urgency alert ── */}
-      {(urgentCount > 0 || problemCount > 0) && (
-        <div className="rounded-2xl bg-red-50 border border-red-100 px-5 py-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex gap-4 text-sm font-bold">
-                {urgentCount > 0 && (
-                  <span className="text-red-700">
-                    {urgentCount} {t("urgent", "urgente", "spoed")}
-                  </span>
-                )}
-                {problemCount > 0 && (
-                  <span className="text-orange-700">
-                    {problemCount} {t("problems", "problemas", "problemen")}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-red-600/60 mt-0.5">
-                {t(
-                  "Need immediate attention",
-                  "Necesitan atención inmediata",
-                  "Vereist directe aandacht"
-                )}
-              </p>
-            </div>
+      {/* ── Active job focus card ── */}
+      {activeJob && !activeFilter && (
+        <ActiveJobCard
+          repair={activeJob}
+          t={t}
+          activeTimers={activeTimers.filter(
+            (at) => at.repairJobId === activeJob.id
+          )}
+        />
+      )}
+
+      {/* ── Status filter cards ── */}
+      <div className="grid grid-cols-4 gap-2.5">
+        {summaryCards.map((card) => {
+          const isActive = activeFilter === card.key;
+          return (
             <button
-              onClick={() =>
-                setActiveFilter(activeFilter === "todo" ? null : "todo")
-              }
-              className="shrink-0 rounded-xl bg-red-100 px-3.5 py-2 text-xs font-bold text-red-700 active:bg-red-200 active:scale-[0.97] transition-all"
+              key={card.key}
+              onClick={() => setActiveFilter(isActive ? null : card.key)}
+              className={`rounded-xl border shadow-sm px-4 py-3 text-left transition-all duration-150 ease-out active:scale-[0.96] ${
+                isActive
+                  ? "ring-2 ring-[#0CC0DF]/20 border-[#0CC0DF]/30 bg-white"
+                  : "border-gray-200 bg-white hover:bg-gray-50"
+              }`}
             >
-              {t("View", "Ver", "Bekijk")}
+              <div className="mb-1.5">{card.icon}</div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                {card.label}
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-gray-900 leading-tight mt-0.5">
+                {card.count}
+              </p>
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Quick start — top 3 jobs ── */}
-      {!activeFilter && topJobs.length > 0 && (
-        <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1 mb-2.5">
-            {t("Start today", "Empezar hoy", "Vandaag starten")}
-          </p>
-          <div className="space-y-2">
-            {topJobs.map((job) => (
-              <QuickStartCard key={job.id} repair={job} t={t} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── KPI filter cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {summaryCards.map((card) => (
-          <button
-            key={card.key}
-            onClick={() =>
-              setActiveFilter(activeFilter === card.key ? null : card.key)
-            }
-            className={`rounded-2xl border border-gray-100 shadow-sm p-4 text-left transition-all duration-150 active:scale-[0.96] ${
-              activeFilter === card.key
-                ? card.activeTint
-                : `${card.tint} hover:shadow-md`
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              {card.icon}
-              {card.count > 0 && (
-                <span className="text-2xl font-bold tabular-nums text-gray-900 leading-none">
-                  {card.count}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
-              {card.label}
-            </p>
-          </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Done count ── */}
@@ -593,7 +534,7 @@ function WorkState({
           onClick={() =>
             setActiveFilter(activeFilter === "done" ? null : "done")
           }
-          className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
             activeFilter === "done"
               ? "bg-emerald-50 text-emerald-700 ring-2 ring-emerald-200"
               : "text-gray-400 hover:text-gray-600 hover:bg-white"
@@ -622,18 +563,27 @@ function WorkState({
       )}
 
       {/* ── Job cards ── */}
-      <div className="space-y-3">
-        {displayRepairs.map((repair) => (
-          <WorkCard
-            key={repair.id}
-            repair={repair}
-            t={t}
-            activeTimers={activeTimers.filter(
-              (at) => at.repairJobId === repair.id
+      {remainingRepairs.length > 0 ? (
+        <div className="space-y-2.5">
+          {remainingRepairs.map((repair) => (
+            <JobListCard
+              key={repair.id}
+              repair={repair}
+              t={t}
+            />
+          ))}
+        </div>
+      ) : activeFilter ? (
+        <div className="rounded-xl border border-gray-200 bg-white px-6 py-8 text-center">
+          <p className="text-sm text-gray-400">
+            {t(
+              "No jobs in this category",
+              "No hay trabajos en esta categoría",
+              "Geen klussen in deze categorie"
             )}
-          />
-        ))}
-      </div>
+          </p>
+        </div>
+      ) : null}
 
       {/* ── Last updated ── */}
       <LastUpdated t={t} lastRefresh={lastRefresh} />
@@ -647,20 +597,27 @@ function WorkState({
 }
 
 // ══════════════════════════════════════════════════
-// QUICK START CARD — mini card for top jobs
+// ACTIVE JOB CARD — primary focus card
 // ══════════════════════════════════════════════════
 
-function QuickStartCard({
+function ActiveJobCard({
   repair,
   t,
+  activeTimers = [],
 }: {
   repair: RepairItem;
   t: (en: string, es?: string | null, nl?: string | null) => string;
+  activeTimers?: ActiveTimerItem[];
 }) {
   const category = categorize(repair);
+  const progress =
+    repair.tasks.total > 0
+      ? Math.round((repair.tasks.done / repair.tasks.total) * 100)
+      : 0;
+
   const statusConfig: Record<StatusCategory, { label: string; cls: string }> = {
     todo: {
-      label: t("To Do", "Por hacer", "Te doen"),
+      label: t("To Do", "Pendiente", "Te doen"),
       cls: "bg-gray-100 text-gray-600",
     },
     in_progress: {
@@ -672,7 +629,124 @@ function QuickStartCard({
       cls: "bg-amber-50 text-amber-700",
     },
     check: {
-      label: t("Check", "Control", "Controle"),
+      label: t("Check", "Revisión", "Nacontrole"),
+      cls: "bg-emerald-50 text-emerald-700",
+    },
+    done: {
+      label: t("Done", "Completado", "Klaar"),
+      cls: "bg-emerald-50 text-emerald-600",
+    },
+  };
+
+  const status = statusConfig[category];
+  const unitLine = [repair.unitBrand, repair.unitModel].filter(Boolean).join(" ");
+  const displayTitle = repair.title || unitLine || repair.publicCode || "—";
+
+  return (
+    <div className="rounded-2xl bg-white border border-gray-200 shadow-sm px-5 py-4">
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {displayTitle}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5 truncate">
+            {repair.customerName}
+          </p>
+        </div>
+        <span
+          className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold shrink-0 ${status.cls}`}
+        >
+          {status.label}
+        </span>
+      </div>
+
+      {/* Progress */}
+      {repair.tasks.total > 0 ? (
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-gray-400">
+              {repair.tasks.done}/{repair.tasks.total}{" "}
+              {t("tasks completed", "tareas completadas", "taken voltooid")}
+            </span>
+            <span className="text-xs font-semibold tabular-nums text-gray-400">
+              {progress}%
+            </span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-sky-500 transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-400 mt-2">
+          {t("In progress", "En progreso", "Bezig")}
+        </p>
+      )}
+
+      {/* Active timer indicator */}
+      {activeTimers.length > 0 && (
+        <div className="flex items-center gap-1.5 mt-3">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+          </span>
+          <span className="text-xs text-emerald-600 font-medium">
+            {activeTimers
+              .map((at) => (at.userName ?? "?").split(" ")[0])
+              .join(", ")}
+          </span>
+        </div>
+      )}
+
+      {/* CTA */}
+      <div className="flex items-center gap-2 mt-4">
+        <Link
+          href={`/garage/repairs/${repair.id}`}
+          className="flex-1 flex items-center justify-center gap-2 bg-[#0CC0DF] text-white rounded-lg px-4 py-2 text-sm font-medium active:scale-[0.98] transition-all duration-150"
+        >
+          {t("Continue work", "Continuar trabajo", "Werk hervatten")}
+        </Link>
+        <Link
+          href={`/garage/repairs/${repair.id}`}
+          className="flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════
+// JOB LIST CARD — compact card for remaining jobs
+// ══════════════════════════════════════════════════
+
+function JobListCard({
+  repair,
+  t,
+}: {
+  repair: RepairItem;
+  t: (en: string, es?: string | null, nl?: string | null) => string;
+}) {
+  const category = categorize(repair);
+  const statusConfig: Record<StatusCategory, { label: string; cls: string }> = {
+    todo: {
+      label: t("To Do", "Pendiente", "Te doen"),
+      cls: "bg-gray-100 text-gray-600",
+    },
+    in_progress: {
+      label: t("Working", "En progreso", "Bezig"),
+      cls: "bg-sky-50 text-sky-700",
+    },
+    waiting: {
+      label: t("Waiting", "Esperando", "Wachten"),
+      cls: "bg-amber-50 text-amber-700",
+    },
+    check: {
+      label: t("Check", "Revisión", "Nacontrole"),
       cls: "bg-emerald-50 text-emerald-700",
     },
     done: {
@@ -687,15 +761,13 @@ function QuickStartCard({
 
   return (
     <Link href={`/garage/repairs/${repair.id}`} className="block">
-      <div className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 active:scale-[0.99] transition-all duration-200 cursor-pointer">
+      <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 hover:bg-gray-50 active:scale-[0.99] transition-all duration-150 ease-out cursor-pointer">
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold text-gray-900 truncate">
+          <p className="text-sm font-medium text-gray-900 truncate">
             {displayTitle}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">
-            {[repair.unitRegistration, repair.customerName]
-              .filter(Boolean)
-              .join(" · ")}
+          <p className="text-xs text-gray-500 mt-0.5 truncate">
+            {repair.customerName}
           </p>
         </div>
         <span
@@ -779,189 +851,4 @@ function LastUpdated({
   );
 }
 
-// ══════════════════════════════════════════════════
-// WORK CARD — Premium job card
-// ══════════════════════════════════════════════════
 
-function WorkCard({
-  repair,
-  t,
-  activeTimers = [],
-}: {
-  repair: RepairItem;
-  t: (en: string, es?: string | null, nl?: string | null) => string;
-  activeTimers?: ActiveTimerItem[];
-}) {
-  const category = categorize(repair);
-  const progress =
-    repair.tasks.total > 0
-      ? Math.round((repair.tasks.done / repair.tasks.total) * 100)
-      : 0;
-
-  const statusConfig: Record<
-    StatusCategory,
-    { label: string; cls: string; bar: string }
-  > = {
-    todo: {
-      label: t("To Do", "Por hacer", "Te doen"),
-      cls: "bg-gray-100 text-gray-600",
-      bar: "bg-gray-400",
-    },
-    in_progress: {
-      label: t("Working", "En progreso", "Bezig"),
-      cls: "bg-sky-50 text-sky-700",
-      bar: "bg-sky-500",
-    },
-    waiting: {
-      label: t("Waiting", "Esperando", "Wachten"),
-      cls: "bg-amber-50 text-amber-700",
-      bar: "bg-amber-500",
-    },
-    check: {
-      label: t("Check", "Control", "Controle"),
-      cls: "bg-emerald-50 text-emerald-700",
-      bar: "bg-emerald-500",
-    },
-    done: {
-      label: t("Done", "Completado", "Klaar"),
-      cls: "bg-emerald-50 text-emerald-600",
-      bar: "bg-emerald-500",
-    },
-  };
-
-  const status = statusConfig[category];
-  const jobType = JOB_TYPE_CONFIG[repair.jobType];
-  const unitLine = [repair.unitBrand, repair.unitModel]
-    .filter(Boolean)
-    .join(" ");
-  const displayTitle = repair.title || unitLine || repair.publicCode || "—";
-
-  const accentColor: Record<StatusCategory, string> = {
-    todo: "border-l-gray-300",
-    in_progress: "border-l-sky-500",
-    waiting: "border-l-amber-400",
-    check: "border-l-emerald-500",
-    done: "border-l-emerald-300",
-  };
-
-  return (
-    <Link href={`/garage/repairs/${repair.id}`} className="block">
-      <div
-        className={`bg-white rounded-2xl border border-gray-100 border-l-4 ${accentColor[category]} shadow-sm active:scale-[0.99] transition-all duration-200 p-5 cursor-pointer`}
-      >
-        {/* Title + chevron */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-[17px] font-bold text-gray-900 leading-snug truncate">
-              {displayTitle}
-            </h3>
-            <p className="text-sm text-gray-400 mt-0.5 truncate">
-              {[
-                repair.unitRegistration,
-                repair.customerName,
-                repair.unitStorageLocation &&
-                  `📍 ${repair.unitStorageLocation}`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-300 shrink-0 mt-1" />
-        </div>
-
-        {/* Badges */}
-        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-          <span
-            className={`inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-bold ${status.cls}`}
-          >
-            {status.label}
-          </span>
-          {jobType && (
-            <span
-              className={`inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-medium ${jobType.cls}`}
-            >
-              {t(jobType.label[0], jobType.label[1], jobType.label[2])}
-            </span>
-          )}
-          {repair.priority === "urgent" && (
-            <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-bold bg-red-50 text-red-600 border border-red-100">
-              ⚡ {t("Urgent", "Urgente", "Spoed")}
-            </span>
-          )}
-          {repair.priority === "high" && (
-            <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-bold bg-orange-50 text-orange-600">
-              {t("High", "Alto", "Hoog")}
-            </span>
-          )}
-          {repair.tasks.problem > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold bg-red-50 text-red-600 border border-red-100">
-              ⚠ {repair.tasks.problem}
-            </span>
-          )}
-          {repair.parts.pending > 0 && (
-            <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-medium bg-purple-50 text-purple-600">
-              📦 {repair.parts.received}/{repair.parts.total}
-            </span>
-          )}
-          {activeTimers.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-600">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-              </span>
-              ⏱{" "}
-              {activeTimers
-                .map((t) => (t.userName ?? "?").split(" ")[0])
-                .join(", ")}
-            </span>
-          )}
-        </div>
-
-        {/* Progress */}
-        {repair.tasks.total > 0 && (
-          <div className="mt-3.5">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-gray-400">
-                {repair.tasks.done}/{repair.tasks.total}{" "}
-                {t("tasks", "tareas", "taken")}
-              </span>
-              <span
-                className={`text-xs font-bold tabular-nums ${
-                  progress === 100 ? "text-emerald-600" : "text-gray-400"
-                }`}
-              >
-                {progress}%
-              </span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ease-out ${status.bar}`}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Workers */}
-        {repair.workers.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-50">
-            {repair.workers.slice(0, 4).map((name, i) => (
-              <span
-                key={i}
-                className="flex items-center justify-center h-7 w-7 rounded-full bg-gray-100 text-[11px] font-bold text-gray-500"
-                title={name}
-              >
-                {name.charAt(0).toUpperCase()}
-              </span>
-            ))}
-            {repair.workers.length > 4 && (
-              <span className="text-xs text-gray-400 font-medium ml-1">
-                +{repair.workers.length - 4}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </Link>
-  );
-}

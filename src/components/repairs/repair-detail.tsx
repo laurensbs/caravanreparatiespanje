@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { updateRepairJob, adminApproveRepair, adminSendBackRepair } from "@/actions/repairs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,15 +149,41 @@ interface RepairDetailProps {
 /* ─── Add Item Dropdown ─── */
 function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void; onCustom: () => void; onPart: () => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; placement: "bottom" | "top" }>({ top: 0, left: 0, placement: "bottom" });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // Position the dropdown relative to the button via portal
+  useEffect(() => {
+    if (!open || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const menuH = 148; // approximate height of 3 items + padding
+    const gap = 6;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placement = spaceBelow >= menuH + gap ? "bottom" : "top";
+    const top = placement === "bottom" ? rect.bottom + gap : rect.top - menuH - gap;
+    // Align right edge of menu with right edge of button
+    const left = Math.max(8, rect.right - 176); // 176 = w-44
+    setPos({ top, left, placement });
+  }, [open]);
+
+  // Close on outside click or ESC
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (btnRef.current?.contains(e.target as Node)) return;
+      if (menuRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open]);
 
   function pick(fn: () => void) {
@@ -164,19 +191,35 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
     setOpen(false);
   }
 
+  const isActive = open;
+
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 h-8 text-sm px-3.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors font-medium shadow-sm"
+        className={cn(
+          "inline-flex items-center gap-1.5 h-8 text-sm px-3.5 rounded-xl font-medium shadow-sm transition-colors",
+          isActive
+            ? "bg-[#0CC0DF]/10 text-[#0CC0DF]"
+            : "bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100"
+        )}
       >
         <Plus className="h-3.5 w-3.5" />
         Add item
         <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1.5 w-44 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1 animate-fade-in">
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 1000 }}
+          className={cn(
+            "w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1",
+            "animate-in fade-in-0 duration-150",
+            pos.placement === "bottom" ? "slide-in-from-top-1" : "slide-in-from-bottom-1"
+          )}
+        >
           <button type="button" onClick={() => pick(onLabour)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
             <Clock className="h-3.5 w-3.5 text-gray-400" />
             Add labour
@@ -189,9 +232,10 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
             <Pencil className="h-3.5 w-3.5 text-gray-400" />
             Add custom
           </button>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 

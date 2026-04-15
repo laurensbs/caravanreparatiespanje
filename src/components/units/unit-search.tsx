@@ -50,6 +50,14 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
     }
   }, [value, units]);
 
+  // Auto-open when customer is selected and no unit chosen yet
+  useEffect(() => {
+    if (customerId && !value) {
+      setOpen(true);
+      setShowCreate(false);
+    }
+  }, [customerId, value]);
+
   // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -61,6 +69,11 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // Units belonging to the selected customer (owned + unassigned)
+  const customerUnits = customerId
+    ? units.filter((u) => u.customerId === customerId)
+    : [];
 
   // Filter: prefer units belonging to selected customer, then match on text
   const available = customerId
@@ -78,7 +91,9 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
           );
         })
         .slice(0, 8)
-    : [];
+    : customerId
+      ? customerUnits.slice(0, 8)
+      : [];
 
   function handleSelect(unit: Unit) {
     setSelectedLabel(unitLabel(unit));
@@ -150,14 +165,14 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search license plate, brand, model..."
+          placeholder={customerId ? "Select or search unit..." : "Search license plate, brand, model..."}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
             setShowCreate(false);
           }}
-          onFocus={() => { if (query.length >= 1) setOpen(true); }}
+          onFocus={() => { if (query.length >= 1 || customerId) setOpen(true); }}
         />
       )}
 
@@ -186,9 +201,9 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
         </div>
       )}
 
-      {open && !showCreate && query.length >= 1 && filtered.length === 0 && (
+      {open && !showCreate && (query.length >= 1 || customerId) && filtered.length === 0 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border bg-popover shadow-lg animate-fade-in">
-          <div className="px-3 py-2 text-sm text-muted-foreground">No units found</div>
+          <div className="px-3 py-2 text-sm text-muted-foreground">{customerId ? "No units linked to this customer" : "No units found"}</div>
           <button
             type="button"
             onClick={() => setShowCreate(true)}

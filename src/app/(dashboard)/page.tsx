@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-foreground">Dashboard</h1>
-          <p className="text-sm text-gray-500 dark:text-muted-foreground mt-0.5">Overview of repair operations</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Overview of repair operations</p>
         </div>
         <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
       </div>

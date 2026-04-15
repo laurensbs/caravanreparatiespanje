@@ -3008,7 +3008,26 @@ const STATUS_GROUPS = [
   { label: "Done", items: ["completed", "invoiced", "rejected", "archived"] },
 ] as const;
 
-function StatusPicker({ value, onChange, badgeColor }: { value: string; onChange: (v: string) => void; badgeColor: string }) {
+const STATUS_DOT_COLORS: Record<string, string> = {
+  new: "bg-gray-400",
+  todo: "bg-gray-400",
+  in_inspection: "bg-blue-500",
+  quote_needed: "bg-amber-500",
+  waiting_approval: "bg-amber-500",
+  waiting_customer: "bg-orange-500",
+  waiting_parts: "bg-amber-500",
+  no_damage: "bg-gray-400",
+  scheduled: "bg-blue-400",
+  in_progress: "bg-sky-500",
+  blocked: "bg-red-500",
+  ready_for_check: "bg-amber-500",
+  completed: "bg-emerald-500",
+  invoiced: "bg-emerald-400",
+  rejected: "bg-red-500",
+  archived: "bg-gray-400",
+};
+
+function StatusPicker({ value, onChange }: { value: string; onChange: (v: string) => void; badgeColor?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -3025,13 +3044,13 @@ function StatusPicker({ value, onChange, badgeColor }: { value: string; onChange
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-gray-300",
-          badgeColor
-        )}
+        className="flex items-center justify-between w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-sm font-medium text-gray-900 dark:text-gray-100 transition-all hover:border-gray-300 dark:hover:border-gray-600"
       >
-        {STATUS_LABELS[value as RepairStatus]}
-        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+        <span className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${STATUS_DOT_COLORS[value] ?? "bg-gray-400"}`} />
+          {STATUS_LABELS[value as RepairStatus]}
+        </span>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-gray-400 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">

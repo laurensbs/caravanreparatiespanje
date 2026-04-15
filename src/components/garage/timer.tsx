@@ -69,47 +69,59 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
   }
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-        ⏱ {t("Time", "Tiempo", "Tijd")}
-      </h3>
+    <div className={`rounded-2xl px-4 py-4 ${
+      isRunning
+        ? "bg-emerald-50 border border-emerald-100"
+        : "bg-sky-50 border border-sky-100"
+    }`}>
+      <p className={`text-xs uppercase tracking-wide font-semibold mb-3 ${
+        isRunning ? "text-emerald-700" : "text-sky-700"
+      }`}>
+        {isRunning
+          ? t("Working now", "Trabajando ahora", "Nu bezig")
+          : t("Work timer", "Temporizador", "Werktimer")}
+      </p>
 
       {/* Timer display when running */}
       {isRunning && (
-        <div className="text-center mb-4">
-          <div className="text-4xl font-bold tabular-nums text-gray-900 tracking-tight">
+        <div className="mb-3">
+          <div className="text-lg font-semibold tabular-nums text-gray-900">
             {formatElapsed(elapsed)}
           </div>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 mt-0.5">
             {currentUserName}
           </p>
         </div>
       )}
 
-      {/* Start / Stop — large touch target */}
-      <button
-        onClick={isRunning ? handleStop : handleStart}
-        disabled={isPending}
-        className={`w-full rounded-2xl p-4 text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 ${
-          isRunning
-            ? "bg-red-500 text-white shadow-sm"
-            : "border-2 border-dashed border-[#0CC0DF]/30 text-[#0CC0DF] active:bg-sky-50"
-        }`}
-      >
-        {isRunning
-          ? `■ ${t("Stop Timer", "Detener", "Stop Timer")}`
-          : `▶ ${t("Start Timer", "Iniciar", "Start Timer")}`}
-      </button>
+      {/* Start / Stop */}
+      {isRunning ? (
+        <button
+          onClick={handleStop}
+          disabled={isPending}
+          className="w-full rounded-xl bg-red-500 text-white px-4 py-2.5 text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
+        >
+          {t("Stop Timer", "Detener", "Stop Timer")}
+        </button>
+      ) : (
+        <button
+          onClick={handleStart}
+          disabled={isPending}
+          className="w-full rounded-xl bg-[#0CC0DF] text-white px-4 py-2.5 text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          {t("Start working", "Empezar a trabajar", "Start werken")}
+        </button>
+      )}
 
       {/* Other technicians */}
       {otherTimers.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-300">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
             {t("Also working", "También trabajando", "Ook bezig")}
           </p>
           {otherTimers.map((timer) => (
             <div key={timer.id} className="flex items-center gap-2 text-sm">
-              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-sky-500 text-[11px] font-bold text-white">
+              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-sky-500 text-[10px] font-bold text-white">
                 {(timer.userName ?? "?").charAt(0).toUpperCase()}
               </span>
               <span className="font-medium text-gray-700">{timer.userName}</span>

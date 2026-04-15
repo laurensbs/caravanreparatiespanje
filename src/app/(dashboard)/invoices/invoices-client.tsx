@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
 import { markInvoicePaid, sendPaymentReminder, dismissQuote, setQuoteNote, convertAndSendQuote } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
-import { WorkflowGuide } from "@/components/workflow-guide";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -308,8 +307,6 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
           )}
         </button>
       </div>
-
-      <WorkflowGuide page={tab === "quotes" ? "quotes" : "invoices"} />
 
       {/* Shared filters */}
       <div className="flex flex-wrap items-center gap-2">

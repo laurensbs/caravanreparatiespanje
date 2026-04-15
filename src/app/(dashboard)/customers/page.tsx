@@ -8,7 +8,6 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CustomerFiltersBar } from "@/components/customers/customer-filters";
 import { NewCustomerDialog } from "@/components/customers/new-customer-dialog";
 import { HoldedHint } from "@/components/holded-hint";
-import { WorkflowGuide } from "@/components/workflow-guide";
 import { CustomersTableClient } from "@/components/customers/customer-quickview";
 import { BusinessesTableClient } from "@/components/customers/businesses-table";
 
@@ -76,8 +75,6 @@ export default async function CustomersPage({ searchParams }: Props) {
         </div>
         <NewCustomerDialog />
       </div>
-
-      <WorkflowGuide page="customers" />
 
       {/* ── Tabs ───────────────────────────────────────── */}
       <div className="flex gap-6 border-b border-gray-200">

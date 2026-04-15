@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getUnits } from "@/actions/units";
-import { WorkflowGuide } from "@/components/workflow-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -133,8 +132,6 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
         </div>
         <NewUnitDialog customers={customers} />
       </div>
-
-      <WorkflowGuide page="units" />
 
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:flex-wrap">

@@ -1,7 +1,6 @@
 import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/actions/repairs";
 import { getGarageAttentionItems } from "@/actions/garage-sync";
 import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
-import { WorkflowGuide } from "@/components/workflow-guide";
 import { PipelineSummary } from "@/components/repair-progress";
 import { GarageAttentionWidget } from "@/components/garage-sync-ui";
 
@@ -93,8 +92,6 @@ export default async function DashboardPage() {
 
       {/* ── Pipeline Progress ──────────────────────────────── */}
       <PipelineSummary repairs={pipelineJobs} />
-
-      <WorkflowGuide page="dashboard" />
 
       <DashboardSuggestions data={dashboardSuggestions} />
 

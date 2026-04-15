@@ -20,7 +20,6 @@ import Link from "next/link";
 import { PartsClient } from "@/components/parts/parts-client";
 import { SuppliersClient } from "@/components/parts/suppliers-client";
 import { HoldedHint } from "@/components/holded-hint";
-import { WorkflowGuide } from "@/components/workflow-guide";
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
   requested: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
@@ -51,8 +50,6 @@ export default async function PartsPage() {
           Manage parts catalog, suppliers, and part requests.
         </p>
       </div>
-
-      <WorkflowGuide page="parts" />
 
       <Tabs defaultValue="catalog">
         <TabsList>

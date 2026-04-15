@@ -1527,14 +1527,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-1.5">
+                  <StatusPicker value={status} onChange={setStatus} badgeColor={statusBadgeColor} />
+                </div>
               </div>
               <div>
                 <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Priority</Label>

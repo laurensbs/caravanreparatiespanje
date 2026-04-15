@@ -2438,7 +2438,7 @@ function FinancialWorkflow({
       <div className="flex items-baseline gap-10">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Estimated</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tabular-nums mt-0.5">
+          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums mt-0.5">
             €{costLines.length > 0 ? costLinesTotalInclTax.toFixed(2) : parseFloat(estimatedCost || "0").toFixed(2)}
           </p>
         </div>

@@ -229,13 +229,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* ─── HEADER ─── */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100 px-4 md:px-6 pt-3 pb-2.5 safe-area-pt">
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200/60 px-4 md:px-6 pt-3 pb-3 safe-area-pt">
         <div className="max-w-3xl mx-auto">
           {/* Nav row */}
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-1">
             <button
               onClick={() => router.push("/garage")}
-              className="flex items-center gap-1 h-9 px-2 -ml-2 text-sm font-semibold text-gray-500 active:bg-gray-100 rounded-xl transition-all"
+              className="flex items-center gap-0.5 h-8 px-1.5 -ml-1.5 text-[13px] font-medium text-gray-400 active:text-gray-600 rounded-lg transition-colors"
             >
               <ChevronLeft className="h-4 w-4" /> {t("Back", "Atrás", "Terug")}
             </button>
@@ -243,15 +243,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               <LanguageToggle />
               <button
                 onClick={handleRefresh}
-                className="h-9 w-9 flex items-center justify-center rounded-xl text-gray-400 active:bg-gray-100 transition-all duration-150"
+                className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 active:bg-gray-50 transition-colors"
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
 
           {/* Vehicle identity */}
-          <h1 className="text-xl font-semibold text-gray-900 leading-tight">
+          <h1 className="text-[17px] font-semibold text-gray-900 leading-snug">
             {repair.unitRegistration && <span className="mr-1.5">{repair.unitRegistration}</span>}
             {[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ")}
           </h1>
@@ -262,58 +262,58 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               <input
                 value={titleValue}
                 onChange={(e) => setTitleValue(e.target.value)}
-                className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSaveTitle();
                   if (e.key === "Escape") setEditingTitle(false);
                 }}
               />
-              <button onClick={handleSaveTitle} disabled={isPending} className="h-9 w-9 flex items-center justify-center rounded-lg text-green-600 active:bg-green-50">✓</button>
-              <button onClick={() => setEditingTitle(false)} className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-400 active:bg-gray-100">✕</button>
+              <button onClick={handleSaveTitle} disabled={isPending} className="h-8 w-8 flex items-center justify-center rounded-lg text-green-600 active:bg-green-50">✓</button>
+              <button onClick={() => setEditingTitle(false)} className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 active:bg-gray-100">✕</button>
             </div>
           ) : (
             <p
-              className="text-sm text-gray-500 mt-0.5 active:opacity-70 cursor-pointer"
+              className="text-[13px] text-gray-400 mt-0.5 active:opacity-70 cursor-pointer"
               onClick={() => setEditingTitle(true)}
             >
-              {repair.title || <span className="italic text-gray-400">{t("No title — tap to add", "Sin título", "Geen titel — tik om toe te voegen")}</span>}
-              <span className="ml-1 text-xs opacity-40">✎</span>
+              {repair.title || <span className="italic">{t("No title — tap to add", "Sin título", "Geen titel — tik om toe te voegen")}</span>}
+              <span className="ml-1 text-[11px] opacity-40">✎</span>
             </p>
           )}
 
-          {/* Vehicle info chips + meta */}
-          <div className="flex items-center gap-1.5 flex-wrap mt-2">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              repair.status === "in_progress" ? "bg-sky-50 text-sky-700" :
-              repair.status === "ready_for_check" ? "bg-amber-50 text-amber-700" :
-              repair.status === "completed" ? "bg-emerald-50 text-emerald-700" :
-              repair.status === "blocked" ? "bg-red-50 text-red-700" :
-              "bg-gray-100 text-gray-600"
+          {/* Meta chips */}
+          <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+            <span className={`inline-flex items-center rounded-full px-2 py-[3px] text-[11px] font-medium ${
+              repair.status === "in_progress" ? "bg-sky-50 text-sky-600" :
+              repair.status === "ready_for_check" ? "bg-amber-50 text-amber-600" :
+              repair.status === "completed" ? "bg-emerald-50 text-emerald-600" :
+              repair.status === "blocked" ? "bg-red-50 text-red-600" :
+              "bg-gray-50 text-gray-500"
             }`}>
               {STATUS_LABELS[repair.status as RepairStatus]}
             </span>
             {(repair.priority === "urgent" || repair.priority === "high") && (
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                repair.priority === "urgent" ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700"
+              <span className={`inline-flex items-center rounded-full px-2 py-[3px] text-[11px] font-medium ${
+                repair.priority === "urgent" ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"
               }`}>
                 {PRIORITY_LABELS[repair.priority as Priority]}
               </span>
             )}
             {repair.customerName && (
-              <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-600 px-2.5 py-0.5 text-xs font-medium">
+              <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-500 px-2 py-[3px] text-[11px] font-medium">
                 {repair.customerName}
               </span>
             )}
             {(repair.unitStorageLocation || repair.unitCurrentPosition) && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-600 px-2.5 py-0.5 text-xs font-medium">
-                <MapPin className="h-3 w-3" />
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-gray-50 text-gray-500 px-2 py-[3px] text-[11px] font-medium">
+                <MapPin className="h-2.5 w-2.5" />
                 {repair.unitCurrentPosition || repair.unitStorageLocation}
               </span>
             )}
-            <span className="text-[11px] text-gray-300 font-mono ml-auto">{repair.publicCode}</span>
+            <span className="text-[10px] text-gray-300 font-mono ml-auto">{repair.publicCode}</span>
             {hasTasks && (
-              <span className="text-xs font-semibold text-gray-400 tabular-nums">
+              <span className="text-[11px] font-semibold text-gray-400 tabular-nums">
                 {doneCount}/{repair.tasks.length}
               </span>
             )}
@@ -324,16 +324,63 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       {/* ─── CONTENT ─── */}
       <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 pb-40 space-y-4 max-w-3xl mx-auto w-full">
 
+        {/* ══════════════════════════════════════════
+            WORKERS — first, so technician can select themselves
+            ══════════════════════════════════════════ */}
+        <div className="flex flex-wrap gap-2">
+          {allUsers.filter(u => u.name && u.role !== "admin").map((user) => {
+            const isAssigned = repair.workers.some(w => w.userId === user.id);
+            return (
+              <button
+                key={user.id}
+                onClick={() => {
+                  startTransition(async () => {
+                    await toggleMyWorker(repair.id, user.id);
+                    router.refresh();
+                  });
+                }}
+                disabled={isPending}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] ${
+                  isAssigned
+                    ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                    : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300"
+                }`}
+              >
+                <span className={`flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold text-white ${
+                  isAssigned ? "bg-emerald-500" : "bg-gray-300"
+                }`}>
+                  {(user.name ?? "?").charAt(0).toUpperCase()}
+                </span>
+                {isAssigned && <span className="text-emerald-500 text-xs">✓</span>}
+                {user.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ══════════════════════════════════════════
+            TIMER — right after workers
+            ══════════════════════════════════════════ */}
+        {isActive && (
+          <GarageTimer
+            repairJobId={repair.id}
+            currentUserId={currentUserId}
+            currentUserName={currentUserName}
+            activeTimers={activeTimers}
+            t={t}
+          />
+        )}
+
         {/* ── Active blockers ── */}
         {activeBlockers.length > 0 && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-red-600">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 space-y-3">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-500">
               {t("Blocked", "Bloqueado", "Geblokkeerd")} ({activeBlockers.length})
             </h3>
             {activeBlockers.map((b) => (
               <div key={b.id} className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <span className="text-sm font-bold text-red-700">
+                  <span className="text-sm font-semibold text-red-700">
                     {BLOCKER_REASON_LABELS[b.reason as BlockerReason]}
                   </span>
                   {b.description && (
@@ -346,7 +393,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 <button
                   onClick={() => handleResolveBlocker(b.id)}
                   disabled={isPending}
-                  className="shrink-0 rounded-xl bg-white border border-green-200 px-4 py-2.5 text-xs font-bold text-green-700 active:bg-green-50 transition-colors"
+                  className="shrink-0 rounded-lg bg-white border border-green-200 px-3 py-2 text-xs font-semibold text-green-700 active:bg-green-50 transition-colors"
                 >
                   ✓ {t("Resolve", "Resolver", "Oplossen")}
                 </button>
@@ -357,8 +404,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
         {/* ── Final check failed ── */}
         {repair.finalCheckStatus === "failed" && repair.finalCheckNotes && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-red-600 mb-1.5">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-500 mb-1">
               {t("Final Check Failed", "Control Final Fallido", "Natest Afgekeurd")}
             </h3>
             <p className="text-sm text-red-800">{repair.finalCheckNotes}</p>
@@ -369,7 +416,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         {flags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {flags.map((f) => (
-              <span key={f.key} className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${f.color}`}>
+              <span key={f.key} className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${f.color}`}>
                 {f.label}
               </span>
             ))}
@@ -377,27 +424,27 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         )}
 
         {/* ══════════════════════════════════════════
-            OFFICE NOTES — only if present
+            OFFICE NOTES — Mollie style: white card, left accent
             ══════════════════════════════════════════ */}
         {(repair.descriptionRaw || repair.notesRaw || repair.internalComments) && (
-          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4">
-            <p className="text-xs uppercase tracking-wide font-semibold text-amber-700 mb-1.5">
+          <div className="rounded-xl bg-white border border-gray-200/60 pl-4 pr-4 py-3.5 border-l-[3px] border-l-amber-400">
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1.5">
               {t("Office Notes", "Notas de Oficina", "Kantoor Notities")}
             </p>
             {repair.descriptionRaw && (
-              <p className="text-sm whitespace-pre-wrap text-gray-700">{repair.descriptionRaw}</p>
+              <p className="text-[13px] whitespace-pre-wrap text-gray-700 leading-relaxed">{repair.descriptionRaw}</p>
             )}
             {repair.notesRaw && (
-              <p className="text-sm whitespace-pre-wrap mt-1.5 text-gray-600">{repair.notesRaw}</p>
+              <p className="text-[13px] whitespace-pre-wrap mt-1.5 text-gray-500 leading-relaxed">{repair.notesRaw}</p>
             )}
             {repair.internalComments && (
-              <p className="text-sm whitespace-pre-wrap mt-1.5 text-gray-500 italic">{repair.internalComments}</p>
+              <p className="text-[13px] whitespace-pre-wrap mt-1.5 text-gray-400 italic leading-relaxed">{repair.internalComments}</p>
             )}
           </div>
         )}
 
         {/* ══════════════════════════════════════════
-            TASKS — Main focus area
+            TASKS
             ══════════════════════════════════════════ */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -447,19 +494,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             </div>
           )}
         </div>
-
-        {/* ══════════════════════════════════════════
-            TIMER / WORK STATE
-            ══════════════════════════════════════════ */}
-        {isActive && (
-          <GarageTimer
-            repairJobId={repair.id}
-            currentUserId={currentUserId}
-            currentUserName={currentUserName}
-            activeTimers={activeTimers}
-            t={t}
-          />
-        )}
 
         {/* ══════════════════════════════════════════
             PARTS
@@ -564,45 +598,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             </div>
           </div>
         )}
-
-        {/* ══════════════════════════════════════════
-            WORKERS — explicit picker
-            ══════════════════════════════════════════ */}
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">
-            {t("Workers", "Trabajadores", "Medewerkers")}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {allUsers.filter(u => u.name).map((user) => {
-              const isAssigned = repair.workers.some(w => w.userId === user.id);
-              return (
-                <button
-                  key={user.id}
-                  onClick={() => {
-                    startTransition(async () => {
-                      await toggleMyWorker(repair.id, user.id);
-                      router.refresh();
-                    });
-                  }}
-                  disabled={isPending}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] ${
-                    isAssigned
-                      ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
-                      : "bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100"
-                  }`}
-                >
-                  <span className={`flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold text-white ${
-                    isAssigned ? "bg-emerald-500" : "bg-gray-300"
-                  }`}>
-                    {(user.name ?? "?").charAt(0).toUpperCase()}
-                  </span>
-                  {isAssigned && <span className="text-emerald-500 text-xs">✓</span>}
-                  {user.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* ── Customer contact ── */}
         {repair.customerId && (repair.customerPhone || repair.customerEmail || repair.customerMobile) && (

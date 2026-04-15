@@ -1528,7 +1528,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <div>
                 <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Status</Label>
                 <div className="mt-1.5">
-                  <StatusPicker value={status} onChange={setStatus} badgeColor={statusBadgeColor} />
+                  <StatusPicker value={status} onChange={setStatus} badgeColor={statusBadgeColor} variant="select" />
                 </div>
               </div>
               <div>
@@ -3027,7 +3027,7 @@ const STATUS_DOT_COLORS: Record<string, string> = {
   archived: "bg-gray-400",
 };
 
-function StatusPicker({ value, onChange }: { value: string; onChange: (v: string) => void; badgeColor?: string }) {
+function StatusPicker({ value, onChange, badgeColor, variant = "pill" }: { value: string; onChange: (v: string) => void; badgeColor?: string; variant?: "pill" | "select" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -3039,19 +3039,37 @@ function StatusPicker({ value, onChange }: { value: string; onChange: (v: string
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
+  const triggerPill = (
+    <button
+      type="button"
+      onClick={() => setOpen(!open)}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-gray-300",
+        badgeColor
+      )}
+    >
+      {STATUS_LABELS[value as RepairStatus]}
+      <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+    </button>
+  );
+
+  const triggerSelect = (
+    <button
+      type="button"
+      onClick={() => setOpen(!open)}
+      className="flex items-center justify-between w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-sm font-medium text-gray-900 dark:text-gray-100 transition-all hover:border-gray-300 dark:hover:border-gray-600"
+    >
+      <span className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${STATUS_DOT_COLORS[value] ?? "bg-gray-400"}`} />
+        {STATUS_LABELS[value as RepairStatus]}
+      </span>
+      <ChevronDown className={cn("h-3.5 w-3.5 text-gray-400 transition-transform", open && "rotate-180")} />
+    </button>
+  );
+
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-sm font-medium text-gray-900 dark:text-gray-100 transition-all hover:border-gray-300 dark:hover:border-gray-600"
-      >
-        <span className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${STATUS_DOT_COLORS[value] ?? "bg-gray-400"}`} />
-          {STATUS_LABELS[value as RepairStatus]}
-        </span>
-        <ChevronDown className={cn("h-3.5 w-3.5 text-gray-400 transition-transform", open && "rotate-180")} />
-      </button>
+      {variant === "select" ? triggerSelect : triggerPill}
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">
           {STATUS_GROUPS.map((group) => (

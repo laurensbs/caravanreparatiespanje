@@ -374,8 +374,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   )}
                 </div>
 
-                {/* Status */}
-                <div className="w-32 shrink-0" onClick={(e) => e.stopPropagation()}>
+                {/* Status + Garage chip */}
+                <div className="w-32 shrink-0 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
@@ -398,19 +398,17 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
+                    <div className="hidden sm:block">
+                      <GarageSyncChip
+                        needsAttention={job.garageNeedsAdminAttention}
+                        unreadCount={job.garageUnreadUpdatesCount}
+                        updateType={job.garageLastUpdateType}
+                        status={job.status}
+                      />
+                    </div>
+                  )}
                 </div>
-
-                {/* Garage sync chip */}
-                {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
-                  <div className="shrink-0 hidden sm:block">
-                    <GarageSyncChip
-                      needsAttention={job.garageNeedsAdminAttention}
-                      unreadCount={job.garageUnreadUpdatesCount}
-                      updateType={job.garageLastUpdateType}
-                      status={job.status}
-                    />
-                  </div>
-                )}
 
                 {/* Contact */}
                 <div className="flex-1 min-w-0 hidden md:block">

@@ -545,7 +545,7 @@ export function GarageSyncChip({
   // Show a chip for ready_for_check status always
   if (status === "ready_for_check") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
         Ready for check
       </span>
     );
@@ -560,12 +560,12 @@ export function GarageSyncChip({
     return (
       <span className="inline-flex items-center gap-1">
         <span
-          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${config.cls}`}
+          className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${config.cls}`}
         >
           {config.label}
         </span>
         {unreadCount > 0 && (
-          <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-sky-500 text-white text-[10px] font-bold px-1">
+          <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-sky-500 text-white text-[9px] font-bold px-0.5">
             {unreadCount}
           </span>
         )}
@@ -576,9 +576,9 @@ export function GarageSyncChip({
   // Generic "Garage update" with unread dot
   if (unreadCount > 0) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
         Garage update
-        <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-sky-500 text-white text-[10px] font-bold px-1">
+        <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-sky-500 text-white text-[9px] font-bold px-0.5">
           {unreadCount}
         </span>
       </span>

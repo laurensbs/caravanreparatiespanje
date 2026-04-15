@@ -20,7 +20,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList, partCategories, garageAttention] =
+  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList, partCategories, garageAttention] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
@@ -38,12 +38,10 @@ export default async function DashboardPage() {
   );
 
   const quickPills = [
-    { label: "Active", value: stats?.active ?? 0, href: "/repairs", dot: "bg-gray-400" },
-    { label: "In Progress", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-sky-400" },
-    { label: "Ready for Check", value: stats?.readyForCheck ?? 0, href: "/repairs?status=ready_for_check", dot: "bg-amber-400" },
-    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts", dot: "bg-amber-400" },
-    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer", dot: "bg-orange-400" },
     { label: "To Do", value: stats?.todo ?? 0, href: "/repairs?status=todo", dot: "bg-gray-400" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-sky-400" },
+    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts", dot: "bg-amber-400" },
+    { label: "Waiting Customer", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer", dot: "bg-orange-400" },
     { label: "Completed", value: stats?.completed ?? 0, href: "/repairs?status=completed", dot: "bg-emerald-400" },
     { label: "Urgent", value: stats?.urgent ?? 0, href: "/repairs?priority=urgent", dot: "bg-red-400" },
     { label: "Follow-up", value: followUps.length, href: "/repairs?customerResponseStatus=no_response", dot: "bg-orange-400" },
@@ -150,42 +148,23 @@ export default async function DashboardPage() {
           <GarageAttentionWidget data={garageAttention} />
 
           {/* Status Summary */}
-          <div className="bg-white dark:bg-card rounded-2xl shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground mb-4">Status Summary</h3>
-            {jobsByStatus.length === 0 ? (
-              <p className="text-sm text-gray-500">No data</p>
-            ) : (
-              <div className="space-y-0">
-                {jobsByStatus.map((item) => {
-                  const dotColor: Record<string, string> = {
-                    new: "bg-gray-300",
-                    todo: "bg-gray-400",
-                    in_inspection: "bg-sky-300",
-                    in_progress: "bg-sky-400",
-                    scheduled: "bg-sky-300",
-                    waiting_parts: "bg-amber-400",
-                    waiting_customer: "bg-orange-400",
-                    waiting_approval: "bg-amber-300",
-                    completed: "bg-emerald-400",
-                    invoiced: "bg-emerald-300",
-                    blocked: "bg-red-400",
-                  };
-                  return (
-                  <Link
-                    key={item.status}
-                    href={`/repairs?status=${item.status}`}
-                    className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent -mx-3 px-3 rounded-lg"
-                  >
-                    <span className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-muted-foreground">
-                      <span className={`h-2 w-2 rounded-full shrink-0 ${dotColor[item.status as string] ?? "bg-gray-300"}`} />
-                      {STATUS_LABELS[item.status as RepairStatus]}
-                    </span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-foreground tabular-nums">{item.count}</span>
-                  </Link>
-                  );
-                })}
-              </div>
-            )}
+          <div className="bg-white dark:bg-card rounded-2xl shadow-sm p-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">Status Summary</h3>
+            <div className="space-y-0">
+              {quickPills.map((pill) => (
+                <Link
+                  key={pill.label}
+                  href={pill.href}
+                  className="flex items-center justify-between py-2 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent -mx-2.5 px-2.5 rounded-lg"
+                >
+                  <span className="flex items-center gap-2 text-xs text-gray-600 dark:text-muted-foreground">
+                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pill.dot}`} />
+                    {pill.label}
+                  </span>
+                  <span className="text-xs font-medium text-gray-900 dark:text-foreground tabular-nums">{pill.value}</span>
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Location Breakdown */}

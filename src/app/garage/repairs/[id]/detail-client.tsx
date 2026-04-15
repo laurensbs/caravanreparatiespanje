@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LanguageBar, useLanguage } from "@/components/garage/language-toggle";
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
@@ -417,21 +418,29 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             <h2 className="text-sm font-semibold text-gray-900">
               {t("Tasks", "Tareas", "Taken")}
             </h2>
-            {hasTasks && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 tabular-nums">
-                  {doneCount}/{repair.tasks.length} {t("completed", "completadas", "voltooid")}
-                </span>
-                <div className="h-1.5 w-16 rounded-full bg-gray-100 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      doneCount === repair.tasks.length ? "bg-emerald-500" : "bg-sky-500"
-                    }`}
-                    style={{ width: `${repair.tasks.length > 0 ? (doneCount / repair.tasks.length) * 100 : 0}%` }}
-                  />
+            <div className="flex items-center gap-2">
+              {hasTasks && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 tabular-nums">
+                    {doneCount}/{repair.tasks.length} {t("completed", "completadas", "voltooid")}
+                  </span>
+                  <div className="h-1.5 w-16 rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        doneCount === repair.tasks.length ? "bg-emerald-500" : "bg-sky-500"
+                      }`}
+                      style={{ width: `${repair.tasks.length > 0 ? (doneCount / repair.tasks.length) * 100 : 0}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => setShowSuggest(true)}
+                className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white px-2.5 h-7 text-xs font-medium text-gray-600 active:bg-gray-50 transition-all"
+              >
+                + {t("Task", "Tarea", "Taak")}
+              </button>
+            </div>
           </div>
 
           {hasTasks ? (
@@ -451,12 +460,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             <div className="rounded-xl bg-gray-50 border border-gray-100 py-6 px-4 text-center">
               <p className="text-sm text-gray-500">{t("No tasks yet", "Sin tareas todavía", "Nog geen taken")}</p>
               <p className="text-xs text-gray-400 mt-1">{t("Add a task to start the repair workflow", "Añade una tarea para iniciar", "Voeg een taak toe om te starten")}</p>
-              <button
-                onClick={() => setShowSuggest(true)}
-                className="mt-3 inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 active:bg-gray-50 transition-all"
-              >
-                + {t("Add task", "Añadir tarea", "Taak toevoegen")}
-              </button>
             </div>
           )}
         </div>
@@ -614,94 +617,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           </>
         )}
 
-        {/* ── Comment form ── */}
-        {showComment && (
-          <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">
-              {t("Add Comment", "Añadir Comentario", "Opmerking Toevoegen")}
-            </h3>
-            <textarea
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder={t("Type your message...", "Escribe tu mensaje...", "Typ je bericht...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowComment(false)} className="flex-1 h-12 rounded-xl">
-                {t("Cancel", "Cancelar", "Annuleren")}
-              </Button>
-              <Button onClick={handleAddComment} disabled={!commentText.trim() || isPending} className="flex-1 h-12 rounded-xl">
-                {t("Send", "Enviar", "Verstuur")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Not done reason form ── */}
-        {showNotDone && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 space-y-3">
-            <h3 className="text-sm font-semibold text-amber-700">
-              {t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}
-            </h3>
-            <textarea
-              value={notDoneReason}
-              onChange={(e) => setNotDoneReason(e.target.value)}
-              placeholder={t("Describe the problem...", "Describe el problema...", "Beschrijf het probleem...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowNotDone(false)} className="flex-1 h-12 rounded-xl">
-                {t("Cancel", "Cancelar", "Annuleren")}
-              </Button>
-              <Button
-                onClick={handleMarkNotDone}
-                disabled={!notDoneReason.trim() || isPending}
-                className="flex-1 h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                {t("Submit", "Enviar", "Verstuur")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Suggest task form ── */}
-        {showSuggest && (
-          <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">
-              {t("Suggest Extra Task", "Sugerir Tarea Extra", "Extra Taak Voorstellen")}
-            </h3>
-            <input
-              value={suggestTitle}
-              onChange={(e) => setSuggestTitle(e.target.value)}
-              placeholder={t("Task name...", "Nombre de tarea...", "Naam van taak...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
-              autoFocus
-            />
-            <textarea
-              value={suggestDesc}
-              onChange={(e) => setSuggestDesc(e.target.value)}
-              placeholder={t("Description (optional)...", "Descripción (opcional)...", "Beschrijving (optioneel)...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-20 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-12 rounded-xl">
-                {t("Cancel", "Cancelar", "Annuleren")}
-              </Button>
-              <Button onClick={handleSuggest} disabled={!suggestTitle.trim() || isPending} className="flex-1 h-12 rounded-xl">
-                {t("Suggest", "Sugerir", "Voorstellen")}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─── STICKY BOTTOM ACTION BAR ─── */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white/95 backdrop-blur-xl px-4 md:px-6 pt-2.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] z-30">
         <div className="max-w-3xl mx-auto space-y-1.5">
           {/* Primary: Ready for Check / Not Done */}
-          {isActive && !showComment && !showSuggest && !showNotDone && (
+          {isActive && (
             <div className="flex gap-2">
               <button
                 onClick={handleMarkDone}
@@ -719,46 +641,38 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             </div>
           )}
           {/* Secondary actions */}
-          {!showComment && !showSuggest && !showNotDone && (
-            <div className="flex gap-1.5">
-              <button
-                onClick={() => setShowComment(true)}
-                className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
-              >
-                {t("Comment", "Comentario", "Opmerking")}
-              </button>
-              <button
-                onClick={() => setShowSuggest(true)}
-                className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
-              >
-                + {t("Task", "Tarea", "Taak")}
-              </button>
-              {isActive && (
-                <>
-                  <button
-                    onClick={() => setShowFinding(true)}
-                    className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
-                  >
-                    {t("Issue", "Problema", "Bevinding")}
-                  </button>
-                  <button
-                    onClick={() => setShowBlocker(true)}
-                    className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
-                  >
-                    {t("Block", "Bloqueo", "Blokkade")}
-                  </button>
-                </>
-              )}
-              {allDone && repair.finalCheckStatus !== "passed" && (
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setShowComment(true)}
+              className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
+            >
+              {t("Comment", "Comentario", "Opmerking")}
+            </button>
+            {isActive && (
+              <>
                 <button
-                  onClick={() => setShowFinalCheck(true)}
-                  className="flex-1 rounded-xl bg-amber-500 text-white h-10 text-[13px] font-medium active:bg-amber-600 active:scale-[0.98] transition-all shadow-sm"
+                  onClick={() => setShowFinding(true)}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
                 >
-                  {t("Check", "Control", "Natest")}
+                  {t("Issue", "Problema", "Bevinding")}
                 </button>
-              )}
-            </div>
-          )}
+                <button
+                  onClick={() => setShowBlocker(true)}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white h-10 text-[13px] font-medium text-gray-600 active:bg-gray-50 active:scale-[0.98] transition-all"
+                >
+                  {t("Block", "Bloqueo", "Blokkade")}
+                </button>
+              </>
+            )}
+            {allDone && repair.finalCheckStatus !== "passed" && (
+              <button
+                onClick={() => setShowFinalCheck(true)}
+                className="flex-1 rounded-xl bg-amber-500 text-white h-10 text-[13px] font-medium active:bg-amber-600 active:scale-[0.98] transition-all shadow-sm"
+              >
+                {t("Check", "Control", "Natest")}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -787,6 +701,94 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         onClose={() => setShowBlocker(false)}
         onComplete={handleRefresh}
       />
+
+      {/* ── Comment Dialog ── */}
+      <Dialog open={showComment} onOpenChange={setShowComment}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("Add Comment", "Añadir Comentario", "Opmerking Toevoegen")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-1">
+            <textarea
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder={t("Type your message...", "Escribe tu mensaje...", "Typ je bericht...")}
+              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowComment(false)} className="flex-1 h-11 rounded-xl">
+                {t("Cancel", "Cancelar", "Annuleren")}
+              </Button>
+              <Button onClick={handleAddComment} disabled={!commentText.trim() || isPending} className="flex-1 h-11 rounded-xl">
+                {t("Send", "Enviar", "Verstuur")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Not Done Dialog ── */}
+      <Dialog open={showNotDone} onOpenChange={setShowNotDone}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-700">{t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-1">
+            <textarea
+              value={notDoneReason}
+              onChange={(e) => setNotDoneReason(e.target.value)}
+              placeholder={t("Describe the problem...", "Describe el problema...", "Beschrijf het probleem...")}
+              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowNotDone(false)} className="flex-1 h-11 rounded-xl">
+                {t("Cancel", "Cancelar", "Annuleren")}
+              </Button>
+              <Button
+                onClick={handleMarkNotDone}
+                disabled={!notDoneReason.trim() || isPending}
+                className="flex-1 h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                {t("Submit", "Enviar", "Verstuur")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Suggest Task Dialog ── */}
+      <Dialog open={showSuggest} onOpenChange={setShowSuggest}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("Suggest Extra Task", "Sugerir Tarea Extra", "Extra Taak Voorstellen")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-1">
+            <input
+              value={suggestTitle}
+              onChange={(e) => setSuggestTitle(e.target.value)}
+              placeholder={t("Task name...", "Nombre de tarea...", "Naam van taak...")}
+              className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+              autoFocus
+            />
+            <textarea
+              value={suggestDesc}
+              onChange={(e) => setSuggestDesc(e.target.value)}
+              placeholder={t("Description (optional)...", "Descripción (opcional)...", "Beschrijving (optioneel)...")}
+              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-11 rounded-xl">
+                {t("Cancel", "Cancelar", "Annuleren")}
+              </Button>
+              <Button onClick={handleSuggest} disabled={!suggestTitle.trim() || isPending} className="flex-1 h-11 rounded-xl">
+                {t("Suggest", "Sugerir", "Voorstellen")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

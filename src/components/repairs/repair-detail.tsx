@@ -1030,8 +1030,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         <div className="space-y-6 lg:col-span-8">
 
           {/* DESCRIPTION CARD */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 transition-all duration-150" ref={descriptionRef}>
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 transition-all duration-150" ref={descriptionRef}>
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Description</h3>
               {!editingDescription && (
                 <button type="button" onClick={() => setEditingDescription(true)} className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150 font-medium">
@@ -1040,7 +1040,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               )}
             </div>
             {editingDescription ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -1052,25 +1052,25 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   }}
                   rows={5}
                   autoFocus
-                  className="rounded-xl text-sm border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
+                  className="rounded-xl text-xs border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
                 />
                 <button onClick={() => setEditingDescription(false)} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150 font-medium">
                   Done
                 </button>
               </div>
             ) : (
-              <div className="whitespace-pre-wrap text-base text-gray-800 dark:text-gray-200 leading-7">
+              <div className="whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
                 {description || <span className="text-gray-400 dark:text-gray-500 italic">No description</span>}
               </div>
             )}
             {job.descriptionNormalized && (
-              <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5">Summary</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{job.descriptionNormalized}</p>
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-1">Summary</p>
+                <p className="text-xs text-muted-foreground">{job.descriptionNormalized}</p>
               </div>
             )}
             {/* Internal notes */}
-            <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
               <details className="group" open={!!internalComments}>
                 <summary className="text-xs text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150 select-none flex items-center gap-1.5 font-medium">
                   Internal notes
@@ -1081,7 +1081,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   onChange={(e) => setInternalComments(e.target.value)}
                   rows={2}
                   placeholder="Private staff notes..."
-                  className="rounded-xl text-sm resize-none mt-3 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
+                  className="rounded-xl text-xs resize-none mt-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5"
                 />
               </details>
             </div>
@@ -1522,7 +1522,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         <div className="space-y-6 lg:col-span-4">
 
           {/* Job Status */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-5">
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Job Status</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1538,24 +1538,36 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </div>
 
             {/* Info rows */}
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3 text-sm">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2.5 text-xs">
               <div className="flex items-start justify-between py-0.5">
-                <span className="text-gray-500 dark:text-gray-400">Location</span>
-                <span className="font-medium text-gray-800 dark:text-gray-200 text-right">{job.location?.name ?? "—"}</span>
+                <span className="text-muted-foreground">Location</span>
+                {job.location?.name ? (
+                  <span className="font-medium text-gray-800 dark:text-gray-200 text-right">{job.location.name}</span>
+                ) : (
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                )}
               </div>
               <div className="flex items-start justify-between py-0.5">
-                <span className="text-gray-500 dark:text-gray-400">Position</span>
-                <span className="font-mono text-xs font-medium text-gray-800 dark:text-gray-200 text-right">{job.unit?.currentPosition ?? "—"}</span>
+                <span className="text-muted-foreground">Position</span>
+                {job.unit?.currentPosition ? (
+                  <span className="font-mono font-medium text-gray-800 dark:text-gray-200 text-right">{job.unit.currentPosition}</span>
+                ) : (
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                )}
               </div>
               <div className="flex items-start justify-between py-0.5">
-                <span className="text-gray-500 dark:text-gray-400">Storage</span>
-                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 text-right">{job.unit?.storageLocation ? `${job.unit.storageLocation}${job.unit.storageType ? ` (${job.unit.storageType})` : ""}` : "—"}</span>
+                <span className="text-muted-foreground">Storage</span>
+                {job.unit?.storageLocation ? (
+                  <span className="font-medium text-gray-800 dark:text-gray-200 text-right">{job.unit.storageLocation}{job.unit.storageType ? ` (${job.unit.storageType})` : ""}</span>
+                ) : (
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                )}
               </div>
-              {job.unit && (
+              {job.unit ? (
                 <div className="flex items-start justify-between py-0.5">
-                  <span className="text-gray-500 dark:text-gray-400">Unit</span>
+                  <span className="text-muted-foreground">Unit</span>
                   <span className="flex items-center gap-1.5">
-                    <Link href={`/units/${job.unit.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right text-xs transition-all duration-150">
+                    <Link href={`/units/${job.unit.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right transition-all duration-150">
                       {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
                     </Link>
                     <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150" title="Edit unit">
@@ -1563,37 +1575,36 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   </span>
                 </div>
+              ) : (
+                <div className="flex items-start justify-between py-0.5">
+                  <span className="text-muted-foreground">Unit</span>
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                </div>
               )}
               {expandUnit && job.unit && (
                 <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
               )}
-              {!job.unit && (
-                <div className="flex items-start justify-between py-0.5">
-                  <span className="text-gray-500 dark:text-gray-400">Unit</span>
-                  <span className="text-gray-400 dark:text-gray-500">—</span>
-                </div>
-              )}
               <div className="flex items-start justify-between py-0.5">
-                <span className="text-gray-500 dark:text-gray-400">Created</span>
+                <span className="text-muted-foreground">Created</span>
                 <span className="text-gray-800 dark:text-gray-200 text-right">{format(new Date(job.createdAt), "dd MMM yyyy")}</span>
               </div>
             </div>
             {job.sourceSheet && (
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">Source</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">Imported</span>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Source</span>
+                  <span className="text-gray-400 dark:text-gray-500">Imported</span>
                 </div>
               </div>
             )}
           </div>
 
           {/* Customer */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-5">
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Customer</h3>
 
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Contact</span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Contact</span>
                 {job.customer ? (
                   <span className="flex items-center gap-1.5">
                     <Link href={`/customers/${job.customer.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right transition-all duration-150">
@@ -1604,7 +1615,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   </span>
                 ) : (
-                  <span className="text-gray-400 dark:text-gray-500">—</span>
+                  <button onClick={() => setExpandCustomer((v) => !v)} className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
                 )}
               </div>
               {expandCustomer && job.customer && (

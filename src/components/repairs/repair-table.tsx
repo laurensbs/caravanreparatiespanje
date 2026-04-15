@@ -376,28 +376,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Status + Garage chip */}
                 <div className="w-32 shrink-0 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="focus:outline-none">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium max-w-[130px] transition-shadow hover:ring-1 hover:ring-gray-200 dark:hover:ring-white/10 ${STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-slate-700/60 text-gray-600 dark:text-slate-200"}`} title={STATUS_LABELS[job.status as RepairStatus]}>
-                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}`} />
-                          <span className="truncate">{STATUS_LABELS[job.status as RepairStatus]}</span>
-                        </span>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-                      {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                        <DropdownMenuItem
-                          key={val}
-                          className={val === job.status ? "font-semibold" : ""}
-                          onClick={() => { if (val !== job.status) quickStatusChange(job.id, val); }}
-                        >
-                          <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_ACCENT[val] ?? "bg-gray-300 dark:bg-slate-500"}`} />
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <TableStatusPicker
+                    value={job.status}
+                    onChange={(val) => quickStatusChange(job.id, val)}
+                    pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-slate-700/60 text-gray-600 dark:text-slate-200"}
+                    accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}
+                  />
                   {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
                     <div className="hidden sm:block">
                       <GarageSyncChip
@@ -488,6 +472,70 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
         <p className="text-center text-[11px] text-gray-400 dark:text-slate-500 py-4">
           {allJobs.length} repair{allJobs.length !== 1 ? "s" : ""}
         </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Table Status Picker (grouped dropdown) ───
+
+const TABLE_STATUS_GROUPS = [
+  { label: "Intake", items: ["new", "todo", "in_inspection", "no_damage"] },
+  { label: "Quote", items: ["quote_needed", "waiting_approval", "waiting_customer"] },
+  { label: "Work", items: ["waiting_parts", "scheduled", "in_progress", "blocked", "ready_for_check"] },
+  { label: "Done", items: ["completed", "invoiced", "rejected", "archived"] },
+] as const;
+
+function TableStatusPicker({ value, onChange, pillClass, accentClass }: { value: string; onChange: (v: string) => void; pillClass: string; accentClass: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="focus:outline-none"
+      >
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium max-w-[130px] transition-shadow hover:ring-1 hover:ring-gray-200 dark:hover:ring-white/10 ${pillClass}`}>
+          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${accentClass}`} />
+          <span className="truncate">{STATUS_LABELS[value as RepairStatus]}</span>
+        </span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">
+          {TABLE_STATUS_GROUPS.map((group) => (
+            <div key={group.label} className="mb-0.5 last:mb-0">
+              <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-3 pt-2 pb-0.5">{group.label}</p>
+              {group.items.map((val) => {
+                const active = value === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => { if (val !== value) onChange(val); setOpen(false); }}
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      active
+                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    }`}
+                  >
+                    {STATUS_LABELS[val as RepairStatus]}
+                    {active && <span className="ml-auto text-green-500">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

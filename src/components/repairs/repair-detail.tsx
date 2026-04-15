@@ -667,6 +667,40 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {financialStage.label}
                   </span>
                 )}
+                <InlinePillPicker
+                  value={customerResponseStatus}
+                  onChange={setCustomerResponseStatus}
+                  options={CUSTOMER_RESPONSE_LABELS}
+                  colorMap={{
+                    not_contacted: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+                    contacted: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+                    waiting_response: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+                    approved: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+                    declined: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+                    no_response: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+                  }}
+                />
+                <InlinePillPicker
+                  value={invoiceStatus}
+                  onChange={(val) => {
+                    setInvoiceStatus(val);
+                    if (val === "rejected") {
+                      setStatus("rejected");
+                      setCustomerResponseStatus("declined");
+                    }
+                  }}
+                  options={INVOICE_STATUS_LABELS}
+                  colorMap={{
+                    not_invoiced: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+                    draft: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+                    sent: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+                    paid: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+                    warranty: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+                    our_costs: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800",
+                    rejected: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+                    no_damage: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+                  }}
+                />
                 {repairWorkers.length > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <User className="h-3 w-3" />
@@ -3030,6 +3064,67 @@ function StatusPicker({ value, onChange, badgeColor }: { value: string; onChange
               })}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Generic Inline Pill Picker ───
+
+function InlinePillPicker({ value, onChange, options, colorMap }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Record<string, string>;
+  colorMap: Record<string, string>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const badgeColor = colorMap[value] ?? "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 border",
+          badgeColor
+        )}
+      >
+        {options[value] ?? value}
+        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[160px] max-h-[300px] overflow-y-auto">
+          {Object.entries(options).map(([val, label]) => {
+            const active = value === val;
+            return (
+              <button
+                key={val}
+                type="button"
+                onClick={() => { onChange(val); setOpen(false); }}
+                className={cn(
+                  "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  active
+                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                )}
+              >
+                {label}
+                {active && <CheckCircle className="h-3 w-3 ml-auto text-green-500" />}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

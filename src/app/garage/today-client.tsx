@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
+import { LanguageBar, useLanguage } from "@/components/garage/language-toggle";
 import { WeatherWidget } from "@/components/garage/weather-widget";
 import { garageLock } from "@/actions/garage-auth";
 import {
@@ -212,6 +212,11 @@ export function GarageTodayClient({
       {/* ─── HEADER ─── */}
       <header className="px-5 sm:px-8 pt-8 pb-6">
         <div className="max-w-3xl mx-auto">
+          {/* Language bar */}
+          <div className="mb-4">
+            <LanguageBar />
+          </div>
+
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center shrink-0">
@@ -230,7 +235,6 @@ export function GarageTodayClient({
               </div>
             </div>
             <div className="flex items-center gap-1.5 mt-1">
-              <LanguageToggle />
               <button
                 onClick={handleRefresh}
                 className="h-11 w-11 flex items-center justify-center rounded-2xl text-gray-400 active:bg-gray-100 transition-all duration-150"

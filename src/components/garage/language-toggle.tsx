@@ -44,19 +44,47 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const FLAGS: Record<Language, string> = { en: "🇬🇧", es: "🇪🇸", nl: "🇳🇱" };
+const LANG_OPTIONS: { code: Language; flag: string; label: string }[] = [
+  { code: "en", flag: "🇬🇧", label: "EN" },
+  { code: "es", flag: "🇪🇸", label: "ES" },
+  { code: "nl", flag: "🇳🇱", label: "NL" },
+];
 
+/** Compact inline toggle – shows current flag, taps to cycle */
 export function LanguageToggle() {
   const { lang, setLang } = useLanguage();
-  const langs: Language[] = ["en", "es", "nl"];
-  const next = langs[(langs.indexOf(lang) + 1) % langs.length];
+  const next = LANG_OPTIONS[(LANG_OPTIONS.findIndex((l) => l.code === lang) + 1) % LANG_OPTIONS.length];
 
   return (
     <button
-      onClick={() => setLang(next)}
+      onClick={() => setLang(next.code)}
       className="flex h-11 w-11 items-center justify-center rounded-xl text-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-150"
     >
-      {FLAGS[lang]}
+      {LANG_OPTIONS.find((l) => l.code === lang)?.flag}
     </button>
+  );
+}
+
+/** Big segmented bar – all 3 flags visible, direct tap */
+export function LanguageBar() {
+  const { lang, setLang } = useLanguage();
+
+  return (
+    <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
+      {LANG_OPTIONS.map((opt) => (
+        <button
+          key={opt.code}
+          onClick={() => setLang(opt.code)}
+          className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-sm font-semibold transition-all duration-150 ${
+            lang === opt.code
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-400 active:bg-gray-200"
+          }`}
+        >
+          <span className="text-base">{opt.flag}</span>
+          <span>{opt.label}</span>
+        </button>
+      ))}
+    </div>
   );
 }

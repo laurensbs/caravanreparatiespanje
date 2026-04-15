@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
+import { LanguageBar, useLanguage } from "@/components/garage/language-toggle";
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
@@ -219,6 +219,11 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       {/* ─── HEADER ─── */}
       <header className="sticky top-0 z-30 bg-white border-b border-gray-200/60 px-4 md:px-6 pt-3 pb-3 safe-area-pt">
         <div className="max-w-3xl mx-auto">
+          {/* Language bar */}
+          <div className="mb-2">
+            <LanguageBar />
+          </div>
+
           {/* Nav row */}
           <div className="flex items-center justify-between mb-1">
             <button
@@ -227,15 +232,12 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             >
               <ChevronLeft className="h-4 w-4" /> {t("Back", "Atrás", "Terug")}
             </button>
-            <div className="flex items-center gap-1">
-              <LanguageToggle />
-              <button
-                onClick={handleRefresh}
-                className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 active:bg-gray-50 transition-colors"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <button
+              onClick={handleRefresh}
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 active:bg-gray-50 transition-colors"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
           </div>
 
           {/* Vehicle identity */}

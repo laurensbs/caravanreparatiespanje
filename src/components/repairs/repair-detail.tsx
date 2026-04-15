@@ -1356,6 +1356,55 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </>
               )}
 
+              {/* ── Start / Schedule pills ── */}
+              {!(job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status)) && (
+                <>
+                  <div className="border-t border-gray-100 dark:border-gray-800" />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        const today = new Date();
+                        today.setHours(8, 0, 0, 0);
+                        await scheduleRepair(job.id, today.toISOString());
+                        toast.success("Repair started for today");
+                        router.refresh();
+                      }}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-foreground text-background text-xs font-medium py-2.5 px-3 transition-colors hover:bg-foreground/90"
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      Start Repair Now
+                    </button>
+                    <div className="flex-1 relative">
+                      <button
+                        onClick={() => {
+                          const input = document.getElementById('workshop-schedule-picker') as HTMLInputElement;
+                          input?.showPicker();
+                        }}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2.5 px-3 transition-colors"
+                      >
+                        <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+                        Schedule Repair
+                      </button>
+                      <input
+                        id="workshop-schedule-picker"
+                        type="date"
+                        className="absolute inset-0 opacity-0 pointer-events-none"
+                        min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
+                        onChange={async (e) => {
+                          if (e.target.value) {
+                            const d = new Date(e.target.value);
+                            d.setHours(8, 0, 0, 0);
+                            await scheduleRepair(job.id, d.toISOString());
+                            toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
+                            router.refresh();
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
             </div>
             </details>
           </div>

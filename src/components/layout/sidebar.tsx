@@ -129,11 +129,11 @@ export function Sidebar({ userRole }: SidebarProps) {
           "group relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
           collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
           isActive
-            ? "bg-white/10 text-white shadow-sm shadow-black/10"
-            : "text-white/60 hover:bg-white/[0.06] hover:text-white/90 active:scale-[0.98]"
+            ? "bg-white text-gray-900 shadow-sm shadow-black/5"
+            : "text-gray-500 hover:bg-white/60 hover:text-gray-900 active:scale-[0.98]"
         )}
       >
-        <span className={cn("shrink-0 transition-colors", isActive ? "text-white" : "text-white/50 group-hover:text-white/80")}>{item.icon}</span>
+        <span className={cn("shrink-0 transition-colors", isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-700")}>{item.icon}</span>
         {!collapsed && (
           <span className="flex items-center gap-1.5">
             {item.label}
@@ -156,12 +156,12 @@ export function Sidebar({ userRole }: SidebarProps) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[oklch(0.16_0.025_260)] transition-all duration-300 ease-in-out",
-        collapsed ? "w-[60px]" : "w-60 shadow-2xl shadow-black/30"
+        "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[#EDEEF0] transition-all duration-300 ease-in-out",
+        collapsed ? "w-[60px]" : "w-60 shadow-xl shadow-black/8"
       )}
     >
       <div className={cn(
-        "flex items-center justify-center border-b border-white/10 transition-all duration-300",
+        "flex items-center justify-center border-b border-gray-200 transition-all duration-300",
         collapsed ? "h-16 px-2" : "h-36 px-4"
       )}>
         <Image
@@ -186,7 +186,7 @@ export function Sidebar({ userRole }: SidebarProps) {
               <div key={item.href}>
                 {showGroup && (
                   <p className={cn(
-                    "text-[10px] font-semibold uppercase tracking-widest text-white/30 mt-4 mb-1.5",
+                    "text-[10px] font-semibold uppercase tracking-widest text-gray-400 mt-4 mb-1.5",
                     collapsed ? "hidden" : "px-3"
                   )}>
                     {item.group}
@@ -201,7 +201,7 @@ export function Sidebar({ userRole }: SidebarProps) {
 
       {/* Bottom items (Bin) + collapse toggle */}
       <div className={cn(
-        "border-t border-white/10 py-2 space-y-0.5",
+        "border-t border-gray-200 py-2 space-y-0.5",
         collapsed ? "px-1.5" : "px-3"
       )}>
         {bottomItems.map((item) => (
@@ -210,7 +210,7 @@ export function Sidebar({ userRole }: SidebarProps) {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            "flex w-full items-center rounded-lg text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70",
+            "flex w-full items-center rounded-lg text-gray-400 transition-all hover:bg-white/60 hover:text-gray-700",
             collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
           )}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}

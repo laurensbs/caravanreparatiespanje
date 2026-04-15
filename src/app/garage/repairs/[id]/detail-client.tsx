@@ -55,6 +55,7 @@ type RepairDetail = {
   sealsFlag: boolean;
   partsRequiredFlag: boolean;
   followUpRequiredFlag: boolean;
+  customFlags: string[] | null;
   tasks: RepairTask[];
   photos: RepairPhoto[];
   partRequests: {
@@ -157,6 +158,11 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   if (repair.sealsFlag) flags.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), color: "bg-teal-100 text-teal-800 border-teal-200" });
   if (repair.partsRequiredFlag) flags.push({ key: "parts", label: t("Parts Needed", "Piezas", "Onderdelen Nodig"), color: "bg-orange-100 text-orange-800 border-orange-200" });
   if (repair.followUpRequiredFlag) flags.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), color: "bg-purple-100 text-purple-800 border-purple-200" });
+  if (repair.customFlags && Array.isArray(repair.customFlags)) {
+    for (const cf of repair.customFlags as string[]) {
+      flags.push({ key: `custom-${cf}`, label: cf, color: "bg-violet-100 text-violet-800 border-violet-200" });
+    }
+  }
 
   function handleRefresh() {
     router.refresh();

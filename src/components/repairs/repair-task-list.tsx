@@ -17,6 +17,14 @@ interface Props {
   totalLoggedMinutes?: number;
 }
 
+const DEFAULT_TASKS = [
+  { title: "Check everything", titleEs: "Revisar toda la caravana", titleNl: "Controle hele caravan" },
+  { title: "Water test", titleEs: "Prueba de agua", titleNl: "Watertest" },
+  { title: "Electric check", titleEs: "Revisión eléctrica", titleNl: "Elektra controle" },
+  { title: "Gas check", titleEs: "Revisión de gas", titleNl: "Gas controle" },
+  { title: "Roof inspection", titleEs: "Inspección del techo", titleNl: "Dak inspectie" },
+] as const;
+
 function formatMinutes(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -40,8 +48,13 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
 
   function handleAdd() {
     if (!newTitle.trim()) return;
+    const match = DEFAULT_TASKS.find((d) => d.title === newTitle.trim());
     startTransition(async () => {
-      await addRepairTask(repairJobId, { title: newTitle.trim() });
+      await addRepairTask(repairJobId, {
+        title: newTitle.trim(),
+        titleEs: match?.titleEs,
+        titleNl: match?.titleNl,
+      });
       setNewTitle("");
       setShowAdd(false);
       refresh();
@@ -102,21 +115,41 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
 
       {/* Add form */}
       {showAdd && (
-        <div className="flex gap-2 mb-2">
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Task name..."
-            className="h-7 text-xs rounded-lg"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAdd();
-              if (e.key === "Escape") { setShowAdd(false); setNewTitle(""); }
-            }}
-            autoFocus
-          />
-          <Button size="sm" className="h-7 text-xs" onClick={handleAdd} disabled={isPending || !newTitle.trim()}>
+        <div className="space-y-2 mb-2">
+          <div className="flex gap-2">
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Task name..."
+              className="h-7 text-xs rounded-lg"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAdd();
+                if (e.key === "Escape") { setShowAdd(false); setNewTitle(""); }
+              }}
+              autoFocus
+            />
+            <Button size="sm" className="h-7 text-xs" onClick={handleAdd} disabled={isPending || !newTitle.trim()}>
             Add
           </Button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {DEFAULT_TASKS.filter((d) => !tasks.some((t) => t.title === d.title)).map((d) => (
+              <button
+                key={d.title}
+                onClick={() => {
+                  startTransition(async () => {
+                    await addRepairTask(repairJobId, { title: d.title, titleEs: d.titleEs, titleNl: d.titleNl });
+                    refresh();
+                    toast.success("Task added");
+                  });
+                }}
+                disabled={isPending}
+                className="text-[10px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                + {d.title}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

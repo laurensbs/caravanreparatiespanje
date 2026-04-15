@@ -332,6 +332,7 @@ export async function getGarageRepairDetail(id: string) {
       sealsFlag: repairJobs.sealsFlag,
       partsRequiredFlag: repairJobs.partsRequiredFlag,
       followUpRequiredFlag: repairJobs.followUpRequiredFlag,
+      customFlags: repairJobs.customFlags,
     })
     .from(repairJobs)
     .leftJoin(customers, eq(repairJobs.customerId, customers.id))

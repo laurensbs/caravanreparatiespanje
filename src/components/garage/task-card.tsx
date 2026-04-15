@@ -5,6 +5,7 @@ import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
 import type { RepairTask, RepairTaskStatus } from "@/types";
 import { toast } from "sonner";
+import { Camera } from "lucide-react";
 
 const STATUS_ICONS: Record<RepairTaskStatus, string> = {
   pending: "○",
@@ -12,14 +13,6 @@ const STATUS_ICONS: Record<RepairTaskStatus, string> = {
   done: "✓",
   problem: "⚠",
   review: "↻",
-};
-
-const STATUS_BG: Record<RepairTaskStatus, string> = {
-  pending: "bg-white border-gray-100",
-  in_progress: "bg-sky-50/50 border-sky-100",
-  done: "bg-emerald-50/30 border-emerald-100",
-  problem: "bg-red-50 border-red-200",
-  review: "bg-amber-50/50 border-amber-100",
 };
 
 interface TaskCardProps {
@@ -38,7 +31,7 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
 
   const title = t(task.title, task.titleEs, task.titleNl);
   const status = task.status as RepairTaskStatus;
-  const bg = STATUS_BG[status] ?? STATUS_BG.pending;
+  const isDone = status === "done";
 
   function handleStatusChange(newStatus: RepairTaskStatus) {
     if (newStatus === "problem") {
@@ -81,56 +74,87 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
   const actions = getActions(task.status);
 
   return (
-    <div className={`rounded-2xl border ${bg} p-4 shadow-sm transition-all ${isPending ? "opacity-60" : ""} ${
-      task.status === "done" ? "opacity-70" : ""
-    }`}>
-      <div className="flex items-start gap-3">
-        {/* Status icon — larger touch area */}
-        <span className="flex items-center justify-center h-10 w-10 rounded-xl bg-white/80 text-xl leading-none shadow-sm border border-gray-100 shrink-0">
-          {STATUS_ICONS[status]}
-        </span>
-
-        <div className="flex-1 min-w-0">
-          {/* Title */}
-          <span className={`font-semibold text-[15px] leading-snug ${task.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
-            {title}
+    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-150 ${isPending ? "opacity-60" : ""} ${isDone ? "opacity-60" : ""}`}>
+      <div className="px-4 py-3.5">
+        <div className="flex items-start gap-3">
+          {/* Status indicator */}
+          <span className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none shrink-0 mt-0.5 ${
+            status === "done" ? "bg-emerald-50 text-emerald-600" :
+            status === "in_progress" ? "bg-sky-50 text-sky-600" :
+            status === "problem" ? "bg-red-50 text-red-600" :
+            status === "review" ? "bg-amber-50 text-amber-600" :
+            "bg-gray-50 text-gray-400"
+          }`}>
+            {STATUS_ICONS[status]}
           </span>
 
-          {/* Pending approval badge */}
-          {task.source === "garage" && !task.approvedAt && (
-            <span className="inline-flex items-center ml-2 rounded-lg bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
-              {t("Pending", "Pendiente", "Wachtend")}
-            </span>
-          )}
-
-          {/* Description */}
-          {task.description && (
-            <p className="text-sm text-gray-400 mt-0.5 leading-snug">{task.description}</p>
-          )}
-
-          {/* Problem info */}
-          {task.status === "problem" && task.problemCategory && (
-            <div className="mt-2 rounded-xl bg-red-100/80 p-2.5 text-sm text-red-800">
-              <strong>{task.problemCategory.replace("_", " ")}</strong>
-              {task.problemNote && <span>: {task.problemNote}</span>}
+          <div className="flex-1 min-w-0">
+            {/* Title + approval badge */}
+            <div className="flex items-center gap-1.5">
+              <span className={`text-sm font-medium leading-snug ${isDone ? "line-through text-gray-400" : "text-gray-900"}`}>
+                {title}
+              </span>
+              {task.source === "garage" && !task.approvedAt && (
+                <span className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 shrink-0">
+                  {t("Pending", "Pendiente", "Wachtend")}
+                </span>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Uploaded photos */}
-      {photos.length > 0 && (
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-          {photos.map((photo) => (
-            <img
-              key={photo.id}
-              src={photo.url}
-              alt={photo.caption || "Task photo"}
-              className="h-16 w-16 rounded-xl object-cover shrink-0 border border-gray-100"
-            />
-          ))}
+            {/* Description */}
+            {task.description && (
+              <p className="text-xs text-gray-400 mt-0.5 leading-snug">{task.description}</p>
+            )}
+
+            {/* Problem info */}
+            {status === "problem" && task.problemCategory && (
+              <div className="mt-1.5 rounded-lg bg-red-50 border border-red-100 px-2.5 py-1.5 text-xs text-red-700">
+                <strong>{task.problemCategory.replace("_", " ")}</strong>
+                {task.problemNote && <span>: {task.problemNote}</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Camera button — always accessible */}
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-all shrink-0 mt-0.5"
+          >
+            <Camera className="h-4 w-4" />
+          </button>
         </div>
-      )}
+
+        {/* Uploaded photos */}
+        {photos.length > 0 && (
+          <div className="flex gap-1.5 mt-2.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+            {photos.map((photo) => (
+              <img
+                key={photo.id}
+                src={photo.url}
+                alt={photo.caption || "Task photo"}
+                className="h-14 w-14 rounded-lg object-cover shrink-0 border border-gray-100"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {actions.length > 0 && (
+          <div className="flex gap-2 mt-3">
+            {actions.map((action) => (
+              <button
+                key={action.status}
+                onClick={() => handleStatusChange(action.status)}
+                disabled={isPending}
+                className={`flex-1 rounded-xl h-11 text-sm font-semibold transition-all active:scale-[0.97] ${action.className}`}
+              >
+                {t(action.labelEn, action.labelEs, action.labelNl)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Hidden file input */}
       <input
@@ -142,29 +166,6 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
         className="hidden"
         onChange={handlePhotoUpload}
       />
-
-      {/* Action buttons — min 44px height touch targets */}
-      <div className="flex gap-2 mt-3">
-        {actions.map((action) => (
-          <button
-            key={action.status}
-            onClick={() => handleStatusChange(action.status)}
-            disabled={isPending}
-            className={`flex-1 rounded-xl px-3 py-3.5 text-sm font-bold transition-all active:scale-[0.97] ${action.className}`}
-          >
-            {t(action.labelEn, action.labelEs, action.labelNl)}
-          </button>
-        ))}
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className={`rounded-xl px-3 py-3.5 text-sm font-bold bg-gray-100 text-gray-500 active:bg-gray-200 active:scale-[0.97] transition-all ${actions.length === 0 ? "flex-1" : ""}`}
-        >
-          {uploading
-            ? t("Uploading...", "Subiendo...", "Uploaden...")
-            : `📷${actions.length === 0 ? ` ${t("Add photo", "Añadir foto", "Foto toevoegen")}` : ""}`}
-        </button>
-      </div>
     </div>
   );
 }
@@ -178,7 +179,7 @@ function getActions(status: string) {
           labelEn: "▶ Start",
           labelEs: "▶ Iniciar",
           labelNl: "▶ Start",
-          className: "bg-sky-500 text-white shadow-sm",
+          className: "bg-gray-900 text-white",
         },
       ];
     case "in_progress":
@@ -188,14 +189,14 @@ function getActions(status: string) {
           labelEn: "✓ Done",
           labelEs: "✓ Listo",
           labelNl: "✓ Klaar",
-          className: "bg-emerald-500 text-white shadow-sm",
+          className: "bg-emerald-500 text-white",
         },
         {
           status: "problem" as RepairTaskStatus,
           labelEn: "⚠ Problem",
           labelEs: "⚠ Problema",
           labelNl: "⚠ Probleem",
-          className: "bg-red-50 text-red-600 border border-red-200",
+          className: "bg-white text-red-600 border border-red-200",
         },
       ];
     case "problem":
@@ -205,7 +206,7 @@ function getActions(status: string) {
           labelEn: "↻ Retry",
           labelEs: "↻ Reintentar",
           labelNl: "↻ Opnieuw",
-          className: "bg-sky-500 text-white shadow-sm",
+          className: "bg-gray-900 text-white",
         },
       ];
     case "review":
@@ -215,14 +216,14 @@ function getActions(status: string) {
           labelEn: "▶ Rework",
           labelEs: "▶ Rehacer",
           labelNl: "▶ Herwerk",
-          className: "bg-sky-500 text-white shadow-sm",
+          className: "bg-gray-900 text-white",
         },
         {
           status: "done" as RepairTaskStatus,
           labelEn: "✓ OK",
           labelEs: "✓ OK",
           labelNl: "✓ OK",
-          className: "bg-emerald-500 text-white shadow-sm",
+          className: "bg-emerald-500 text-white",
         },
       ];
     case "done":

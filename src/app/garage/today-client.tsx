@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { LanguageBar, useLanguage } from "@/components/garage/language-toggle";
-import { WeatherWidget } from "@/components/garage/weather-widget";
 import { garageLock } from "@/actions/garage-auth";
 import {
   RefreshCw,
@@ -16,11 +15,9 @@ import {
   Zap,
   Clock,
   Package,
-  CalendarDays,
-  Truck,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 
 type RepairItem = {
   id: string;
@@ -65,30 +62,7 @@ interface Props {
   activeTimers?: ActiveTimerItem[];
 }
 
-// ─── Job type badge config ───
-const JOB_TYPE_CONFIG: Record<
-  string,
-  { label: [string, string, string]; cls: string }
-> = {
-  repair: {
-    label: ["Repair", "Reparación", "Reparatie"],
-    cls: "bg-slate-100 text-slate-700",
-  },
-  wax: {
-    label: ["Wax", "Cera", "Wax"],
-    cls: "bg-amber-50 text-amber-700",
-  },
-  maintenance: {
-    label: ["Maintenance", "Mantenimiento", "Onderhoud"],
-    cls: "bg-sky-50 text-sky-700",
-  },
-  inspection: {
-    label: ["Inspection", "Inspección", "Inspectie"],
-    cls: "bg-emerald-50 text-emerald-700",
-  },
-};
-
-// ─── Status category definitions ───
+// ─── Status categories ───
 type StatusCategory = "todo" | "in_progress" | "waiting" | "check" | "done";
 
 function categorize(r: RepairItem): StatusCategory {
@@ -105,6 +79,16 @@ function categorize(r: RepairItem): StatusCategory {
   if (r.status === "in_progress") return "in_progress";
   return "todo";
 }
+
+const STATUS_PILL: Record<StatusCategory, { cls: string }> = {
+  todo: { cls: "bg-gray-100 text-gray-600" },
+  in_progress: { cls: "bg-sky-50 text-sky-700" },
+  waiting: { cls: "bg-amber-50 text-amber-700" },
+  check: { cls: "bg-emerald-50 text-emerald-700" },
+  done: { cls: "bg-emerald-50 text-emerald-600" },
+};
+
+// ─── Main component ───
 
 export function GarageTodayClient({
   repairs,
@@ -128,7 +112,7 @@ export function GarageTodayClient({
     return () => clearInterval(interval);
   }, [router]);
 
-  // Live clock — update every 30s
+  // Live clock
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 30000);
     return () => clearInterval(interval);
@@ -141,7 +125,7 @@ export function GarageTodayClient({
     setTimeout(() => setRefreshing(false), 800);
   }
 
-  // ─── Date formatting ───
+  // ─── Date / time ───
   const dateLocale =
     lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-GB";
   const formattedDate = time.toLocaleDateString(dateLocale, {
@@ -151,13 +135,11 @@ export function GarageTodayClient({
   });
   const displayDate =
     formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-
   const clock = time.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  // ─── Greeting ───
   const firstName = userName.split(" ")[0];
   const greeting = (() => {
     const h = time.getHours();
@@ -178,8 +160,6 @@ export function GarageTodayClient({
     for (const r of repairs) map[categorize(r)].push(r);
     return map;
   }, [repairs]);
-
-  const hasRepairs = repairs.length > 0;
 
   const counts = {
     todo: grouped.todo.length,
@@ -202,84 +182,182 @@ export function GarageTodayClient({
     return grouped[activeFilter];
   }, [activeFilter, grouped]);
 
-  const urgentCount = repairs.filter(
-    (r) => r.priority === "urgent" || r.priority === "high"
-  ).length;
-  const problemCount = repairs.reduce((sum, r) => sum + r.tasks.problem, 0);
+  const hasRepairs = repairs.length > 0;
+
+  // ─── Filter pills ───
+  const filterPills: {
+    key: StatusCategory;
+    label: string;
+    count: number;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      key: "todo",
+      label: t("To Do", "Pendiente", "Te doen"),
+      count: counts.todo,
+      icon: <ClipboardCheck className="h-3 w-3" />,
+    },
+    {
+      key: "in_progress",
+      label: t("Working", "En progreso", "Bezig"),
+      count: counts.in_progress,
+      icon: <Wrench className="h-3 w-3" />,
+    },
+    {
+      key: "waiting",
+      label: t("Waiting", "Esperando", "Wachten"),
+      count: counts.waiting,
+      icon: <AlertTriangle className="h-3 w-3" />,
+    },
+    {
+      key: "check",
+      label: t("Check", "Revisión", "Controle"),
+      count: counts.check,
+      icon: <SearchIcon className="h-3 w-3" />,
+    },
+    {
+      key: "done",
+      label: t("Done", "Hecho", "Klaar"),
+      count: counts.done,
+      icon: <CircleCheck className="h-3 w-3" />,
+    },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* ─── HEADER ─── */}
-      <header className="px-5 sm:px-8 pt-8 pb-6">
-        <div className="max-w-3xl mx-auto">
+      <header className="bg-white border-b border-gray-100">
+        <div className="max-w-3xl mx-auto px-5 sm:px-8">
           {/* Language bar */}
-          <div className="mb-4">
+          <div className="pt-5 pb-3">
             <LanguageBar />
           </div>
 
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center shrink-0">
-                <Truck className="h-6 w-6 text-[#0CC0DF]" />
-              </div>
-              <div>
-                <p className="text-[13px] text-gray-400 font-medium leading-snug">
-                  {greeting}, {firstName}
-                </p>
-                <h1 className="text-[26px] sm:text-[32px] font-bold text-gray-900 tracking-tight leading-tight mt-0.5">
-                  {displayDate}
-                </h1>
-                <p className="text-sm text-gray-300 font-semibold tabular-nums mt-1">
-                  {clock}
-                </p>
-              </div>
+          <div className="flex items-center justify-between pb-5">
+            <div>
+              <p className="text-xs text-gray-400 font-medium">
+                {greeting}, {firstName}
+              </p>
+              <h1 className="text-lg font-bold text-gray-900 tracking-tight mt-0.5">
+                {displayDate}
+              </h1>
+              <p className="text-xs text-gray-300 font-medium tabular-nums mt-0.5">
+                {clock}
+              </p>
             </div>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={handleRefresh}
-                className="h-11 w-11 flex items-center justify-center rounded-2xl text-gray-400 active:bg-gray-100 transition-all duration-150"
+                className="h-9 w-9 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-50 active:bg-gray-100 transition-all duration-150"
                 title={t("Refresh", "Actualizar", "Vernieuwen")}
               >
-                <RefreshCw
-                  className={`h-[18px] w-[18px] ${refreshing ? "animate-spin" : ""}`}
-                />
+                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               </button>
               <button
                 onClick={async () => { await garageLock(); router.refresh(); }}
-                className="h-11 w-11 flex items-center justify-center rounded-full text-sm font-bold bg-white text-gray-500 border border-gray-100 shadow-sm active:bg-gray-100 transition-all duration-150"
+                className="h-9 w-9 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-50 active:bg-gray-100 transition-all duration-150"
                 title={t("Lock Garage", "Bloquear garaje", "Garage vergrendelen")}
               >
-                {firstName.charAt(0).toUpperCase()}
+                <Lock className="h-4 w-4" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* ─── MAIN CONTENT ─── */}
-      <div className="flex-1">
+      {/* ─── MAIN ─── */}
+      <div className="flex-1 max-w-3xl mx-auto w-full px-5 sm:px-8 py-5">
         {hasRepairs ? (
-          <WorkState
-            counts={counts}
-            displayRepairs={displayRepairs}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-            urgentCount={urgentCount}
-            problemCount={problemCount}
-            t={t}
-            activeTimers={activeTimers}
-            lastRefresh={lastRefresh}
-            grouped={grouped}
-          />
+          <div className="space-y-4">
+            {/* Status filter pills */}
+            <div className="flex flex-wrap gap-1.5">
+              {filterPills.map((pill) => {
+                const isActive = activeFilter === pill.key;
+                return (
+                  <button
+                    key={pill.key}
+                    onClick={() => setActiveFilter(isActive ? null : pill.key)}
+                    className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-all duration-150 active:scale-[0.97] ${
+                      isActive
+                        ? "bg-gray-900 text-white"
+                        : "bg-white text-gray-500 border border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {pill.icon}
+                    {pill.label}
+                    {pill.count > 0 && (
+                      <span className={`text-[10px] font-bold tabular-nums ml-0.5 ${
+                        isActive ? "text-white/70" : "text-gray-400"
+                      }`}>
+                        {pill.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active filter label */}
+            {activeFilter && (
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {filterPills.find((p) => p.key === activeFilter)?.label}
+                </p>
+                <button
+                  onClick={() => setActiveFilter(null)}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                >
+                  {t("Show all", "Mostrar todo", "Alles tonen")}
+                </button>
+              </div>
+            )}
+
+            {/* Job list */}
+            {displayRepairs.length > 0 ? (
+              <div className="space-y-2">
+                {displayRepairs.map((repair) => (
+                  <JobCard
+                    key={repair.id}
+                    repair={repair}
+                    t={t}
+                    activeTimers={activeTimers.filter(
+                      (at) => at.repairJobId === repair.id
+                    )}
+                  />
+                ))}
+              </div>
+            ) : activeFilter ? (
+              <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10 text-center">
+                <p className="text-sm text-gray-400">
+                  {t(
+                    "No jobs in this category",
+                    "No hay trabajos en esta categoría",
+                    "Geen klussen in deze categorie"
+                  )}
+                </p>
+              </div>
+            ) : null}
+          </div>
         ) : (
           <EmptyState
             t={t}
             stats={stats}
             handleRefresh={handleRefresh}
             refreshing={refreshing}
-            lastRefresh={lastRefresh}
           />
         )}
+
+        {/* Last updated */}
+        <div className="flex items-center justify-center gap-1.5 pt-6 pb-2">
+          <Clock className="h-3 w-3 text-gray-300" />
+          <p className="text-[10px] text-gray-300 tabular-nums">
+            {t("Last updated", "Última actualización", "Laatste update")}:{" "}
+            {lastRefresh.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -294,45 +372,27 @@ function EmptyState({
   stats,
   handleRefresh,
   refreshing,
-  lastRefresh,
 }: {
   t: (en: string, es?: string | null, nl?: string | null) => string;
   stats: QuickStats;
   handleRefresh: () => void;
   refreshing: boolean;
-  lastRefresh: Date;
 }) {
-  const hasUrgency = stats.urgentCount > 0;
-  const hasPending = stats.waitingPartsCount > 0 || stats.unassignedCount > 0;
-  const hasAnything = hasUrgency || hasPending;
-
-  // Dynamic CTA
-  const ctaLabel = hasUrgency
-    ? t("View urgent jobs", "Ver trabajos urgentes", "Bekijk spoedklussen")
-    : t("Check for new tasks", "Buscar nuevas tareas", "Nieuwe taken ophalen");
-
   return (
-    <div className="max-w-lg mx-auto px-5 pb-10 space-y-5 pt-2">
-      {/* ── Urgency alert ── */}
-      {hasUrgency && (
-        <div className="rounded-2xl bg-amber-50 border border-amber-200/60 px-5 py-5 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-              <Zap className="h-5 w-5 text-amber-600" />
+    <div className="space-y-4">
+      {/* Urgency alert */}
+      {stats.urgentCount > 0 && (
+        <div className="rounded-2xl bg-amber-50 border border-amber-200/60 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <Zap className="h-4 w-4 text-amber-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-amber-900">
+              <p className="text-sm font-semibold text-amber-900">
                 {t(
-                  "Pending jobs need attention",
-                  "Trabajos pendientes necesitan atención",
-                  "Openstaande klussen vereisen aandacht"
-                )}
-              </p>
-              <p className="text-sm text-amber-700/80 mt-0.5">
-                {t(
-                  `${stats.urgentCount} urgent — not scheduled for today`,
-                  `${stats.urgentCount} urgente${stats.urgentCount > 1 ? "s" : ""} — no planificado para hoy`,
-                  `${stats.urgentCount} spoed — niet ingepland voor vandaag`
+                  `${stats.urgentCount} urgent job${stats.urgentCount > 1 ? "s" : ""} pending`,
+                  `${stats.urgentCount} trabajo${stats.urgentCount > 1 ? "s" : ""} urgente${stats.urgentCount > 1 ? "s" : ""}`,
+                  `${stats.urgentCount} spoedklus${stats.urgentCount > 1 ? "sen" : ""} openstaand`
                 )}
               </p>
             </div>
@@ -340,271 +400,86 @@ function EmptyState({
         </div>
       )}
 
-      {/* ── Center status card — only when no urgency ── */}
-      {!hasUrgency && (
-        <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-6 py-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-            <CircleCheck className="h-7 w-7 text-emerald-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900">
-            {t(
-              "No work scheduled today",
-              "Sin trabajo planificado hoy",
-              "Geen werk gepland vandaag"
-            )}
-          </h2>
-          <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-            {stats.tomorrowCount > 0
-              ? t(
-                  `Tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""} planned`,
-                  `Mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""}`,
-                  `Morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland`
-                )
-              : t(
-                  "New tasks appear automatically",
-                  "Las nuevas tareas aparecen automáticamente",
-                  "Nieuwe taken verschijnen automatisch"
-                )}
-          </p>
+      {/* Main card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-8 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+          <CircleCheck className="h-6 w-6 text-emerald-500" />
         </div>
-      )}
-
-      {/* ── Primary CTA ── */}
-      <button
-        onClick={handleRefresh}
-        className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#0CC0DF] text-white text-base font-bold shadow-sm active:scale-[0.98] transition-all duration-150"
-      >
-        <RefreshCw
-          className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`}
-        />
-        {ctaLabel}
-      </button>
-
-      {/* ── KPI cards ── */}
-      <div className="grid grid-cols-2 gap-3">
-        <KpiCard
-          icon={<Wrench className="h-5 w-5 text-gray-400" />}
-          label={t("Today", "Hoy", "Vandaag")}
-          value="0"
-          sub={t("jobs", "trabajos", "klussen")}
-          tint="bg-white"
-        />
-        <KpiCard
-          icon={<CalendarDays className="h-5 w-5 text-sky-400" />}
-          label={t("Tomorrow", "Mañana", "Morgen")}
-          value={String(stats.tomorrowCount)}
-          sub={t("planned", "planificados", "gepland")}
-          tint="bg-sky-50/40"
-        />
-        <KpiCard
-          icon={<Package className="h-5 w-5 text-purple-400" />}
-          label={t("Waiting parts", "Esperando piezas", "Wacht op onderdelen")}
-          value={String(stats.waitingPartsCount)}
-          tint="bg-purple-50/40"
-        />
-        <KpiCard
-          icon={<Zap className="h-5 w-5 text-amber-500" />}
-          label={t("Urgent", "Urgente", "Spoed")}
-          value={String(stats.urgentCount)}
-          tint={
-            stats.urgentCount > 0
-              ? "bg-amber-50/60 border-amber-200"
-              : "bg-white"
-          }
-          highlight={stats.urgentCount > 0}
-        />
-      </div>
-
-      {/* ── Last updated ── */}
-      <LastUpdated t={t} lastRefresh={lastRefresh} />
-
-      {/* ── Weather ── */}
-      <div className="mx-auto max-w-sm pt-2">
-        <WeatherWidget />
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════
-// WORK STATE
-// ══════════════════════════════════════════════════
-
-function WorkState({
-  counts,
-  displayRepairs,
-  activeFilter,
-  setActiveFilter,
-  urgentCount,
-  problemCount,
-  t,
-  activeTimers = [],
-  lastRefresh,
-  grouped,
-}: {
-  counts: Record<StatusCategory, number>;
-  displayRepairs: RepairItem[];
-  activeFilter: StatusCategory | null;
-  setActiveFilter: (f: StatusCategory | null) => void;
-  urgentCount: number;
-  problemCount: number;
-  t: (en: string, es?: string | null, nl?: string | null) => string;
-  activeTimers?: ActiveTimerItem[];
-  lastRefresh: Date;
-  grouped: Record<StatusCategory, RepairItem[]>;
-}) {
-  // Active job = first in_progress, or first todo if nothing in progress
-  const activeJob = grouped.in_progress[0] ?? null;
-
-  // Remaining jobs = all display repairs minus the active job
-  const remainingRepairs = activeJob
-    ? displayRepairs.filter((r) => r.id !== activeJob.id)
-    : displayRepairs;
-
-  const summaryCards: {
-    key: StatusCategory;
-    label: string;
-    count: number;
-    icon: React.ReactNode;
-  }[] = [
-    {
-      key: "todo",
-      label: t("To Do", "Pendiente", "Te doen"),
-      count: counts.todo,
-      icon: <ClipboardCheck className="h-5 w-5 text-gray-400" />,
-    },
-    {
-      key: "in_progress",
-      label: t("Working", "En progreso", "Bezig"),
-      count: counts.in_progress,
-      icon: <Wrench className="h-5 w-5 text-sky-500" />,
-    },
-    {
-      key: "waiting",
-      label: t("Waiting", "Esperando", "Wachten"),
-      count: counts.waiting,
-      icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-    },
-    {
-      key: "check",
-      label: t("Check", "Revisión", "Nacontrole"),
-      count: counts.check,
-      icon: <SearchIcon className="h-5 w-5 text-emerald-500" />,
-    },
-  ];
-
-  return (
-    <div className="max-w-3xl mx-auto px-5 sm:px-8 pb-10 space-y-5">
-      {/* ── Active job focus card ── */}
-      {activeJob && !activeFilter && (
-        <ActiveJobCard
-          repair={activeJob}
-          t={t}
-          activeTimers={activeTimers.filter(
-            (at) => at.repairJobId === activeJob.id
+        <h2 className="text-base font-bold text-gray-900">
+          {t(
+            "No work scheduled today",
+            "Sin trabajo planificado hoy",
+            "Geen werk gepland vandaag"
           )}
-        />
-      )}
-
-      {/* ── Status filter cards ── */}
-      <div className="grid grid-cols-4 gap-2.5">
-        {summaryCards.map((card) => {
-          const isActive = activeFilter === card.key;
-          return (
-            <button
-              key={card.key}
-              onClick={() => setActiveFilter(isActive ? null : card.key)}
-              className={`rounded-xl border shadow-sm px-4 py-3 text-left transition-all duration-150 ease-out active:scale-[0.96] ${
-                isActive
-                  ? "ring-2 ring-[#0CC0DF]/20 border-[#0CC0DF]/30 bg-white"
-                  : "border-gray-200 bg-white hover:bg-gray-50"
-              }`}
-            >
-              <div className="mb-1.5">{card.icon}</div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
-                {card.label}
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-gray-900 leading-tight mt-0.5">
-                {card.count}
-              </p>
-            </button>
-          );
-        })}
+        </h2>
+        <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+          {stats.tomorrowCount > 0
+            ? t(
+                `Tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""} planned`,
+                `Mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""}`,
+                `Morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland`
+              )
+            : t(
+                "New tasks appear automatically",
+                "Las nuevas tareas aparecen automáticamente",
+                "Nieuwe taken verschijnen automatisch"
+              )}
+        </p>
+        <button
+          onClick={handleRefresh}
+          className="mt-4 inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-gray-900 text-white text-sm font-medium active:scale-[0.97] transition-all duration-150"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          {t("Check for new tasks", "Buscar nuevas tareas", "Nieuwe taken ophalen")}
+        </button>
       </div>
 
-      {/* ── Done count ── */}
-      {counts.done > 0 && (
-        <button
-          onClick={() =>
-            setActiveFilter(activeFilter === "done" ? null : "done")
-          }
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
-            activeFilter === "done"
-              ? "bg-emerald-50 text-emerald-700 ring-2 ring-emerald-200"
-              : "text-gray-400 hover:text-gray-600 hover:bg-white"
-          }`}
-        >
-          <CircleCheck className="h-4 w-4" />
-          {counts.done} {t("completed", "completados", "afgerond")}
-        </button>
-      )}
-
-      {/* ── Filter label ── */}
-      {activeFilter && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-            {activeFilter === "done"
-              ? t("Completed", "Completados", "Afgerond")
-              : (summaryCards.find((c) => c.key === activeFilter)?.label ?? "")}
-          </p>
-          <button
-            onClick={() => setActiveFilter(null)}
-            className="text-xs text-[#0CC0DF] font-semibold active:opacity-70 transition-opacity"
+      {/* Compact stats row */}
+      <div className="flex gap-2">
+        {[
+          {
+            icon: <Package className="h-3.5 w-3.5 text-purple-400" />,
+            label: t("Waiting parts", "Esperando piezas", "Wacht op onderdelen"),
+            value: stats.waitingPartsCount,
+          },
+          {
+            icon: <Zap className="h-3.5 w-3.5 text-amber-500" />,
+            label: t("Urgent", "Urgente", "Spoed"),
+            value: stats.urgentCount,
+            highlight: stats.urgentCount > 0,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className={`flex-1 rounded-xl border px-3 py-3 ${
+              item.highlight
+                ? "bg-amber-50/50 border-amber-200"
+                : "bg-white border-gray-100"
+            }`}
           >
-            {t("Show all", "Mostrar todo", "Alles tonen")}
-          </button>
-        </div>
-      )}
-
-      {/* ── Job cards ── */}
-      {remainingRepairs.length > 0 ? (
-        <div className="space-y-2.5">
-          {remainingRepairs.map((repair) => (
-            <JobListCard
-              key={repair.id}
-              repair={repair}
-              t={t}
-            />
-          ))}
-        </div>
-      ) : activeFilter ? (
-        <div className="rounded-xl border border-gray-200 bg-white px-6 py-8 text-center">
-          <p className="text-sm text-gray-400">
-            {t(
-              "No jobs in this category",
-              "No hay trabajos en esta categoría",
-              "Geen klussen in deze categorie"
-            )}
-          </p>
-        </div>
-      ) : null}
-
-      {/* ── Last updated ── */}
-      <LastUpdated t={t} lastRefresh={lastRefresh} />
-
-      {/* ── Weather ── */}
-      <div className="pt-2">
-        <WeatherWidget />
+            <div className="flex items-center gap-1.5 mb-1">
+              {item.icon}
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                {item.label}
+              </span>
+            </div>
+            <p className={`text-lg font-bold tabular-nums ${
+              item.highlight ? "text-amber-600" : "text-gray-900"
+            }`}>
+              {item.value}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
 // ══════════════════════════════════════════════════
-// ACTIVE JOB CARD — primary focus card
+// JOB CARD
 // ══════════════════════════════════════════════════
 
-function ActiveJobCard({
+function JobCard({
   repair,
   t,
   activeTimers = [],
@@ -614,245 +489,111 @@ function ActiveJobCard({
   activeTimers?: ActiveTimerItem[];
 }) {
   const category = categorize(repair);
-  const progress =
-    repair.tasks.total > 0
-      ? Math.round((repair.tasks.done / repair.tasks.total) * 100)
-      : 0;
-
-  const statusConfig: Record<StatusCategory, { label: string; cls: string }> = {
-    todo: {
-      label: t("To Do", "Pendiente", "Te doen"),
-      cls: "bg-gray-100 text-gray-600",
-    },
-    in_progress: {
-      label: t("Working", "En progreso", "Bezig"),
-      cls: "bg-sky-50 text-sky-700",
-    },
-    waiting: {
-      label: t("Waiting", "Esperando", "Wachten"),
-      cls: "bg-amber-50 text-amber-700",
-    },
-    check: {
-      label: t("Check", "Revisión", "Nacontrole"),
-      cls: "bg-emerald-50 text-emerald-700",
-    },
-    done: {
-      label: t("Done", "Completado", "Klaar"),
-      cls: "bg-emerald-50 text-emerald-600",
-    },
-  };
-
-  const status = statusConfig[category];
+  const status = STATUS_PILL[category];
   const unitLine = [repair.unitBrand, repair.unitModel].filter(Boolean).join(" ");
   const displayTitle = repair.title || unitLine || repair.publicCode || "—";
+  const isUrgent = repair.priority === "urgent" || repair.priority === "high";
+  const hasTasks = repair.tasks.total > 0;
+  const progress = hasTasks
+    ? Math.round((repair.tasks.done / repair.tasks.total) * 100)
+    : 0;
 
-  return (
-    <div className="rounded-2xl bg-white border border-gray-200 shadow-sm px-5 py-4">
-      {/* Top row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {displayTitle}
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5 truncate">
-            {repair.customerName}
-          </p>
-        </div>
-        <span
-          className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold shrink-0 ${status.cls}`}
-        >
-          {status.label}
-        </span>
-      </div>
-
-      {/* Progress */}
-      {repair.tasks.total > 0 ? (
-        <div className="mt-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs text-gray-400">
-              {repair.tasks.done}/{repair.tasks.total}{" "}
-              {t("tasks completed", "tareas completadas", "taken voltooid")}
-            </span>
-            <span className="text-xs font-semibold tabular-nums text-gray-400">
-              {progress}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-sky-500 transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      ) : (
-        <p className="text-xs text-gray-400 mt-2">
-          {t("In progress", "En progreso", "Bezig")}
-        </p>
-      )}
-
-      {/* Active timer indicator */}
-      {activeTimers.length > 0 && (
-        <div className="flex items-center gap-1.5 mt-3">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-          </span>
-          <span className="text-xs text-emerald-600 font-medium">
-            {activeTimers
-              .map((at) => (at.userName ?? "?").split(" ")[0])
-              .join(", ")}
-          </span>
-        </div>
-      )}
-
-      {/* CTA */}
-      <div className="flex items-center gap-2 mt-4">
-        <Link
-          href={`/garage/repairs/${repair.id}`}
-          className="flex-1 flex items-center justify-center gap-2 bg-[#0CC0DF] text-white rounded-lg px-4 py-2 text-sm font-medium active:scale-[0.98] transition-all duration-150"
-        >
-          {t("Continue work", "Continuar trabajo", "Werk hervatten")}
-        </Link>
-        <Link
-          href={`/garage/repairs/${repair.id}`}
-          className="flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════
-// JOB LIST CARD — compact card for remaining jobs
-// ══════════════════════════════════════════════════
-
-function JobListCard({
-  repair,
-  t,
-}: {
-  repair: RepairItem;
-  t: (en: string, es?: string | null, nl?: string | null) => string;
-}) {
-  const category = categorize(repair);
-  const statusConfig: Record<StatusCategory, { label: string; cls: string }> = {
-    todo: {
-      label: t("To Do", "Pendiente", "Te doen"),
-      cls: "bg-gray-100 text-gray-600",
-    },
-    in_progress: {
-      label: t("Working", "En progreso", "Bezig"),
-      cls: "bg-sky-50 text-sky-700",
-    },
-    waiting: {
-      label: t("Waiting", "Esperando", "Wachten"),
-      cls: "bg-amber-50 text-amber-700",
-    },
-    check: {
-      label: t("Check", "Revisión", "Nacontrole"),
-      cls: "bg-emerald-50 text-emerald-700",
-    },
-    done: {
-      label: t("Done", "Completado", "Klaar"),
-      cls: "bg-emerald-50 text-emerald-600",
-    },
-  };
-
-  const status = statusConfig[category];
-  const unitLine = [repair.unitBrand, repair.unitModel].filter(Boolean).join(" ");
-  const displayTitle = repair.title || unitLine || repair.publicCode || "—";
+  const statusLabel = (() => {
+    const m: Record<StatusCategory, string> = {
+      todo: t("To Do", "Pendiente", "Te doen"),
+      in_progress: t("Working", "En progreso", "Bezig"),
+      waiting: t("Waiting", "Esperando", "Wachten"),
+      check: t("Check", "Revisión", "Controle"),
+      done: t("Done", "Hecho", "Klaar"),
+    };
+    return m[category];
+  })();
 
   return (
     <Link href={`/garage/repairs/${repair.id}`} className="block">
-      <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 hover:bg-gray-50 active:scale-[0.99] transition-all duration-150 ease-out cursor-pointer">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {displayTitle}
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5 truncate">
-            {repair.customerName}
-          </p>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 hover:border-gray-200 active:scale-[0.99] transition-all duration-150">
+        {/* Top: title + chevron */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {displayTitle}
+              </p>
+              {isUrgent && (
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-red-50 text-red-600 px-1.5 py-0.5 text-[10px] font-bold shrink-0">
+                  <Zap className="h-2.5 w-2.5" />
+                  {repair.priority === "urgent"
+                    ? t("Urgent", "Urgente", "Spoed")
+                    : t("High", "Alta", "Hoog")}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">
+              {[repair.customerName, repair.unitRegistration].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 mt-1" />
         </div>
-        <span
-          className={`inline-flex items-center rounded-lg px-2 py-1 text-[11px] font-bold shrink-0 ${status.cls}`}
-        >
-          {status.label}
-        </span>
-        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+
+        {/* Bottom: pills row */}
+        <div className="flex items-center gap-1.5 mt-2.5">
+          {/* Status pill */}
+          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold ${status.cls}`}>
+            {statusLabel}
+          </span>
+
+          {/* Task progress */}
+          {hasTasks && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-gray-50 text-gray-500 px-2 py-0.5 text-[10px] font-medium">
+              <Wrench className="h-2.5 w-2.5" />
+              {repair.tasks.done}/{repair.tasks.total}
+            </span>
+          )}
+
+          {/* Parts pending */}
+          {repair.parts.pending > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 text-purple-600 px-2 py-0.5 text-[10px] font-medium">
+              <Package className="h-2.5 w-2.5" />
+              {repair.parts.pending}
+            </span>
+          )}
+
+          {/* Problems */}
+          {repair.tasks.problem > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-red-50 text-red-600 px-2 py-0.5 text-[10px] font-medium">
+              <AlertTriangle className="h-2.5 w-2.5" />
+              {repair.tasks.problem}
+            </span>
+          )}
+
+          {/* Active timer */}
+          {activeTimers.length > 0 && (
+            <span className="inline-flex items-center gap-1 ml-auto">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              </span>
+              <span className="text-[10px] text-emerald-600 font-medium">
+                {activeTimers
+                  .map((at) => (at.userName ?? "?").split(" ")[0])
+                  .join(", ")}
+              </span>
+            </span>
+          )}
+        </div>
+
+        {/* Progress bar for in-progress with tasks */}
+        {category === "in_progress" && hasTasks && (
+          <div className="mt-2.5">
+            <div className="h-1 w-full rounded-full bg-gray-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-sky-400 transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </Link>
   );
 }
-
-// ══════════════════════════════════════════════════
-// KPI CARD — reusable stat card
-// ══════════════════════════════════════════════════
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  sub,
-  tint,
-  highlight,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-  tint: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border shadow-sm px-5 py-4 ${tint} ${
-        highlight ? "border-amber-200" : "border-gray-100"
-      }`}
-    >
-      <div className="mb-2">{icon}</div>
-      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-        {label}
-      </p>
-      <p
-        className={`text-2xl font-bold tabular-nums mt-0.5 ${
-          highlight ? "text-amber-600" : "text-gray-900"
-        }`}
-      >
-        {value}
-        {sub && (
-          <span className="text-sm font-medium text-gray-400 ml-1.5">
-            {sub}
-          </span>
-        )}
-      </p>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════
-// LAST UPDATED — subtle indicator
-// ══════════════════════════════════════════════════
-
-function LastUpdated({
-  t,
-  lastRefresh,
-}: {
-  t: (en: string, es?: string | null, nl?: string | null) => string;
-  lastRefresh: Date;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-2 pt-4">
-      <Clock className="h-3 w-3 text-gray-300" />
-      <p className="text-xs text-gray-300 tabular-nums">
-        {t("Last updated", "Última actualización", "Laatste update")}:{" "}
-        {lastRefresh.toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </p>
-    </div>
-  );
-}
-
-

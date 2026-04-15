@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { LanguageToggle, useLanguage } from "@/components/garage/language-toggle";
 import { WeatherWidget } from "@/components/garage/weather-widget";
-import { signOut } from "next-auth/react";
+import { garageLock } from "@/actions/garage-auth";
 import {
   RefreshCw,
   ChevronRight,
@@ -246,9 +246,9 @@ export function GarageTodayClient({
                 />
               </button>
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={async () => { await garageLock(); router.refresh(); }}
                 className="h-11 w-11 flex items-center justify-center rounded-full text-sm font-bold bg-white text-gray-500 border border-gray-100 shadow-sm active:bg-gray-100 transition-all duration-150"
-                title={t("Sign out", "Cerrar sesión", "Uitloggen")}
+                title={t("Lock Garage", "Bloquear garaje", "Garage vergrendelen")}
               >
                 {firstName.charAt(0).toUpperCase()}
               </button>

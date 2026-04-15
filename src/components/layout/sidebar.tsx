@@ -41,7 +41,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations" },
-  { label: "Garage", href: "/garage", icon: <Warehouse className="h-[18px] w-[18px]" />, external: true, group: "Operations" },
+  { label: "Garage", href: "/garage", icon: <Warehouse className="h-[18px] w-[18px]" />, group: "Operations" },
   // DATA
   { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data" },
   { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data" },

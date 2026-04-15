@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import { createHmac } from "crypto";
 import { auth } from "@/lib/auth";
 
-const GARAGE_PASSWORD = "C@r@v@n2024!@#";
+const GARAGE_PIN = "1234";
 const COOKIE_NAME = "garage_auth";
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
+const SESSION_DURATION = 4 * 60 * 60; // 4 hours in seconds
 
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -16,9 +16,9 @@ function sign(value: string): string {
   return createHmac("sha256", getSecret()).update(value).digest("hex");
 }
 
-/** Verify that the garage password is correct and set a signed cookie */
-export async function verifyGaragePassword(password: string): Promise<boolean> {
-  if (password !== GARAGE_PASSWORD) return false;
+/** Verify the garage PIN and set a signed session cookie (4 hours) */
+export async function verifyGaragePin(pin: string): Promise<boolean> {
+  if (pin !== GARAGE_PIN) return false;
 
   const timestamp = Date.now().toString();
   const signature = sign(`garage:${timestamp}`);
@@ -29,7 +29,7 @@ export async function verifyGaragePassword(password: string): Promise<boolean> {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: SESSION_DURATION,
     path: "/garage",
   });
 
@@ -52,12 +52,18 @@ export async function isGarageAuthenticated(): Promise<boolean> {
   const expectedSig = sign(`garage:${timestamp}`);
   if (providedSig !== expectedSig) return false;
 
-  // Check expiry
+  // Check expiry (4 hours)
   const ts = parseInt(timestamp, 10);
   if (isNaN(ts)) return false;
-  if (Date.now() - ts > COOKIE_MAX_AGE * 1000) return false;
+  if (Date.now() - ts > SESSION_DURATION * 1000) return false;
 
   return true;
+}
+
+/** Clear the garage session cookie (lock garage) */
+export async function clearGarageSession(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete({ name: COOKIE_NAME, path: "/garage" });
 }
 
 /** Require garage authentication — throws if not authenticated */

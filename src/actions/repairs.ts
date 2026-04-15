@@ -6,6 +6,7 @@ import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
+import { clearGarageAttention } from "./garage-sync";
 import { generatePublicCode } from "@/lib/utils";
 import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -173,6 +174,9 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
         holdedInvoiceNum: repairJobs.holdedInvoiceNum,
         holdedQuoteId: repairJobs.holdedQuoteId,
         holdedQuoteNum: repairJobs.holdedQuoteNum,
+        garageNeedsAdminAttention: repairJobs.garageNeedsAdminAttention,
+        garageUnreadUpdatesCount: repairJobs.garageUnreadUpdatesCount,
+        garageLastUpdateType: repairJobs.garageLastUpdateType,
       })
       .from(repairJobs)
       .leftJoin(locations, eq(repairJobs.locationId, locations.id))
@@ -995,6 +999,8 @@ export async function adminApproveRepair(repairJobId: string) {
     comment: `Approved and completed by ${session.user.name ?? "admin"}`,
   });
 
+  await clearGarageAttention(repairJobId);
+
   revalidatePath("/");
   revalidatePath(`/repairs/${repairJobId}`);
   return { success: true };
@@ -1023,6 +1029,8 @@ export async function adminSendBackRepair(repairJobId: string, note?: string) {
       ? `Sent back to garage by ${session.user.name ?? "admin"}: ${note}`
       : `Sent back to garage by ${session.user.name ?? "admin"}`,
   });
+
+  await clearGarageAttention(repairJobId);
 
   revalidatePath("/");
   revalidatePath(`/repairs/${repairJobId}`);

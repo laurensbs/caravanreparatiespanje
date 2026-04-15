@@ -6,6 +6,7 @@ import { getTags, getRepairTags } from "@/actions/tags";
 import { getUsers } from "@/actions/users";
 import { getAllCustomers } from "@/actions/customers";
 import { getRepairTasks, getRepairWorkers, getActiveUsers, getRepairFindings, getRepairBlockers } from "@/actions/garage";
+import { getRepairSyncState, getGarageActivity, markGarageUpdatesRead } from "@/actions/garage-sync";
 import { getEstimateLineItems, getDismissedWorkshopItems } from "@/actions/estimates";
 import { getRepairPhotos } from "@/actions/photos";
 import { getJobTimeEntries, getJobActiveTimers } from "@/actions/time-entries";
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers, dismissedWorkshopItems] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers, dismissedWorkshopItems, syncState, garageActivity] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
@@ -49,8 +50,15 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getJobTimeEntries(id),
     getJobActiveTimers(id),
     getDismissedWorkshopItems(id),
+    getRepairSyncState(id),
+    getGarageActivity(id, 10),
   ]);
   if (!job) notFound();
+
+  // Mark garage updates as read when admin opens the page
+  if (syncState && syncState.garageUnreadUpdatesCount > 0) {
+    await markGarageUpdatesRead(id);
+  }
 
   const customerRepairs = job.customerId
     ? await getCustomerRepairs(job.customerId, job.id)
@@ -79,6 +87,8 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       photos={photos}
       timeEntries={timeEntries}
       activeTimers={activeTimers}
+      syncState={syncState}
+      garageActivity={garageActivity}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

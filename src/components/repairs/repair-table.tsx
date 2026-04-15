@@ -9,6 +9,7 @@ import { STATUS_LABELS, JOB_TYPE_LABELS, JOB_TYPE_COLORS } from "@/types";
 import type { RepairStatus, JobType } from "@/types";
 import { ExternalLink } from "lucide-react";
 import { SmartDate } from "@/components/ui/smart-date";
+import { GarageSyncChip } from "@/components/garage-sync-ui";
 import { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import { BulkActions } from "./bulk-actions";
 import { ArrowUp, ArrowDown, ArrowUpDown, Loader2 } from "lucide-react";
@@ -45,6 +46,9 @@ interface Job {
   holdedInvoiceNum: string | null;
   holdedQuoteId: string | null;
   holdedQuoteNum: string | null;
+  garageNeedsAdminAttention: boolean;
+  garageUnreadUpdatesCount: number;
+  garageLastUpdateType: string | null;
   tags: { id: string; name: string; color: string }[];
 }
 
@@ -395,6 +399,18 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+
+                {/* Garage sync chip */}
+                {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
+                  <div className="shrink-0 hidden sm:block">
+                    <GarageSyncChip
+                      needsAttention={job.garageNeedsAdminAttention}
+                      unreadCount={job.garageUnreadUpdatesCount}
+                      updateType={job.garageLastUpdateType}
+                      status={job.status}
+                    />
+                  </div>
+                )}
 
                 {/* Contact */}
                 <div className="flex-1 min-w-0 hidden md:block">

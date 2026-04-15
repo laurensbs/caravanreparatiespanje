@@ -1,7 +1,9 @@
 import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/actions/repairs";
+import { getGarageAttentionItems } from "@/actions/garage-sync";
 import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
 import { WorkflowGuide } from "@/components/workflow-guide";
 import { PipelineSummary } from "@/components/repair-progress";
+import { GarageAttentionWidget } from "@/components/garage-sync-ui";
 
 import { getLocations } from "@/actions/locations";
 import { getAllCustomers } from "@/actions/customers";
@@ -19,7 +21,7 @@ import { SmartDate } from "@/components/ui/smart-date";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList, partCategories] =
+  const [{ stats, recentJobs, jobsByStatus, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList, partCategories, garageAttention] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
@@ -29,6 +31,7 @@ export default async function DashboardPage() {
       getDashboardSuggestions(),
       getAllUnits(),
       getPartCategories(),
+      getGarageAttentionItems(),
     ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -163,6 +166,9 @@ export default async function DashboardPage() {
 
         {/* Right Column */}
         <div className="space-y-6">
+          {/* Garage Needs Attention */}
+          <GarageAttentionWidget data={garageAttention} />
+
           {/* Status Summary */}
           <div className="bg-white dark:bg-card rounded-2xl shadow-sm p-6">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground mb-4">Status Summary</h3>

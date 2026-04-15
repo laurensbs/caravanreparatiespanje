@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { recordGarageUpdate } from "./garage-sync";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: create office notification for garage activity
@@ -58,6 +59,8 @@ export async function garageAutoStart(repairJobId: string) {
     newValue: "in_progress",
     comment: "Auto-started when opened in garage",
   });
+
+  await recordGarageUpdate(repairJobId, "work_started", ctx.userId);
 
   return { changed: true };
 }
@@ -116,6 +119,8 @@ export async function garageMarkDone(repairJobId: string) {
     "garage_done"
   );
 
+  await recordGarageUpdate(repairJobId, "ready_for_check", ctx.userId);
+
   return { success: true };
 }
 
@@ -166,6 +171,8 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
     trimmed,
     "garage_not_done"
   );
+
+  await recordGarageUpdate(repairJobId, "job_blocked", ctx.userId);
 
   return { success: true };
 }
@@ -447,6 +454,10 @@ export async function updateTaskStatus(
   // Auto-update repair status based on task progress
   await autoUpdateRepairStatus(task.repairJobId);
 
+  // Track sync state
+  const syncType = status === "done" ? "task_completed" : status === "problem" ? "issue_reported" : "task_reopened";
+  await recordGarageUpdate(task.repairJobId, syncType, userId);
+
   return { success: true };
 }
 
@@ -533,6 +544,8 @@ export async function addGarageComment(repairJobId: string, summary: string) {
     "garage_comment"
   );
 
+  await recordGarageUpdate(repairJobId, "note_added", ctx.userId);
+
   return { success: true };
 }
 
@@ -584,6 +597,8 @@ export async function suggestExtraTask(
     `"${title}"${description ? `: ${description}` : ""}`,
     "garage_task_suggestion"
   );
+
+  await recordGarageUpdate(repairJobId, "task_suggested", ctx.userId);
 
   return task;
 }
@@ -685,6 +700,8 @@ export async function garageRequestPart(
   revalidatePath(`/garage/repairs/${repairJobId}`);
   revalidatePath(`/repairs/${repairJobId}`);
   revalidatePath("/parts");
+
+  await recordGarageUpdate(repairJobId, "part_requested", ctx.userId);
 
   return request;
 }
@@ -1064,6 +1081,10 @@ export async function addFinding(
 
   revalidatePath(`/garage/repairs/${repairJobId}`);
   revalidatePath(`/repairs/${repairJobId}`);
+
+  const syncType = data.severity === "critical" ? "urgent_issue" : "issue_reported";
+  await recordGarageUpdate(repairJobId, syncType, ctx.userId);
+
   return finding;
 }
 
@@ -1170,6 +1191,9 @@ export async function addBlocker(
 
   revalidatePath(`/garage/repairs/${repairJobId}`);
   revalidatePath(`/repairs/${repairJobId}`);
+
+  await recordGarageUpdate(repairJobId, "blocker_added", ctx.userId);
+
   return blocker;
 }
 

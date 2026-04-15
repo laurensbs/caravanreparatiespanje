@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/actions/tags";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
+import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
 import type { RepairTask } from "@/types";
 
 interface PartItem {
@@ -140,9 +141,11 @@ interface RepairDetailProps {
   photos?: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string }[];
   timeEntries?: any[];
   activeTimers?: any[];
+  syncState?: any;
+  garageActivity?: any[];
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -592,6 +595,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
         )}
       </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          GARAGE SYNC STRIP
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <GarageSyncStrip syncState={syncState} />
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ADMIN REVIEW BAR (Ready for Check)
@@ -1232,6 +1240,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 })()}
               </div>
             </div>
+          )}
+
+          {/* Garage Activity Timeline */}
+          {garageActivity.length > 0 && (
+            <GarageActivityTimeline
+              events={garageActivity}
+              repairId={job.id}
+            />
           )}
 
           {/* Timeline + Communication */}

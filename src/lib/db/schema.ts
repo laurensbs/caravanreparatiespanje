@@ -452,6 +452,20 @@ export const repairJobs = pgTable(
     finalCheckAt: timestamp("final_check_at", { withTimezone: true }),
     finalCheckNotes: text("final_check_notes"),
 
+    // Garage-admin sync metadata
+    garageLastUpdateAt: timestamp("garage_last_update_at", { withTimezone: true }),
+    garageLastUpdateType: varchar("garage_last_update_type", { length: 100 }),
+    garageLastUpdatedByUserId: uuid("garage_last_updated_by_user_id").references(
+      () => users.id,
+      { onDelete: "set null" }
+    ),
+    garageNeedsAdminAttention: boolean("garage_needs_admin_attention")
+      .notNull()
+      .default(false),
+    garageUnreadUpdatesCount: integer("garage_unread_updates_count")
+      .notNull()
+      .default(0),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -474,6 +488,7 @@ export const repairJobs = pgTable(
     index("repair_jobs_job_type_idx").on(table.jobType),
     index("repair_jobs_archived_idx").on(table.archivedAt),
     index("repair_jobs_deleted_idx").on(table.deletedAt),
+    index("repair_jobs_garage_attention_idx").on(table.garageNeedsAdminAttention),
   ]
 );
 

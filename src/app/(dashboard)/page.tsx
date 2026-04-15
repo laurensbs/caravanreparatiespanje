@@ -10,7 +10,7 @@ import { getParts, getPartCategories } from "@/actions/parts";
 import { getAllUnits } from "@/actions/units";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
-  Wrench, AlertTriangle, ArrowRight, PhoneOff, TrendingUp, ClipboardCheck,
+  Wrench, AlertTriangle, ArrowRight, PhoneOff,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
@@ -37,19 +37,16 @@ export default async function DashboardPage() {
     MAIN_LOCATIONS.includes(l.name.toLowerCase())
   );
 
-  const heroCards = [
-    { label: "Active Jobs", value: stats?.active ?? 0, icon: <TrendingUp className="h-5 w-5 text-gray-400 dark:text-muted-foreground" />, href: "/repairs", bg: "bg-white dark:bg-card border border-gray-100 dark:border-border" },
-    { label: "Ready for Check", value: stats?.readyForCheck ?? 0, icon: <ClipboardCheck className="h-5 w-5 text-amber-500" />, href: "/repairs?status=ready_for_check", bg: "bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20" },
-    { label: "In Progress", value: stats?.inProgress ?? 0, icon: <Wrench className="h-5 w-5 text-sky-500" />, href: "/repairs?status=in_progress", bg: "bg-sky-50 dark:bg-sky-500/10 border border-sky-100 dark:border-sky-500/20" },
-    { label: "Urgent", value: stats?.urgent ?? 0, icon: <AlertTriangle className="h-5 w-5 text-red-500" />, href: "/repairs?priority=urgent", bg: "bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20" },
-    { label: "Follow-up", value: followUps.length, icon: <PhoneOff className="h-5 w-5 text-amber-500" />, href: "/repairs?customerResponseStatus=no_response", bg: "bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20" },
-  ];
-
-  const statusTabs = [
-    { label: "To Do", value: stats?.todo ?? 0, href: "/repairs?status=todo" },
-    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts" },
-    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer" },
-    { label: "Completed", value: stats?.completed ?? 0, href: "/repairs?status=completed" },
+  const quickPills = [
+    { label: "Active", value: stats?.active ?? 0, href: "/repairs", dot: "bg-gray-400" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-sky-400" },
+    { label: "Ready for Check", value: stats?.readyForCheck ?? 0, href: "/repairs?status=ready_for_check", dot: "bg-amber-400" },
+    { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts", dot: "bg-amber-400" },
+    { label: "Waiting Contact", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer", dot: "bg-orange-400" },
+    { label: "To Do", value: stats?.todo ?? 0, href: "/repairs?status=todo", dot: "bg-gray-400" },
+    { label: "Completed", value: stats?.completed ?? 0, href: "/repairs?status=completed", dot: "bg-emerald-400" },
+    { label: "Urgent", value: stats?.urgent ?? 0, href: "/repairs?priority=urgent", dot: "bg-red-400" },
+    { label: "Follow-up", value: followUps.length, href: "/repairs?customerResponseStatus=no_response", dot: "bg-orange-400" },
   ];
 
   return (
@@ -63,29 +60,15 @@ export default async function DashboardPage() {
         <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
       </div>
 
-      {/* ── KPI Cards ──────────────────────────────────────── */}
-      <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
-        {heroCards.map((kpi) => (
-          <Link key={kpi.label} href={kpi.href}>
-            <div className={`rounded-2xl shadow-sm p-6 transition-all duration-150 hover:shadow-md cursor-pointer ${kpi.bg}`}>
-              <div className="mb-3">{kpi.icon}</div>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-foreground tabular-nums">{kpi.value}</p>
-              <p className="text-sm text-gray-500 dark:text-muted-foreground mt-1">{kpi.label}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* ── Status Tabs ────────────────────────────────────── */}
-      <div className="flex items-center gap-6 border-b border-gray-200 dark:border-border overflow-x-auto">
-        {statusTabs.map((tab) => (
-          <Link
-            key={tab.label}
-            href={tab.href}
-            className="flex items-center gap-1.5 pb-2.5 text-sm text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground transition-colors whitespace-nowrap border-b-2 border-transparent hover:border-[#0CC0DF]"
-          >
-            {tab.label}
-            <span className="font-medium tabular-nums text-gray-400 dark:text-muted-foreground">{tab.value}</span>
+      {/* ── Quick Filter Pills ─────────────────────────────── */}
+      <div className="flex flex-wrap gap-1.5">
+        {quickPills.map((pill) => (
+          <Link key={pill.label} href={pill.href}>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all duration-150 cursor-pointer">
+              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pill.dot}`} />
+              {pill.label}
+              <span className="tabular-nums font-medium text-gray-700 dark:text-slate-300">{pill.value}</span>
+            </span>
           </Link>
         ))}
       </div>

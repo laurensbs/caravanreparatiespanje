@@ -659,9 +659,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <JobTypePicker value={jobType} onChange={setJobType} />
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 cursor-pointer hover:opacity-80 ${statusBadgeColor}`}>
+                    <button className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 ${statusBadgeColor}`}>
                       {STATUS_LABELS[status as RepairStatus]}
-                      <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
+                      <ChevronDown className="h-3 w-3" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-52 p-2">

@@ -636,25 +636,7 @@ export function RepairPartsUsed({
             />
           ))}
         </div>
-      ) : (
-        !showPicker && (
-          <button
-            onClick={() => {
-              setShowPicker(true);
-              setTimeout(() => inputRef.current?.focus(), 50);
-            }}
-            className="w-full rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-dashed border-gray-200 dark:border-gray-700 px-4 py-5 text-center hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors cursor-pointer group"
-          >
-            <Package className="h-5 w-5 text-gray-300 dark:text-gray-600 mx-auto mb-1.5 group-hover:text-gray-400" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No parts used yet
-            </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              Click to search and add parts
-            </p>
-          </button>
-        )
-      )}
+      ) : null}
     </div>
   );
 }

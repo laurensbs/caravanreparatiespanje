@@ -31,7 +31,7 @@ import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQu
 import { deleteRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
-import { addRepairWorker, removeRepairWorker, resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction, updateRepairTaskPricing } from "@/actions/garage";
+import { resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent, restoreWorkshopItem, restoreAllWorkshopItems } from "@/actions/estimates";
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
@@ -1140,54 +1140,20 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {/* Assigned workers */}
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2.5">Assigned</p>
-                  {repairWorkers.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {repairWorkers.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
                       {repairWorkers.map((w) => (
-                        <span key={w.id} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 group transition-all duration-150">
+                        <span key={w.id} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                           <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-400">
                             {w.userName.charAt(0).toUpperCase()}
                           </span>
                           {w.userName}
-                          <button
-                            onClick={() => {
-                              startPartTransition(async () => {
-                                await removeRepairWorker(job.id, w.userId);
-                                router.refresh();
-                              });
-                            }}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all duration-150 ml-0.5"
-                            title="Remove"
-                          >
-                            <XIcon className="h-2.5 w-2.5" />
-                          </button>
                         </span>
                       ))}
                     </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">No workers yet</p>
                   )}
-                  {(() => {
-                    const availableUsers = activeUsers.filter(
-                      (u) => !repairWorkers.some((w) => w.userId === u.id) && u.role === "technician"
-                    );
-                    if (availableUsers.length === 0) return null;
-                    return (
-                      <Select
-                        value=""
-                        onValueChange={(userId) => {
-                          startPartTransition(async () => {
-                            await addRepairWorker(job.id, userId);
-                            router.refresh();
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue placeholder="+ Assign technician..." /></SelectTrigger>
-                        <SelectContent>
-                          {availableUsers.map((u) => (
-                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  })()}
                 </div>
 
                 {/* Planning + Send to Garage */}
@@ -1201,7 +1167,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* ── Tasks (main focus) ── */}
               <div>
-                <RepairTaskList repairJobId={job.id} initialTasks={tasks} defaultHourlyRate={settings.hourlyRate} />
+                <RepairTaskList repairJobId={job.id} initialTasks={tasks} />
               </div>
 
               {/* ── Divider ── */}

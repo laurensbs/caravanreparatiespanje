@@ -17,6 +17,7 @@ import {
   Search,
   Zap,
   Clock,
+  ChevronDown,
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -287,19 +288,21 @@ export function GarageActivityTimeline({
   if (events.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border shadow-sm">
-      <div className="flex items-center justify-between p-5 pb-0">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground flex items-center gap-2">
-          <Wrench className="h-3.5 w-3.5 text-gray-400" />
-          Garage Activity
-        </h3>
-        {(totalCount ?? events.length) > events.length && (
-          <span className="text-xs text-gray-400">
-            Showing {events.length} of {totalCount}
-          </span>
-        )}
-      </div>
-      <div className="p-5 space-y-0">
+    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border shadow-sm overflow-hidden">
+      <details>
+        <summary className="px-5 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground flex items-center gap-2">
+            <Wrench className="h-3.5 w-3.5 text-gray-400" />
+            Garage Activity
+            {(totalCount ?? events.length) > events.length && (
+              <span className="text-xs font-normal text-gray-400">
+                ({events.length} of {totalCount})
+              </span>
+            )}
+          </h3>
+          <ChevronDown className="h-3.5 w-3.5 text-gray-400 opacity-40" />
+        </summary>
+      <div className="px-5 pb-5 space-y-0">
         {events.map((event, i) => {
           const icon = EVENT_ICON[event.eventType] ?? (
             <Wrench className="h-3.5 w-3.5" />
@@ -344,6 +347,7 @@ export function GarageActivityTimeline({
           );
         })}
       </div>
+      </details>
     </div>
   );
 }

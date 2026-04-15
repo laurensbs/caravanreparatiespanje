@@ -610,13 +610,22 @@ export async function suggestExtraTask(
 export async function searchPartsCatalog(query: string, category?: string) {
   await requireAnyAuth();
 
-  const q = `%${query.toLowerCase()}%`;
-  const conditions = [
-    sql`(lower(${parts.name}) like ${q} or lower(${parts.partNumber}) like ${q} or lower(${suppliers.name}) like ${q})`,
-  ];
+  const conditions = [];
+  
+  // Text search — only if query is non-empty
+  if (query.trim()) {
+    const q = `%${query.toLowerCase()}%`;
+    conditions.push(
+      sql`(lower(${parts.name}) like ${q} or lower(${parts.partNumber}) like ${q} or lower(${suppliers.name}) like ${q})`
+    );
+  }
+  
   if (category) {
     conditions.push(sql`${parts.category} = ${category}`);
   }
+
+  // Need at least one condition
+  if (conditions.length === 0) return [];
 
   const results = await db
     .select({
@@ -634,16 +643,17 @@ export async function searchPartsCatalog(query: string, category?: string) {
     .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
     .where(and(...conditions))
     .orderBy(
-      // exact match first, then starts-with, then partial
-      sql`CASE
-        WHEN lower(${parts.name}) = ${query.toLowerCase()} THEN 0
-        WHEN lower(${parts.partNumber}) = ${query.toLowerCase()} THEN 0
-        WHEN lower(${parts.name}) like ${query.toLowerCase() + "%"} THEN 1
-        ELSE 2
-      END`,
+      query.trim()
+        ? sql`CASE
+            WHEN lower(${parts.name}) = ${query.toLowerCase()} THEN 0
+            WHEN lower(${parts.partNumber}) = ${query.toLowerCase()} THEN 0
+            WHEN lower(${parts.name}) like ${query.toLowerCase() + "%"} THEN 1
+            ELSE 2
+          END`
+        : parts.name,
       parts.name
     )
-    .limit(10);
+    .limit(15);
 
   return results;
 }

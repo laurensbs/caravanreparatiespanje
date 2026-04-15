@@ -2,10 +2,15 @@
 
 import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { Search, X, Loader2, Package, Plus } from "lucide-react";
+import { Search, X, Loader2, Package, Plus, Zap, Wrench, Paintbrush, Droplets, Snowflake, Warehouse, Truck, Sparkles, Hammer, Home, SquareStack } from "lucide-react";
 import { searchPartsCatalog, garageRequestPart } from "@/actions/garage";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+
+// Icon map (matches admin parts page)
+const ICON_MAP: Record<string, React.ElementType> = {
+  Zap, Wrench, SquareStack, Paintbrush, Droplets, Snowflake, Warehouse, Truck, Sparkles, Hammer, Package, Home,
+};
 
 // Multilingual synonym groups for caravan parts search
 const PART_SYNONYMS: string[][] = [
@@ -71,16 +76,20 @@ interface GaragePartsPickerProps {
   repairJobId: string;
   t: (en: string, es?: string | null, nl?: string | null) => string;
   onAdded?: () => void;
+  partCategories?: { id: string; key: string; label: string; icon: string; color: string; sortOrder: number; active: boolean }[];
 }
 
-export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPickerProps) {
+export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: GaragePartsPickerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customName, setCustomName] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -98,9 +107,9 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
     });
   }, []);
 
-  // Search with debounce + synonym expansion
+  // Search with debounce + synonym expansion + category filter
   useEffect(() => {
-    if (query.length < 2) {
+    if (query.length < 2 && !selectedCategory) {
       setResults([]);
       setIsOpen(false);
       return;
@@ -110,20 +119,26 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        // Search original query + all synonyms, deduplicate results
-        const terms = expandWithSynonyms(query);
-        const allResults = await Promise.all(terms.map(term => searchPartsCatalog(term)));
-        const seen = new Set<string>();
-        const deduped: SearchResult[] = [];
-        for (const batch of allResults) {
-          for (const r of batch) {
-            if (!seen.has(r.id)) {
-              seen.add(r.id);
-              deduped.push(r);
+        if (query.length >= 2) {
+          // Search original query + all synonyms, deduplicate results
+          const terms = expandWithSynonyms(query);
+          const allResults = await Promise.all(terms.map(term => searchPartsCatalog(term, selectedCategory ?? undefined)));
+          const seen = new Set<string>();
+          const deduped: SearchResult[] = [];
+          for (const batch of allResults) {
+            for (const r of batch) {
+              if (!seen.has(r.id)) {
+                seen.add(r.id);
+                deduped.push(r);
+              }
             }
           }
+          setResults(deduped.slice(0, 15));
+        } else if (selectedCategory) {
+          // Category only — show all parts in this category
+          const data = await searchPartsCatalog("", selectedCategory);
+          setResults(data);
         }
-        setResults(deduped.slice(0, 15));
         setIsOpen(true);
         setHighlightIndex(-1);
         updatePosition();
@@ -135,7 +150,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
     }, 250);
 
     return () => clearTimeout(debounceRef.current);
-  }, [query, updatePosition]);
+  }, [query, selectedCategory, updatePosition]);
 
   // Update position on scroll/resize
   useEffect(() => {
@@ -185,16 +200,19 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
   }
 
   // Add custom/freetext part
-  function addCustomPart() {
-    if (!query.trim()) return;
+  function addCustomPart(name?: string) {
+    const partName = name || query.trim();
+    if (!partName) return;
     startTransition(async () => {
-      await garageRequestPart(repairJobId, query.trim());
+      await garageRequestPart(repairJobId, partName);
       toast.success(t(
-        `"${query.trim()}" requested`,
-        `"${query.trim()}" solicitado`,
-        `"${query.trim()}" aangevraagd`
+        `"${partName}" requested`,
+        `"${partName}" solicitado`,
+        `"${partName}" aangevraagd`
       ));
       setQuery("");
+      setCustomName("");
+      setShowCustomForm(false);
       setResults([]);
       setIsOpen(false);
       onAdded?.();
@@ -321,7 +339,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
         {showCustomOption && (
           <button
             type="button"
-            onClick={addCustomPart}
+            onClick={() => addCustomPart()}
             className={`w-full text-left px-4 py-3.5 flex items-center gap-3 border-t border-gray-100 transition-colors duration-100 ${
               highlightIndex === results.length
                 ? "bg-sky-50"
@@ -347,18 +365,94 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
     </div>
   );
 
+  const activeCategories = (partCategories ?? []).filter(c => c.active).sort((a, b) => a.sortOrder - b.sortOrder);
+
   return (
-    <div className="relative">
+    <div className="space-y-2.5">
+      {/* Category filter pills */}
+      {activeCategories.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {activeCategories.map((cat) => {
+            const CatIcon = ICON_MAP[cat.icon] ?? Package;
+            const isSelected = selectedCategory === cat.key;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(isSelected ? null : cat.key);
+                  setHighlightIndex(-1);
+                }}
+                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.97] ${
+                  isSelected
+                    ? cat.color
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100"
+                }`}
+              >
+                <CatIcon className="h-3 w-3" />
+                {cat.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowCustomForm(!showCustomForm)}
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 transition-all active:scale-[0.97]"
+          >
+            <Plus className="h-3 w-3" />
+            {t("New", "Nuevo", "Nieuw")}
+          </button>
+        </div>
+      )}
+
+      {/* Custom part request form */}
+      {showCustomForm && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && customName.trim()) {
+                e.preventDefault();
+                addCustomPart(customName.trim());
+              }
+              if (e.key === "Escape") setShowCustomForm(false);
+            }}
+            placeholder={t(
+              "Part name or description…",
+              "Nombre o descripción de la pieza…",
+              "Naam of beschrijving onderdeel…"
+            )}
+            autoFocus
+            disabled={isPending}
+            className="flex-1 h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/40 transition-all disabled:opacity-50"
+          />
+          <button
+            type="button"
+            onClick={() => addCustomPart(customName.trim())}
+            disabled={!customName.trim() || isPending}
+            className="h-10 px-4 rounded-lg bg-gray-900 text-white text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-40"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t("Request", "Solicitar", "Aanvragen")
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-gray-400 pointer-events-none" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
-            if (query.length >= 2) {
+            if (query.length >= 2 || selectedCategory) {
               setIsOpen(true);
               updatePosition();
             }
@@ -370,7 +464,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded }: GaragePartsPicker
             "Zoek onderdelen (naam, nummer, leverancier…)"
           )}
           disabled={isPending}
-          className="w-full h-12 pl-11 pr-10 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/40 transition-all duration-150 disabled:opacity-50"
+          className="w-full h-11 pl-10 pr-10 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/40 transition-all duration-150 disabled:opacity-50"
         />
         {(query || isPending) && (
           <button

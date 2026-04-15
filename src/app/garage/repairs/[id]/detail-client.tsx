@@ -9,7 +9,7 @@ import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
-import { addGarageComment, suggestExtraTask, updateRepairTitle, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
+import { addGarageComment, suggestExtraTask, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { GarageTimer } from "@/components/garage/timer";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
@@ -121,9 +121,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [suggestDesc, setSuggestDesc] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  // Editable title
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState(repair.title ?? "");
+
 
   // Not done reason
   const [showNotDone, setShowNotDone] = useState(false);
@@ -161,16 +159,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   function handleRefresh() {
     router.refresh();
-  }
-
-  function handleSaveTitle() {
-    if (!titleValue.trim()) return;
-    startTransition(async () => {
-      await updateRepairTitle(repair.id, titleValue);
-      setEditingTitle(false);
-      toast.success(t("Title updated", "Título actualizado", "Titel bijgewerkt"));
-      router.refresh();
-    });
   }
 
   function handleMarkDone() {
@@ -256,30 +244,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {[repair.unitBrand, repair.unitModel].filter(Boolean).join(" ")}
           </h1>
 
-          {/* Editable subtitle */}
-          {editingTitle ? (
-            <div className="flex items-center gap-2 mt-1">
-              <input
-                value={titleValue}
-                onChange={(e) => setTitleValue(e.target.value)}
-                className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveTitle();
-                  if (e.key === "Escape") setEditingTitle(false);
-                }}
-              />
-              <button onClick={handleSaveTitle} disabled={isPending} className="h-8 w-8 flex items-center justify-center rounded-lg text-green-600 active:bg-green-50">✓</button>
-              <button onClick={() => setEditingTitle(false)} className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 active:bg-gray-100">✕</button>
-            </div>
-          ) : (
-            <p
-              className="text-[13px] text-gray-400 mt-0.5 active:opacity-70 cursor-pointer"
-              onClick={() => setEditingTitle(true)}
-            >
-              {repair.title || <span className="italic">{t("No title — tap to add", "Sin título", "Geen titel — tik om toe te voegen")}</span>}
-              <span className="ml-1 text-[11px] opacity-40">✎</span>
-            </p>
+          {/* Job title (read-only) */}
+          {repair.title && (
+            <p className="text-[13px] text-gray-400 mt-0.5">{repair.title}</p>
           )}
 
           {/* Meta chips */}
@@ -325,9 +292,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 pb-40 space-y-4 max-w-3xl mx-auto w-full">
 
         {/* ══════════════════════════════════════════
-            WORKERS — first, so technician can select themselves
+            WORKERS + TIMER — inline, first thing
             ══════════════════════════════════════════ */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {allUsers.filter(u => u.name && u.role !== "admin").map((user) => {
             const isAssigned = repair.workers.some(w => w.userId === user.id);
             return (
@@ -340,7 +307,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   });
                 }}
                 disabled={isPending}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] ${
                   isAssigned
                     ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
                     : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300"
@@ -356,20 +323,17 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               </button>
             );
           })}
+          {/* Timer inline */}
+          {isActive && (
+            <GarageTimer
+              repairJobId={repair.id}
+              currentUserId={currentUserId}
+              currentUserName={currentUserName}
+              activeTimers={activeTimers}
+              t={t}
+            />
+          )}
         </div>
-
-        {/* ══════════════════════════════════════════
-            TIMER — right after workers
-            ══════════════════════════════════════════ */}
-        {isActive && (
-          <GarageTimer
-            repairJobId={repair.id}
-            currentUserId={currentUserId}
-            currentUserName={currentUserName}
-            activeTimers={activeTimers}
-            t={t}
-          />
-        )}
 
         {/* ── Active blockers ── */}
         {activeBlockers.length > 0 && (
@@ -552,7 +516,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
             {isActive && (
               <div className="mt-3">
-                <GaragePartsPicker repairJobId={repair.id} t={t} />
+                <GaragePartsPicker repairJobId={repair.id} t={t} partCategories={partCategories} />
               </div>
             )}
           </div>

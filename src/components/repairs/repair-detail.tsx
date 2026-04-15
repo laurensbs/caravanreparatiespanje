@@ -656,40 +656,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <JobTypePicker value={jobType} onChange={setJobType} />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 ${statusBadgeColor}`}>
-                      {STATUS_LABELS[status as RepairStatus]}
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-52 p-2">
-                    {[
-                      { label: "Intake", items: ["new", "todo", "in_inspection", "no_damage"] },
-                      { label: "Quote", items: ["quote_needed", "waiting_approval", "waiting_customer"] },
-                      { label: "Work", items: ["waiting_parts", "scheduled", "in_progress", "blocked", "ready_for_check"] },
-                      { label: "Done", items: ["completed", "invoiced", "rejected", "archived"] },
-                    ].map((group) => (
-                      <div key={group.label} className="mb-1 last:mb-0">
-                        <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-2 pt-1.5 pb-0.5">{group.label}</p>
-                        {group.items.map((val) => (
-                          <button
-                            key={val}
-                            onClick={() => setStatus(val)}
-                            className={cn(
-                              "w-full text-left px-2 py-1 text-[11px] rounded-md transition-colors",
-                              val === status
-                                ? "bg-gray-100 dark:bg-gray-800 font-semibold text-gray-900 dark:text-gray-100"
-                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                            )}
-                          >
-                            {STATUS_LABELS[val as RepairStatus]}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                  </PopoverContent>
-                </Popover>
+                <StatusPicker value={status} onChange={setStatus} badgeColor={statusBadgeColor} />
                 {priority !== "normal" && (
                   <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border transition-all duration-150 ${priorityBadgeColor}`}>
                     {PRIORITY_LABELS[priority as Priority]}
@@ -1367,6 +1334,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* ━━━ FINANCIAL ━━━ */}
           <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden" ref={costRef}>
+            <details>
+              <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
+                Financial
+                <ChevronDown className="h-3.5 w-3.5 opacity-40" />
+              </summary>
             <FinancialWorkflow
               job={job}
               estimatedCost={estimatedCost}
@@ -1407,6 +1379,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               findings={findings}
               initialDismissed={initialDismissed}
             />
+            </details>
           </div>
 
           {/* Photos */}
@@ -1465,15 +1438,49 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             />
           )}
 
-          {/* Timeline + Communication */}
-          {(job.events.length > 0 || communicationLogs.length > 0) && (
-            <TimelineCommunicationCard
-              events={job.events}
-              repairJobId={job.id}
-              communicationLogs={communicationLogs}
-              customerName={job.customer?.name}
-              communicationRef={communicationRef}
-            />
+          {/* Timeline (compact scroll) */}
+          {job.events.length > 0 && (
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+              <details>
+                <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    Timeline
+                    <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 font-bold">{job.events.length}</span>
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-40" />
+                </summary>
+                <div className="px-6 pb-5 max-h-[400px] overflow-y-auto">
+                  <div className="space-y-0">
+                    {job.events.map((event: any, idx: number) => (
+                      <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
+                        {idx < job.events.length - 1 && (
+                          <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+                        )}
+                        <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-1.5 text-xs">
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{event.userName ?? "System"}</span>
+                            <span className="text-gray-400 dark:text-gray-500">{event.eventType.replace(/_/g, " ")}</span>
+                            <span className="ml-auto text-[11px] text-gray-300 dark:text-gray-600 whitespace-nowrap">
+                              <SmartDate date={event.createdAt} />
+                            </span>
+                          </div>
+                          {event.fieldChanged && (
+                            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                              {event.fieldChanged}: {event.oldValue} → {event.newValue}
+                            </p>
+                          )}
+                          {event.comment && (
+                            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{event.comment}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </div>
           )}
         </div>
 
@@ -1614,9 +1621,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 )}
               </div>
+              
+              {/* Communication */}
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-4" ref={communicationRef}>
+                <CommunicationLogPanel
+                  repairJobId={job.id}
+                  logs={communicationLogs}
+                  customerName={job.customer?.name}
+                />
+              </div>
           </div>
-
-          {/* Documents */}
           {(job.holdedQuoteId || job.holdedInvoiceId) && (
             <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-3">
               <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Documents</h3>
@@ -2950,6 +2964,72 @@ function JobTypePicker({ value, onChange }: { value: JobType; onChange: (v: JobT
               </button>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Status Picker (inline dropdown badge, same style as JobTypePicker) ───
+
+const STATUS_GROUPS = [
+  { label: "Intake", items: ["new", "todo", "in_inspection", "no_damage"] },
+  { label: "Quote", items: ["quote_needed", "waiting_approval", "waiting_customer"] },
+  { label: "Work", items: ["waiting_parts", "scheduled", "in_progress", "blocked", "ready_for_check"] },
+  { label: "Done", items: ["completed", "invoiced", "rejected", "archived"] },
+] as const;
+
+function StatusPicker({ value, onChange, badgeColor }: { value: string; onChange: (v: string) => void; badgeColor: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-gray-300",
+          badgeColor
+        )}
+      >
+        {STATUS_LABELS[value as RepairStatus]}
+        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">
+          {STATUS_GROUPS.map((group) => (
+            <div key={group.label} className="mb-0.5 last:mb-0">
+              <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-3 pt-2 pb-0.5">{group.label}</p>
+              {group.items.map((val) => {
+                const active = value === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => { onChange(val); setOpen(false); }}
+                    className={cn(
+                      "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                      active
+                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    )}
+                  >
+                    {STATUS_LABELS[val as RepairStatus]}
+                    {active && <CheckCircle className="h-3 w-3 ml-auto text-green-500" />}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
     </div>

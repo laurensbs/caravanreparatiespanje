@@ -719,22 +719,26 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 ) : (
                   <>
                     {job.dueDate && (
-                      <button
-                        onClick={async () => {
-                          await unscheduleRepair(job.id);
-                          if (["scheduled", "in_progress"].includes(status)) {
-                            setStatus("todo");
-                          }
-                          toast.success("Removed from planning");
-                          router.refresh();
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all duration-150 group/date"
-                        title="Remove from planning"
-                      >
-                        <CalendarDays className="h-3 w-3" />
-                        {format(new Date(job.dueDate), "d MMM")}
-                        <XIcon className="h-2.5 w-2.5 opacity-0 group-hover/date:opacity-100 transition-opacity" />
-                      </button>
+                      <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400">
+                          <CalendarDays className="h-3 w-3" />
+                          {format(new Date(job.dueDate), "d MMM")}
+                        </span>
+                        <button
+                          onClick={async () => {
+                            await unscheduleRepair(job.id);
+                            if (["scheduled", "in_progress"].includes(status)) {
+                              setStatus("todo");
+                            }
+                            toast.success("Removed from planning");
+                            router.refresh();
+                          }}
+                          className="p-0.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950/30 transition-all duration-150"
+                          title="Remove from planning"
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </button>
+                      </span>
                     )}
                     <Popover>
                       <PopoverTrigger asChild>

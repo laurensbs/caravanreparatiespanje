@@ -305,10 +305,19 @@ function EmptyState({
   refreshing: boolean;
   lastRefresh: Date;
 }) {
+  const hasUrgency = stats.urgentCount > 0;
+  const hasPending = stats.waitingPartsCount > 0 || stats.unassignedCount > 0;
+  const hasAnything = hasUrgency || hasPending;
+
+  // Dynamic CTA
+  const ctaLabel = hasUrgency
+    ? t("View urgent jobs", "Ver trabajos urgentes", "Bekijk spoedklussen")
+    : t("Check for new tasks", "Buscar nuevas tareas", "Nieuwe taken ophalen");
+
   return (
     <div className="max-w-lg mx-auto px-5 pb-10 space-y-5 pt-2">
       {/* ── Urgency alert ── */}
-      {stats.urgentCount > 0 && (
+      {hasUrgency && (
         <div className="rounded-2xl bg-amber-50 border border-amber-200/60 px-5 py-5 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -329,48 +338,41 @@ function EmptyState({
                   `${stats.urgentCount} spoed — niet ingepland voor vandaag`
                 )}
               </p>
-              <button
-                onClick={handleRefresh}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800 active:bg-amber-200 active:scale-[0.97] transition-all"
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
-                />
-                {t("View now", "Ver ahora", "Bekijk nu")}
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Calm empty state ── */}
-      <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-6 py-8 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-          <CircleCheck className="h-7 w-7 text-emerald-500" />
+      {/* ── Center status card — only when no urgency ── */}
+      {!hasUrgency && (
+        <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-6 py-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+            <CircleCheck className="h-7 w-7 text-emerald-500" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">
+            {t(
+              "No work scheduled today",
+              "Sin trabajo planificado hoy",
+              "Geen werk gepland vandaag"
+            )}
+          </h2>
+          <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
+            {stats.tomorrowCount > 0
+              ? t(
+                  `Tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""} planned`,
+                  `Mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""}`,
+                  `Morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland`
+                )
+              : t(
+                  "New tasks appear automatically",
+                  "Las nuevas tareas aparecen automáticamente",
+                  "Nieuwe taken verschijnen automatisch"
+                )}
+          </p>
         </div>
-        <h2 className="text-lg font-bold text-gray-900">
-          {t(
-            "No work scheduled today",
-            "Sin trabajo planificado hoy",
-            "Geen werk gepland vandaag"
-          )}
-        </h2>
-        <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-          {stats.tomorrowCount > 0
-            ? t(
-                `Tomorrow has ${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""} planned`,
-                `Mañana hay ${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""}`,
-                `Morgen ${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland`
-              )
-            : t(
-                "New tasks appear automatically",
-                "Las nuevas tareas aparecen automáticamente",
-                "Nieuwe taken verschijnen automatisch"
-              )}
-        </p>
-      </div>
+      )}
 
-      {/* ── Primary action ── */}
+      {/* ── Primary CTA ── */}
       <button
         onClick={handleRefresh}
         className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#0CC0DF] text-white text-base font-bold shadow-sm active:scale-[0.98] transition-all duration-150"
@@ -378,11 +380,7 @@ function EmptyState({
         <RefreshCw
           className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`}
         />
-        {t(
-          "Check for new tasks",
-          "Buscar nuevas tareas",
-          "Nieuwe taken ophalen"
-        )}
+        {ctaLabel}
       </button>
 
       {/* ── KPI cards ── */}

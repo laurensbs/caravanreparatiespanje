@@ -627,9 +627,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] py-8 px-4 text-center">
-                  <Package className="h-8 w-8 text-white/10 mx-auto mb-2" />
-                  <p className="text-sm text-white/30">{t("No parts requested yet", "Sin piezas solicitadas", "Nog geen onderdelen aangevraagd")}</p>
+                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] py-12 px-6 text-center">
+                  <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
+                  <p className="text-base text-white/30">{t("No parts requested yet", "Sin piezas solicitadas", "Nog geen onderdelen aangevraagd")}</p>
                 </div>
               )}
 

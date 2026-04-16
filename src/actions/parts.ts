@@ -211,6 +211,7 @@ export async function getPartRequests(repairJobId?: string) {
       jobTitle: repairJobs.title,
       jobRef: repairJobs.publicCode,
       stockQuantity: parts.stockQuantity,
+      requestType: partRequests.requestType,
     })
     .from(partRequests)
     .leftJoin(parts, eq(partRequests.partId, parts.id))

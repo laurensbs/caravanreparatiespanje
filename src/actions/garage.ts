@@ -679,9 +679,12 @@ export async function garageRequestPart(
     quantity?: number;
     unitCost?: string;
     category?: string;
+    requestType?: "part" | "equipment";
   }
 ) {
   const ctx = await requireAnyAuth();
+  const type = options?.requestType ?? "part";
+  const isEquipment = type === "equipment";
 
   const [request] = await db
     .insert(partRequests)
@@ -692,6 +695,7 @@ export async function garageRequestPart(
       quantity: options?.quantity ?? 1,
       unitCost: options?.unitCost ?? null,
       status: "requested",
+      requestType: type,
       notes: `Requested by garage (${ctx.userName ?? "technician"})`,
     })
     .returning();
@@ -701,7 +705,9 @@ export async function garageRequestPart(
     repairJobId,
     userId: ctx.userId,
     eventType: "part_requested",
-    comment: `Garage requested part: "${partName}"`,
+    comment: isEquipment
+      ? `Garage requested equipment: "${partName}"`
+      : `Garage requested part: "${partName}"`,
   });
 
   // Notify office
@@ -711,7 +717,9 @@ export async function garageRequestPart(
     .where(eq(repairJobs.id, repairJobId));
   await notifyOffice(
     repairJobId,
-    `📦 Onderdeel aangevraagd — ${jobInfo?.publicCode ?? ""}`,
+    isEquipment
+      ? `🔧 Gereedschap aangevraagd — ${jobInfo?.publicCode ?? ""}`
+      : `📦 Onderdeel aangevraagd — ${jobInfo?.publicCode ?? ""}`,
     `"${partName}"`,
     "garage_part_request"
   );

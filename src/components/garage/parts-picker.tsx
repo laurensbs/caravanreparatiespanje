@@ -90,6 +90,8 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customName, setCustomName] = useState("");
+  const [showEquipmentForm, setShowEquipmentForm] = useState(false);
+  const [equipmentName, setEquipmentName] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -402,6 +404,14 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
             <Plus className="h-3 w-3" />
             {t("New", "Nuevo", "Nieuw")}
           </button>
+          <button
+            type="button"
+            onClick={() => setShowEquipmentForm(!showEquipmentForm)}
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-violet-50 text-violet-600 border border-violet-200 hover:bg-violet-100 transition-all active:scale-[0.97]"
+          >
+            <Wrench className="h-3 w-3" />
+            {t("Equipment", "Herramienta", "Gereedschap")}
+          </button>
         </div>
       )}
 
@@ -433,6 +443,72 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
             onClick={() => addCustomPart(customName.trim())}
             disabled={!customName.trim() || isPending}
             className="h-10 px-4 rounded-lg bg-gray-900 text-white text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-40"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t("Request", "Solicitar", "Aanvragen")
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Equipment request form */}
+      {showEquipmentForm && (
+        <div className="flex items-center gap-2">
+          <div className="h-10 w-10 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
+            <Wrench className="h-4 w-4 text-violet-500" />
+          </div>
+          <input
+            type="text"
+            value={equipmentName}
+            onChange={(e) => setEquipmentName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && equipmentName.trim()) {
+                e.preventDefault();
+                startTransition(async () => {
+                  await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment" });
+                  toast.success(t(
+                    `"${equipmentName.trim()}" requested`,
+                    `"${equipmentName.trim()}" solicitado`,
+                    `"${equipmentName.trim()}" aangevraagd`
+                  ));
+                  setEquipmentName("");
+                  setShowEquipmentForm(false);
+                  onAdded?.();
+                  router.refresh();
+                });
+              }
+              if (e.key === "Escape") setShowEquipmentForm(false);
+            }}
+            placeholder={t(
+              "Tool or equipment name…",
+              "Nombre de herramienta…",
+              "Gereedschap of apparaat…"
+            )}
+            autoFocus
+            disabled={isPending}
+            className="flex-1 h-10 px-3 rounded-lg border border-violet-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 transition-all disabled:opacity-50"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (!equipmentName.trim()) return;
+              startTransition(async () => {
+                await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment" });
+                toast.success(t(
+                  `"${equipmentName.trim()}" requested`,
+                  `"${equipmentName.trim()}" solicitado`,
+                  `"${equipmentName.trim()}" aangevraagd`
+                ));
+                setEquipmentName("");
+                setShowEquipmentForm(false);
+                onAdded?.();
+                router.refresh();
+              });
+            }}
+            disabled={!equipmentName.trim() || isPending}
+            className="h-10 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-40"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

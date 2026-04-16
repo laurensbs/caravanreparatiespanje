@@ -9,20 +9,35 @@ import { buildRepairFolderPath, getRepairFolderUrl } from "@/lib/onedrive";
 
 export async function getRepairPhotos(repairJobId: string) {
   await requireAuth();
-  return db
+  const rows = await db
     .select()
     .from(repairPhotos)
     .where(eq(repairPhotos.repairJobId, repairJobId))
     .orderBy(repairPhotos.createdAt);
+
+  // Ensure all photos with a onedriveItemId use the proxy URL
+  return rows.map((p) => {
+    if (p.onedriveItemId && !p.url.startsWith("/api/photos/")) {
+      return { ...p, url: `/api/photos/${p.id}`, thumbnailUrl: `/api/photos/${p.id}` };
+    }
+    return p;
+  });
 }
 
 export async function getTaskPhotos(repairTaskId: string) {
   await requireAuth();
-  return db
+  const rows = await db
     .select()
     .from(repairPhotos)
     .where(eq(repairPhotos.repairTaskId, repairTaskId))
     .orderBy(repairPhotos.createdAt);
+
+  return rows.map((p) => {
+    if (p.onedriveItemId && !p.url.startsWith("/api/photos/")) {
+      return { ...p, url: `/api/photos/${p.id}`, thumbnailUrl: `/api/photos/${p.id}` };
+    }
+    return p;
+  });
 }
 
 /** Get the OneDrive folder URL for a repair job */

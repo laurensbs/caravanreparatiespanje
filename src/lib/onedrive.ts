@@ -264,7 +264,7 @@ export async function uploadFile(
     }
   }
 
-  // Create a sharing link so the image is viewable
+  // Create a sharing link so the image is viewable without auth
   const shareRes = await fetch(
     `${GRAPH_BASE}/users/${process.env.ONEDRIVE_USER_EMAIL!}/drive/items/${itemData.id}/createLink`,
     {
@@ -280,14 +280,37 @@ export async function uploadFile(
     }
   );
 
+  // The @microsoft.graph.downloadUrl is a pre-authenticated direct URL (valid ~1h)
+  // We need a permanent URL, so we use the sharing link and convert it to a direct download
   let downloadUrl = itemData["@microsoft.graph.downloadUrl"] || itemData.webUrl;
+
   if (shareRes.ok) {
     const shareData = await shareRes.json();
-    // Convert sharing link to direct download URL for embedding
     const shareUrl = shareData.link?.webUrl;
     if (shareUrl) {
-      // Use the embed URL format for direct image access
-      downloadUrl = shareUrl;
+      // Convert SharePoint sharing URL to direct download/embed URL
+      // Sharing URLs look like: https://xxx.sharepoint.com/:i:/g/personal/xxx/XXXXXX
+      // We convert to: https://xxx.sharepoint.com/personal/xxx/_layouts/15/download.aspx?share=XXXXXX
+      // Or use the base64 encoding trick for Graph API
+      const encodedUrl = Buffer.from(shareUrl).toString("base64")
+        .replace(/=+$/, "")
+        .replace(/\//g, "_")
+        .replace(/\+/g, "-");
+      const directUrl = `${GRAPH_BASE}/shares/u!${encodedUrl}/driveItem/content`;
+
+      // Get a fresh pre-authenticated download URL via Graph
+      const contentRes = await fetch(directUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        redirect: "manual",
+      });
+
+      if (contentRes.status === 302) {
+        // The redirect location is a direct CDN URL for the image
+        downloadUrl = contentRes.headers.get("location") || downloadUrl;
+      } else {
+        // Fallback: use the sharing URL with download parameter
+        downloadUrl = shareUrl.replace(/\?/, "?download=1&");
+      }
     }
   }
 

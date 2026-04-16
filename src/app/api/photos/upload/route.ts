@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       repairJobId,
       repairTaskId: repairTaskId || null,
       findingId: findingId || null,
-      url: result.downloadUrl,
+      url: "pending", // will be updated with proxy URL
       thumbnailUrl: null,
       caption: caption || null,
       photoType,
@@ -87,7 +87,11 @@ export async function POST(request: NextRequest) {
       onedriveItemId: result.itemId,
     }).returning();
 
-    return NextResponse.json({ photo });
+    // Set URL to proxy endpoint so images always load via our API
+    const proxyUrl = `/api/photos/${photo.id}`;
+    await db.update(repairPhotos).set({ url: proxyUrl, thumbnailUrl: proxyUrl }).where(eq(repairPhotos.id, photo.id));
+
+    return NextResponse.json({ photo: { ...photo, url: proxyUrl, thumbnailUrl: proxyUrl } });
   } catch (err: any) {
     console.error("Photo upload error:", err);
     return NextResponse.json(

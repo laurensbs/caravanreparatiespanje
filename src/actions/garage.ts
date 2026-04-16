@@ -354,6 +354,14 @@ export async function getGarageRepairDetail(id: string) {
     .where(eq(repairPhotos.repairJobId, id))
     .orderBy(desc(repairPhotos.createdAt));
 
+  // Map OneDrive photos to use proxy URLs
+  const mappedPhotos = photos.map((p) => {
+    if (p.onedriveItemId && !p.url.startsWith("/api/photos/")) {
+      return { ...p, url: `/api/photos/${p.id}`, thumbnailUrl: `/api/photos/${p.id}` };
+    }
+    return p;
+  });
+
   // Fetch part requests for this repair
   const jobPartRequests = await db
     .select({
@@ -386,7 +394,7 @@ export async function getGarageRepairDetail(id: string) {
     .where(eq(repairWorkers.repairJobId, id))
     .orderBy(asc(repairWorkers.createdAt));
 
-  return { ...job, tasks, photos, partRequests: jobPartRequests, workers: jobWorkers };
+  return { ...job, tasks, photos: mappedPhotos, partRequests: jobPartRequests, workers: jobWorkers };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

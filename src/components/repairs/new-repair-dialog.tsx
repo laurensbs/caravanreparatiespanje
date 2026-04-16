@@ -58,7 +58,7 @@ const JOB_TYPE_CONFIG: Record<JobType, { icon: React.ElementType; color: string;
 
 // Quick statuses for creation — only the common starting ones
 const QUICK_STATUSES = [
-  { value: "todo", label: "To Do" },
+  { value: "todo", label: "In Workshop" },
   { value: "new", label: "New" },
   { value: "scheduled", label: "Scheduled" },
   { value: "in_inspection", label: "In Inspection" },

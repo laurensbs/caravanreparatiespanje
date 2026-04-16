@@ -16,6 +16,7 @@ import { markAdminMessageRead } from "@/actions/garage-sync";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
+import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { toast } from "sonner";
@@ -162,6 +163,7 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
   }, [timer.startedAt]);
 
   const handleStop = async () => {
+    hapticTap();
     await stopTimer(repairJobId, timer.userId);
     onStop();
   };
@@ -446,6 +448,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                     <button
                       key={user.id}
                       onClick={() => {
+                        hapticTap();
                         startTransition(async () => {
                           await toggleMyWorker(repair.id, user.id);
                           router.refresh();
@@ -633,7 +636,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 </div>
               )}
 
-              {isActive && <GaragePartsPicker repairJobId={repair.id} t={t} partCategories={partCategories} />}
+              {isActive && <GaragePartsPicker repairJobId={repair.id} t={t} partCategories={partCategories} workerName={(() => {
+                const wid = lastPickedWorkerId ?? repair.workers[0]?.userId;
+                return allUsers.find(u => u.id === wid)?.name ?? undefined;
+              })()} />}
             </div>
           )}
 
@@ -752,7 +758,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           <div className="max-w-4xl mx-auto px-4 pt-2 pb-1">
             <div className="flex gap-2">
               <button
-                onClick={handleMarkDone}
+                onClick={() => { hapticSuccess(); handleMarkDone(); }}
                 disabled={isPending}
                 className="flex-1 rounded-xl bg-emerald-500 text-white h-11 text-sm font-semibold active:bg-emerald-600 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
@@ -760,7 +766,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 {t("Ready for Check", "Listo para Revisión", "Klaar voor Controle")}
               </button>
               <button
-                onClick={() => setShowNotDone(true)}
+                onClick={() => { hapticTap(); setShowNotDone(true); }}
                 className="rounded-xl border border-white/[0.06] bg-white/[0.03] text-white/50 h-11 px-4 text-sm font-medium active:bg-white/[0.06] active:scale-[0.98] transition-all flex items-center gap-1.5"
               >
                 <XCircle className="h-4 w-4" />
@@ -773,7 +779,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         <div className="max-w-4xl mx-auto px-4 py-1.5">
           <div className="flex gap-2">
             <button
-              onClick={() => setShowComment(true)}
+              onClick={() => { hapticTap(); setShowComment(true); }}
               className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
             >
               <MessageSquare className="h-3.5 w-3.5" />
@@ -782,14 +788,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {isActive && (
               <>
                 <button
-                  onClick={() => setShowFinding(true)}
+                  onClick={() => { hapticTap(); setShowFinding(true); }}
                   className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
                 >
                   <Flag className="h-3.5 w-3.5" />
                   {t("Issue", "Problema", "Bevinding")}
                 </button>
                 <button
-                  onClick={() => setShowBlocker(true)}
+                  onClick={() => { hapticTap(); setShowBlocker(true); }}
                   className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
                 >
                   <OctagonX className="h-3.5 w-3.5" />
@@ -816,7 +822,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => { hapticTap(); setActiveTab(tab.key); }}
                   className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors relative ${
                     active ? "text-white" : "text-white/30"
                   }`}

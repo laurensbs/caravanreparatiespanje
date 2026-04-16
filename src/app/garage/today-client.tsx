@@ -1,17 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useTransition, useRef } from "react";
 import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
+import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
 import { garageLock } from "@/actions/garage-auth";
+import { toggleMyWorker } from "@/actions/garage";
+import { startTimer } from "@/actions/time-entries";
 import {
   RefreshCw,
   ChevronRight,
   AlertTriangle,
   Wrench,
-  ClipboardCheck,
-  CircleCheck,
   Clock,
   Package,
   Lock,
@@ -20,7 +21,6 @@ import {
   X,
   MessageSquare,
 } from "lucide-react";
-import Link from "next/link";
 
 /* ─── Types ─── */
 
@@ -69,6 +69,7 @@ interface Props {
   userName: string;
   stats: QuickStats;
   activeTimers?: ActiveTimerItem[];
+  allUsers: { id: string; name: string | null; role: string | null }[];
 }
 
 /* ─── Status categories ─── */
@@ -86,15 +87,30 @@ function categorize(r: RepairItem): StatusCategory {
 
 /* ─── Main ─── */
 
-export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] }: Props) {
+export function GarageTodayClient({ repairs, userName, stats, activeTimers = [], allUsers }: Props) {
   const { t, lang } = useLanguage();
   const router = useRouter();
   const [time, setTime] = useState(() => new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<StatusCategory | "all">("all");
   const [search, setSearch] = useState("");
+  const [workerPickerRepairId, setWorkerPickerRepairId] = useState<string | null>(null);
+  const [isStarting, startStartTransition] = useTransition();
+  const prevRepairIdsRef = useRef<Set<string> | null>(null);
 
   useGaragePoll();
+
+  // Detect new repairs and play notification sound
+  useEffect(() => {
+    const currentIds = new Set(repairs.map((r) => r.id));
+    if (prevRepairIdsRef.current !== null) {
+      const newIds = [...currentIds].filter((id) => !prevRepairIdsRef.current!.has(id));
+      if (newIds.length > 0) {
+        hapticNotify();
+      }
+    }
+    prevRepairIdsRef.current = currentIds;
+  }, [repairs]);
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 30000);
@@ -102,6 +118,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
   }, []);
 
   function handleRefresh() {
+    hapticTap();
     setRefreshing(true);
     router.refresh();
     setTimeout(() => setRefreshing(false), 800);
@@ -184,7 +201,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
             <button onClick={handleRefresh} className="h-10 w-10 flex items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:scale-95 transition-all">
               <RefreshCw className={`h-4.5 w-4.5 ${refreshing ? "animate-spin" : ""}`} />
             </button>
-            <button onClick={async () => { await garageLock(); router.refresh(); }} className="h-10 w-10 flex items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:scale-95 transition-all">
+            <button onClick={async () => { hapticTap(); await garageLock(); router.refresh(); }} className="h-10 w-10 flex items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:scale-95 transition-all">
               <Lock className="h-4.5 w-4.5" />
             </button>
           </div>
@@ -200,7 +217,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => { hapticTap(); setActiveTab(tab.key); }}
                   className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${
                     active ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/50"
                   }`}
@@ -231,11 +248,74 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {displayRepairs.map((repair) => (
-              <JobCard key={repair.id} repair={repair} t={t} activeTimers={activeTimers.filter((at) => at.repairJobId === repair.id)} />
+              <JobCard
+                key={repair.id}
+                repair={repair}
+                t={t}
+                activeTimers={activeTimers.filter((at) => at.repairJobId === repair.id)}
+                onTap={() => { hapticTap(); setWorkerPickerRepairId(repair.id); }}
+              />
             ))}
           </div>
         )}
       </main>
+
+      {/* ─── Worker picker overlay ─── */}
+      {workerPickerRepairId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setWorkerPickerRepairId(null)}>
+          <div className="w-full max-w-sm mx-4 rounded-2xl bg-gray-900 border border-white/10 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-white mb-1">
+              {t("Who is working?", "¿Quién trabaja?", "Wie gaat werken?")}
+            </h3>
+            <p className="text-sm text-white/40 mb-5">
+              {t("Select a person to start", "Selecciona una persona", "Selecteer een persoon om te starten")}
+            </p>
+            <div className="flex flex-col gap-2">
+              {allUsers.map((user) => (
+                <button
+                  key={user.id}
+                  disabled={isStarting}
+                  onClick={() => {
+                    hapticSuccess();
+                    const repairId = workerPickerRepairId;
+                    startStartTransition(async () => {
+                      try {
+                        // Check if already assigned — toggle will add if not
+                        const repair = repairs.find(r => r.id === repairId);
+                        const alreadyAssigned = repair?.workers?.includes(user.name ?? "");
+                        if (!alreadyAssigned) {
+                          await toggleMyWorker(repairId, user.id);
+                        }
+                        await startTimer(repairId, user.id);
+                      } catch {
+                        // Timer may already be running — continue to navigate
+                      }
+                      setWorkerPickerRepairId(null);
+                      router.push(`/garage/repairs/${repairId}`);
+                    });
+                  }}
+                  className="flex items-center gap-3 h-14 px-4 rounded-xl bg-white/[0.06] border border-white/[0.06] hover:bg-white/[0.12] active:scale-[0.97] transition-all disabled:opacity-50"
+                >
+                  <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold text-white/60">
+                    {(user.name ?? "?").charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-base font-medium text-white">{user.name ?? "Unknown"}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                const repairId = workerPickerRepairId;
+                setWorkerPickerRepairId(null);
+                router.push(`/garage/repairs/${repairId}`);
+              }}
+              className="w-full mt-4 h-11 rounded-xl text-sm font-medium text-white/40 hover:text-white/60 hover:bg-white/[0.04] transition-all"
+            >
+              {t("Skip — just view", "Saltar — solo ver", "Overslaan — alleen bekijken")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -256,14 +336,14 @@ const STATUS_COLOR: Record<string, string> = {
   invoiced: "bg-emerald-400",
 };
 
-function JobCard({ repair, t, activeTimers }: { repair: RepairItem; t: (en: string, es?: string | null, nl?: string | null) => string; activeTimers: ActiveTimerItem[] }) {
+function JobCard({ repair, t, activeTimers, onTap }: { repair: RepairItem; t: (en: string, es?: string | null, nl?: string | null) => string; activeTimers: ActiveTimerItem[]; onTap: () => void }) {
   const hasTimer = activeTimers.length > 0;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
 
   return (
-    <Link
-      href={`/garage/repairs/${repair.id}`}
-      className={`group block rounded-2xl border transition-all active:scale-[0.98] ${
+    <button
+      onClick={onTap}
+      className={`group block w-full text-left rounded-2xl border transition-all active:scale-[0.98] ${
         hasTimer
           ? "bg-sky-400/[0.06] border-sky-400/20"
           : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
@@ -349,7 +429,7 @@ function JobCard({ repair, t, activeTimers }: { repair: RepairItem; t: (en: stri
           )}
         </div>
       </div>
-    </Link>
+    </button>
   );
 }
 

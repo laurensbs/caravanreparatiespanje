@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers, timeEntries } from "@/lib/db/schema";
 import { requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
-import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
+import { eq, and, or, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { recordGarageUpdate } from "./garage-sync";
 
@@ -219,8 +219,21 @@ export async function getGarageRepairsToday() {
       and(
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
-        gte(repairJobs.dueDate, startOfDay),
-        lte(repairJobs.dueDate, endOfDay)
+        or(
+          // Today's repairs (any status)
+          and(
+            gte(repairJobs.dueDate, startOfDay),
+            lte(repairJobs.dueDate, endOfDay)
+          ),
+          // Active/waiting repairs regardless of due date
+          inArray(repairJobs.status, [
+            "in_progress",
+            "waiting_parts",
+            "waiting_customer",
+            "blocked",
+            "ready_for_check",
+          ])
+        )
       )
     )
     .orderBy(asc(repairJobs.priority), asc(repairJobs.title));
@@ -700,11 +713,13 @@ export async function garageRequestPart(
     unitCost?: string;
     category?: string;
     requestType?: "part" | "equipment";
+    workerName?: string;
   }
 ) {
   const ctx = await requireAnyAuth();
   const type = options?.requestType ?? "part";
   const isEquipment = type === "equipment";
+  const requesterName = options?.workerName ?? ctx.userName ?? "technician";
 
   const [request] = await db
     .insert(partRequests)
@@ -716,7 +731,7 @@ export async function garageRequestPart(
       unitCost: options?.unitCost ?? null,
       status: "requested",
       requestType: type,
-      notes: `Requested by garage (${ctx.userName ?? "technician"})`,
+      notes: `Requested by ${requesterName}`,
     })
     .returning();
 
@@ -953,8 +968,8 @@ export async function getRepairWorkers(repairJobId: string) {
 /** Toggle worker assignment — adds or removes the specified (or current) user */
 export async function toggleMyWorker(repairJobId: string, targetUserId?: string) {
   const ctx = await requireAnyAuth();
-  if (!ctx.userId) throw new Error("User identity required");
   const userId = targetUserId ?? ctx.userId;
+  if (!userId) throw new Error("User identity required");
 
   const existing = await db
     .select({ id: repairWorkers.id })
@@ -967,7 +982,7 @@ export async function toggleMyWorker(repairJobId: string, targetUserId?: string)
     await db.insert(repairWorkers).values({
       repairJobId,
       userId,
-      addedByUserId: ctx.userId,
+      addedByUserId: ctx.userId ?? userId,
     });
   }
 

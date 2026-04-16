@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { repairJobs } from "@/lib/db/schema";
-import { isNull, and, gte, lte, sql } from "drizzle-orm";
+import { isNull, and, or, gte, lte, sql, inArray } from "drizzle-orm";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { NextResponse } from "next/server";
 
@@ -45,8 +45,19 @@ export async function GET(req: Request) {
       and(
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
-        gte(repairJobs.dueDate, startOfDay),
-        lte(repairJobs.dueDate, endOfDay)
+        or(
+          and(
+            gte(repairJobs.dueDate, startOfDay),
+            lte(repairJobs.dueDate, endOfDay)
+          ),
+          inArray(repairJobs.status, [
+            "in_progress",
+            "waiting_parts",
+            "waiting_customer",
+            "blocked",
+            "ready_for_check",
+          ])
+        )
       )
     );
 

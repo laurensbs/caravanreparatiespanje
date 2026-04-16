@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { Search, X, Loader2, Package, Plus, Zap, Wrench, Paintbrush, Droplets, Snowflake, Warehouse, Truck, Sparkles, Hammer, Home, SquareStack } from "lucide-react";
 import { searchPartsCatalog, garageRequestPart } from "@/actions/garage";
+import { hapticSuccess } from "@/lib/haptic";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -77,9 +78,10 @@ interface GaragePartsPickerProps {
   t: (en: string, es?: string | null, nl?: string | null) => string;
   onAdded?: () => void;
   partCategories?: { id: string; key: string; label: string; icon: string; color: string; sortOrder: number; active: boolean }[];
+  workerName?: string;
 }
 
-export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: GaragePartsPickerProps) {
+export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, workerName }: GaragePartsPickerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
@@ -182,11 +184,13 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
 
   // Select a catalog part
   function selectPart(part: SearchResult) {
+    hapticSuccess();
     startTransition(async () => {
       await garageRequestPart(repairJobId, part.name, {
         partId: part.id,
         unitCost: part.defaultCost ?? undefined,
         category: part.category ?? undefined,
+        workerName,
       });
       toast.success(t(
         `"${part.name}" requested`,
@@ -205,8 +209,9 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
   function addCustomPart(name?: string) {
     const partName = name || query.trim();
     if (!partName) return;
+    hapticSuccess();
     startTransition(async () => {
-      await garageRequestPart(repairJobId, partName);
+      await garageRequestPart(repairJobId, partName, { workerName });
       toast.success(t(
         `"${partName}" requested`,
         `"${partName}" solicitado`,
@@ -467,7 +472,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
               if (e.key === "Enter" && equipmentName.trim()) {
                 e.preventDefault();
                 startTransition(async () => {
-                  await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment" });
+                  await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment", workerName });
                   toast.success(t(
                     `"${equipmentName.trim()}" requested`,
                     `"${equipmentName.trim()}" solicitado`,
@@ -495,7 +500,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
             onClick={() => {
               if (!equipmentName.trim()) return;
               startTransition(async () => {
-                await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment" });
+                await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment", workerName });
                 toast.success(t(
                   `"${equipmentName.trim()}" requested`,
                   `"${equipmentName.trim()}" solicitado`,

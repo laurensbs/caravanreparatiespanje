@@ -5,6 +5,7 @@ import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
 import { startTimer } from "@/actions/time-entries";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
+import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import type { RepairTask, RepairTaskStatus } from "@/types";
 import { toast } from "sonner";
 
@@ -36,9 +37,11 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, onBeforeStart
 
   function handleStatusChange(newStatus: RepairTaskStatus) {
     if (newStatus === "problem") {
+      hapticTap();
       onProblem(task.id);
       return;
     }
+    newStatus === "done" ? hapticSuccess() : hapticTap();
     startTransition(async () => {
       if (newStatus === "in_progress" && onBeforeStart) {
         const ok = await onBeforeStart();

@@ -700,7 +700,6 @@ export const partRequests = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     repairJobId: uuid("repair_job_id")
-      .notNull()
       .references(() => repairJobs.id, { onDelete: "cascade" }),
     partId: uuid("part_id").references(() => parts.id, {
       onDelete: "set null",

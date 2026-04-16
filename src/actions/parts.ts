@@ -222,7 +222,7 @@ export async function getPartRequests(repairJobId?: string) {
 }
 
 export async function createPartRequest(data: {
-  repairJobId: string;
+  repairJobId?: string;
   partId?: string;
   partName?: string;
   quantity?: number;
@@ -240,7 +240,7 @@ export async function createPartRequest(data: {
   const totalCost = unitCost ? String(parseFloat(unitCost) * qty) : null;
 
   // If same catalog part already exists for this job, increase quantity
-  if (data.partId) {
+  if (data.partId && data.repairJobId) {
     const [existing] = await db
       .select({ id: partRequests.id, quantity: partRequests.quantity })
       .from(partRequests)
@@ -256,7 +256,7 @@ export async function createPartRequest(data: {
         .update(partRequests)
         .set({ quantity: newQty, totalCost: newTotal, updatedAt: new Date() })
         .where(eq(partRequests.id, existing.id));
-      revalidatePath(`/repairs/${data.repairJobId}`);
+      if (data.repairJobId) revalidatePath(`/repairs/${data.repairJobId}`);
       revalidatePath("/parts");
       return existing;
     }
@@ -265,7 +265,7 @@ export async function createPartRequest(data: {
   const [request] = await db
     .insert(partRequests)
     .values({
-      repairJobId: data.repairJobId,
+      repairJobId: data.repairJobId ?? null,
       partId: data.partId ?? null,
       partName: data.partName ?? "TBD",
       quantity: qty,
@@ -280,20 +280,24 @@ export async function createPartRequest(data: {
     })
     .returning();
 
-  revalidatePath(`/repairs/${data.repairJobId}`);
+  if (data.repairJobId) {
+    revalidatePath(`/repairs/${data.repairJobId}`);
+  }
   revalidatePath("/parts");
 
-  // Auto-set repair to waiting_parts if it's in a workable status
-  const [job] = await db
-    .select({ status: repairJobs.status })
-    .from(repairJobs)
-    .where(eq(repairJobs.id, data.repairJobId));
-  if (job && ["new", "todo", "scheduled", "in_progress"].includes(job.status)) {
-    await db
-      .update(repairJobs)
-      .set({ status: "waiting_parts", updatedAt: new Date() })
+  // Auto-set repair to waiting_parts if it's in a workable status (parts only)
+  if (data.repairJobId && data.requestType !== "equipment") {
+    const [job] = await db
+      .select({ status: repairJobs.status })
+      .from(repairJobs)
       .where(eq(repairJobs.id, data.repairJobId));
-    revalidatePath(`/repairs/${data.repairJobId}`);
+    if (job && ["new", "todo", "scheduled", "in_progress"].includes(job.status)) {
+      await db
+        .update(repairJobs)
+        .set({ status: "waiting_parts", updatedAt: new Date() })
+        .where(eq(repairJobs.id, data.repairJobId));
+      revalidatePath(`/repairs/${data.repairJobId}`);
+    }
   }
 
   return request;
@@ -315,11 +319,13 @@ export async function updatePartRequestStatus(
 
   revalidatePath("/parts");
   if (pr) {
-    revalidatePath(`/repairs/${pr.repairJobId}`);
+    if (pr.repairJobId) {
+      revalidatePath(`/repairs/${pr.repairJobId}`);
+    }
 
     // When marking as received, check if ALL pending parts for this repair are now received
-    if (status === "received") {
-      const [pending] = await db
+    if (status === "received" && pr.repairJobId) {
+      const [pendingParts] = await db
         .select({ count: sql<number>`count(*)` })
         .from(partRequests)
         .where(
@@ -329,7 +335,7 @@ export async function updatePartRequestStatus(
             ne(partRequests.requestType, "equipment")
           )
         );
-      if (Number(pending?.count ?? 0) === 0) {
+      if (Number(pendingParts?.count ?? 0) === 0) {
         // All parts received — revert to todo if currently waiting_parts
         const [job] = await db
           .select({ status: repairJobs.status })

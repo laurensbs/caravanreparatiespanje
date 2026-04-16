@@ -37,7 +37,7 @@ type Filter = (typeof FILTERS)[number]["key"];
 
 interface PartRequest {
   id: string;
-  repairJobId: string;
+  repairJobId: string | null;
   partName: string | null;
   partNumber: string | null;
   supplierName: string | null;

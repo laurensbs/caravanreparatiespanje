@@ -468,6 +468,11 @@ export const repairJobs = pgTable(
       .notNull()
       .default(0),
 
+    // Admin → Garage messaging
+    garageAdminMessage: text("garage_admin_message"),
+    garageAdminMessageAt: timestamp("garage_admin_message_at", { withTimezone: true }),
+    garageAdminMessageReadAt: timestamp("garage_admin_message_read_at", { withTimezone: true }),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

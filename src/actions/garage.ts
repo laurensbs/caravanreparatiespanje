@@ -207,6 +207,9 @@ export async function getGarageRepairsToday() {
       assignedUserName: users.name,
       finalCheckStatus: repairJobs.finalCheckStatus,
       jobType: repairJobs.jobType,
+      garageAdminMessage: repairJobs.garageAdminMessage,
+      garageAdminMessageAt: repairJobs.garageAdminMessageAt,
+      garageAdminMessageReadAt: repairJobs.garageAdminMessageReadAt,
     })
     .from(repairJobs)
     .leftJoin(customers, eq(repairJobs.customerId, customers.id))
@@ -333,6 +336,10 @@ export async function getGarageRepairDetail(id: string) {
       partsRequiredFlag: repairJobs.partsRequiredFlag,
       followUpRequiredFlag: repairJobs.followUpRequiredFlag,
       customFlags: repairJobs.customFlags,
+      // Admin messaging
+      garageAdminMessage: repairJobs.garageAdminMessage,
+      garageAdminMessageAt: repairJobs.garageAdminMessageAt,
+      garageAdminMessageReadAt: repairJobs.garageAdminMessageReadAt,
     })
     .from(repairJobs)
     .leftJoin(customers, eq(repairJobs.customerId, customers.id))

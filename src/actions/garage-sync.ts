@@ -12,6 +12,7 @@ import {
   locations,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
+import { requireAnyAuth } from "@/lib/garage-auth";
 import {
   eq,
   and,
@@ -102,6 +103,66 @@ export async function clearGarageAttention(repairJobId: string) {
       garageUnreadUpdatesCount: 0,
     })
     .where(eq(repairJobs.id, repairJobId));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN → GARAGE MESSAGING
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function sendMessageToGarage(repairJobId: string, message: string) {
+  const session = await requireAuth();
+
+  await db
+    .update(repairJobs)
+    .set({
+      garageAdminMessage: message,
+      garageAdminMessageAt: new Date(),
+      garageAdminMessageReadAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  // Log the event for audit trail
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "admin_message_sent",
+    comment: message,
+  });
+
+  revalidatePath("/");
+}
+
+export async function markAdminMessageRead(repairJobId: string) {
+  await requireAnyAuth();
+
+  await db
+    .update(repairJobs)
+    .set({
+      garageAdminMessageReadAt: new Date(),
+    })
+    .where(
+      and(
+        eq(repairJobs.id, repairJobId),
+        isNull(repairJobs.garageAdminMessageReadAt)
+      )
+    );
+}
+
+export async function clearGarageMessage(repairJobId: string) {
+  await requireAuth();
+
+  await db
+    .update(repairJobs)
+    .set({
+      garageAdminMessage: null,
+      garageAdminMessageAt: null,
+      garageAdminMessageReadAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  revalidatePath("/");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -239,6 +300,8 @@ export async function getRepairSyncState(repairJobId: string) {
       garageLastUpdateType: repairJobs.garageLastUpdateType,
       garageNeedsAdminAttention: repairJobs.garageNeedsAdminAttention,
       garageUnreadUpdatesCount: repairJobs.garageUnreadUpdatesCount,
+      garageAdminMessage: repairJobs.garageAdminMessage,
+      garageAdminMessageAt: repairJobs.garageAdminMessageAt,
       lastUpdatedByName: users.name,
       status: repairJobs.status,
       finalCheckStatus: repairJobs.finalCheckStatus,

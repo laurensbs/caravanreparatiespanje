@@ -275,19 +275,19 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
         zIndex: 9999,
       }}
     >
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden max-h-[360px] flex flex-col">
+      <div className="bg-gray-900 rounded-2xl border border-white/[0.08] shadow-xl overflow-hidden max-h-[360px] flex flex-col">
         {isSearching && results.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+          <div className="flex items-center justify-center gap-2 py-8 text-white/30">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">{t("Searching parts…", "Buscando piezas…", "Onderdelen zoeken…")}</span>
           </div>
         ) : results.length === 0 && !isSearching ? (
           <div className="py-6 px-4 text-center">
-            <Package className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-500">
+            <Package className="h-8 w-8 text-white/15 mx-auto mb-2" />
+            <p className="text-sm font-medium text-white/50">
               {t("No parts found", "No se encontraron piezas", "Geen onderdelen gevonden")}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-white/25 mt-1">
               {t("Press Enter to add as custom part", "Presiona Enter para añadir como pieza nueva", "Druk op Enter om toe te voegen")}
             </p>
           </div>
@@ -298,19 +298,19 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
                 key={part.id}
                 type="button"
                 onClick={() => selectPart(part)}
-                className={`w-full text-left px-4 py-3.5 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-gray-50 last:border-0 ${
+                className={`w-full text-left px-4 py-3.5 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-white/[0.04] last:border-0 ${
                   highlightIndex === i
-                    ? "bg-sky-50"
-                    : "hover:bg-gray-50 active:bg-sky-50"
+                    ? "bg-white/[0.06]"
+                    : "hover:bg-white/[0.04] active:bg-white/[0.06]"
                 }`}
                 onMouseEnter={() => setHighlightIndex(i)}
                 style={{ minHeight: 56 }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-white/90 truncate">
                     {part.name}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                  <p className="text-xs text-white/40 mt-0.5 truncate">
                     {[
                       part.partNumber,
                       part.category,
@@ -322,12 +322,12 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
                 </div>
                 <div className="text-right shrink-0">
                   {part.defaultCost && (
-                    <p className="text-xs font-semibold text-gray-700 tabular-nums">
+                    <p className="text-xs font-semibold text-white/70 tabular-nums">
                       €{parseFloat(part.defaultCost).toFixed(2)}
                     </p>
                   )}
                   {part.stockQuantity != null && part.stockQuantity > 0 && (
-                    <p className="text-[11px] text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-white/25 mt-0.5">
                       {t("Stock", "Stock", "Voorraad")}: {part.stockQuantity}
                     </p>
                   )}
@@ -342,22 +342,22 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
           <button
             type="button"
             onClick={() => addCustomPart()}
-            className={`w-full text-left px-4 py-3.5 flex items-center gap-3 border-t border-gray-100 transition-colors duration-100 ${
+            className={`w-full text-left px-4 py-3.5 flex items-center gap-3 border-t border-white/[0.06] transition-colors duration-100 ${
               highlightIndex === results.length
-                ? "bg-sky-50"
-                : "hover:bg-gray-50 active:bg-sky-50"
+                ? "bg-white/[0.06]"
+                : "hover:bg-white/[0.04] active:bg-white/[0.06]"
             }`}
             onMouseEnter={() => setHighlightIndex(results.length)}
             style={{ minHeight: 56 }}
           >
-            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-              <Plus className="h-4 w-4 text-gray-500" />
+            <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0">
+              <Plus className="h-4 w-4 text-white/40" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-white/70">
                 {t("Add", "Añadir", "Toevoegen")} &ldquo;{query.trim()}&rdquo;
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-white/30">
                 {t("as custom part", "como pieza nueva", "als nieuw onderdeel")}
               </p>
             </div>
@@ -388,7 +388,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
                 className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-[0.97] ${
                   isSelected
                     ? cat.color
-                    : "bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100"
+                    : "bg-white/[0.04] text-white/40 hover:bg-white/[0.08] border border-white/[0.06]"
                 }`}
               >
                 <CatIcon className="h-3 w-3" />
@@ -399,7 +399,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
           <button
             type="button"
             onClick={() => setShowCustomForm(!showCustomForm)}
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 transition-all active:scale-[0.97]"
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white/[0.03] border border-dashed border-white/[0.12] text-white/40 hover:border-white/20 transition-all active:scale-[0.97]"
           >
             <Plus className="h-3 w-3" />
             {t("New", "Nuevo", "Nieuw")}
@@ -407,7 +407,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
           <button
             type="button"
             onClick={() => setShowEquipmentForm(!showEquipmentForm)}
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-violet-50 text-violet-600 border border-violet-200 hover:bg-violet-100 transition-all active:scale-[0.97]"
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-violet-400/10 text-violet-400 border border-violet-400/20 hover:bg-violet-400/20 transition-all active:scale-[0.97]"
           >
             <Wrench className="h-3 w-3" />
             {t("Equipment", "Herramienta", "Gereedschap")}
@@ -436,13 +436,13 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
             )}
             autoFocus
             disabled={isPending}
-            className="flex-1 h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/40 transition-all disabled:opacity-50"
+            className="flex-1 h-10 px-3 rounded-lg border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all disabled:opacity-50"
           />
           <button
             type="button"
             onClick={() => addCustomPart(customName.trim())}
             disabled={!customName.trim() || isPending}
-            className="h-10 px-4 rounded-lg bg-gray-900 text-white text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-40"
+            className="h-10 px-4 rounded-lg bg-white/10 text-white text-sm font-medium transition-all active:scale-[0.97] hover:bg-white/15 disabled:opacity-40"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -456,8 +456,8 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
       {/* Equipment request form */}
       {showEquipmentForm && (
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
-            <Wrench className="h-4 w-4 text-violet-500" />
+          <div className="h-10 w-10 rounded-lg bg-violet-400/10 flex items-center justify-center shrink-0">
+            <Wrench className="h-4 w-4 text-violet-400" />
           </div>
           <input
             type="text"
@@ -488,7 +488,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
             )}
             autoFocus
             disabled={isPending}
-            className="flex-1 h-10 px-3 rounded-lg border border-violet-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 transition-all disabled:opacity-50"
+            className="flex-1 h-10 px-3 rounded-lg border border-violet-400/20 bg-white/[0.04] text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-violet-400/20 transition-all disabled:opacity-50"
           />
           <button
             type="button"
@@ -508,7 +508,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
               });
             }}
             disabled={!equipmentName.trim() || isPending}
-            className="h-10 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-40"
+            className="h-10 px-4 rounded-lg bg-violet-500 text-white text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-40"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -521,7 +521,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
 
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -540,7 +540,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
             "Zoek onderdelen (naam, nummer, leverancier…)"
           )}
           disabled={isPending}
-          className="w-full h-11 pl-10 pr-10 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/40 transition-all duration-150 disabled:opacity-50"
+          className="w-full h-11 pl-10 pr-10 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all duration-150 disabled:opacity-50"
         />
         {(query || isPending) && (
           <button
@@ -552,7 +552,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories }: G
               setIsOpen(false);
               inputRef.current?.focus();
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-colors"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
 import type { ProblemCategory } from "@/types";
@@ -71,15 +70,15 @@ export function ProblemDialog({ open, onClose, taskId, onComplete }: ProblemDial
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-gray-900 border-white/[0.08] text-white">
         <DialogHeader>
-          <DialogTitle className="text-lg">
+          <DialogTitle className="text-lg text-white">
             {t("Report Problem", "Reportar Problema", "Probleem Melden")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 mt-2">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-white/40">
             {t("What's the problem?", "¿Cuál es el problema?", "Wat is het probleem?")}
           </p>
 
@@ -88,14 +87,14 @@ export function ProblemDialog({ open, onClose, taskId, onComplete }: ProblemDial
               <button
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors active:scale-[0.98] ${
+                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all active:scale-[0.98] ${
                   category === cat
-                    ? "border-red-400 bg-red-50 ring-2 ring-red-200"
-                    : "hover:bg-gray-50"
+                    ? "border-red-400/40 bg-red-400/10 ring-1 ring-red-400/20"
+                    : "border-white/[0.06] hover:bg-white/[0.04]"
                 }`}
               >
                 <span className="text-xl">{CATEGORY_ICONS[cat]}</span>
-                <span className="font-medium text-sm">
+                <span className="font-medium text-sm text-white/80">
                   {t(PROBLEM_CATEGORY_LABELS[cat], CATEGORY_ES[cat], CATEGORY_NL[cat])}
                 </span>
               </button>
@@ -106,27 +105,26 @@ export function ProblemDialog({ open, onClose, taskId, onComplete }: ProblemDial
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={t("Additional details...", "Detalles adicionales...", "Extra details...")}
-            className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
           />
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
+            <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl"
               disabled={isPending}
+              className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/60 font-medium text-sm transition-all hover:bg-white/[0.04] active:scale-[0.97] disabled:opacity-40"
             >
               {t("Cancel", "Cancelar", "Annuleren")}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleSubmit}
               disabled={!category || isPending}
-              className="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+              className="flex-1 h-12 rounded-xl bg-red-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
             >
               {isPending
                 ? t("Sending...", "Enviando...", "Versturen...")
                 : t("Report", "Reportar", "Melden")}
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>

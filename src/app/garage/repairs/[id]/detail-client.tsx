@@ -12,8 +12,10 @@ import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { addGarageComment, suggestExtraTask, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
+import { markAdminMessageRead } from "@/actions/garage-sync";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { GarageTimer } from "@/components/garage/timer";
+import { useGaragePoll } from "@/lib/use-garage-poll";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { toast } from "sonner";
@@ -113,6 +115,9 @@ type RepairDetail = {
     resolvedAt: Date | string | null;
     createdByName: string | null;
   }[];
+  garageAdminMessage: string | null;
+  garageAdminMessageAt: Date | string | null;
+  garageAdminMessageReadAt: Date | string | null;
 };
 
 interface Props {
@@ -149,6 +154,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [notDoneReason, setNotDoneReason] = useState("");
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
+  const [viewPhoto, setViewPhoto] = useState<string | null>(null);
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -157,11 +163,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const activeBlockers = repair.blockers.filter(b => b.active);
   const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
 
-  // Auto-refresh every 30s
+  // Smart polling: only refresh when data actually changed
+  useGaragePoll(repair.id);
+
+  // Auto-mark admin message as read
   useEffect(() => {
-    const interval = setInterval(() => router.refresh(), 30000);
-    return () => clearInterval(interval);
-  }, [router]);
+    if (repair.garageAdminMessage && !repair.garageAdminMessageReadAt) {
+      markAdminMessageRead(repair.id);
+    }
+  }, [repair.id, repair.garageAdminMessage, repair.garageAdminMessageReadAt]);
 
   // Flags
   const flags: { key: string; label: string; color: string }[] = [];
@@ -236,7 +246,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { key: "tasks", label: t("Tasks", "Tareas", "Taken"), icon: <ClipboardList className="h-5 w-5" />, badge: repair.tasks.length - doneCount || undefined },
-    { key: "photos", label: t("Photos", "Fotos", "Foto's"), icon: <Camera className="h-5 w-5" />, badge: repair.photos.filter(p => !p.repairTaskId).length || undefined },
+    { key: "photos", label: t("Photos", "Fotos", "Foto's"), icon: <Camera className="h-5 w-5" />, badge: repair.photos.length || undefined },
     { key: "parts", label: t("Parts", "Piezas", "Delen"), icon: <Package className="h-5 w-5" />, badge: repair.partRequests.filter(p => p.status !== "received" && p.status !== "cancelled").length || undefined },
     { key: "info", label: "Info", icon: <Info className="h-5 w-5" />, badge: (activeBlockers.length + unresolvedFindings.length) || undefined },
   ];
@@ -311,6 +321,24 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       {/* ─── CONTENT AREA ─── */}
       <main className="flex-1 overflow-y-auto pb-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
+
+          {/* Admin message banner */}
+          {repair.garageAdminMessage && (
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3.5 mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <MessageSquare className="h-4 w-4 text-sky-600" />
+                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-sky-600">
+                  {t("Office Message", "Mensaje de Oficina", "Kantoor Bericht")}
+                </h3>
+              </div>
+              <p className="text-sm text-sky-900 font-medium whitespace-pre-wrap">{repair.garageAdminMessage}</p>
+              {repair.garageAdminMessageAt && (
+                <p className="text-[11px] text-sky-400 mt-1">
+                  {new Date(repair.garageAdminMessageAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Active blockers banner */}
           {activeBlockers.length > 0 && (
@@ -455,12 +483,57 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* ═══ TAB: PHOTOS ═══ */}
           {activeTab === "photos" && (
-            <GaragePhotoUpload
-              repairJobId={repair.id}
-              photos={repair.photos.filter(p => !p.repairTaskId).map(p => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
-              onUpdate={handleRefresh}
-              t={t}
-            />
+            <div className="space-y-4">
+              {/* Task photos grouped by task */}
+              {repair.tasks
+                .filter((task) => repair.photos.some((p) => p.repairTaskId === task.id))
+                .map((task) => (
+                  <div key={task.id}>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <ClipboardList className="h-3 w-3" />
+                      {task.title}
+                      <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-bold">
+                        {repair.photos.filter((p) => p.repairTaskId === task.id).length}
+                      </span>
+                    </h3>
+                    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                      <div className="grid grid-cols-3 gap-0.5 p-0.5">
+                        {repair.photos
+                          .filter((p) => p.repairTaskId === task.id)
+                          .map((photo) => (
+                            <button
+                              key={photo.id}
+                              onClick={() => setViewPhoto(photo.thumbnailUrl ?? photo.url)}
+                              className="aspect-square overflow-hidden bg-gray-100"
+                            >
+                              <img
+                                src={photo.thumbnailUrl ?? photo.url}
+                                alt={photo.caption || ""}
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+              {/* General photos + upload */}
+              <div>
+                {repair.photos.some((p) => p.repairTaskId) && (
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Camera className="h-3 w-3" />
+                    {t("General", "General", "Algemeen")}
+                  </h3>
+                )}
+                <GaragePhotoUpload
+                  repairJobId={repair.id}
+                  photos={repair.photos.filter((p) => !p.repairTaskId).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
+                  onUpdate={handleRefresh}
+                  t={t}
+                />
+              </div>
+            </div>
           )}
 
           {/* ═══ TAB: PARTS ═══ */}
@@ -791,6 +864,16 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Photo lightbox (for grouped task photos) */}
+      {viewPhoto && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setViewPhoto(null)}>
+          <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-white/10 text-white" onClick={() => setViewPhoto(null)}>
+            <XCircle className="h-5 w-5" />
+          </button>
+          <img src={viewPhoto} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }

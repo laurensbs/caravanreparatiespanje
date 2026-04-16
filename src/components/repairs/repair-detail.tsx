@@ -48,6 +48,7 @@ import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/act
 import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
+import { sendMessageToGarage, clearGarageMessage } from "@/actions/garage-sync";
 import type { RepairTask } from "@/types";
 
 interface PartItem {
@@ -282,6 +283,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [discountPercent, setDiscountPercent] = useState(parseFloat(job.discountPercent ?? "0"));
   const [nextAction, setNextAction] = useState(job.nextAction ?? "");
   const [currentBlocker, setCurrentBlocker] = useState(job.currentBlocker ?? "");
+
+  // Garage messaging
+  const [garageMessage, setGarageMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   // Flag definitions for rendering
   const allFlags = [
@@ -838,6 +843,68 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           GARAGE SYNC STRIP
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <GarageSyncStrip syncState={syncState} />
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          SEND MESSAGE TO GARAGE
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-5 py-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <MessageSquare className="h-4 w-4 text-sky-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Send to Garage</h3>
+        </div>
+        {syncState?.garageAdminMessage && (
+          <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/50 px-3 py-2.5 mb-3">
+            <p className="text-sm text-sky-800 dark:text-sky-300 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>
+            <div className="flex items-center justify-between mt-1.5">
+              <span className="text-[11px] text-sky-400">
+                {syncState.garageAdminMessageAt ? format(new Date(syncState.garageAdminMessageAt), "HH:mm") : ""}
+              </span>
+              <button
+                onClick={async () => {
+                  await clearGarageMessage(job.id);
+                  router.refresh();
+                }}
+                className="text-[11px] text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 font-medium"
+              >
+                Clear message
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            value={garageMessage}
+            onChange={(e) => setGarageMessage(e.target.value)}
+            placeholder="Type a message for the garage team..."
+            className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 dark:focus:ring-sky-700 dark:text-gray-100"
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && garageMessage.trim() && !sendingMessage) {
+                setSendingMessage(true);
+                await sendMessageToGarage(job.id, garageMessage.trim());
+                setGarageMessage("");
+                setSendingMessage(false);
+                router.refresh();
+                toast.success("Message sent to garage");
+              }
+            }}
+          />
+          <Button
+            size="sm"
+            disabled={!garageMessage.trim() || sendingMessage}
+            onClick={async () => {
+              setSendingMessage(true);
+              await sendMessageToGarage(job.id, garageMessage.trim());
+              setGarageMessage("");
+              setSendingMessage(false);
+              router.refresh();
+              toast.success("Message sent to garage");
+            }}
+            className="rounded-xl h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white"
+          >
+            {sendingMessage ? <Spinner className="h-3 w-3" /> : "Send"}
+          </Button>
+        </div>
+      </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ADMIN REVIEW BAR (Ready for Check)

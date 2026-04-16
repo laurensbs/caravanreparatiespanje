@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { addFinding } from "@/actions/garage";
 import type { FindingCategory, FindingSeverity } from "@/types";
@@ -63,15 +62,15 @@ const SEVERITY_NL: Record<FindingSeverity, string> = {
 };
 
 const SEVERITY_COLORS: Record<FindingSeverity, string> = {
-  minor: "border-slate-300 bg-slate-50 text-slate-700",
-  normal: "border-amber-300 bg-amber-50 text-amber-700",
-  critical: "border-red-400 bg-red-50 text-red-700 ring-2 ring-red-200",
+  minor: "border-white/[0.08] bg-white/[0.04] text-white/60",
+  normal: "border-amber-400/20 bg-amber-400/10 text-amber-400",
+  critical: "border-red-400/20 bg-red-400/10 text-red-400 ring-1 ring-red-400/20",
 };
 
 const SEVERITY_SELECTED: Record<FindingSeverity, string> = {
-  minor: "border-slate-500 bg-slate-50 text-slate-700 ring-2 ring-slate-200",
-  normal: "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200",
-  critical: "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200",
+  minor: "border-white/20 bg-white/[0.08] text-white ring-1 ring-white/10",
+  normal: "border-amber-400/40 bg-amber-400/10 text-amber-400 ring-1 ring-amber-400/20",
+  critical: "border-red-400/40 bg-red-400/10 text-red-400 ring-1 ring-red-400/30",
 };
 
 interface FindingDialogProps {
@@ -116,17 +115,16 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-gray-900 border-white/[0.08] text-white">
         <DialogHeader>
-          <DialogTitle className="text-lg">
+          <DialogTitle className="text-lg text-white">
             🔍 {t("Add Finding", "Añadir Hallazgo", "Bevinding Toevoegen")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          {/* Category grid */}
           <div>
-            <p className="text-sm font-medium text-gray-500 mb-2">
+            <p className="text-sm font-medium text-white/40 mb-2">
               {t("Category", "Categoría", "Categorie")}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -134,14 +132,14 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-colors active:scale-[0.97] ${
+                  className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all active:scale-[0.97] ${
                     category === cat
-                      ? "border-blue-400 bg-blue-50 ring-2 ring-blue-200"
-                      : "hover:bg-gray-50"
+                      ? "border-sky-400/40 bg-sky-400/10 ring-1 ring-sky-400/20"
+                      : "border-white/[0.06] hover:bg-white/[0.04]"
                   }`}
                 >
                   <span className="text-2xl">{FINDING_CATEGORY_EMOJI[cat]}</span>
-                  <span className="text-[11px] font-bold leading-tight">
+                  <span className="text-[11px] font-bold leading-tight text-white/70">
                     {t(FINDING_CATEGORY_LABELS[cat], CATEGORY_ES[cat], CATEGORY_NL[cat])}
                   </span>
                 </button>
@@ -149,9 +147,8 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
             </div>
           </div>
 
-          {/* Description */}
           <div>
-            <p className="text-sm font-medium text-gray-500 mb-2">
+            <p className="text-sm font-medium text-white/40 mb-2">
               {t("What did you find?", "¿Qué encontraste?", "Wat heb je gevonden?")}
             </p>
             <textarea
@@ -162,13 +159,12 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
                 "Describe lo que encontraste...",
                 "Beschrijf wat je hebt gevonden..."
               )}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
             />
           </div>
 
-          {/* Severity toggle */}
           <div>
-            <p className="text-sm font-medium text-gray-500 mb-2">
+            <p className="text-sm font-medium text-white/40 mb-2">
               {t("Severity", "Gravedad", "Ernst")}
             </p>
             <div className="flex gap-2">
@@ -176,7 +172,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
                 <button
                   key={sev}
                   onClick={() => setSeverity(sev)}
-                  className={`flex-1 rounded-xl border p-3 text-sm font-bold transition-colors active:scale-[0.97] ${
+                  className={`flex-1 rounded-xl border p-3 text-sm font-bold transition-all active:scale-[0.97] ${
                     severity === sev ? SEVERITY_SELECTED[sev] : SEVERITY_COLORS[sev]
                   }`}
                 >
@@ -187,14 +183,13 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
             </div>
           </div>
 
-          {/* Toggle flags */}
           <div className="space-y-2">
             <button
               onClick={() => setRequiresFollowUp(!requiresFollowUp)}
-              className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-colors active:scale-[0.98] ${
+              className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-all active:scale-[0.98] ${
                 requiresFollowUp
-                  ? "border-purple-400 bg-purple-50 text-purple-700"
-                  : "hover:bg-gray-50"
+                  ? "border-violet-400/40 bg-violet-400/10 text-violet-400"
+                  : "border-white/[0.06] text-white/50 hover:bg-white/[0.04]"
               }`}
             >
               <span className="text-lg">{requiresFollowUp ? "☑" : "☐"}</span>
@@ -204,10 +199,10 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
             </button>
             <button
               onClick={() => setRequiresCustomerApproval(!requiresCustomerApproval)}
-              className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-colors active:scale-[0.98] ${
+              className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-all active:scale-[0.98] ${
                 requiresCustomerApproval
-                  ? "border-orange-400 bg-orange-50 text-orange-700"
-                  : "hover:bg-gray-50"
+                  ? "border-amber-400/40 bg-amber-400/10 text-amber-400"
+                  : "border-white/[0.06] text-white/50 hover:bg-white/[0.04]"
               }`}
             >
               <span className="text-lg">{requiresCustomerApproval ? "☑" : "☐"}</span>
@@ -217,25 +212,23 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
             </button>
           </div>
 
-          {/* Submit */}
           <div className="flex gap-2">
-            <Button
-              variant="outline"
+            <button
               onClick={() => { reset(); onClose(); }}
-              className="flex-1 h-12 rounded-xl"
               disabled={isPending}
+              className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/60 font-medium text-sm transition-all hover:bg-white/[0.04] active:scale-[0.97] disabled:opacity-40"
             >
               {t("Cancel", "Cancelar", "Annuleren")}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleSubmit}
               disabled={!category || !description.trim() || isPending}
-              className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+              className="flex-1 h-12 rounded-xl bg-sky-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
             >
               {isPending
                 ? t("Saving...", "Guardando...", "Opslaan...")
                 : t("Add Finding", "Añadir Hallazgo", "Bevinding Toevoegen")}
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>

@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { completeFinalCheck, failFinalCheck } from "@/actions/garage";
 
@@ -49,16 +48,16 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && resetAndClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-gray-900 border-white/[0.08] text-white">
         <DialogHeader>
-          <DialogTitle className="text-lg">
+          <DialogTitle className="text-lg text-white">
             {t("Final Check", "Control Final", "Natest")}
           </DialogTitle>
         </DialogHeader>
 
         {mode === "choose" && (
           <div className="space-y-3 mt-2">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-white/40">
               {t(
                 "All tasks are complete. Perform final check.",
                 "Todas las tareas completadas. Realizar control final.",
@@ -67,13 +66,13 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
             </p>
             <button
               onClick={() => setMode("pass")}
-              className="w-full rounded-xl bg-green-500 p-4 text-white font-semibold text-base active:bg-green-600 transition-colors"
+              className="w-full rounded-xl bg-emerald-500 p-4 text-white font-semibold text-base active:bg-emerald-600 transition-all active:scale-[0.98]"
             >
               ✓ {t("Passed — Ready for delivery", "Aprobado — Listo para entrega", "Goedgekeurd — Klaar voor uitlevering")}
             </button>
             <button
               onClick={() => setMode("fail")}
-              className="w-full rounded-xl bg-red-100 border border-red-300 p-4 text-red-700 font-semibold text-base active:bg-red-200 transition-colors"
+              className="w-full rounded-xl bg-red-400/10 border border-red-400/20 p-4 text-red-400 font-semibold text-base transition-all active:bg-red-400/20 active:scale-[0.98]"
             >
               ✗ {t("Failed — Send back", "Fallido — Devolver", "Afgekeurd — Terug naar garage")}
             </button>
@@ -86,22 +85,30 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t("Notes (optional)...", "Notas (opcional)...", "Opmerkingen (optioneel)...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
             />
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setMode("choose")} className="flex-1 h-12 rounded-xl" disabled={isPending}>
+              <button
+                onClick={() => setMode("choose")}
+                disabled={isPending}
+                className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/60 font-medium text-sm transition-all hover:bg-white/[0.04] active:scale-[0.97] disabled:opacity-40"
+              >
                 {t("Back", "Atrás", "Terug")}
-              </Button>
-              <Button onClick={handlePass} disabled={isPending} className="flex-1 h-12 rounded-xl bg-green-600 hover:bg-green-700 text-white">
+              </button>
+              <button
+                onClick={handlePass}
+                disabled={isPending}
+                className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
+              >
                 {isPending ? "..." : t("Confirm Pass", "Confirmar", "Bevestig Goedkeuring")}
-              </Button>
+              </button>
             </div>
           </div>
         )}
 
         {mode === "fail" && (
           <div className="space-y-3 mt-2">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-white/40">
               {t(
                 "Describe what needs to be fixed:",
                 "Describe qué necesita ser corregido:",
@@ -112,19 +119,23 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t("What's wrong?", "¿Qué está mal?", "Wat is er mis?")}
-              className="w-full rounded-xl border border-red-300 p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-red-200"
+              className="w-full rounded-xl border border-red-400/20 bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-28 resize-none focus:outline-none focus:ring-2 focus:ring-red-400/20"
             />
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setMode("choose")} className="flex-1 h-12 rounded-xl" disabled={isPending}>
+              <button
+                onClick={() => setMode("choose")}
+                disabled={isPending}
+                className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/60 font-medium text-sm transition-all hover:bg-white/[0.04] active:scale-[0.97] disabled:opacity-40"
+              >
                 {t("Back", "Atrás", "Terug")}
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={handleFail}
                 disabled={!notes.trim() || isPending}
-                className="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                className="flex-1 h-12 rounded-xl bg-red-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
               >
                 {isPending ? "..." : t("Send Back", "Devolver", "Terugsturen")}
-              </Button>
+              </button>
             </div>
           </div>
         )}

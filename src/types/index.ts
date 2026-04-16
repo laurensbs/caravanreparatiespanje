@@ -176,7 +176,7 @@ export type RepairJobDetail = RepairJobWithRelations & {
 // UI labels
 export const STATUS_LABELS: Record<RepairStatus, string> = {
   new: "New",
-  todo: "In Workshop",
+  todo: "To Do",
   in_inspection: "In Inspection",
   no_damage: "No Damage",
   quote_needed: "Quote Needed",

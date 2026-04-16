@@ -155,6 +155,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const [showWorkerPicker, setShowWorkerPicker] = useState(false);
+  const [workerPickerResolve, setWorkerPickerResolve] = useState<((ok: boolean) => void) | null>(null);
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -162,6 +164,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
   const activeBlockers = repair.blockers.filter(b => b.active);
   const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
+
+  // Check if any worker is assigned before starting a task
+  async function handleBeforeStart(): Promise<boolean> {
+    if (repair.workers.length > 0) return true;
+    return new Promise<boolean>((resolve) => {
+      setWorkerPickerResolve(() => resolve);
+      setShowWorkerPicker(true);
+    });
+  }
 
   // Smart polling: only refresh when data actually changed
   useGaragePoll(repair.id);
@@ -467,6 +478,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                         repairJobId={repair.id}
                         onUpdate={handleRefresh}
                         onProblem={(id) => setProblemTaskId(id)}
+                        onBeforeStart={handleBeforeStart}
                         photos={repair.photos.filter((p) => p.repairTaskId === task.id).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
                       />
                     ))}
@@ -792,6 +804,41 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       <FinalCheckDialog repairJobId={repair.id} open={showFinalCheck} onClose={() => setShowFinalCheck(false)} onComplete={handleRefresh} />
       <FindingDialog repairJobId={repair.id} open={showFinding} onClose={() => setShowFinding(false)} onComplete={handleRefresh} />
       <BlockerDialog repairJobId={repair.id} open={showBlocker} onClose={() => setShowBlocker(false)} onComplete={handleRefresh} />
+
+      {/* Worker Picker Dialog */}
+      <Dialog open={showWorkerPicker} onOpenChange={(open) => {
+        if (!open) {
+          workerPickerResolve?.(false);
+          setWorkerPickerResolve(null);
+          setShowWorkerPicker(false);
+        }
+      }}>
+        <DialogContent className="rounded-2xl max-w-sm bg-gray-900 border-white/[0.08] text-white">
+          <DialogHeader>
+            <DialogTitle>{t("Who are you?", "¿Quién eres?", "Wie ben je?")}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {allUsers.filter(u => u.name && u.role !== "admin").map((user) => (
+              <button
+                key={user.id}
+                onClick={async () => {
+                  await toggleMyWorker(repair.id, user.id);
+                  setShowWorkerPicker(false);
+                  workerPickerResolve?.(true);
+                  setWorkerPickerResolve(null);
+                  router.refresh();
+                }}
+                className="flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-sm font-medium text-white/80 active:bg-white/[0.08] transition-all"
+              >
+                <span className="flex items-center justify-center h-8 w-8 rounded-full bg-sky-500 text-sm font-bold text-white shrink-0">
+                  {(user.name ?? "?").charAt(0).toUpperCase()}
+                </span>
+                {user.name}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Comment Dialog */}
       <Dialog open={showComment} onOpenChange={setShowComment}>

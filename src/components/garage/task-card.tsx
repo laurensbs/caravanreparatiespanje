@@ -21,10 +21,11 @@ interface TaskCardProps {
   repairJobId: string;
   onUpdate: () => void;
   onProblem: (taskId: string) => void;
+  onBeforeStart?: () => Promise<boolean>;
   photos?: { id: string; url: string; caption: string | null }[];
 }
 
-export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }: TaskCardProps) {
+export function TaskCard({ task, repairJobId, onUpdate, onProblem, onBeforeStart, photos = [] }: TaskCardProps) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
@@ -38,6 +39,10 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
       return;
     }
     startTransition(async () => {
+      if (newStatus === "in_progress" && onBeforeStart) {
+        const ok = await onBeforeStart();
+        if (!ok) return;
+      }
       await updateTaskStatus(task.id, newStatus);
       if (newStatus === "in_progress") {
         await startTimer(repairJobId);

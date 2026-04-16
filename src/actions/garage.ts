@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers } from "@/lib/db/schema";
+import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers, timeEntries } from "@/lib/db/schema";
 import { requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
@@ -281,11 +281,24 @@ export async function getGarageRepairsToday() {
     workersMap.set(w.repairJobId, list);
   }
 
+  // Get total logged time per job (rounded minutes)
+  const timeTotals = await db
+    .select({
+      repairJobId: timeEntries.repairJobId,
+      totalMinutes: sql<number>`coalesce(sum(${timeEntries.roundedMinutes}), 0)`,
+    })
+    .from(timeEntries)
+    .where(inArray(timeEntries.repairJobId, jobIds))
+    .groupBy(timeEntries.repairJobId);
+
+  const timeMap = new Map(timeTotals.map((t) => [t.repairJobId, Number(t.totalMinutes)]));
+
   return jobs.map((job) => ({
     ...job,
     tasks: countsMap.get(job.id) ?? { total: 0, done: 0, problem: 0 },
     parts: partsMap.get(job.id) ?? { total: 0, received: 0, pending: 0 },
     workers: workersMap.get(job.id) ?? [],
+    totalMinutes: timeMap.get(job.id) ?? 0,
   }));
 }
 

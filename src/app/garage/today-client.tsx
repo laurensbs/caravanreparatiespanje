@@ -43,6 +43,7 @@ type RepairItem = {
   tasks: { total: number; done: number; problem: number };
   parts: { total: number; received: number; pending: number };
   workers: string[];
+  totalMinutes: number;
   garageAdminMessage: string | null;
   garageAdminMessageAt: Date | string | null;
   garageAdminMessageReadAt: Date | string | null;
@@ -337,6 +338,14 @@ function JobCard({ repair, t, activeTimers }: { repair: RepairItem; t: (en: stri
                 </div>
               ))}
             </div>
+          )}
+          {repair.totalMinutes > 0 && (
+            <span className="flex items-center gap-1 text-[11px] text-white/30 font-medium tabular-nums">
+              <Clock className="h-3 w-3" />
+              {Math.floor(repair.totalMinutes / 60) > 0
+                ? `${Math.floor(repair.totalMinutes / 60)}h ${repair.totalMinutes % 60}m`
+                : `${repair.totalMinutes}m`}
+            </span>
           )}
         </div>
       </div>

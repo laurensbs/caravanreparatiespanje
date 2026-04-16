@@ -130,6 +130,8 @@ export const partRequestStatusEnum = pgEnum("part_request_status", [
   "cancelled",
 ]);
 
+export const requestTypeEnum = pgEnum("request_type", ["part", "equipment"]);
+
 export const repairTaskStatusEnum = pgEnum("repair_task_status", [
   "pending",
   "in_progress",
@@ -714,6 +716,7 @@ export const partRequests = pgTable(
     supplierId: uuid("supplier_id").references(() => suppliers.id, {
       onDelete: "set null",
     }),
+    requestType: requestTypeEnum("request_type").notNull().default("part"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

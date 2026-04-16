@@ -1,183 +1,167 @@
 "use client";
 
-import { useState, useRef, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { garageLogin } from "@/actions/garage-auth";
 import { useLanguage } from "@/components/garage/language-toggle";
-import { LanguageToggle } from "@/components/garage/language-toggle";
-import Image from "next/image";
+import { Delete, Wrench } from "lucide-react";
 
 const PIN_LENGTH = 4;
 
 export function GarageLoginForm() {
   const router = useRouter();
-  const { t } = useLanguage();
-  const [digits, setDigits] = useState<string[]>(Array(PIN_LENGTH).fill(""));
+  const { t, lang, setLang } = useLanguage();
+  const [digits, setDigits] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [shake, setShake] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const pin = digits.join("");
-  const isComplete = pin.length === PIN_LENGTH && digits.every((d) => d !== "");
+  const submitPin = useCallback(
+    (pinValue: string) => {
+      setError("");
+      startTransition(async () => {
+        const result = await garageLogin(pinValue);
+        if (result.success) {
+          router.refresh();
+        } else {
+          setError(
+            t("Incorrect PIN", "PIN incorrecto", "Onjuiste pincode")
+          );
+          setShake(true);
+          setTimeout(() => {
+            setShake(false);
+            setDigits([]);
+          }, 500);
+        }
+      });
+    },
+    [router, t, startTransition]
+  );
 
-  // Focus first input on mount
-  useEffect(() => {
-    inputRefs.current[0]?.focus();
-  }, []);
-
-  const submitPin = useCallback((pinValue: string) => {
-    setError("");
-    startTransition(async () => {
-      const result = await garageLogin(pinValue);
-      if (result.success) {
-        router.refresh();
-      } else {
-        setError(t(
-          "Incorrect PIN. Try again.",
-          "PIN incorrecto. Inténtalo de nuevo.",
-          "Onjuiste pincode. Probeer opnieuw."
-        ));
-        setDigits(Array(PIN_LENGTH).fill(""));
-        setTimeout(() => inputRefs.current[0]?.focus(), 50);
-      }
-    });
-  }, [router, t, startTransition]);
-
-  function handleChange(index: number, value: string) {
-    const digit = value.replace(/\D/g, "").slice(-1);
-    const next = [...digits];
-    next[index] = digit;
+  function handleDigit(d: string) {
+    if (isPending || digits.length >= PIN_LENGTH) return;
+    const next = [...digits, d];
     setDigits(next);
     setError("");
-
-    if (digit && index < PIN_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    // Auto-submit when all digits filled
-    if (digit && index === PIN_LENGTH - 1) {
-      const fullPin = next.join("");
-      if (fullPin.length === PIN_LENGTH) {
-        submitPin(fullPin);
-      }
+    if (next.length === PIN_LENGTH) {
+      submitPin(next.join(""));
     }
   }
 
-  function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace") {
-      if (!digits[index] && index > 0) {
-        const next = [...digits];
-        next[index - 1] = "";
-        setDigits(next);
-        inputRefs.current[index - 1]?.focus();
-      } else {
-        const next = [...digits];
-        next[index] = "";
-        setDigits(next);
-      }
-      e.preventDefault();
-    }
-    if (e.key === "Enter" && isComplete) {
-      submitPin(pin);
-    }
+  function handleDelete() {
+    if (isPending) return;
+    setDigits((prev) => prev.slice(0, -1));
+    setError("");
   }
 
-  function handlePaste(e: React.ClipboardEvent) {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, PIN_LENGTH);
-    if (!pasted) return;
-    const next = [...digits];
-    for (let i = 0; i < pasted.length; i++) {
-      next[i] = pasted[i];
-    }
-    setDigits(next);
-    const focusIdx = Math.min(pasted.length, PIN_LENGTH - 1);
-    inputRefs.current[focusIdx]?.focus();
-
-    if (pasted.length === PIN_LENGTH) {
-      submitPin(pasted);
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (isComplete) submitPin(pin);
-  }
+  const langs: { code: string; flag: string }[] = [
+    { code: "en", flag: "🇬🇧" },
+    { code: "es", flag: "🇪🇸" },
+    { code: "nl", flag: "🇳🇱" },
+  ];
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB] px-6">
+    <div className="fixed inset-0 flex flex-col items-center justify-between bg-gray-950 text-white select-none">
       {/* Language toggle */}
-      <div className="fixed top-4 right-4 z-10">
-        <LanguageToggle />
+      <div className="absolute top-6 right-6 flex gap-1.5 z-10">
+        {langs.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => setLang(l.code as any)}
+            className={`h-8 w-8 rounded-full text-base flex items-center justify-center transition-all ${
+              lang === l.code
+                ? "bg-white/20 ring-1 ring-white/40"
+                : "bg-white/5 hover:bg-white/10"
+            }`}
+          >
+            {l.flag}
+          </button>
+        ))}
       </div>
 
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-8 py-10 space-y-8">
-          {/* Logo + title */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-              <Image src="/favicon.png" alt="Logo" width={40} height={40} className="rounded-lg" />
-            </div>
-            <div className="text-center space-y-1.5">
-              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
-                {t("Garage Access", "Acceso al garaje", "Garage toegang")}
-              </h1>
-              <p className="text-sm text-gray-500">
-                {t(
-                  "Enter the PIN to open the garage workspace",
-                  "Introduce el PIN para abrir el espacio de trabajo del garaje",
-                  "Voer de pincode in om de garagewerkplek te openen"
-                )}
-              </p>
-            </div>
-          </div>
-
-          {/* PIN input */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex justify-center gap-3" onPaste={handlePaste}>
-              {digits.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  disabled={isPending}
-                  autoComplete="one-time-code"
-                  className="h-16 w-16 rounded-xl border border-gray-200 bg-white text-center text-2xl font-semibold text-gray-900 outline-none transition-all focus:ring-2 focus:ring-[#0CC0DF]/20 focus:border-[#0CC0DF]/50 disabled:opacity-50 placeholder:text-gray-200"
-                  placeholder="·"
-                />
-              ))}
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500 text-center font-medium">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={!isComplete || isPending}
-              className="w-full h-12 rounded-xl bg-[#0CC0DF] text-white text-sm font-semibold shadow-sm hover:bg-[#0BB0CC] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
-            >
-              {isPending
-                ? t("Checking...", "Verificando...", "Controleren...")
-                : t("Enter Garage", "Entrar al garaje", "Garage openen")}
-            </button>
-          </form>
+      {/* Branding */}
+      <div className="flex-1 flex flex-col items-center justify-end pb-8 pt-16">
+        <div className="h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-5">
+          <Wrench className="h-8 w-8 text-white/80" />
         </div>
-
-        <p className="text-center text-xs text-gray-400 mt-5">
-          {t(
-            "Enter the 4-digit PIN to unlock the garage workspace",
-            "Introduce el PIN de 4 dígitos para desbloquear el garaje",
-            "Voer de 4-cijferige pincode in om de garage te ontgrendelen"
-          )}
+        <h1 className="text-xl font-semibold tracking-tight text-white/90">
+          {t("Garage Portal", "Portal del Taller", "Garage Portaal")}
+        </h1>
+        <p className="text-sm text-white/40 mt-1.5">
+          {t("Enter PIN to continue", "Introduce el PIN", "Voer pincode in")}
         </p>
       </div>
+
+      {/* PIN dots */}
+      <div className="flex flex-col items-center gap-6 py-6">
+        <div
+          className={`flex gap-4 transition-transform ${
+            shake ? "animate-[shake_0.4s_ease-in-out]" : ""
+          }`}
+        >
+          {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-4 w-4 rounded-full transition-all duration-200 ${
+                i < digits.length
+                  ? error
+                    ? "bg-red-400 scale-110"
+                    : "bg-white scale-110"
+                  : "bg-white/20"
+              }`}
+            />
+          ))}
+        </div>
+        {error && (
+          <p className="text-sm text-red-400 font-medium animate-in fade-in-0 duration-200">
+            {error}
+          </p>
+        )}
+      </div>
+
+      {/* Numpad */}
+      <div className="w-full max-w-[320px] px-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => handleDigit(String(n))}
+              disabled={isPending}
+              className="h-[72px] rounded-2xl bg-white/[0.08] text-2xl font-medium text-white transition-all active:scale-95 active:bg-white/[0.15] hover:bg-white/[0.12] disabled:opacity-40"
+            >
+              {n}
+            </button>
+          ))}
+          <div />
+          <button
+            type="button"
+            onClick={() => handleDigit("0")}
+            disabled={isPending}
+            className="h-[72px] rounded-2xl bg-white/[0.08] text-2xl font-medium text-white transition-all active:scale-95 active:bg-white/[0.15] hover:bg-white/[0.12] disabled:opacity-40"
+          >
+            0
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending || digits.length === 0}
+            className="h-[72px] rounded-2xl flex items-center justify-center text-white/60 transition-all active:scale-95 hover:bg-white/[0.06] disabled:opacity-20"
+          >
+            <Delete className="h-6 w-6" />
+          </button>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-12px); }
+          40% { transform: translateX(12px); }
+          60% { transform: translateX(-8px); }
+          80% { transform: translateX(8px); }
+        }
+      `}</style>
     </div>
   );
 }

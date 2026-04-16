@@ -1894,8 +1894,10 @@ function PhotosSection({
         formData.append("photoType", "general");
         const res = await fetch("/api/photos/upload", { method: "POST", body: formData });
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Upload failed");
+          const text = await res.text();
+          let msg = "Upload failed";
+          try { msg = JSON.parse(text).error || msg; } catch {}
+          throw new Error(msg);
         }
         successCount++;
       } catch (err: any) {

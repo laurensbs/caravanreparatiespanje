@@ -48,43 +48,51 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Repair job not found" }, { status: 404 });
   }
 
-  // Compress image with sharp
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  try {
+    // Compress image with sharp
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-  const compressed = await sharp(buffer)
-    .rotate() // auto-rotate based on EXIF
-    .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 75, mozjpeg: true })
-    .toBuffer();
+    const compressed = await sharp(buffer)
+      .rotate() // auto-rotate based on EXIF
+      .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 75, mozjpeg: true })
+      .toBuffer();
 
-  // Build OneDrive folder path and file name
-  const folderPath = buildRepairFolderPath({
-    customerName: job.customerName,
-    unitRegistration: job.unitRegistration,
-    repairCode: job.publicCode,
-  });
+    // Build OneDrive folder path and file name
+    const folderPath = buildRepairFolderPath({
+      customerName: job.customerName,
+      unitRegistration: job.unitRegistration,
+      repairCode: job.publicCode,
+    });
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const originalName = file.name.replace(/\.[^.]+$/, "");
-  const fileName = `${timestamp}_${originalName}.jpg`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const originalName = file.name.replace(/\.[^.]+$/, "");
+    const fileName = `${timestamp}_${originalName}.jpg`;
 
-  // Upload to OneDrive
-  const result = await uploadFile(folderPath, fileName, compressed, "image/jpeg");
+    // Upload to OneDrive
+    const result = await uploadFile(folderPath, fileName, compressed, "image/jpeg");
 
-  const [photo] = await db.insert(repairPhotos).values({
-    repairJobId,
-    repairTaskId: repairTaskId || null,
-    findingId: findingId || null,
-    url: result.downloadUrl,
-    thumbnailUrl: null,
-    caption: caption || null,
-    photoType,
-    uploadedByUserId: ctx.userId,
-    onedrivePath: result.drivePath,
-    onedriveFolderUrl: result.folderWebUrl,
-    onedriveItemId: result.itemId,
-  }).returning();
+    const [photo] = await db.insert(repairPhotos).values({
+      repairJobId,
+      repairTaskId: repairTaskId || null,
+      findingId: findingId || null,
+      url: result.downloadUrl,
+      thumbnailUrl: null,
+      caption: caption || null,
+      photoType,
+      uploadedByUserId: ctx.userId,
+      onedrivePath: result.drivePath,
+      onedriveFolderUrl: result.folderWebUrl,
+      onedriveItemId: result.itemId,
+    }).returning();
 
-  return NextResponse.json({ photo });
+    return NextResponse.json({ photo });
+  } catch (err: any) {
+    console.error("Photo upload error:", err);
+    return NextResponse.json(
+      { error: err?.message || "Failed to upload photo" },
+      { status: 500 }
+    );
+  }
 }

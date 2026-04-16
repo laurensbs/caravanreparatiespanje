@@ -1365,9 +1365,24 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {startedToday ? (
                 <>
                   <div className="border-t border-gray-100 dark:border-gray-800" />
-                  <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium py-2.5 px-3">
-                    <Check className="h-3.5 w-3.5" />
-                    Is in garage now
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium py-2.5 px-3">
+                      <Check className="h-3.5 w-3.5" />
+                      Is in garage now
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await unscheduleRepair(job.id);
+                        setStartedToday(false);
+                        setStatus("todo");
+                        toast.success("Removed from garage");
+                        router.refresh();
+                      }}
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-background hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 text-xs font-medium py-2.5 px-3 transition-colors"
+                      title="Remove from garage"
+                    >
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </>
               ) : !(job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status)) && (

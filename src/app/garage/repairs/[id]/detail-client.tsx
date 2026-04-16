@@ -945,7 +945,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
             />
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-11 rounded-xl">{t("Cancel", "Cancelar", "Annuleren")}</Button>
+              <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-11 rounded-xl border-white/[0.1] text-white/70 hover:bg-white/[0.06]">{t("Cancel", "Cancelar", "Annuleren")}</Button>
               <Button onClick={handleSuggest} disabled={!suggestTitle.trim() || isPending} className="flex-1 h-11 rounded-xl">{t("Suggest", "Sugerir", "Voorstellen")}</Button>
             </div>
           </div>

@@ -247,6 +247,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState(job.status);
+  const [startedToday, setStartedToday] = useState(false);
   const [priority, setPriority] = useState(job.priority);
   const [jobType, setJobType] = useState<JobType>(job.jobType as JobType ?? "repair");
   const [invoiceStatus, setInvoiceStatus] = useState(job.invoiceStatus);
@@ -745,6 +746,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         </button>
                       </span>
                     )}
+                    {startedToday ? (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        <Check className="h-3 w-3" />
+                        In garage
+                      </span>
+                    ) : (
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-150">
@@ -758,6 +765,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                             const today = new Date();
                             today.setHours(8, 0, 0, 0);
                             await scheduleRepair(job.id, today.toISOString());
+                            setStatus("scheduled");
+                            setStartedToday(true);
                             toast.success("Repair started for today");
                             router.refresh();
                           }}
@@ -795,6 +804,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         </div>
                       </PopoverContent>
                     </Popover>
+                    )}
                   </>
                 )}
                 <TagPicker
@@ -1381,7 +1391,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               )}
 
               {/* ── Start / Schedule pills ── */}
-              {!(job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status)) && (
+              {startedToday ? (
+                <>
+                  <div className="border-t border-gray-100 dark:border-gray-800" />
+                  <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium py-2.5 px-3">
+                    <Check className="h-3.5 w-3.5" />
+                    Is in garage now
+                  </div>
+                </>
+              ) : !(job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status)) && (
                 <>
                   <div className="border-t border-gray-100 dark:border-gray-800" />
                   <div className="flex gap-2">
@@ -1390,6 +1408,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         const today = new Date();
                         today.setHours(8, 0, 0, 0);
                         await scheduleRepair(job.id, today.toISOString());
+                        setStatus("scheduled");
+                        setStartedToday(true);
                         toast.success("Repair started for today");
                         router.refresh();
                       }}

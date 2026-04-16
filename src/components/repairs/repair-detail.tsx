@@ -1402,13 +1402,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </>
               )}
 
-              {/* ── Send to Garage ── */}
+              {/* ── Send Direct Message to Garage ── */}
               <div>
-                <div className="border-t border-gray-100 dark:border-gray-800 mb-5" />
-                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2 flex items-center gap-1.5">
-                  <MessageSquare className="h-3 w-3" />
-                  Send to Garage
-                </p>
+                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2">Send Direct Message to Garage</p>
                 {syncState?.garageAdminMessage && (
                   <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/50 px-3 py-2.5 mb-2">
                     <p className="text-xs text-sky-800 dark:text-sky-300 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>

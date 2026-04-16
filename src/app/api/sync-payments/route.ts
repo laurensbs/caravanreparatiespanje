@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { repairJobs, repairJobEvents, customers } from "@/lib/db/schema";
 import { eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
+import { listAllInvoices, getInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
 import { isNonRepairInvoice } from "@/lib/holded/filter";
 
 // Vercel cron: runs every minute
@@ -11,10 +11,37 @@ import { isNonRepairInvoice } from "@/lib/holded/filter";
 
 export const dynamic = "force-dynamic";
 
+// Maximum remaining amount (in €) to still consider an invoice as fully paid.
+// Handles Stripe rounding differences (e.g. €0.01 off).
+const PAYMENT_TOLERANCE_EUR = 0.05;
+
 function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" {
   if (invoice.status === 1) return "paid";
+  // Partially paid: check if remaining amount is within tolerance
+  if (invoice.status === 2) {
+    const remaining = getPartiallyPaidRemaining(invoice);
+    if (remaining !== null && remaining <= PAYMENT_TOLERANCE_EUR) return "paid";
+  }
   if (invoice.draft || !invoice.docNumber || invoice.docNumber === "---") return "draft";
   return "sent";
+}
+
+/**
+ * Calculate remaining amount for a partially paid invoice.
+ * Uses the `due` field (detail endpoint) or `payments` array if available.
+ * Returns null if we can't determine the remaining amount from list data.
+ */
+function getPartiallyPaidRemaining(invoice: HoldedInvoice): number | null {
+  // Holded detail endpoint may include `due` (remaining to pay)
+  if (typeof invoice.due === "number") {
+    return Math.abs(invoice.due);
+  }
+  // If payments array is present, calculate remaining
+  if (invoice.payments && invoice.payments.length > 0) {
+    const totalPaid = invoice.payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    return Math.max(0, invoice.total - totalPaid);
+  }
+  return null;
 }
 
 export async function GET(request: Request) {
@@ -84,6 +111,21 @@ export async function GET(request: Request) {
     }
 
     // ─── Step 3: Process each Holded invoice ───
+    // For partially paid invoices (status 2) where we can't determine remaining
+    // from list data, fetch individual invoice details to check the remaining amount.
+    for (const inv of allInvoices) {
+      if (inv.status === 2 && getPartiallyPaidRemaining(inv) === null) {
+        try {
+          const detail = await getInvoice(inv.id);
+          // Copy payment-related fields from detail to list item
+          if (detail.payments) inv.payments = detail.payments;
+          if (typeof detail.due === "number") inv.due = detail.due;
+        } catch {
+          // If we can't fetch detail, we'll treat it as "sent" (safe default)
+        }
+      }
+    }
+
     for (const inv of allInvoices) {
       try {
         const newStatus = holdedInvoiceStatus(inv);

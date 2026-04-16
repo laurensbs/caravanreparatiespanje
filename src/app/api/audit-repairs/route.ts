@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { repairJobs, repairJobEvents, customers } from "@/lib/db/schema";
 import { eq, isNull, isNotNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
+import { listAllInvoices, getInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
 
 // Vercel cron: runs every 6 hours
 // 1. Verifies linked invoice statuses match Holded
@@ -11,10 +11,25 @@ import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
 
 export const dynamic = "force-dynamic";
 
+const PAYMENT_TOLERANCE_EUR = 0.05;
+
 function holdedInvoiceStatus(inv: HoldedInvoice): "draft" | "sent" | "paid" {
   if (inv.status === 1) return "paid";
+  if (inv.status === 2) {
+    const remaining = getPartiallyPaidRemaining(inv);
+    if (remaining !== null && remaining <= PAYMENT_TOLERANCE_EUR) return "paid";
+  }
   if (inv.draft || !inv.docNumber || inv.docNumber === "---") return "draft";
   return "sent";
+}
+
+function getPartiallyPaidRemaining(inv: HoldedInvoice): number | null {
+  if (typeof inv.due === "number") return Math.abs(inv.due);
+  if (inv.payments && inv.payments.length > 0) {
+    const totalPaid = inv.payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    return Math.max(0, inv.total - totalPaid);
+  }
+  return null;
 }
 
 function normalize(s: string | null | undefined): string {
@@ -66,6 +81,18 @@ export async function GET(request: Request) {
   try {
     // ─── Part 1: Invoice status audit ───
     const allInvoices = await listAllInvoices();
+
+    // Fetch details for partially paid invoices to check remaining amounts
+    for (const inv of allInvoices) {
+      if (inv.status === 2 && getPartiallyPaidRemaining(inv) === null) {
+        try {
+          const detail = await getInvoice(inv.id);
+          if (detail.payments) inv.payments = detail.payments;
+          if (typeof detail.due === "number") inv.due = detail.due;
+        } catch { /* skip */ }
+      }
+    }
+
     const invoiceById = new Map<string, HoldedInvoice>();
     for (const inv of allInvoices) invoiceById.set(inv.id, inv);
 

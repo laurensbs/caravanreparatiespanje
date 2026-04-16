@@ -32,11 +32,26 @@ function generatePublicCode(): string {
   return `REP-${year}${month}-${random}`;
 }
 
+const PAYMENT_TOLERANCE_EUR = 0.05;
+
 // Determine invoice payment status from Holded
 function holdedInvoiceStatus(inv: HoldedInvoice): "draft" | "sent" | "paid" {
   if (inv.status === 1) return "paid";
+  if (inv.status === 2) {
+    const remaining = getPartiallyPaidRemaining(inv);
+    if (remaining !== null && remaining <= PAYMENT_TOLERANCE_EUR) return "paid";
+  }
   if (inv.draft || !inv.docNumber || inv.docNumber === "---") return "draft";
   return "sent";
+}
+
+function getPartiallyPaidRemaining(inv: HoldedInvoice): number | null {
+  if (typeof inv.due === "number") return Math.abs(inv.due);
+  if (inv.payments && inv.payments.length > 0) {
+    const totalPaid = inv.payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    return Math.max(0, inv.total - totalPaid);
+  }
+  return null;
 }
 
 // Map Holded invoice status → repair workflow status

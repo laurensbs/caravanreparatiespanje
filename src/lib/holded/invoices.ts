@@ -79,6 +79,12 @@ export interface HoldedInvoice {
     tax: number;
     tags?: string[];
   }>;
+  payments?: Array<{
+    amount: number;
+    date: number;
+    desc?: string;
+  }>;
+  due?: number; // remaining amount to be paid (detail endpoint)
 }
 
 export interface HoldedQuote {

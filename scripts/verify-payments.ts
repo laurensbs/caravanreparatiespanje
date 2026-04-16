@@ -16,12 +16,29 @@ dotenv.config({ path: ".env.local", override: true });
 import { db } from "@/lib/db";
 import { repairJobs, repairJobEvents } from "@/lib/db/schema";
 import { eq, isNull, isNotNull } from "drizzle-orm";
-import { listAllInvoices, type HoldedInvoice } from "@/lib/holded/invoices";
+import { listAllInvoices, getInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
+
+// Maximum remaining amount (in €) to still consider an invoice as fully paid.
+const PAYMENT_TOLERANCE_EUR = 0.05;
 
 function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" {
   if (invoice.status === 1) return "paid";
+  // Partially paid: check if remaining amount is within tolerance
+  if (invoice.status === 2) {
+    const remaining = getPartiallyPaidRemaining(invoice);
+    if (remaining !== null && remaining <= PAYMENT_TOLERANCE_EUR) return "paid";
+  }
   if (invoice.draft || !invoice.docNumber || invoice.docNumber === "---") return "draft";
   return "sent";
+}
+
+function getPartiallyPaidRemaining(invoice: HoldedInvoice): number | null {
+  if (typeof invoice.due === "number") return Math.abs(invoice.due);
+  if (invoice.payments && invoice.payments.length > 0) {
+    const totalPaid = invoice.payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    return Math.max(0, invoice.total - totalPaid);
+  }
+  return null;
 }
 
 const earlyStatuses = [
@@ -46,6 +63,21 @@ async function main() {
   console.log("Fetching all invoices from Holded...");
   const allInvoices = await listAllInvoices();
   console.log(`  Found ${allInvoices.length} invoices in Holded\n`);
+
+  // Fetch details for partially paid invoices to check remaining amounts
+  const partiallyPaid = allInvoices.filter(i => i.status === 2 && getPartiallyPaidRemaining(i) === null);
+  if (partiallyPaid.length > 0) {
+    console.log(`  Fetching details for ${partiallyPaid.length} partially paid invoices...`);
+    for (const inv of partiallyPaid) {
+      try {
+        const detail = await getInvoice(inv.id);
+        if (detail.payments) inv.payments = detail.payments;
+        if (typeof detail.due === "number") inv.due = detail.due;
+      } catch {
+        // Skip — will be treated as "sent"
+      }
+    }
+  }
 
   // Build lookup: holdedInvoiceId → real status from Holded
   const holdedStatusMap = new Map<string, { status: "draft" | "sent" | "paid"; docNumber: string; total: number }>();

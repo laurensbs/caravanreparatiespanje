@@ -30,6 +30,7 @@ import { PrioritySelect } from "@/components/repairs/priority-select";
 import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
+import { updatePartRequestStatus } from "@/actions/parts";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
 import { resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent, restoreWorkshopItem, restoreAllWorkshopItems } from "@/actions/estimates";
@@ -994,6 +995,40 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   )}
                 </div>
               </div>
+              {/* Pending parts checklist */}
+              {(status === "waiting_parts" || (computedBlocker && computedBlocker.includes("Parts"))) && (() => {
+                const pending = partRequests.filter(p => !["received", "cancelled"].includes(p.status));
+                if (pending.length === 0) return null;
+                return (
+                  <div className="mt-3 pt-3 border-t border-amber-200/50 dark:border-amber-700/30 space-y-1.5">
+                    <p className="text-[10px] uppercase tracking-wider text-amber-700/50 dark:text-amber-400/40 font-semibold mb-1">Waiting for</p>
+                    {pending.map((p) => (
+                      <label key={p.id} className="flex items-center gap-2.5 group/part cursor-pointer py-0.5">
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await updatePartRequestStatus(p.id, "received");
+                            router.refresh();
+                          }}
+                          className="h-4 w-4 rounded border border-amber-300 dark:border-amber-600 bg-white/50 dark:bg-white/5 flex items-center justify-center hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors shrink-0"
+                        >
+                          <Check className="h-2.5 w-2.5 text-amber-400/0 group-hover/part:text-amber-500 dark:group-hover/part:text-amber-400 transition-colors" />
+                        </button>
+                        <span className="text-xs text-amber-900/70 dark:text-amber-200/70 font-medium">{p.partName}</span>
+                        {p.quantity > 1 && <span className="text-[10px] text-amber-700/40 dark:text-amber-400/30">×{p.quantity}</span>}
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                          p.status === "ordered" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                            : p.status === "shipped" ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                        )}>
+                          {p.status}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>

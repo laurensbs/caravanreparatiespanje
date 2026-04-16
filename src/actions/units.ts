@@ -116,6 +116,16 @@ export async function createUnit(data: unknown) {
   return unit;
 }
 
+/** Same as createUnit but without revalidatePath — for inline creation inside dialogs */
+export async function createUnitInline(data: unknown) {
+  await requireRole("staff");
+  const parsed = unitSchema.parse(data);
+
+  const [unit] = await db.insert(units).values(parsed).returning();
+  await createAuditLog("create", "unit", unit.id);
+  return unit;
+}
+
 export async function updateUnit(id: string, data: unknown) {
   await requireRole("staff");
   const parsed = unitSchema.parse(data);

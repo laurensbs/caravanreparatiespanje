@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Truck, X, Plus } from "lucide-react";
-import { createUnit } from "@/actions/units";
+import { createUnitInline } from "@/actions/units";
 import { toast } from "sonner";
 
 interface Unit {
@@ -110,17 +110,19 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
     inputRef.current?.focus();
   }
 
-  async function handleCreateUnit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    e.stopPropagation();
+  const createFormRef = useRef<HTMLDivElement>(null);
+
+  async function handleCreateUnit() {
     setCreating(true);
-    const fd = new FormData(e.currentTarget);
+    const container = createFormRef.current;
+    if (!container) return;
+    const get = (name: string) => (container.querySelector(`[name="${name}"]`) as HTMLInputElement)?.value || "";
     try {
-      const unit = await createUnit({
-        registration: fd.get("registration") || undefined,
-        brand: fd.get("brand") || undefined,
-        model: fd.get("model") || undefined,
-        year: fd.get("year") ? Number(fd.get("year")) : undefined,
+      const unit = await createUnitInline({
+        registration: get("registration") || undefined,
+        brand: get("brand") || undefined,
+        model: get("model") || undefined,
+        year: get("year") ? Number(get("year")) : undefined,
         customerId: customerId || undefined,
       });
       units.push({
@@ -218,7 +220,7 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
       {showCreate && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border bg-popover shadow-lg p-3 animate-fade-in">
           <p className="text-xs font-semibold mb-2">Quick add unit</p>
-          <form onSubmit={handleCreateUnit} className="space-y-2">
+          <div ref={createFormRef} className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[11px]">License Plate</Label>
@@ -243,12 +245,12 @@ export function UnitSearch({ units, value, customerId, onSelect }: UnitSearchPro
               <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowCreate(false)}>
                 Cancel
               </Button>
-              <Button type="submit" size="sm" className="h-7 text-xs" disabled={creating}>
+              <Button type="button" size="sm" className="h-7 text-xs" disabled={creating} onClick={handleCreateUnit}>
                 {creating ? <Spinner className="mr-1 h-3 w-3" /> : <Plus className="mr-1 h-3 w-3" />}
                 Create
               </Button>
             </div>
-          </form>
+          </div>
         </div>
       )}
     </div>

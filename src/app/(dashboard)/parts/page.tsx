@@ -4,8 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -19,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { PartsClient } from "@/components/parts/parts-client";
 import { SuppliersClient } from "@/components/parts/suppliers-client";
+import { PartRequestsClient } from "@/components/parts/part-requests-client";
 import { HoldedHint } from "@/components/holded-hint";
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
@@ -73,76 +72,7 @@ export default async function PartsPage() {
         </TabsContent>
 
         <TabsContent value="requests" className="mt-4">
-          {requests.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No part requests yet.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="rounded-lg border bg-card overflow-hidden">
-              <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Job</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Part</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Type</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Supplier</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Qty</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requests.map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell>
-                        <Link
-                          href={`/repairs/${req.repairJobId}`}
-                          className="font-mono text-xs hover:underline"
-                        >
-                          {req.jobRef}
-                        </Link>
-                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {req.jobTitle}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">{req.partName ?? "—"}</p>
-                        {req.partNumber && (
-                          <p className="text-xs text-muted-foreground">
-                            {req.partNumber}
-                          </p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={req.requestType === 'equipment' ? 'border-violet-200 text-violet-600 bg-violet-50' : 'border-gray-200 text-gray-500'}>
-                          {req.requestType === 'equipment' ? '🔧 Equipment' : '📦 Part'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{req.supplierName ?? "—"}</TableCell>
-                      <TableCell>{req.quantity}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="secondary"
-                          className={
-                            REQUEST_STATUS_COLORS[req.status] ?? ""
-                          }
-                        >
-                          {req.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
-                        {req.notes ?? "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              </div>
-            </div>
-          )}
+          <PartRequestsClient requests={requests} />
         </TabsContent>
 
         <TabsContent value="equipment" className="mt-4">

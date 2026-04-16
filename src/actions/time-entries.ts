@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { timeEntries, users, repairJobs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
+import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -16,10 +17,16 @@ function roundToQuarter(minutes: number): number {
 
 // ─── Start / Stop Timer ─────────────────────────────────────────────────────
 
-/** Start a timer for the current user on a repair job */
-export async function startTimer(repairJobId: string) {
-  const session = await requireAuth();
-  const userId = session.user.id;
+/** Start a timer for a user on a repair job. If no userId provided, uses the session user. */
+export async function startTimer(repairJobId: string, forUserId?: string) {
+  let userId: string;
+  if (forUserId) {
+    await requireAnyAuth();
+    userId = forUserId;
+  } else {
+    const session = await requireAuth();
+    userId = session.user.id;
+  }
 
   // Check for existing active timer on ANY job for this user
   const existing = await db
@@ -76,9 +83,15 @@ async function stopTimerById(timeEntryId: string) {
 }
 
 /** Stop the current user's active timer (public action) */
-export async function stopTimer(repairJobId: string) {
-  const session = await requireAuth();
-  const userId = session.user.id;
+export async function stopTimer(repairJobId: string, forUserId?: string) {
+  let userId: string;
+  if (forUserId) {
+    await requireAnyAuth();
+    userId = forUserId;
+  } else {
+    const session = await requireAuth();
+    userId = session.user.id;
+  }
 
   const [active] = await db
     .select({ id: timeEntries.id })

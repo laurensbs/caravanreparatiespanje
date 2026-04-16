@@ -14,7 +14,7 @@ import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { addGarageComment, suggestExtraTask, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
 import { markAdminMessageRead } from "@/actions/garage-sync";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
-import { GarageTimer } from "@/components/garage/timer";
+import { stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
@@ -34,6 +34,7 @@ import {
   Plus,
   CheckCircle2,
   XCircle,
+  Square,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -136,6 +137,47 @@ interface Props {
 
 type Tab = "tasks" | "photos" | "parts" | "info";
 
+/* ─── Header Timer ─── */
+
+function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
+  timer: { id: string; userId: string; userName: string | null; startedAt: Date | string };
+  repairJobId: string;
+  t: (en: string, es: string, nl: string) => string;
+  onStop: () => void;
+}) {
+  const [elapsed, setElapsed] = useState("");
+
+  useEffect(() => {
+    const start = new Date(timer.startedAt).getTime();
+    const tick = () => {
+      const diff = Date.now() - start;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setElapsed(h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [timer.startedAt]);
+
+  const handleStop = async () => {
+    await stopTimer(repairJobId, timer.userId);
+    onStop();
+  };
+
+  return (
+    <button
+      onClick={handleStop}
+      className="flex items-center gap-1.5 rounded-lg bg-red-500/15 border border-red-500/25 px-2.5 py-1.5 text-xs font-medium text-red-400 active:bg-red-500/25 transition-all"
+    >
+      <Square className="h-3 w-3 fill-current" />
+      <span className="text-white/60 text-[10px]">{timer.userName?.split(" ")[0]}</span>
+      <span className="tabular-nums font-mono">{elapsed}</span>
+    </button>
+  );
+}
+
 /* ─── Main ─── */
 
 export function GarageRepairDetailClient({ repair, currentUserId, currentUserName, partCategories, activeTimers, allUsers }: Props) {
@@ -157,6 +199,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [showWorkerPicker, setShowWorkerPicker] = useState(false);
   const [workerPickerResolve, setWorkerPickerResolve] = useState<((ok: boolean) => void) | null>(null);
+  const [lastPickedWorkerId, setLastPickedWorkerId] = useState<string | null>(null);
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -278,6 +321,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               {t("Back", "Atrás", "Terug")}
             </button>
             <div className="flex items-center gap-1">
+              {/* Active timers in header */}
+              {activeTimers.map((timer) => (
+                <HeaderTimerDisplay key={timer.id} timer={timer} repairJobId={repair.id} t={t} onStop={() => router.refresh()} />
+              ))}
               <button
                 onClick={handleRefresh}
                 className="h-9 w-9 flex items-center justify-center rounded-lg text-white/40 active:bg-white/[0.06]"
@@ -421,15 +468,6 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                     </button>
                   );
                 })}
-                {isActive && (
-                  <GarageTimer
-                    repairJobId={repair.id}
-                    currentUserId={currentUserId}
-                    currentUserName={currentUserName}
-                    activeTimers={activeTimers}
-                    t={t}
-                  />
-                )}
               </div>
 
               {/* Flags */}
@@ -479,6 +517,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                         onUpdate={handleRefresh}
                         onProblem={(id) => setProblemTaskId(id)}
                         onBeforeStart={handleBeforeStart}
+                        workerId={lastPickedWorkerId ?? repair.workers[0]?.userId}
                         photos={repair.photos.filter((p) => p.repairTaskId === task.id).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
                       />
                     ))}
@@ -823,6 +862,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 key={user.id}
                 onClick={async () => {
                   await toggleMyWorker(repair.id, user.id);
+                  setLastPickedWorkerId(user.id);
                   setShowWorkerPicker(false);
                   workerPickerResolve?.(true);
                   setWorkerPickerResolve(null);

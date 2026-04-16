@@ -1913,40 +1913,44 @@ function PhotosSection({
   }
 
   return (
-    <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold flex items-center gap-2">
-          <Camera className="h-4 w-4" />
-          Photos
-          {photos.length > 0 && (
-            <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
-          )}
-        </h3>
-        <div className="flex items-center gap-2">
-          {onedriveFolderUrl && (
-            <a
-              href={onedriveFolderUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 px-2.5 h-7 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10.051 8.149L3.2 12.48l6.851 3.951 6.851-3.95-6.851-4.332zM20.8 12.48l-3.248-1.874-3.602 2.078 3.602 2.078L20.8 12.48zM3.2 13.598v4.164l6.851 3.951v-4.164L3.2 13.598zM10.949 17.549v4.164l6.851-3.951v-4.164l-6.851 3.951zM17.552 9.488L20.8 11.362V7.198l-3.248 1.874zM10.051 2.287L3.2 6.618l6.851 3.951 6.851-3.95-6.851-4.332z"/></svg>
-              OneDrive Map
-            </a>
-          )}
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 h-7 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-          >
-            {uploading ? (
-              <><RefreshCw className="h-3 w-3 animate-spin" /> Uploading...</>
-            ) : (
-              <><Plus className="h-3 w-3" /> Upload</>
+    <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+      <details open={photos.length > 0}>
+        <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
+          <span className="flex items-center gap-2">
+            <Camera className="h-4 w-4" />
+            Photos
+            {photos.length > 0 && (
+              <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
             )}
-          </button>
-        </div>
-      </div>
+          </span>
+          <div className="flex items-center gap-2">
+            {onedriveFolderUrl && (
+              <a
+                href={onedriveFolderUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 px-2.5 h-7 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10.051 8.149L3.2 12.48l6.851 3.951 6.851-3.95-6.851-4.332zM20.8 12.48l-3.248-1.874-3.602 2.078 3.602 2.078L20.8 12.48zM3.2 13.598v4.164l6.851 3.951v-4.164L3.2 13.598zM10.949 17.549v4.164l6.851-3.951v-4.164l-6.851 3.951zM17.552 9.488L20.8 11.362V7.198l-3.248 1.874zM10.051 2.287L3.2 6.618l6.851 3.951 6.851-3.95-6.851-4.332z"/></svg>
+                OneDrive Map
+              </a>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 h-7 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            >
+              {uploading ? (
+                <><RefreshCw className="h-3 w-3 animate-spin" /> Uploading...</>
+              ) : (
+                <><Plus className="h-3 w-3" /> Upload</>
+              )}
+            </button>
+            <ChevronDown className="h-3.5 w-3.5 opacity-40" />
+          </div>
+        </summary>
+        <div className="px-6 pb-6">
 
       {photos.length > 0 ? (
         <div className="space-y-4">
@@ -1994,6 +1998,8 @@ function PhotosSection({
         </div>
       )}
 
+        </div>
+      </details>
       <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
     </div>
   );

@@ -627,7 +627,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 )}
                 {job.customer ? (
                   <button
-                    onClick={() => setExpandCustomer((v) => !v)}
+                    onClick={() => {
+                      setExpandCustomer((v) => !v);
+                      setTimeout(() => document.getElementById("customer-section")?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+                    }}
                     className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-150"
                   >
                     {job.customer.name}
@@ -837,11 +840,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         </div>
 
         {/* Inline edit panels */}
-        {expandCustomer && job.customer && (
-          <div className="ml-14">
-            <InlineCustomerEdit customer={job.customer} onDone={() => setExpandCustomer(false)} />
-          </div>
-        )}
         {expandUnit && job.unit && (
           <div className="ml-14">
             <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
@@ -1641,7 +1639,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
 
           {/* Customer */}
-          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
+          <div id="customer-section" className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Customer</h3>
 
             <div className="flex items-center justify-between text-xs">

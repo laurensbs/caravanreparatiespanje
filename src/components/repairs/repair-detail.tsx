@@ -1084,65 +1084,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 <p className="text-xs text-muted-foreground">{job.descriptionNormalized}</p>
               </div>
             )}
-            {/* Send to Garage */}
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-1.5 mb-2">
-                <MessageSquare className="h-3 w-3 text-gray-400 dark:text-gray-500" />
-                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Send to Garage</p>
-              </div>
-              {syncState?.garageAdminMessage && (
-                <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/50 px-3 py-2.5 mb-2">
-                  <p className="text-xs text-sky-800 dark:text-sky-300 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] text-sky-400">
-                      {syncState.garageAdminMessageAt ? format(new Date(syncState.garageAdminMessageAt), "HH:mm") : ""}
-                    </span>
-                    <button
-                      onClick={async () => {
-                        await clearGarageMessage(job.id);
-                        router.refresh();
-                      }}
-                      className="text-[10px] text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 font-medium"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <input
-                  value={garageMessage}
-                  onChange={(e) => setGarageMessage(e.target.value)}
-                  placeholder="Type a message for the garage team..."
-                  className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-300 dark:focus:ring-sky-700 dark:text-gray-100"
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && garageMessage.trim() && !sendingMessage) {
-                      setSendingMessage(true);
-                      await sendMessageToGarage(job.id, garageMessage.trim());
-                      setGarageMessage("");
-                      setSendingMessage(false);
-                      router.refresh();
-                      toast.success("Message sent to garage");
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  disabled={!garageMessage.trim() || sendingMessage}
-                  onClick={async () => {
-                    setSendingMessage(true);
-                    await sendMessageToGarage(job.id, garageMessage.trim());
-                    setGarageMessage("");
-                    setSendingMessage(false);
-                    router.refresh();
-                    toast.success("Message sent to garage");
-                  }}
-                  className="rounded-xl h-9 px-3 bg-sky-500 hover:bg-sky-600 text-white text-xs"
-                >
-                  {sendingMessage ? <Spinner className="h-3 w-3" /> : "Send"}
-                </Button>
-              </div>
-            </div>
             {/* Internal notes */}
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
               <details className="group" open={!!internalComments}>
@@ -1497,6 +1438,67 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               findings={findings}
               initialDismissed={initialDismissed}
             />
+
+              {/* ── Send to Garage ── */}
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2 flex items-center gap-1.5">
+                  <MessageSquare className="h-3 w-3" />
+                  Send to Garage
+                </p>
+                {syncState?.garageAdminMessage && (
+                  <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/50 px-3 py-2.5 mb-2">
+                    <p className="text-xs text-sky-800 dark:text-sky-300 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-[10px] text-sky-400">
+                        {syncState.garageAdminMessageAt ? format(new Date(syncState.garageAdminMessageAt), "HH:mm") : ""}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          await clearGarageMessage(job.id);
+                          router.refresh();
+                        }}
+                        className="text-[10px] text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 font-medium"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={garageMessage}
+                    onChange={(e) => setGarageMessage(e.target.value)}
+                    placeholder="Type a message for the garage team..."
+                    className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-300 dark:focus:ring-sky-700 dark:text-gray-100"
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter" && garageMessage.trim() && !sendingMessage) {
+                        setSendingMessage(true);
+                        await sendMessageToGarage(job.id, garageMessage.trim());
+                        setGarageMessage("");
+                        setSendingMessage(false);
+                        router.refresh();
+                        toast.success("Message sent to garage");
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!garageMessage.trim() || sendingMessage}
+                    onClick={async () => {
+                      setSendingMessage(true);
+                      await sendMessageToGarage(job.id, garageMessage.trim());
+                      setGarageMessage("");
+                      setSendingMessage(false);
+                      router.refresh();
+                      toast.success("Message sent to garage");
+                    }}
+                    className="rounded-xl h-9 px-3 bg-sky-500 hover:bg-sky-600 text-white text-xs"
+                  >
+                    {sendingMessage ? <Spinner className="h-3 w-3" /> : "Send"}
+                  </Button>
+                </div>
+              </div>
+
             </details>
           </div>
 

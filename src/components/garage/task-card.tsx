@@ -1,11 +1,11 @@
 "use client";
 
-import { useTransition, useState, useRef } from "react";
+import { useTransition } from "react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
+import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import type { RepairTask, RepairTaskStatus } from "@/types";
 import { toast } from "sonner";
-import { Camera } from "lucide-react";
 
 const STATUS_ICONS: Record<RepairTaskStatus, string> = {
   pending: "○",
@@ -26,8 +26,6 @@ interface TaskCardProps {
 export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }: TaskCardProps) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const title = t(task.title, task.titleEs, task.titleNl);
   const status = task.status as RepairTaskStatus;
@@ -42,33 +40,6 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
       await updateTaskStatus(task.id, newStatus);
       onUpdate();
     });
-  }
-
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("repairJobId", repairJobId);
-        formData.append("repairTaskId", task.id);
-        formData.append("photoType", "task");
-        const res = await fetch("/api/photos/upload", { method: "POST", body: formData });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Upload failed");
-        }
-      }
-      toast.success(t("Photo uploaded", "Foto subida", "Foto geüpload"));
-      onUpdate();
-    } catch (err: any) {
-      toast.error(err?.message || "Upload failed");
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
   }
 
   const actions = getActions(task.status);
@@ -115,29 +86,16 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
             )}
           </div>
 
-          {/* Camera button — always accessible */}
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-all shrink-0 mt-0.5"
-          >
-            <Camera className="h-4 w-4" />
-          </button>
+          {/* Photo upload — compact mode */}
+          <GaragePhotoUpload
+            repairJobId={repairJobId}
+            repairTaskId={task.id}
+            photos={photos}
+            onUpdate={onUpdate}
+            t={t}
+            compact
+          />
         </div>
-
-        {/* Uploaded photos */}
-        {photos.length > 0 && (
-          <div className="flex gap-1.5 mt-2.5 overflow-x-auto pb-0.5 -mx-1 px-1">
-            {photos.map((photo) => (
-              <img
-                key={photo.id}
-                src={photo.url}
-                alt={photo.caption || "Task photo"}
-                className="h-14 w-14 rounded-lg object-cover shrink-0 border border-gray-100"
-              />
-            ))}
-          </div>
-        )}
 
         {/* Action buttons */}
         {actions.length > 0 && (
@@ -155,17 +113,6 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
           </div>
         )}
       </div>
-
-      {/* Hidden file input */}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        className="hidden"
-        onChange={handlePhotoUpload}
-      />
     </div>
   );
 }

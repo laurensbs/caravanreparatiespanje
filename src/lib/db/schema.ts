@@ -1384,6 +1384,9 @@ export const repairPhotos = pgTable(
     uploadedByUserId: uuid("uploaded_by_user_id").references(() => users.id, {
       onDelete: "set null",
     }),
+    onedrivePath: text("onedrive_path"),
+    onedriveFolderUrl: text("onedrive_folder_url"),
+    onedriveItemId: text("onedrive_item_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

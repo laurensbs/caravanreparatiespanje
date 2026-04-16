@@ -140,7 +140,7 @@ interface RepairDetailProps {
   estimateLines?: EstimateLineItem[];
   dismissedWorkshopItems?: DismissedWorkshopItem[];
   partCategories?: PartCategory[];
-  photos?: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string }[];
+  photos?: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string; onedriveFolderUrl?: string | null; onedrivePath?: string | null }[];
   timeEntries?: any[];
   activeTimers?: any[];
   syncState?: any;
@@ -1417,52 +1417,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           </div>
 
           {/* Photos */}
-          {photos.length > 0 && (
-            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold flex items-center gap-2 mb-4">
-                <Camera className="h-4 w-4" />
-                Photos
-                <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
-              </h3>
-              <div className="space-y-4">
-                {(() => {
-                  const taskPhotos = photos.filter(p => p.repairTaskId);
-                  const generalPhotos = photos.filter(p => !p.repairTaskId);
-                  const grouped = taskPhotos.reduce<Record<string, typeof photos>>((acc, p) => {
-                    const key = p.repairTaskId!;
-                    if (!acc[key]) acc[key] = [];
-                    acc[key].push(p);
-                    return acc;
-                  }, {});
-                  const taskName = (taskId: string) => tasks.find(t => t.id === taskId)?.title ?? "Task";
-                  return (
-                    <>
-                      {Object.entries(grouped).map(([taskId, taskPics]) => (
-                        <div key={taskId} className="space-y-2">
-                          <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500">{taskName(taskId)}</h4>
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                            {taskPics.map(photo => (
-                              <PhotoCard key={photo.id} photo={photo} />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                      {generalPhotos.length > 0 && (
-                        <div className="space-y-2">
-                          {taskPhotos.length > 0 && <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500">General</h4>}
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                            {generalPhotos.map(photo => (
-                              <PhotoCard key={photo.id} photo={photo} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
+          <PhotosSection photos={photos} tasks={tasks} jobId={job.id} />
 
           {/* Garage Activity Timeline */}
           {garageActivity.length > 0 && (
@@ -1849,48 +1804,195 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
 function PhotoCard({ photo }: { photo: { id: string; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; createdAt: Date | string } }) {
   const [deleting, startDelete] = useTransition();
+  const [expanded, setExpanded] = useState(false);
   const router = useRouter();
 
   return (
-    <div className="group relative rounded-lg overflow-hidden border border-border/50 bg-muted/20">
-      <a href={photo.url} target="_blank" rel="noopener noreferrer">
-        <img
-          src={photo.thumbnailUrl || photo.url}
-          alt={photo.caption || "Photo"}
-          className="aspect-square w-full object-cover"
-        />
-      </a>
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end justify-center gap-1 p-1 opacity-0 group-hover:opacity-100">
-        <a
-          href={photo.url}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-md bg-white/90 p-1.5 hover:bg-white transition-colors"
-        >
-          <Download className="h-3.5 w-3.5 text-foreground" />
-        </a>
-        <button
-          disabled={deleting}
-          onClick={() => {
-            startDelete(async () => {
-              try {
-                await deleteRepairPhoto(photo.id);
-                toast.success("Photo deleted");
-                router.refresh();
-              } catch {
-                toast.error("Failed to delete photo");
-              }
-            });
-          }}
-          className="rounded-md bg-white/90 p-1.5 hover:bg-red-100 transition-colors disabled:opacity-50"
-        >
-          <Trash2 className="h-3.5 w-3.5 text-red-600" />
+    <>
+      <div className="group relative rounded-lg overflow-hidden border border-border/50 bg-muted/20">
+        <button onClick={() => setExpanded(true)} className="w-full">
+          <img
+            src={photo.thumbnailUrl || photo.url}
+            alt={photo.caption || "Photo"}
+            className="aspect-square w-full object-cover"
+          />
         </button>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end justify-center gap-1 p-1 opacity-0 group-hover:opacity-100">
+          <a
+            href={photo.url}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md bg-white/90 p-1.5 hover:bg-white transition-colors"
+          >
+            <Download className="h-3.5 w-3.5 text-foreground" />
+          </a>
+          <button
+            disabled={deleting}
+            onClick={() => {
+              startDelete(async () => {
+                try {
+                  await deleteRepairPhoto(photo.id);
+                  toast.success("Photo deleted");
+                  router.refresh();
+                } catch {
+                  toast.error("Failed to delete photo");
+                }
+              });
+            }}
+            className="rounded-md bg-white/90 p-1.5 hover:bg-red-100 transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-red-600" />
+          </button>
+        </div>
+        {photo.caption && (
+          <p className="px-1.5 py-1 text-[10px] text-muted-foreground truncate">{photo.caption}</p>
+        )}
       </div>
-      {photo.caption && (
-        <p className="px-1.5 py-1 text-[10px] text-muted-foreground truncate">{photo.caption}</p>
+
+      {/* Lightbox */}
+      {expanded && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setExpanded(false)}>
+          <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors" onClick={() => setExpanded(false)}>
+            <XIcon className="h-5 w-5" />
+          </button>
+          <img src={photo.url} alt={photo.caption || ""} className="max-w-full max-h-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+        </div>
       )}
+    </>
+  );
+}
+
+// ─── Photos Section with OneDrive link + upload ───
+
+function PhotosSection({
+  photos,
+  tasks,
+  jobId,
+}: {
+  photos: { id: string; repairJobId: string; repairTaskId: string | null; findingId: string | null; url: string; thumbnailUrl: string | null; caption: string | null; photoType: string | null; uploadedByUserId: string | null; createdAt: Date | string; onedriveFolderUrl?: string | null; onedrivePath?: string | null }[];
+  tasks: RepairTask[];
+  jobId: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  // Get the OneDrive folder URL from the first photo that has it
+  const onedriveFolderUrl = photos.find(p => p.onedriveFolderUrl)?.onedriveFolderUrl;
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    let successCount = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("repairJobId", jobId);
+        formData.append("photoType", "general");
+        const res = await fetch("/api/photos/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Upload failed");
+        }
+        successCount++;
+      } catch (err: any) {
+        toast.error(`${file.name}: ${err?.message || "Upload failed"}`);
+      }
+    }
+    if (successCount > 0) {
+      toast.success(`${successCount} photo${successCount > 1 ? "s" : ""} uploaded to OneDrive`);
+      router.refresh();
+    }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  return (
+    <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold flex items-center gap-2">
+          <Camera className="h-4 w-4" />
+          Photos
+          {photos.length > 0 && (
+            <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
+          )}
+        </h3>
+        <div className="flex items-center gap-2">
+          {onedriveFolderUrl && (
+            <a
+              href={onedriveFolderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 px-2.5 h-7 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10.051 8.149L3.2 12.48l6.851 3.951 6.851-3.95-6.851-4.332zM20.8 12.48l-3.248-1.874-3.602 2.078 3.602 2.078L20.8 12.48zM3.2 13.598v4.164l6.851 3.951v-4.164L3.2 13.598zM10.949 17.549v4.164l6.851-3.951v-4.164l-6.851 3.951zM17.552 9.488L20.8 11.362V7.198l-3.248 1.874zM10.051 2.287L3.2 6.618l6.851 3.951 6.851-3.95-6.851-4.332z"/></svg>
+              OneDrive Map
+            </a>
+          )}
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 h-7 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            {uploading ? (
+              <><RefreshCw className="h-3 w-3 animate-spin" /> Uploading...</>
+            ) : (
+              <><Plus className="h-3 w-3" /> Upload</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {photos.length > 0 ? (
+        <div className="space-y-4">
+          {(() => {
+            const taskPhotos = photos.filter(p => p.repairTaskId);
+            const generalPhotos = photos.filter(p => !p.repairTaskId);
+            const grouped = taskPhotos.reduce<Record<string, typeof photos>>((acc, p) => {
+              const key = p.repairTaskId!;
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(p);
+              return acc;
+            }, {});
+            const taskName = (taskId: string) => tasks.find(t => t.id === taskId)?.title ?? "Task";
+            return (
+              <>
+                {Object.entries(grouped).map(([taskId, taskPics]) => (
+                  <div key={taskId} className="space-y-2">
+                    <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500">{taskName(taskId)}</h4>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                      {taskPics.map(photo => (
+                        <PhotoCard key={photo.id} photo={photo} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {generalPhotos.length > 0 && (
+                  <div className="space-y-2">
+                    {taskPhotos.length > 0 && <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500">General</h4>}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                      {generalPhotos.map(photo => (
+                        <PhotoCard key={photo.id} photo={photo} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : (
+        <div className="text-center py-6">
+          <Camera className="h-8 w-8 text-gray-200 dark:text-gray-700 mx-auto mb-2" />
+          <p className="text-xs text-gray-400 dark:text-gray-500">No photos yet</p>
+          <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-0.5">Photos uploaded from the garage portal will appear here</p>
+        </div>
+      )}
+
+      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
     </div>
   );
 }

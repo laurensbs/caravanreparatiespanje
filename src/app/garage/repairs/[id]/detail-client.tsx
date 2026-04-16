@@ -10,6 +10,7 @@ import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
+import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { addGarageComment, suggestExtraTask, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { GarageTimer } from "@/components/garage/timer";
@@ -133,8 +134,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
 
-  // Collapsible sections
-  const [showPhotos, setShowPhotos] = useState(false);
+  // Collapsible sections (photos now always visible)
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -595,33 +595,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           </div>
         )}
 
-        {/* ── Photos (collapsible) ── */}
-        {repair.photos.length > 0 && (
-          <>
-            <button
-              onClick={() => setShowPhotos(!showPhotos)}
-              className="w-full flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3.5 shadow-sm active:bg-gray-50 transition-all"
-            >
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {t("Photos", "Fotos", "Foto's")} ({repair.photos.length})
-              </span>
-              <span className="text-gray-300 text-sm">{showPhotos ? "▲" : "▼"}</span>
-            </button>
-            {showPhotos && (
-              <div className="grid grid-cols-3 gap-2 -mt-2">
-                {repair.photos.map((photo) => (
-                  <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-gray-100 shadow-sm">
-                    <img
-                      src={photo.thumbnailUrl ?? photo.url}
-                      alt={photo.caption ?? ""}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+        {/* ── Photos — always visible, prominent upload ── */}
+        <GaragePhotoUpload
+          repairJobId={repair.id}
+          photos={repair.photos.filter(p => !p.repairTaskId).map(p => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
+          onUpdate={handleRefresh}
+          t={t}
+        />
 
       </div>
 

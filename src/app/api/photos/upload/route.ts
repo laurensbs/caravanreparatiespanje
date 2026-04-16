@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import sharp from "sharp";
 import { db } from "@/lib/db";
-import { repairPhotos } from "@/lib/db/schema";
-import { requireAuth } from "@/lib/auth-utils";
+import { repairPhotos, repairJobs, customers, units } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { requireAnyAuth } from "@/lib/garage-auth";
+import { uploadFile, buildRepairFolderPath } from "@/lib/onedrive";
 
 export async function POST(request: NextRequest) {
-  const session = await requireAuth();
+  const ctx = await requireAnyAuth();
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
@@ -25,24 +27,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Only images are allowed (JPEG, PNG, WebP, HEIC)" }, { status: 400 });
   }
 
-  // Limit file size to 10MB
-  if (file.size > 10 * 1024 * 1024) {
-    return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 });
+  // Limit file size to 20MB (will be compressed)
+  if (file.size > 20 * 1024 * 1024) {
+    return NextResponse.json({ error: "File too large (max 20MB)" }, { status: 400 });
   }
 
-  const blob = await put(`repairs/${repairJobId}/${Date.now()}-${file.name}`, file, {
-    access: "public",
+  // Fetch repair job details for folder path
+  const [job] = await db
+    .select({
+      publicCode: repairJobs.publicCode,
+      customerName: customers.name,
+      unitRegistration: units.registration,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .leftJoin(units, eq(repairJobs.unitId, units.id))
+    .where(eq(repairJobs.id, repairJobId));
+
+  if (!job) {
+    return NextResponse.json({ error: "Repair job not found" }, { status: 404 });
+  }
+
+  // Compress image with sharp
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  const compressed = await sharp(buffer)
+    .rotate() // auto-rotate based on EXIF
+    .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 75, mozjpeg: true })
+    .toBuffer();
+
+  // Build OneDrive folder path and file name
+  const folderPath = buildRepairFolderPath({
+    customerName: job.customerName,
+    unitRegistration: job.unitRegistration,
+    repairCode: job.publicCode,
   });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const originalName = file.name.replace(/\.[^.]+$/, "");
+  const fileName = `${timestamp}_${originalName}.jpg`;
+
+  // Upload to OneDrive
+  const result = await uploadFile(folderPath, fileName, compressed, "image/jpeg");
 
   const [photo] = await db.insert(repairPhotos).values({
     repairJobId,
     repairTaskId: repairTaskId || null,
     findingId: findingId || null,
-    url: blob.url,
+    url: result.downloadUrl,
     thumbnailUrl: null,
     caption: caption || null,
     photoType,
-    uploadedByUserId: session.user.id,
+    uploadedByUserId: ctx.userId,
+    onedrivePath: result.drivePath,
+    onedriveFolderUrl: result.folderWebUrl,
+    onedriveItemId: result.itemId,
   }).returning();
 
   return NextResponse.json({ photo });

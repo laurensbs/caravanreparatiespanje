@@ -7,10 +7,10 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Referrer info only within same origin
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Disable browser features not needed
+  // Disable browser features not needed (allow camera for garage portal)
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=()",
+    value: "camera=(self), microphone=(), geolocation=(), payment=()",
   },
   // Force HTTPS for 1 year
   {
@@ -28,10 +28,10 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       // Scripts: self + nonce-based inline (Next.js injects inline scripts)
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      // API calls: self + Holded + Vercel Blob
-      "connect-src 'self' https://api.holded.com https://*.public.blob.vercel-storage.com wss:",
-      // Images: self + Vercel Blob + data URIs
-      "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com",
+      // API calls: self + Holded + Vercel Blob + Microsoft Graph + OneDrive
+      "connect-src 'self' https://api.holded.com https://*.public.blob.vercel-storage.com https://graph.microsoft.com https://*.sharepoint.com wss:",
+      // Images: self + Vercel Blob + OneDrive/SharePoint + data URIs
+      "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://*.sharepoint.com https://*.sharepoint-df.com",
       "frame-src 'none'",
       "object-src 'none'",
       "base-uri 'self'",
@@ -41,7 +41,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["bcryptjs"],
+  serverExternalPackages: ["bcryptjs", "sharp"],
   async headers() {
     return [
       {

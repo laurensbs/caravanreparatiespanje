@@ -84,7 +84,7 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
     <div>
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs text-muted-foreground font-medium flex items-center gap-2">
-          <span>``
+          <span>
             Tasks
             {tasks.length > 0 && (
               <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${

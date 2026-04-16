@@ -1036,3 +1036,37 @@ export async function adminSendBackRepair(repairJobId: string, note?: string) {
   revalidatePath(`/repairs/${repairJobId}`);
   return { success: true };
 }
+
+export async function searchRepairJobsForPicker(query: string) {
+  await requireAuth();
+  if (!query || query.length < 2) return [];
+
+  const searchTerm = `%${query}%`;
+  const results = await db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      status: repairJobs.status,
+      customerName: customers.name,
+      unitRegistration: units.registration,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .leftJoin(units, eq(repairJobs.unitId, units.id))
+    .where(
+      and(
+        isNull(repairJobs.deletedAt),
+        or(
+          ilike(repairJobs.publicCode, searchTerm),
+          ilike(repairJobs.title, searchTerm),
+          ilike(customers.name, searchTerm),
+          ilike(units.registration, searchTerm),
+        ),
+      )
+    )
+    .orderBy(desc(repairJobs.updatedAt))
+    .limit(10);
+
+  return results;
+}

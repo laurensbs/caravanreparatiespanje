@@ -231,6 +231,7 @@ export async function createPartRequest(data: {
   markupPercent?: string;
   supplierId?: string;
   notes?: string;
+  requestType?: "part" | "equipment";
 }) {
   await requireRole("staff");
 
@@ -275,6 +276,7 @@ export async function createPartRequest(data: {
       supplierId: data.supplierId ?? null,
       status: "requested",
       notes: data.notes ?? null,
+      requestType: data.requestType ?? "part",
     })
     .returning();
 

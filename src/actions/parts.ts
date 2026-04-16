@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { suppliers, parts, partRequests, repairJobs, partCategories } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
-import { eq, desc, sql, asc, and } from "drizzle-orm";
+import { eq, desc, sql, asc, and, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit";
 
@@ -282,6 +282,20 @@ export async function createPartRequest(data: {
 
   revalidatePath(`/repairs/${data.repairJobId}`);
   revalidatePath("/parts");
+
+  // Auto-set repair to waiting_parts if it's in a workable status
+  const [job] = await db
+    .select({ status: repairJobs.status })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, data.repairJobId));
+  if (job && ["new", "todo", "scheduled", "in_progress"].includes(job.status)) {
+    await db
+      .update(repairJobs)
+      .set({ status: "waiting_parts", updatedAt: new Date() })
+      .where(eq(repairJobs.id, data.repairJobId));
+    revalidatePath(`/repairs/${data.repairJobId}`);
+  }
+
   return request;
 }
 
@@ -300,7 +314,37 @@ export async function updatePartRequestStatus(
     .returning({ repairJobId: partRequests.repairJobId });
 
   revalidatePath("/parts");
-  if (pr) revalidatePath(`/repairs/${pr.repairJobId}`);
+  if (pr) {
+    revalidatePath(`/repairs/${pr.repairJobId}`);
+
+    // When marking as received, check if ALL pending parts for this repair are now received
+    if (status === "received") {
+      const [pending] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(partRequests)
+        .where(
+          and(
+            eq(partRequests.repairJobId, pr.repairJobId),
+            sql`${partRequests.status} in ('requested', 'ordered', 'shipped')`,
+            ne(partRequests.requestType, "equipment")
+          )
+        );
+      if (Number(pending?.count ?? 0) === 0) {
+        // All parts received — revert to todo if currently waiting_parts
+        const [job] = await db
+          .select({ status: repairJobs.status })
+          .from(repairJobs)
+          .where(eq(repairJobs.id, pr.repairJobId));
+        if (job?.status === "waiting_parts") {
+          await db
+            .update(repairJobs)
+            .set({ status: "todo", updatedAt: new Date() })
+            .where(eq(repairJobs.id, pr.repairJobId));
+          revalidatePath(`/repairs/${pr.repairJobId}`);
+        }
+      }
+    }
+  }
 }
 
 export async function updatePartRequest(

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
+import { startTimer } from "@/actions/time-entries";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import type { RepairTask, RepairTaskStatus } from "@/types";
 import { toast } from "sonner";
@@ -38,6 +39,9 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, photos = [] }
     }
     startTransition(async () => {
       await updateTaskStatus(task.id, newStatus);
+      if (newStatus === "in_progress") {
+        await startTimer(repairJobId);
+      }
       onUpdate();
     });
   }

@@ -175,18 +175,18 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   // Flags
   const flags: { key: string; label: string; color: string }[] = [];
-  if (repair.waterDamageRiskFlag) flags.push({ key: "water", label: t("Water Damage", "Daño Agua", "Waterschade"), color: "bg-blue-100 text-blue-800" });
-  if (repair.safetyFlag) flags.push({ key: "safety", label: t("Safety", "Seguridad", "Veiligheid"), color: "bg-red-100 text-red-800" });
-  if (repair.tyresFlag) flags.push({ key: "tyres", label: t("Tyres", "Neumáticos", "Banden"), color: "bg-gray-100 text-gray-800" });
-  if (repair.lightsFlag) flags.push({ key: "lights", label: t("Lights", "Luces", "Verlichting"), color: "bg-yellow-100 text-yellow-800" });
-  if (repair.brakesFlag) flags.push({ key: "brakes", label: t("Brakes", "Frenos", "Remmen"), color: "bg-red-100 text-red-800" });
-  if (repair.windowsFlag) flags.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), color: "bg-cyan-100 text-cyan-800" });
-  if (repair.sealsFlag) flags.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), color: "bg-teal-100 text-teal-800" });
-  if (repair.partsRequiredFlag) flags.push({ key: "parts", label: t("Parts Needed", "Piezas", "Onderdelen Nodig"), color: "bg-orange-100 text-orange-800" });
-  if (repair.followUpRequiredFlag) flags.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), color: "bg-purple-100 text-purple-800" });
+  if (repair.waterDamageRiskFlag) flags.push({ key: "water", label: t("Water Damage", "Daño Agua", "Waterschade"), color: "bg-blue-400/10 text-blue-400" });
+  if (repair.safetyFlag) flags.push({ key: "safety", label: t("Safety", "Seguridad", "Veiligheid"), color: "bg-red-400/10 text-red-400" });
+  if (repair.tyresFlag) flags.push({ key: "tyres", label: t("Tyres", "Neumáticos", "Banden"), color: "bg-white/[0.06] text-white/60" });
+  if (repair.lightsFlag) flags.push({ key: "lights", label: t("Lights", "Luces", "Verlichting"), color: "bg-amber-400/10 text-amber-400" });
+  if (repair.brakesFlag) flags.push({ key: "brakes", label: t("Brakes", "Frenos", "Remmen"), color: "bg-red-400/10 text-red-400" });
+  if (repair.windowsFlag) flags.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), color: "bg-cyan-400/10 text-cyan-400" });
+  if (repair.sealsFlag) flags.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), color: "bg-teal-400/10 text-teal-400" });
+  if (repair.partsRequiredFlag) flags.push({ key: "parts", label: t("Parts Needed", "Piezas", "Onderdelen Nodig"), color: "bg-orange-400/10 text-orange-400" });
+  if (repair.followUpRequiredFlag) flags.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), color: "bg-violet-400/10 text-violet-400" });
   if (repair.customFlags && Array.isArray(repair.customFlags)) {
     for (const cf of repair.customFlags as string[]) {
-      flags.push({ key: `custom-${cf}`, label: cf, color: "bg-violet-100 text-violet-800" });
+      flags.push({ key: `custom-${cf}`, label: cf, color: "bg-violet-400/10 text-violet-400" });
     }
   }
 
@@ -252,16 +252,16 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
 
       {/* ─── HEADER ─── */}
-      <header className="shrink-0 bg-white border-b border-gray-100 safe-area-pt">
+      <header className="shrink-0 bg-gray-950 border-b border-white/[0.06] safe-area-pt">
         <div className="max-w-4xl mx-auto px-4">
           {/* Nav row */}
           <div className="h-12 flex items-center justify-between">
             <button
               onClick={() => router.push("/garage")}
-              className="flex items-center gap-0.5 text-sm font-medium text-gray-400 active:text-gray-600 transition-colors -ml-1"
+              className="flex items-center gap-0.5 text-sm font-medium text-white/40 active:text-white/60 transition-colors -ml-1"
             >
               <ChevronLeft className="h-5 w-5" />
               {t("Back", "Atrás", "Terug")}
@@ -269,7 +269,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             <div className="flex items-center gap-1">
               <button
                 onClick={handleRefresh}
-                className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-400 active:bg-gray-50"
+                className="h-9 w-9 flex items-center justify-center rounded-lg text-white/40 active:bg-white/[0.06]"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -279,39 +279,39 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           {/* Vehicle identity */}
           <div className="pb-3">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-lg font-bold text-gray-900 tracking-tight font-mono">
+              <h1 className="text-lg font-bold text-white tracking-tight font-mono">
                 {repair.unitRegistration || repair.publicCode || "—"}
               </h1>
               {(repair.priority === "urgent" || repair.priority === "high") && (
                 <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                  repair.priority === "urgent" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"
+                  repair.priority === "urgent" ? "bg-red-400/10 text-red-400" : "bg-amber-400/10 text-amber-400"
                 }`}>
                   {PRIORITY_LABELS[repair.priority as Priority]}
                 </span>
               )}
               <span className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                repair.status === "in_progress" ? "bg-sky-50 text-sky-600" :
-                repair.status === "ready_for_check" ? "bg-violet-50 text-violet-600" :
-                repair.status === "completed" ? "bg-emerald-50 text-emerald-600" :
-                repair.status === "blocked" ? "bg-red-50 text-red-600" :
-                "bg-gray-50 text-gray-500"
+                repair.status === "in_progress" ? "bg-sky-400/10 text-sky-400" :
+                repair.status === "ready_for_check" ? "bg-violet-400/10 text-violet-400" :
+                repair.status === "completed" ? "bg-emerald-400/10 text-emerald-400" :
+                repair.status === "blocked" ? "bg-red-400/10 text-red-400" :
+                "bg-white/[0.06] text-white/50"
               }`}>
                 {STATUS_LABELS[repair.status as RepairStatus]}
               </span>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-white/40">
               {[repair.customerName, repair.unitBrand, repair.unitModel].filter(Boolean).join(" · ")}
             </p>
             {/* Progress bar */}
             {hasTasks && (
               <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? "bg-emerald-500" : "bg-sky-500"}`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-xs text-gray-400 tabular-nums font-medium">{doneCount}/{repair.tasks.length}</span>
+                <span className="text-xs text-white/30 tabular-nums font-medium">{doneCount}/{repair.tasks.length}</span>
               </div>
             )}
           </div>
@@ -324,16 +324,16 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Admin message banner */}
           {repair.garageAdminMessage && (
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3.5 mb-4">
+            <div className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.06] px-4 py-3.5 mb-4">
               <div className="flex items-center gap-2 mb-1">
-                <MessageSquare className="h-4 w-4 text-sky-600" />
-                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-sky-600">
+                <MessageSquare className="h-4 w-4 text-sky-400" />
+                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-sky-400">
                   {t("Office Message", "Mensaje de Oficina", "Kantoor Bericht")}
                 </h3>
               </div>
-              <p className="text-sm text-sky-900 font-medium whitespace-pre-wrap">{repair.garageAdminMessage}</p>
+              <p className="text-sm text-white/80 font-medium whitespace-pre-wrap">{repair.garageAdminMessage}</p>
               {repair.garageAdminMessageAt && (
-                <p className="text-[11px] text-sky-400 mt-1">
+                <p className="text-[11px] text-sky-400/50 mt-1">
                   {new Date(repair.garageAdminMessageAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               )}
@@ -342,23 +342,23 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Active blockers banner */}
           {activeBlockers.length > 0 && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 mb-4 space-y-3">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-500">
+            <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5 mb-4 space-y-3">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-400">
                 {t("Blocked", "Bloqueado", "Geblokkeerd")} ({activeBlockers.length})
               </h3>
               {activeBlockers.map((b) => (
                 <div key={b.id} className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="text-sm font-semibold text-red-700">
+                    <span className="text-sm font-semibold text-red-400">
                       {BLOCKER_REASON_LABELS[b.reason as BlockerReason]}
                     </span>
-                    {b.description && <p className="text-sm text-red-600/80 mt-0.5">{b.description}</p>}
-                    <p className="text-[11px] text-red-400 mt-0.5">{b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}</p>
+                    {b.description && <p className="text-sm text-red-300/70 mt-0.5">{b.description}</p>}
+                    <p className="text-[11px] text-red-400/50 mt-0.5">{b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}</p>
                   </div>
                   <button
                     onClick={() => handleResolveBlocker(b.id)}
                     disabled={isPending}
-                    className="shrink-0 rounded-lg bg-white border border-green-200 px-3 py-2 text-xs font-semibold text-green-700 active:bg-green-50"
+                    className="shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-400/20 px-3 py-2 text-xs font-semibold text-emerald-400 active:bg-emerald-500/20"
                   >
                     ✓ {t("Resolve", "Resolver", "Oplossen")}
                   </button>
@@ -369,11 +369,11 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Final check failed */}
           {repair.finalCheckStatus === "failed" && repair.finalCheckNotes && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 mb-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-500 mb-1">
+            <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5 mb-4">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-400 mb-1">
                 {t("Final Check Failed", "Control Final Fallido", "Natest Afgekeurd")}
               </h3>
-              <p className="text-sm text-red-800">{repair.finalCheckNotes}</p>
+              <p className="text-sm text-red-300">{repair.finalCheckNotes}</p>
             </div>
           )}
 
@@ -396,12 +396,12 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                       disabled={isPending}
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all active:scale-[0.97] ${
                         isAssigned
-                          ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
-                          : "bg-white border border-gray-200 text-gray-500"
+                          ? "bg-emerald-400/10 border border-emerald-400/20 text-emerald-400"
+                          : "bg-white/[0.03] border border-white/[0.06] text-white/50"
                       }`}
                     >
                       <span className={`flex items-center justify-center h-6 w-6 rounded-full text-[10px] font-bold text-white ${
-                        isAssigned ? "bg-emerald-500" : "bg-gray-300"
+                        isAssigned ? "bg-emerald-500" : "bg-white/20"
                       }`}>
                         {(user.name ?? "?").charAt(0).toUpperCase()}
                       </span>
@@ -434,25 +434,25 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
               {/* Office notes */}
               {(repair.descriptionRaw || repair.notesRaw || repair.internalComments) && (
-                <div className="rounded-xl bg-white border border-gray-200/60 pl-4 pr-4 py-3.5 border-l-[3px] border-l-amber-400">
-                  <p className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1.5">
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] pl-4 pr-4 py-3.5 border-l-[3px] border-l-amber-400/50">
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-white/30 mb-1.5">
                     {t("Office Notes", "Notas de Oficina", "Kantoor Notities")}
                   </p>
-                  {repair.descriptionRaw && <p className="text-sm whitespace-pre-wrap text-gray-700 leading-relaxed">{repair.descriptionRaw}</p>}
-                  {repair.notesRaw && <p className="text-sm whitespace-pre-wrap mt-1.5 text-gray-500 leading-relaxed">{repair.notesRaw}</p>}
-                  {repair.internalComments && <p className="text-sm whitespace-pre-wrap mt-1.5 text-gray-400 italic leading-relaxed">{repair.internalComments}</p>}
+                  {repair.descriptionRaw && <p className="text-sm whitespace-pre-wrap text-white/70 leading-relaxed">{repair.descriptionRaw}</p>}
+                  {repair.notesRaw && <p className="text-sm whitespace-pre-wrap mt-1.5 text-white/50 leading-relaxed">{repair.notesRaw}</p>}
+                  {repair.internalComments && <p className="text-sm whitespace-pre-wrap mt-1.5 text-white/30 italic leading-relaxed">{repair.internalComments}</p>}
                 </div>
               )}
 
               {/* Task list */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-semibold text-gray-900">
+                  <h2 className="text-sm font-semibold text-white/90">
                     {t("Tasks", "Tareas", "Taken")}
                   </h2>
                   <button
                     onClick={() => setShowSuggest(true)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 h-8 text-xs font-medium text-gray-600 active:bg-gray-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 h-8 text-xs font-medium text-white/50 active:bg-white/[0.06]"
                   >
                     <Plus className="h-3 w-3" />
                     {t("Task", "Tarea", "Taak")}
@@ -472,9 +472,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-white border border-gray-100 py-8 px-4 text-center">
-                    <ClipboardList className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">{t("No tasks yet", "Sin tareas todavía", "Nog geen taken")}</p>
+                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] py-8 px-4 text-center">
+                    <ClipboardList className="h-8 w-8 text-white/10 mx-auto mb-2" />
+                    <p className="text-sm text-white/30">{t("No tasks yet", "Sin tareas todav\u00eda", "Nog geen taken")}</p>
                   </div>
                 )}
               </div>
@@ -489,14 +489,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 .filter((task) => repair.photos.some((p) => p.repairTaskId === task.id))
                 .map((task) => (
                   <div key={task.id}>
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <ClipboardList className="h-3 w-3" />
                       {task.title}
-                      <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-bold">
+                      <span className="text-[10px] bg-white/[0.06] text-white/40 rounded-full px-1.5 py-0.5 font-bold">
                         {repair.photos.filter((p) => p.repairTaskId === task.id).length}
                       </span>
                     </h3>
-                    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
                       <div className="grid grid-cols-3 gap-0.5 p-0.5">
                         {repair.photos
                           .filter((p) => p.repairTaskId === task.id)
@@ -504,7 +504,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                             <button
                               key={photo.id}
                               onClick={() => setViewPhoto(photo.thumbnailUrl ?? photo.url)}
-                              className="aspect-square overflow-hidden bg-gray-100"
+                              className="aspect-square overflow-hidden bg-white/[0.04]"
                             >
                               <img
                                 src={photo.thumbnailUrl ?? photo.url}
@@ -521,7 +521,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               {/* General photos + upload */}
               <div>
                 {repair.photos.some((p) => p.repairTaskId) && (
-                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Camera className="h-3 w-3" />
                     {t("General", "General", "Algemeen")}
                   </h3>
@@ -541,9 +541,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             <div className="space-y-4">
               {repair.partRequests.length > 0 && (
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-semibold text-gray-900">{t("Requested Parts", "Piezas Solicitadas", "Aangevraagde Onderdelen")}</h2>
+                  <h2 className="text-sm font-semibold text-white/90">{t("Requested Parts", "Piezas Solicitadas", "Aangevraagde Onderdelen")}</h2>
                   <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                    repair.partRequests.every(p => p.status === "received") ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                    repair.partRequests.every(p => p.status === "received") ? "bg-emerald-400/10 text-emerald-400" : "bg-amber-400/10 text-amber-400"
                   }`}>
                     {repair.partRequests.filter(p => p.status === "received").length}/{repair.partRequests.length} {t("received", "recibidas", "ontvangen")}
                   </span>
@@ -551,20 +551,20 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               )}
 
               {repair.partRequests.length > 0 ? (
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
                   {repair.partRequests.map((pr, i) => (
-                    <div key={pr.id} className={`flex items-center justify-between px-4 py-3.5 text-sm ${i > 0 ? "border-t border-gray-50" : ""}`}>
+                    <div key={pr.id} className={`flex items-center justify-between px-4 py-3.5 text-sm ${i > 0 ? "border-t border-white/[0.04]" : ""}`}>
                       <div className="min-w-0">
-                        <span className="font-medium text-gray-900">{pr.partName}</span>
-                        {pr.quantity > 1 && <span className="text-gray-400 ml-1">×{pr.quantity}</span>}
-                        {pr.supplierName && <span className="text-xs text-gray-400 ml-2">{pr.supplierName}</span>}
+                        <span className="font-medium text-white/90">{pr.partName}</span>
+                        {pr.quantity > 1 && <span className="text-white/30 ml-1">×{pr.quantity}</span>}
+                        {pr.supplierName && <span className="text-xs text-white/30 ml-2">{pr.supplierName}</span>}
                       </div>
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ml-2 ${
-                        pr.status === "received" ? "bg-emerald-50 text-emerald-600" :
-                        pr.status === "shipped" ? "bg-indigo-50 text-indigo-600" :
-                        pr.status === "ordered" ? "bg-blue-50 text-blue-600" :
-                        pr.status === "cancelled" ? "bg-gray-100 text-gray-500" :
-                        "bg-amber-50 text-amber-600"
+                        pr.status === "received" ? "bg-emerald-400/10 text-emerald-400" :
+                        pr.status === "shipped" ? "bg-indigo-400/10 text-indigo-400" :
+                        pr.status === "ordered" ? "bg-blue-400/10 text-blue-400" :
+                        pr.status === "cancelled" ? "bg-white/[0.06] text-white/40" :
+                        "bg-amber-400/10 text-amber-400"
                       }`}>
                         {t(
                           pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
@@ -576,9 +576,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl bg-white border border-gray-100 py-8 px-4 text-center">
-                  <Package className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">{t("No parts requested yet", "Sin piezas solicitadas", "Nog geen onderdelen aangevraagd")}</p>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] py-8 px-4 text-center">
+                  <Package className="h-8 w-8 text-white/10 mx-auto mb-2" />
+                  <p className="text-sm text-white/30">{t("No parts requested yet", "Sin piezas solicitadas", "Nog geen onderdelen aangevraagd")}</p>
                 </div>
               )}
 
@@ -590,13 +590,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           {activeTab === "info" && (
             <div className="space-y-4">
               {/* Vehicle details */}
-              <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-50">
-                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    {t("Vehicle", "Vehículo", "Voertuig")}
+              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.04]">
+                  <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
+                    {t("Vehicle", "Veh\u00edculo", "Voertuig")}
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-white/[0.04]">
                   {repair.unitRegistration && <InfoRow label={t("Registration", "Matrícula", "Kenteken")} value={repair.unitRegistration} mono />}
                   {repair.unitBrand && <InfoRow label={t("Brand", "Marca", "Merk")} value={`${repair.unitBrand} ${repair.unitModel || ""}`} />}
                   {repair.unitYear && <InfoRow label={t("Year", "Año", "Bouwjaar")} value={String(repair.unitYear)} />}
@@ -606,7 +606,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                     <InfoRow
                       label={t("Location", "Ubicación", "Locatie")}
                       value={repair.unitCurrentPosition || repair.unitStorageLocation || ""}
-                      icon={<MapPin className="h-3 w-3 text-gray-400" />}
+                      icon={<MapPin className="h-3 w-3 text-white/30" />}
                     />
                   )}
                 </div>
@@ -614,13 +614,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
               {/* Customer */}
               {repair.customerId && (
-                <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-50">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                  <div className="px-4 py-3 border-b border-white/[0.04]">
+                    <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
                       {t("Customer", "Cliente", "Klant")}
                     </h3>
                   </div>
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-white/[0.04]">
                     {repair.customerName && <InfoRow label={t("Name", "Nombre", "Naam")} value={repair.customerName} />}
                     {repair.customerPhone && (
                       <a href={`tel:${repair.customerPhone}`} className="block">
@@ -642,13 +642,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               )}
 
               {/* Job details */}
-              <div className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-50">
-                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.04]">
+                  <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
                     {t("Job", "Trabajo", "Klus")}
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-white/[0.04]">
                   {repair.publicCode && <InfoRow label={t("Code", "Código", "Code")} value={repair.publicCode} mono />}
                   {repair.title && <InfoRow label={t("Title", "Título", "Titel")} value={repair.title} />}
                   <InfoRow label="Status" value={STATUS_LABELS[repair.status as RepairStatus] || repair.status} />
@@ -660,29 +660,29 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               {/* Findings */}
               {unresolvedFindings.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                  <h3 className="text-sm font-semibold text-white/90 mb-2">
                     {t("Issues found", "Problemas", "Bevindingen")} ({unresolvedFindings.length})
                   </h3>
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
                     {unresolvedFindings.map((f, i) => (
-                      <div key={f.id} className={`flex items-start gap-2.5 px-4 py-3 text-sm ${i > 0 ? "border-t border-gray-50" : ""}`}>
+                      <div key={f.id} className={`flex items-start gap-2.5 px-4 py-3 text-sm ${i > 0 ? "border-t border-white/[0.04]" : ""}`}>
                         <span className="text-base mt-0.5 shrink-0">{FINDING_CATEGORY_EMOJI[f.category as FindingCategory]}</span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-medium text-gray-900">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
+                            <span className="font-medium text-white/90">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
                             <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                              f.severity === "critical" ? "bg-red-50 text-red-600" : f.severity === "minor" ? "bg-gray-100 text-gray-500" : "bg-amber-50 text-amber-600"
+                              f.severity === "critical" ? "bg-red-400/10 text-red-400" : f.severity === "minor" ? "bg-white/[0.06] text-white/40" : "bg-amber-400/10 text-amber-400"
                             }`}>
                               {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
                             </span>
                             {f.requiresCustomerApproval && (
-                              <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-600 px-1.5 py-0.5 text-[10px] font-medium">
+                              <span className="inline-flex items-center rounded-full bg-orange-400/10 text-orange-400 px-1.5 py-0.5 text-[10px] font-medium">
                                 {t("Approval", "Aprobación", "Goedkeuring")}
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-500 mt-0.5">{f.description}</p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">{f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}</p>
+                          <p className="text-white/50 mt-0.5">{f.description}</p>
+                          <p className="text-[11px] text-white/25 mt-0.5">{f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                     ))}
@@ -695,7 +695,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </main>
 
       {/* ─── BOTTOM: Action bar + Tab nav ─── */}
-      <div className="shrink-0 border-t border-gray-100 bg-white/95 backdrop-blur-xl safe-area-pb z-30">
+      <div className="shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl safe-area-pb z-30">
         {/* Action buttons */}
         {isActive && (
           <div className="max-w-4xl mx-auto px-4 pt-2 pb-1">
@@ -710,7 +710,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               </button>
               <button
                 onClick={() => setShowNotDone(true)}
-                className="rounded-xl border border-gray-200 bg-white text-gray-600 h-11 px-4 text-sm font-medium active:bg-gray-50 active:scale-[0.98] transition-all flex items-center gap-1.5"
+                className="rounded-xl border border-white/[0.06] bg-white/[0.03] text-white/50 h-11 px-4 text-sm font-medium active:bg-white/[0.06] active:scale-[0.98] transition-all flex items-center gap-1.5"
               >
                 <XCircle className="h-4 w-4" />
               </button>
@@ -723,7 +723,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           <div className="flex gap-2">
             <button
               onClick={() => setShowComment(true)}
-              className="flex-1 rounded-lg bg-gray-50 h-9 text-xs font-medium text-gray-500 active:bg-gray-100 transition-all flex items-center justify-center gap-1"
+              className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
             >
               <MessageSquare className="h-3.5 w-3.5" />
               {t("Comment", "Nota", "Opmerking")}
@@ -732,14 +732,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               <>
                 <button
                   onClick={() => setShowFinding(true)}
-                  className="flex-1 rounded-lg bg-gray-50 h-9 text-xs font-medium text-gray-500 active:bg-gray-100 transition-all flex items-center justify-center gap-1"
+                  className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
                 >
                   <Flag className="h-3.5 w-3.5" />
                   {t("Issue", "Problema", "Bevinding")}
                 </button>
                 <button
                   onClick={() => setShowBlocker(true)}
-                  className="flex-1 rounded-lg bg-gray-50 h-9 text-xs font-medium text-gray-500 active:bg-gray-100 transition-all flex items-center justify-center gap-1"
+                  className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
                 >
                   <OctagonX className="h-3.5 w-3.5" />
                   {t("Block", "Bloqueo", "Blokkade")}
@@ -749,7 +749,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {allDone && repair.finalCheckStatus !== "passed" && (
               <button
                 onClick={() => setShowFinalCheck(true)}
-                className="flex-1 rounded-lg bg-amber-50 h-9 text-xs font-medium text-amber-700 active:bg-amber-100 transition-all flex items-center justify-center gap-1"
+                className="flex-1 rounded-lg bg-amber-400/10 h-9 text-xs font-medium text-amber-400 active:bg-amber-400/20 transition-all flex items-center justify-center gap-1"
               >
                 {t("Final Check", "Control", "Natest")}
               </button>
@@ -767,7 +767,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors relative ${
-                    active ? "text-gray-900" : "text-gray-400"
+                    active ? "text-white" : "text-white/30"
                   }`}
                 >
                   <div className="relative">
@@ -779,7 +779,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                     )}
                   </div>
                   <span className="text-[10px] font-medium">{tab.label}</span>
-                  {active && <span className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-gray-900 rounded-full" />}
+                  {active && <span className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-white rounded-full" />}
                 </button>
               );
             })}
@@ -795,7 +795,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Comment Dialog */}
       <Dialog open={showComment} onOpenChange={setShowComment}>
-        <DialogContent className="rounded-2xl max-w-md">
+        <DialogContent className="rounded-2xl max-w-md bg-gray-900 border-white/[0.08] text-white">
           <DialogHeader>
             <DialogTitle>{t("Add Comment", "Añadir Comentario", "Opmerking Toevoegen")}</DialogTitle>
           </DialogHeader>
@@ -804,7 +804,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder={t("Type your message...", "Escribe tu mensaje...", "Typ je bericht...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
               autoFocus
             />
             <div className="flex gap-2">
@@ -817,16 +817,16 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Not Done Dialog */}
       <Dialog open={showNotDone} onOpenChange={setShowNotDone}>
-        <DialogContent className="rounded-2xl max-w-md">
+        <DialogContent className="rounded-2xl max-w-md bg-gray-900 border-white/[0.08] text-white">
           <DialogHeader>
-            <DialogTitle className="text-amber-700">{t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}</DialogTitle>
+            <DialogTitle className="text-amber-400">{t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-1">
             <textarea
               value={notDoneReason}
               onChange={(e) => setNotDoneReason(e.target.value)}
               placeholder={t("Describe the problem...", "Describe el problema...", "Beschrijf het probleem...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
               autoFocus
             />
             <div className="flex gap-2">
@@ -839,7 +839,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Suggest Task Dialog */}
       <Dialog open={showSuggest} onOpenChange={setShowSuggest}>
-        <DialogContent className="rounded-2xl max-w-md">
+        <DialogContent className="rounded-2xl max-w-md bg-gray-900 border-white/[0.08] text-white">
           <DialogHeader>
             <DialogTitle>{t("Suggest Extra Task", "Sugerir Tarea Extra", "Extra Taak Voorstellen")}</DialogTitle>
           </DialogHeader>
@@ -848,14 +848,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               value={suggestTitle}
               onChange={(e) => setSuggestTitle(e.target.value)}
               placeholder={t("Task name...", "Nombre de tarea...", "Naam van taak...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
               autoFocus
             />
             <textarea
               value={suggestDesc}
               onChange={(e) => setSuggestDesc(e.target.value)}
               placeholder={t("Description (optional)...", "Descripción (opcional)...", "Beschrijving (optioneel)...")}
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
             />
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-11 rounded-xl">{t("Cancel", "Cancelar", "Annuleren")}</Button>
@@ -883,8 +883,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 function InfoRow({ label, value, mono, link, icon }: { label: string; value: string; mono?: boolean; link?: boolean; icon?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      <span className="text-sm text-gray-400">{label}</span>
-      <span className={`text-sm text-right ${link ? "text-sky-600" : "text-gray-900"} ${mono ? "font-mono" : ""} flex items-center gap-1`}>
+      <span className="text-sm text-white/30">{label}</span>
+      <span className={`text-sm text-right ${link ? "text-sky-400" : "text-white/80"} ${mono ? "font-mono" : ""} flex items-center gap-1`}>
         {icon}
         {value}
       </span>

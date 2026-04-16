@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { useLanguage } from "@/components/garage/language-toggle";
+import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { garageLock } from "@/actions/garage-auth";
 import {
@@ -179,6 +179,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [] 
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <LanguageToggle />
             <button onClick={handleRefresh} className="h-10 w-10 flex items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:scale-95 transition-all">
               <RefreshCw className={`h-4.5 w-4.5 ${refreshing ? "animate-spin" : ""}`} />
             </button>

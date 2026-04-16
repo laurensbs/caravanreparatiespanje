@@ -58,7 +58,7 @@ export function LanguageToggle() {
   return (
     <button
       onClick={() => setLang(next.code)}
-      className="flex h-11 w-11 items-center justify-center rounded-xl text-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-150"
+      className="flex h-11 w-11 items-center justify-center rounded-xl text-xl hover:bg-white/[0.06] active:bg-white/[0.1] transition-all duration-150"
     >
       {LANG_OPTIONS.find((l) => l.code === lang)?.flag}
     </button>
@@ -70,15 +70,15 @@ export function LanguageBar() {
   const { lang, setLang } = useLanguage();
 
   return (
-    <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
+    <div className="flex items-center gap-1 rounded-xl bg-white/[0.06] p-1">
       {LANG_OPTIONS.map((opt) => (
         <button
           key={opt.code}
           onClick={() => setLang(opt.code)}
           className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-sm font-semibold transition-all duration-150 ${
             lang === opt.code
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-400 active:bg-gray-200"
+              ? "bg-white/20 text-white shadow-sm"
+              : "text-white/40 active:bg-white/[0.1]"
           }`}
         >
           <span className="text-base">{opt.flag}</span>

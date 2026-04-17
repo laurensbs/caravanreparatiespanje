@@ -166,6 +166,14 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
     { key: "done", label: t("Done", "Hecho", "Klaar"), count: counts.done },
   ];
 
+  const selectableUsers = useMemo(() => {
+    const excludedNames = new Set(["laurens", "jake", "johan"]);
+    return allUsers.filter((user) => {
+      const normalizedName = (user.name ?? "").trim().toLowerCase();
+      return normalizedName && !excludedNames.has(normalizedName);
+    });
+  }, [allUsers]);
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-950 text-white">
       {/* ─── Top bar ─── */}
@@ -271,7 +279,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
               {t("Select a person to start", "Selecciona una persona", "Selecteer een persoon om te starten")}
             </p>
             <div className="flex flex-col gap-2">
-              {allUsers.map((user) => (
+              {selectableUsers.map((user) => (
                 <button
                   key={user.id}
                   disabled={isStarting}

@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Wrench,
   Users,
   Truck,
   ChevronsLeft,
@@ -21,7 +20,6 @@ import {
   ClipboardList,
   MessageSquare,
   Shield,
-  Settings,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -51,7 +49,6 @@ const navItems: NavItem[] = [
   // FINANCE
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
   { label: "Audit", href: "/audit", icon: <Shield className="h-[18px] w-[18px]" />, group: "Admin", minRole: "admin" },
-  { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, group: "Admin", minRole: "admin" },
   { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
 

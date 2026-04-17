@@ -30,9 +30,9 @@ import {
   Loader2,
   MessageSquare,
   Pencil,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FeedbackProductUpdates } from "./feedback-product-updates";
 
 type FeedbackItem = {
   id: string;
@@ -61,7 +61,7 @@ const statusConfig = {
     className: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   },
   in_progress: {
-    label: "In Progress",
+    label: "In progress",
     icon: Clock,
     variant: "secondary" as const,
     className: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
@@ -92,9 +92,8 @@ export function FeedbackClient({
   const [showForm, setShowForm] = useState(false);
   const isAdmin = userRole === "admin" || userRole === "manager";
 
-  /** Snapshot of server “unread reply” flags on first paint so ribbons stay after mark-seen + refresh. */
   const [initialUnreadReplyIds] = useState(
-    () => new Set(items.filter((i) => i.authorHasUnreadResponse).map((i) => i.id))
+    () => new Set(items.filter((i) => i.authorHasUnreadResponse).map((i) => i.id)),
   );
 
   useEffect(() => {
@@ -118,7 +117,7 @@ export function FeedbackClient({
 
   function handleStatusChange(
     id: string,
-    status: "open" | "in_progress" | "done" | "dismissed"
+    status: "open" | "in_progress" | "done" | "dismissed",
   ) {
     startTransition(async () => {
       await updateFeedbackStatus(id, status);
@@ -141,10 +140,9 @@ export function FeedbackClient({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Feedback</h1>
-            <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted-foreground">
-              Hieronder staat eerst wat er nieuw is in het systeem (in gewone taal, met scroll voor oudere updates). Daaronder kun je zelf een
-              wens doorgeven; managers kunnen daarop antwoorden. Zolang er een ongelezen antwoord is, zie je op een groot scherm een stipje
-              bij het Feedback-icoon tot je deze pagina opent.
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              Suggest improvements or report issues. Managers can reply in the thread. When there is an unread reply, a dot appears on the
+              Feedback icon in the header (on larger screens) until you open this page.
             </p>
           </div>
           <Button
@@ -153,14 +151,12 @@ export function FeedbackClient({
             className="h-11 w-full shrink-0 touch-manipulation gap-2 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.98] sm:h-11 sm:w-auto sm:px-6"
           >
             <MessageSquarePlus className="h-4 w-4" aria-hidden />
-            {showForm ? "Close" : "New request"}
+            {showForm ? "Close form" : "New request"}
           </Button>
         </div>
       </header>
 
       <div className="space-y-6 border-b border-border/40 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
-        <FeedbackProductUpdates openRequestCount={openItems.length} doneRequestCount={closedItems.length} />
-
         {showForm && (
           <Card className="animate-slide-up border-primary/20 shadow-sm">
             <CardHeader className="space-y-1 px-4 pt-4 sm:px-6 sm:pt-6">
@@ -203,56 +199,77 @@ export function FeedbackClient({
           </Card>
         )}
 
-        <div id="feedback-queue" className="scroll-mt-6 space-y-3">
-          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border/50 pb-2">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">Your open requests</h2>
-            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-              {openItems.length} open
-            </span>
+        <section id="feedback-queue" className="scroll-mt-6">
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+            <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/25 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold tracking-tight text-foreground">Open requests</h2>
+                <p className="text-xs text-muted-foreground">Active items we have not marked as done yet.</p>
+              </div>
+              <Badge variant="secondary" className="w-fit shrink-0 tabular-nums">
+                {openItems.length} open
+              </Badge>
+            </div>
+            <div className="space-y-3 p-4 sm:p-5">
+              {openItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/80 bg-muted/15 py-14 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
+                    <Inbox className="h-7 w-7 opacity-70" aria-hidden />
+                  </div>
+                  <div className="max-w-sm space-y-1 px-2">
+                    <p className="text-sm font-medium text-foreground">No open requests</p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      You are all caught up. Use <span className="font-medium text-foreground">New request</span> to suggest an improvement.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                openItems.map((item) => (
+                  <FeedbackCard
+                    key={item.id}
+                    item={item}
+                    isAdmin={isAdmin}
+                    isOwner={item.userId === currentUserId}
+                    highlightTeamReply={initialUnreadReplyIds.has(item.id)}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    isPending={isPending}
+                  />
+                ))
+              )}
+            </div>
           </div>
-          {openItems.length === 0 ? (
-            <Card className="rounded-xl border-dashed">
-              <CardContent className="px-4 py-10 text-center text-sm text-muted-foreground sm:py-12">
-                No open feedback. Tap <span className="font-medium text-foreground">New request</span> to add something.
-              </CardContent>
-            </Card>
-          ) : (
-            openItems.map((item) => (
-              <FeedbackCard
-                key={item.id}
-                item={item}
-                isAdmin={isAdmin}
-                isOwner={item.userId === currentUserId}
-                highlightTeamReply={initialUnreadReplyIds.has(item.id)}
-                onStatusChange={handleStatusChange}
-                onDelete={handleDelete}
-                isPending={isPending}
-              />
-            ))
-          )}
-        </div>
+        </section>
 
         {closedItems.length > 0 && (
-          <div className="space-y-3 border-t border-border/40 pt-6 sm:pt-8">
-            <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border/50 pb-2">
-              <h2 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">Resolved</h2>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-                {closedItems.length} done
-              </span>
+          <section className="space-y-0">
+            <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+              <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/15 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+                <div>
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">Resolved</h2>
+                  <p className="text-xs text-muted-foreground">Completed or dismissed requests.</p>
+                </div>
+                <Badge variant="outline" className="w-fit shrink-0 tabular-nums text-muted-foreground">
+                  {closedItems.length} total
+                </Badge>
+              </div>
+              <div className="divide-y divide-border/50 p-2 sm:p-3">
+                {closedItems.map((item) => (
+                  <div key={item.id} className="p-2 sm:p-2.5">
+                    <FeedbackCard
+                      item={item}
+                      isAdmin={isAdmin}
+                      isOwner={item.userId === currentUserId}
+                      highlightTeamReply={initialUnreadReplyIds.has(item.id)}
+                      onStatusChange={handleStatusChange}
+                      onDelete={handleDelete}
+                      isPending={isPending}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            {closedItems.map((item) => (
-              <FeedbackCard
-                key={item.id}
-                item={item}
-                isAdmin={isAdmin}
-                isOwner={item.userId === currentUserId}
-                highlightTeamReply={initialUnreadReplyIds.has(item.id)}
-                onStatusChange={handleStatusChange}
-                onDelete={handleDelete}
-                isPending={isPending}
-              />
-            ))}
-          </div>
+          </section>
         )}
       </div>
     </div>
@@ -301,8 +318,8 @@ function FeedbackCard({
   return (
     <Card
       className={cn(
-        "overflow-hidden rounded-2xl border-border/60 transition-all duration-200 hover:border-border hover:shadow-md",
-        showNewReplyRibbon && "ring-2 ring-cyan-500/25 dark:ring-cyan-400/20"
+        "overflow-hidden rounded-xl border-border/60 transition-all duration-200 hover:border-border hover:shadow-md sm:rounded-2xl",
+        showNewReplyRibbon && "ring-2 ring-cyan-500/25 dark:ring-cyan-400/20",
       )}
     >
       {showNewReplyRibbon ? (

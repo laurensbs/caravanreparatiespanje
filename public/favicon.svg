@@ -1,14 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Caravan Repairs">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
   <defs>
-    <linearGradient id="a" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+    <linearGradient id="g" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
       <stop stop-color="#5b7aef" />
       <stop offset="1" stop-color="#3b56cc" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#a)" />
+  <rect width="64" height="64" rx="14" fill="url(#g)" />
+  <!-- Simple caravan silhouette: body + awning, reads at small sizes -->
   <path
     fill="#fff"
-    fill-opacity="0.95"
-    d="M18 42V26h12l3-9h14v9h5v17H18zm10-4h22V30H30l-2 4h-2v4z"
+    fill-opacity="0.96"
+    d="M14 42c0-1.1.9-2 2-2h32c1.1 0 2 .9 2 2v2H14v-2zm4-14v10h4V28h24v10h4V28l-3-8H21l-3 8z"
   />
+  <path fill="#fff" fill-opacity="0.5" d="M22 36h6v4h-6v-4zm14 0h6v4h-6v-4z" />
 </svg>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -156,24 +157,17 @@ export function Sidebar({ userRole }: SidebarProps) {
     >
       <div
         className={cn(
-          "flex border-b border-gray-200 transition-all duration-300",
-          collapsed ? "h-16 items-center justify-center px-2" : "items-center gap-3 px-4 py-3"
+          "flex items-center justify-center border-b border-gray-200 transition-all duration-300",
+          collapsed ? "h-16 px-2" : "h-36 px-4"
         )}
       >
-        <img
-          src="/favicon.svg"
-          alt="Caravan Repairs"
-          className={cn(
-            "aspect-square shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-black/5 transition-all duration-300",
-            collapsed ? "h-9 w-9" : "h-10 w-10"
-          )}
+        <Image
+          src="/favicon.png"
+          alt="Logo"
+          width={collapsed ? 44 : 220}
+          height={collapsed ? 30 : 160}
+          className="object-contain transition-all duration-300"
         />
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold tracking-tight text-gray-900">Caravan Repairs</p>
-            <p className="truncate text-[11px] font-medium uppercase tracking-widest text-gray-400">Admin</p>
-          </div>
-        )}
       </div>
 
       <nav className={cn(

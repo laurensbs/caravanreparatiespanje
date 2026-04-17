@@ -160,11 +160,12 @@ export function Sidebar({ userRole }: SidebarProps) {
         collapsed ? "h-16 px-2" : "h-36 px-4"
       )}>
         <Image
-          src="/favicon.png"
+          src="/favicon.svg"
           alt="Logo"
           width={collapsed ? 44 : 220}
           height={collapsed ? 30 : 160}
           className="object-contain transition-all duration-300"
+          unoptimized
         />
       </div>
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Caravan Repairs">
+  <defs>
+    <linearGradient id="a" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5b7aef" />
+      <stop offset="1" stop-color="#3b56cc" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#a)" />
+  <path
+    fill="#fff"
+    fill-opacity="0.95"
+    d="M18 42V26h12l3-9h14v9h5v17H18zm10-4h22V30H30l-2 4h-2v4z"
+  />
+</svg>

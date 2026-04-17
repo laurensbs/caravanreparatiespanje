@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     googleBot: { index: false, follow: false },
   },
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/favicon.svg", type: "image/svg+xml" }],
   },
   manifest: "/manifest.json",
   appleWebApp: {

@@ -612,31 +612,45 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const communicationRef = useRef<HTMLDivElement>(null);
   const costRef = useRef<HTMLDivElement>(null);
 
-  // Detect likely relatives in the address book (shared meaningful name tokens).
-  // Only used to decide whether to show the "Use a different client for this repair only"
-  // explainer + button — otherwise that block adds noise on every repair.
+  // Detect likely relatives in the address book — only when they share the
+  // same *surname* (last meaningful name token). Honorifics, initials and
+  // common particles are stripped so e.g. "Dhr. Carlos Jubitana" matches
+  // "Naomi Jubitana" but NOT "Dhr. Fred van Ewijk".
   const likelyRelatedCustomers = useMemo(() => {
     if (!job.customer) return [] as { id: string; name: string }[];
-    const stop = new Set([
-      "de", "van", "der", "den", "het", "ter", "ten", "la", "le", "el", "di", "da", "do",
-      "du", "mr", "mrs", "the", "and", "en", "jr", "sr", "ii", "iii",
+    const honorifics = new Set([
+      "dhr", "mw", "mevr", "mvr", "mr", "mrs", "ms", "dr", "prof",
+      "sr", "sra", "srta", "jr", "ii", "iii",
     ]);
-    const tokenize = (s: string) =>
-      s
+    const particles = new Set([
+      "de", "van", "der", "den", "het", "ter", "ten", "te",
+      "la", "le", "el", "di", "da", "do", "du", "bin", "ben",
+      "al",
+    ]);
+    const lastSurname = (s: string): string | null => {
+      const tokens = s
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .split(/[\s,\-_/]+/)
         .map((t) => t.replace(/[^a-z0-9]/g, ""))
-        .filter((t) => t.length >= 3 && !stop.has(t));
-    const selfTokens = new Set(tokenize(job.customer.name));
-    if (selfTokens.size === 0) return [] as { id: string; name: string }[];
+        .filter(Boolean);
+      for (let i = tokens.length - 1; i >= 0; i--) {
+        const t = tokens[i];
+        if (t.length < 3) continue;
+        if (honorifics.has(t)) continue;
+        if (particles.has(t)) continue;
+        return t;
+      }
+      return null;
+    };
+    const selfSurname = lastSurname(job.customer.name);
+    if (!selfSurname) return [] as { id: string; name: string }[];
     const selfId = job.customer.id;
     const matches: { id: string; name: string }[] = [];
     for (const c of allCustomers) {
       if (c.id === selfId) continue;
-      const tokens = tokenize(c.name);
-      if (tokens.some((t) => selfTokens.has(t))) {
+      if (lastSurname(c.name) === selfSurname) {
         matches.push(c);
         if (matches.length >= 5) break;
       }

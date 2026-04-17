@@ -43,7 +43,11 @@ async function main() {
   console.log("Customer:", carlos.name, carlos.id);
   console.log("Holded contact:", carlos.holdedContactId ?? "(none — run push/merge first)");
 
-  const res = await linkHoldedDocumentsForCustomer(carlos.id, { dryRun, sequentialDateFallback });
+  const res = await linkHoldedDocumentsForCustomer(carlos.id, {
+    dryRun,
+    sequentialDateFallback,
+    detachDocumentsLinkedToOtherCustomers: true,
+  });
 
   console.log("\n--- Invoices linked ---");
   for (const x of res.invoicesLinked) {

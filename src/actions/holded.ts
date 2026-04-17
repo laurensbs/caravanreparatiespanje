@@ -1041,7 +1041,10 @@ export async function syncCustomerHoldedRepairLinks(customerId: string) {
   await requireRole("manager");
   if (!isHoldedConfigured()) throw new Error("Holded not configured");
 
-  const res = await linkHoldedDocumentsForCustomer(customerId, { sequentialDateFallback: true });
+  const res = await linkHoldedDocumentsForCustomer(customerId, {
+    sequentialDateFallback: true,
+    detachDocumentsLinkedToOtherCustomers: true,
+  });
 
   revalidatePath(`/customers/${customerId}`);
   revalidatePath("/customers");
@@ -1051,6 +1054,12 @@ export async function syncCustomerHoldedRepairLinks(customerId: string) {
   }
   for (const x of res.quotesLinked) {
     revalidatePath(`/repairs/${x.repairId}`);
+  }
+  for (const x of res.invoicesDetachedFromOtherRepairs) {
+    revalidatePath(`/repairs/${x.previousRepairId}`);
+  }
+  for (const x of res.quotesDetachedFromOtherRepairs) {
+    revalidatePath(`/repairs/${x.previousRepairId}`);
   }
 
   return res;

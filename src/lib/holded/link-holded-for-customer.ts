@@ -70,14 +70,27 @@ export type LinkHoldedForCustomerResult = {
   errors: string[];
   /** When counts match, invoices were paired to repairs by invoice date vs repair date (weak match). */
   invoicesLinkedBySequentialFallback: number;
+  quotesLinkedBySequentialFallback: number;
+  /** Invoice was on this Holded contact but still pointed at another customer’s repair (e.g. after merging contacts). */
+  invoicesDetachedFromOtherRepairs: { docNumber: string; previousRepairId: string }[];
+  quotesDetachedFromOtherRepairs: { docNumber: string; previousRepairId: string }[];
 };
 
 export async function linkHoldedDocumentsForCustomer(
   customerId: string,
-  options?: { dryRun?: boolean; sequentialDateFallback?: boolean },
+  options?: {
+    dryRun?: boolean;
+    sequentialDateFallback?: boolean;
+    /**
+     * Clear DB links on *other* customers’ repairs when the document in Holded belongs to this contact
+     * (fixes family-split / merged-contact cases where invoices were never re-linked).
+     */
+    detachDocumentsLinkedToOtherCustomers?: boolean;
+  },
 ): Promise<LinkHoldedForCustomerResult> {
   const dryRun = options?.dryRun ?? false;
   const sequentialDateFallback = options?.sequentialDateFallback ?? false;
+  const detachOther = options?.detachDocumentsLinkedToOtherCustomers ?? false;
   const result: LinkHoldedForCustomerResult = {
     customerId,
     holdedContactId: "",
@@ -87,6 +100,9 @@ export async function linkHoldedDocumentsForCustomer(
     quotesSkipped: [],
     errors: [],
     invoicesLinkedBySequentialFallback: 0,
+    quotesLinkedBySequentialFallback: 0,
+    invoicesDetachedFromOtherRepairs: [],
+    quotesDetachedFromOtherRepairs: [],
   };
 
   const [customer] = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
@@ -141,6 +157,106 @@ export async function linkHoldedDocumentsForCustomer(
 
   // ─── Invoices on this Holded contact ───
   const onContact = await listInvoicesByContact(customer.holdedContactId);
+  const rawQuotesOnContact = await listQuotesByContact(customer.holdedContactId);
+
+  // Documents on this contact in Holded may still be linked to another customer’s repairs in our DB — clear so we can attach here.
+  if (detachOther && !dryRun) {
+    for (const summary of onContact) {
+      if (!linkedInvoiceIds.has(summary.id)) continue;
+      const [job] = await db
+        .select({
+          id: repairJobs.id,
+          customerId: repairJobs.customerId,
+          publicCode: repairJobs.publicCode,
+          status: repairJobs.status,
+        })
+        .from(repairJobs)
+        .where(eq(repairJobs.holdedInvoiceId, summary.id))
+        .limit(1);
+      if (!job || job.customerId === customerId) continue;
+
+      let inv: HoldedInvoice;
+      try {
+        inv = await getInvoice(summary.id);
+      } catch {
+        continue;
+      }
+      if (inv.contact !== customer.holdedContactId) continue;
+
+      await db
+        .update(repairJobs)
+        .set({
+          holdedInvoiceId: null,
+          holdedInvoiceNum: null,
+          holdedInvoiceDate: null,
+          holdedInvoiceSentAt: null,
+          invoiceStatus: "not_invoiced",
+          ...(job.status === "invoiced" ? { status: "completed" as const } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(repairJobs.id, job.id));
+
+      await db.insert(repairJobEvents).values({
+        repairJobId: job.id,
+        eventType: "invoice_unlinked",
+        fieldChanged: "holdedInvoiceId",
+        comment: `Unlinked invoice (was on another customer) so it can link to ${customer.name ?? "customer"} — ${inv.docNumber ?? inv.id}`,
+      });
+
+      linkedInvoiceIds.delete(summary.id);
+      result.invoicesDetachedFromOtherRepairs.push({
+        docNumber: inv.docNumber ?? inv.id,
+        previousRepairId: job.id,
+      });
+    }
+
+    for (const q of rawQuotesOnContact) {
+      if (!linkedQuoteIds.has(q.id)) continue;
+      const [job] = await db
+        .select({
+          id: repairJobs.id,
+          customerId: repairJobs.customerId,
+          publicCode: repairJobs.publicCode,
+        })
+        .from(repairJobs)
+        .where(eq(repairJobs.holdedQuoteId, q.id))
+        .limit(1);
+      if (!job || job.customerId === customerId) continue;
+
+      let full;
+      try {
+        full = await getQuote(q.id);
+      } catch {
+        continue;
+      }
+      if (full.contact !== customer.holdedContactId) continue;
+
+      await db
+        .update(repairJobs)
+        .set({
+          holdedQuoteId: null,
+          holdedQuoteNum: null,
+          holdedQuoteDate: null,
+          holdedQuoteSentAt: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(repairJobs.id, job.id));
+
+      await db.insert(repairJobEvents).values({
+        repairJobId: job.id,
+        eventType: "quote_unlinked",
+        fieldChanged: "holdedQuoteId",
+        comment: `Unlinked quote (was on another customer) so it can link to ${customer.name ?? "customer"} — ${full.docNumber ?? full.id}`,
+      });
+
+      linkedQuoteIds.delete(q.id);
+      result.quotesDetachedFromOtherRepairs.push({
+        docNumber: full.docNumber ?? full.id,
+        previousRepairId: job.id,
+      });
+    }
+  }
+
   for (const summary of onContact) {
     try {
       if (linkedInvoiceIds.has(summary.id)) continue;
@@ -261,14 +377,22 @@ export async function linkHoldedDocumentsForCustomer(
       }
     }
 
-    if (orphanInvoices.length > 0 && orphanInvoices.length === unlinkedSequential.length) {
+    if (orphanInvoices.length > 0 && unlinkedSequential.length > 0) {
       orphanInvoices.sort((a, b) => a.date - b.date);
       unlinkedSequential.sort(
         (a, b) =>
           (a.completedAt ?? a.createdAt).getTime() - (b.completedAt ?? b.createdAt).getTime(),
       );
 
-      for (let i = 0; i < orphanInvoices.length; i++) {
+      const pairCount = Math.min(orphanInvoices.length, unlinkedSequential.length);
+      if (orphanInvoices.length > unlinkedSequential.length) {
+        for (let k = pairCount; k < orphanInvoices.length; k++) {
+          const inv = orphanInvoices[k]!;
+          result.invoicesSkipped.push(`${inv.docNumber ?? inv.id} (more invoices than open work orders — link manually)`);
+        }
+      }
+
+      for (let i = 0; i < pairCount; i++) {
         const inv = orphanInvoices[i]!;
         const matched = unlinkedSequential[i]!;
         const newStatus = holdedInvoicePanelStatus(inv);
@@ -313,8 +437,7 @@ export async function linkHoldedDocumentsForCustomer(
   }
 
   // ─── Quotes on this Holded contact ───
-  const rawQuotes = await listQuotesByContact(customer.holdedContactId);
-  const holdedQuotes = filterRepairQuotes(rawQuotes);
+  const holdedQuotes = filterRepairQuotes(rawQuotesOnContact);
 
   for (const q of holdedQuotes) {
     try {
@@ -376,6 +499,57 @@ export async function linkHoldedDocumentsForCustomer(
       });
     } catch (e) {
       result.errors.push(`quote ${q.id}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  if (sequentialDateFallback) {
+    const unlinkedQuoteRepairs = customerRepairs.filter((r) => !r.holdedQuoteId);
+    const orphanQuotes = holdedQuotes.filter((q) => !linkedQuoteIds.has(q.id));
+    if (orphanQuotes.length > 0 && unlinkedQuoteRepairs.length > 0) {
+      orphanQuotes.sort((a, b) => a.date - b.date);
+      unlinkedQuoteRepairs.sort(
+        (a, b) =>
+          (a.completedAt ?? a.createdAt).getTime() - (b.completedAt ?? b.createdAt).getTime(),
+      );
+      const nq = Math.min(orphanQuotes.length, unlinkedQuoteRepairs.length);
+      if (orphanQuotes.length > unlinkedQuoteRepairs.length) {
+        for (let k = nq; k < orphanQuotes.length; k++) {
+          const q = orphanQuotes[k]!;
+          result.quotesSkipped.push(`${q.docNumber ?? q.id} (more quotes than open work orders — link manually)`);
+        }
+      }
+      for (let i = 0; i < nq; i++) {
+        const q = orphanQuotes[i]!;
+        const matched = unlinkedQuoteRepairs[i]!;
+        const full = await getQuote(q.id);
+        if (!dryRun) {
+          await db
+            .update(repairJobs)
+            .set({
+              holdedQuoteId: q.id,
+              holdedQuoteNum: q.docNumber,
+              holdedQuoteDate: q.date ? new Date(q.date * 1000) : new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(repairJobs.id, matched.id));
+          await db.insert(repairJobEvents).values({
+            repairJobId: matched.id,
+            eventType: "quote_discovered",
+            fieldChanged: "holdedQuoteId",
+            oldValue: "",
+            newValue: q.docNumber ?? q.id,
+            comment: `Quote linked (sequential date fallback) — ${q.docNumber ?? q.id}`,
+          });
+          matched.holdedQuoteId = q.id;
+          linkedQuoteIds.add(q.id);
+        }
+        result.quotesLinked.push({
+          quoteId: q.id,
+          docNumber: q.docNumber ?? q.id,
+          repairId: matched.id,
+        });
+        result.quotesLinkedBySequentialFallback++;
+      }
     }
   }
 

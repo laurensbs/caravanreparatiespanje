@@ -115,18 +115,32 @@ export function CustomerDetail({
     try {
       const res = await syncCustomerHoldedRepairLinks(customer.id);
       const n = res.invoicesLinked.length + res.quotesLinked.length;
-      const seq = res.invoicesLinkedBySequentialFallback;
+      const seqInv = res.invoicesLinkedBySequentialFallback;
+      const seqQ = res.quotesLinkedBySequentialFallback;
+      const detached =
+        res.invoicesDetachedFromOtherRepairs.length + res.quotesDetachedFromOtherRepairs.length;
       if (res.errors.length > 0) {
         toast.error(res.errors.join("; "));
-      } else if (n === 0) {
+      } else if (n === 0 && detached === 0) {
         toast.info("No new links", {
           description:
-            "Documents may already be on a work order, or no confident match was found.",
+            "Nothing changed. If documents sit on this Holded contact but stay unlinked, check the non-repair filter or link a document manually on the work order.",
         });
       } else {
-        toast.success(
-          `Linked ${n} document${n === 1 ? "" : "s"} to work orders${seq > 0 ? ` (${seq} by date order)` : ""}.`,
-        );
+        const parts: string[] = [];
+        if (detached > 0) {
+          parts.push(
+            `Removed ${detached} stuck link(s) from other clients’ work orders (after merging contacts / splits).`,
+          );
+        }
+        if (n > 0) {
+          parts.push(
+            `Linked ${n} document${n === 1 ? "" : "s"} to work orders${seqInv + seqQ > 0 ? ` (${seqInv + seqQ} by date order)` : ""}.`,
+          );
+        } else if (detached > 0) {
+          parts.push("Run again to attach those documents to this customer’s work orders.");
+        }
+        toast.success(parts.join(" "));
       }
       router.refresh();
     } catch (e) {

@@ -175,7 +175,11 @@ async function main() {
   console.log(`\nFacturen verplaatst: ${invMoved}, offertes: ${qMoved}`);
 
   if (!dryRun && (invMoved > 0 || qMoved > 0)) {
-    const link = await linkHoldedDocumentsForCustomer(carlos.id, { dryRun: false, sequentialDateFallback: true });
+    const link = await linkHoldedDocumentsForCustomer(carlos.id, {
+      dryRun: false,
+      sequentialDateFallback: true,
+      detachDocumentsLinkedToOtherCustomers: true,
+    });
     console.log(
       "Repairs gekoppeld — facturen:",
       link.invoicesLinked.length,

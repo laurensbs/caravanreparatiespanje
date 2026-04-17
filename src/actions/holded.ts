@@ -1044,6 +1044,7 @@ export async function syncCustomerHoldedRepairLinks(customerId: string) {
   const res = await linkHoldedDocumentsForCustomer(customerId, {
     sequentialDateFallback: true,
     detachDocumentsLinkedToOtherCustomers: true,
+    bypassHoldedNonRepairFilters: true,
   });
 
   revalidatePath(`/customers/${customerId}`);

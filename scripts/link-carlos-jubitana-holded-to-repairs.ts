@@ -47,6 +47,7 @@ async function main() {
     dryRun,
     sequentialDateFallback,
     detachDocumentsLinkedToOtherCustomers: true,
+    bypassHoldedNonRepairFilters: true,
   });
 
   console.log("\n--- Invoices linked ---");

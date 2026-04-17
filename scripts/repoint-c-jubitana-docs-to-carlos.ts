@@ -179,6 +179,7 @@ async function main() {
       dryRun: false,
       sequentialDateFallback: true,
       detachDocumentsLinkedToOtherCustomers: true,
+      bypassHoldedNonRepairFilters: true,
     });
     console.log(
       "Repairs gekoppeld — facturen:",

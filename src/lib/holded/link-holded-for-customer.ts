@@ -86,11 +86,17 @@ export async function linkHoldedDocumentsForCustomer(
      * (fixes family-split / merged-contact cases where invoices were never re-linked).
      */
     detachDocumentsLinkedToOtherCustomers?: boolean;
+    /**
+     * Skip stalling/transport keyword filter (isNonRepair*) so documents on this contact can link
+     * even when lines mention “huur”, “stalling”, etc. Use for manager “link all on contact” recovery.
+     */
+    bypassHoldedNonRepairFilters?: boolean;
   },
 ): Promise<LinkHoldedForCustomerResult> {
   const dryRun = options?.dryRun ?? false;
   const sequentialDateFallback = options?.sequentialDateFallback ?? false;
   const detachOther = options?.detachDocumentsLinkedToOtherCustomers ?? false;
+  const bypassNR = options?.bypassHoldedNonRepairFilters ?? false;
   const result: LinkHoldedForCustomerResult = {
     customerId,
     holdedContactId: "",
@@ -276,7 +282,7 @@ export async function linkHoldedDocumentsForCustomer(
         result.invoicesSkipped.push(`${summary.id} (empty)`);
         continue;
       }
-      if (isNonRepairInvoice(inv)) {
+      if (!bypassNR && isNonRepairInvoice(inv)) {
         result.invoicesSkipped.push(`${inv.docNumber ?? inv.id} (non-repair filter)`);
         continue;
       }
@@ -370,7 +376,7 @@ export async function linkHoldedDocumentsForCustomer(
         }
 
         if (inv.total === 0 && !inv.desc) continue;
-        if (isNonRepairInvoice(inv)) continue;
+        if (!bypassNR && isNonRepairInvoice(inv)) continue;
         orphanInvoices.push(inv);
       } catch (e) {
         result.errors.push(`invoice ${summary.id} (sequential): ${e instanceof Error ? e.message : String(e)}`);
@@ -437,7 +443,7 @@ export async function linkHoldedDocumentsForCustomer(
   }
 
   // ─── Quotes on this Holded contact ───
-  const holdedQuotes = filterRepairQuotes(rawQuotesOnContact);
+  const holdedQuotes = bypassNR ? rawQuotesOnContact : filterRepairQuotes(rawQuotesOnContact);
 
   for (const q of holdedQuotes) {
     try {

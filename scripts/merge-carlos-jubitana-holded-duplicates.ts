@@ -124,6 +124,7 @@ async function afterMergePushAndOptionalLink(carlosCustomerId: string, alsoLink:
       dryRun: false,
       sequentialDateFallback: true,
       detachDocumentsLinkedToOtherCustomers: true,
+      bypassHoldedNonRepairFilters: true,
     });
     console.log(
       "Repairs gekoppeld — facturen:",

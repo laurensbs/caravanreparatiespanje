@@ -122,10 +122,12 @@ export function CustomerDetail({
       if (res.errors.length > 0) {
         toast.error(res.errors.join("; "));
       } else if (n === 0 && detached === 0) {
-        toast.info("No new links", {
-          description:
-            "Nothing changed. If documents sit on this Holded contact but stay unlinked, check the non-repair filter or link a document manually on the work order.",
-        });
+        const skipSamples = [...res.invoicesSkipped, ...res.quotesSkipped].slice(0, 6);
+        const skipText =
+          skipSamples.length > 0
+            ? `Details: ${skipSamples.join(" · ")}${res.invoicesSkipped.length + res.quotesSkipped.length > 6 ? " …" : ""}`
+            : "Nothing changed — documents may already be linked, or Holded returned no documents for this contact.";
+        toast.info("No new links", { description: skipText });
       } else {
         const parts: string[] = [];
         if (detached > 0) {

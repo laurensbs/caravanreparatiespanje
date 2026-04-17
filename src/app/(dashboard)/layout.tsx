@@ -42,7 +42,7 @@ export default async function DashboardLayout({
               {children}
             </main>
             <Toaster
-              theme="system"
+              theme="light"
               position="bottom-right"
               offset={{ bottom: "1rem", right: "1rem" }}
               closeButton

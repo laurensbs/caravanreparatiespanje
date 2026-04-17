@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare, Menu } from "lucide-react";
+import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare, Menu, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -49,7 +49,7 @@ function HeaderIconLink({
     <Button
       variant="ghost"
       size="icon"
-      className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg"
+      className="relative h-8 w-8 shrink-0 touch-manipulation rounded-lg"
       asChild
     >
       <Link
@@ -57,13 +57,13 @@ function HeaderIconLink({
         title={title}
         aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
         className={cn(
-          "inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
-          isActive && "bg-muted/80 text-foreground"
+          "inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
+          isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100"
         )}
       >
         {children}
         {showBadge ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cyan-600 px-1 text-[10px] font-bold text-white tabular-nums dark:bg-cyan-500">
+          <span className="absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white tabular-nums ring-2 ring-white dark:ring-gray-950">
             {badgeCount! > 99 ? "99+" : badgeCount}
           </span>
         ) : null}
@@ -85,11 +85,12 @@ export function Header({
   const showSettings = hasMinRole(userRole, "admin");
   const feedbackActive = pathname === "/feedback" || pathname.startsWith("/feedback/");
   const settingsActive = pathname.startsWith("/settings");
+  const binActive = pathname.startsWith("/repairs/bin");
 
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-12 min-w-0 items-center gap-2 border-b border-border/60 bg-card/85 px-3 backdrop-blur-xl supports-[backdrop-filter]:bg-card/70 sm:gap-3 sm:px-5">
+      <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center gap-3 border-b border-gray-100 bg-white/80 px-3 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:border-gray-800/80 dark:bg-gray-950/70 dark:supports-[backdrop-filter]:bg-gray-950/60 sm:px-5">
         <Button
           type="button"
           variant="ghost"
@@ -107,22 +108,22 @@ export function Header({
             onClick={() =>
               document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
             }
-            className="flex min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-all hover:border-border hover:bg-muted/70 sm:max-w-sm lg:max-w-md"
+            className="group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/60 px-3 text-sm text-gray-500 shadow-[inset_0_0_0_1px_rgba(15,23,42,0)] transition-all hover:border-gray-200 hover:bg-white hover:text-gray-900 focus-visible:border-gray-300 focus-visible:bg-white focus-visible:outline-none dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-white/[0.06] dark:hover:text-gray-100 sm:max-w-sm lg:max-w-md"
           >
-            <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left text-xs">Search…</span>
-            <kbd className="pointer-events-none hidden shrink-0 rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+            <Search className="h-3.5 w-3.5 shrink-0 opacity-70 transition-opacity group-hover/search:opacity-100" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal">Search work, customers, units…</span>
+            <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-medium text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 sm:inline-flex">
               ⌘K
             </kbd>
           </button>
         </div>
 
-        <div className="flex max-w-[min(50vw,14rem)] shrink-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden sm:max-w-none sm:overflow-visible sm:gap-1">
+        <div className="flex max-w-[min(60vw,18rem)] shrink-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:max-w-none sm:overflow-visible [&::-webkit-scrollbar]:hidden">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground hover:text-foreground"
+            className="h-8 w-8 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100"
             title="Smart Assistant"
             aria-label="Smart Assistant"
             onClick={() => toggle()}
@@ -141,6 +142,16 @@ export function Header({
             <MessageSquare className="h-4 w-4" />
           </HeaderIconLink>
 
+          <HeaderIconLink
+            href="/repairs/bin"
+            title="Deleted work orders"
+            isActive={binActive}
+          >
+            <Trash2 className="h-4 w-4" />
+          </HeaderIconLink>
+
+          <span className="mx-1.5 hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block" aria-hidden />
+
           <ThemeToggle />
 
           {showSettings ? (
@@ -149,37 +160,46 @@ export function Header({
             </HeaderIconLink>
           ) : null}
 
+          <span className="mx-1.5 hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block" aria-hidden />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="ml-0.5 gap-2 rounded-lg touch-manipulation sm:ml-1">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="group/avatar h-9 gap-2 rounded-full px-1 pr-2.5 touch-manipulation transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                aria-label={`Account menu for ${userName}`}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-[11px] font-semibold text-white ring-1 ring-white/40 shadow-sm dark:ring-white/10">
                   {userName?.charAt(0)?.toUpperCase() ?? "U"}
-                </div>
-                <span className="hidden max-w-[140px] truncate text-sm font-medium md:inline">{userName}</span>
+                </span>
+                <span className="hidden max-w-[120px] truncate text-[13px] font-medium text-gray-700 group-hover/avatar:text-gray-900 dark:text-gray-300 dark:group-hover/avatar:text-gray-100 md:inline">
+                  {userName}
+                </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <p className="font-medium">{userName}</p>
-                <p className="text-xs text-muted-foreground">{userEmail}</p>
-                <Badge variant="secondary" className="mt-1 text-[10px]">
+            <DropdownMenuContent align="end" className="w-60 rounded-xl p-1.5">
+              <DropdownMenuLabel className="rounded-lg px-2 py-2">
+                <p className="text-sm font-semibold leading-tight">{userName}</p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{userEmail}</p>
+                <Badge variant="secondary" className="mt-1.5 h-4 rounded-full px-1.5 text-[10px] font-medium">
                   {userRole}
                 </Badge>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => router.push("/settings/account")}>
+              <DropdownMenuItem className="rounded-lg" onSelect={() => router.push("/settings/account")}>
                 <Settings className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
               {showSettings ? (
-                <DropdownMenuItem onSelect={() => router.push("/settings")}>
+                <DropdownMenuItem className="rounded-lg" onSelect={() => router.push("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
                   All settings
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
+                className="rounded-lg text-destructive focus:text-destructive"
                 onSelect={() => signOut({ callbackUrl: "/login" })}
               >
                 <LogOut className="mr-2 h-4 w-4" />

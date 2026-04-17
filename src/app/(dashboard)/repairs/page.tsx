@@ -7,8 +7,6 @@ import { getTags } from "@/actions/tags";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { DashboardPageCanvas, DashboardPageHeader } from "@/components/layout/dashboard-surface";
 
@@ -84,26 +82,13 @@ export default async function RepairsPage({ searchParams }: Props) {
           </>
         }
         actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="h-9 touch-manipulation rounded-lg text-[12px] text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              <Link href="/repairs/bin">
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                Bin
-              </Link>
-            </Button>
-            <NewRepairDialog
-              locations={filteredLocations}
-              customers={customersList}
-              partsCatalog={partsCatalog}
-              partCategories={partCategories}
-              units={unitsList}
-            />
-          </div>
+          <NewRepairDialog
+            locations={filteredLocations}
+            customers={customersList}
+            partsCatalog={partsCatalog}
+            partCategories={partCategories}
+            units={unitsList}
+          />
         }
       />
 

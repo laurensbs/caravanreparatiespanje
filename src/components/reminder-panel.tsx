@@ -155,15 +155,15 @@ export function ReminderPanel() {
           type="button"
           variant="ghost"
           size="icon"
-          className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg"
+          className="relative h-8 w-8 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100"
           title="Reminders"
           aria-label={badgeCount > 0 ? `Reminders, ${badgeCount} new` : count > 0 ? "Reminders (open list for details)" : "Reminders"}
         >
-          <Bell className="h-4 w-4 text-muted-foreground" />
+          <Bell className="h-4 w-4" />
           {badgeCount > 0 && (
             <span
               className={cn(
-                "absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white tabular-nums",
+                "absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold text-white tabular-nums ring-2 ring-white dark:ring-gray-950",
                 overdueCount > 0 ? "bg-red-500" : "bg-cyan-600 dark:bg-cyan-500"
               )}
             >

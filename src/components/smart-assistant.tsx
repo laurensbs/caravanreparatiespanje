@@ -1687,7 +1687,24 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
     <>
       {/* Panel */}
       {open && (
-        <div className="fixed top-14 right-5 z-50 w-[420px] max-h-[min(640px,calc(100vh-5rem))] flex flex-col rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+        <>
+          {/* Mobile-only dimmer so the panel feels modal under 640px */}
+          <button
+            type="button"
+            aria-label="Close assistant"
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] sm:hidden animate-in fade-in-0 duration-150"
+            onClick={() => setOpen(false)}
+          />
+        <div
+          className={cn(
+            "fixed z-50 flex flex-col overflow-hidden bg-card shadow-2xl animate-in duration-200",
+            // Mobile: bottom sheet covering most of the viewport, with safe-area
+            "inset-x-0 bottom-0 top-14 rounded-t-2xl border border-border/80 slide-in-from-bottom-2",
+            // sm+ : floating card anchored to top-right
+            "sm:inset-auto sm:top-14 sm:right-5 sm:bottom-auto sm:w-[420px] sm:max-h-[min(640px,calc(100vh-5rem))] sm:rounded-2xl sm:slide-in-from-top-2",
+          )}
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           {/* Header — brand gradient, calmer than solid flat cyan */}
           <div className="px-4 pt-3 pb-2.5 border-b border-white/10 shrink-0 bg-gradient-to-br from-cyan-600/95 via-teal-700/90 to-slate-800">
             <div className="flex items-center justify-between">
@@ -2059,6 +2076,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
             </form>
           )}
         </div>
+        </>
       )}
     </>
   );

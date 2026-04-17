@@ -54,11 +54,18 @@
   }
 
   @media (max-width: 768px) {
-    button, a, [role="button"] {
-      min-height: 44px;
-    }
+    /* Keep iOS from auto-zooming when focusing a form field. */
     input, select, textarea {
       font-size: 16px;
+    }
+    /* Opt-in touch target helper for primary mobile buttons. */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* Better default tap feedback for buttons/links that didn't opt out. */
+    button:not([data-compact]), a:not([data-compact]), [role="button"]:not([data-compact]) {
+      -webkit-tap-highlight-color: transparent;
     }
   }
 
@@ -161,6 +168,41 @@
      than scale-in, which helps clarity on the dark garage UI. */
   .animate-pop-in {
     animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Tap feedback for interactive cards/pills (mobile + desktop). Using
+     `touch-manipulation` avoids the 300ms delay on iOS, while the small
+     `active:scale` cue communicates the hit in dense layouts. */
+  .tap-surface {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tap-surface:active {
+    transform: scale(0.98);
+  }
+
+  /* Staggered entrance helper — pair with inline `animationDelay`. */
+  .stagger-child {
+    animation: fadeIn 0.32s ease-out both, slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Safe-area helpers used across admin + garage on iPhones with notches. */
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .pt-safe {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+}
+
+/* Respect users who prefer reduced motion – drop every decorative animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

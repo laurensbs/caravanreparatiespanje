@@ -50,14 +50,14 @@ function HeaderIconLink({
       <Button
         variant="ghost"
         size="icon"
-        className="relative h-8 w-8 shrink-0 touch-manipulation rounded-lg"
+        className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg sm:h-8 sm:w-8"
         asChild
       >
         <Link
           href={href}
           aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
           className={cn(
-            "inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
+            "inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
             isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100"
           )}
         >
@@ -100,7 +100,7 @@ function HeaderIconButton({
         onClick={onClick}
         aria-label={ariaLabel ?? (showBadge ? `${title}, ${badgeCount} pending` : title)}
         className={cn(
-          "relative h-8 w-8 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
+          "relative h-9 w-9 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100 sm:h-8 sm:w-8",
           isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100",
         )}
       >
@@ -145,7 +145,7 @@ export function Header({
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center gap-3 border-b border-gray-100 bg-white/80 px-3 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:border-gray-800/80 dark:bg-gray-950/70 dark:supports-[backdrop-filter]:bg-gray-950/60 sm:px-5">
+      <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center gap-2 border-b border-gray-100 bg-white/80 px-2.5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:border-gray-800/80 dark:bg-gray-950/70 dark:supports-[backdrop-filter]:bg-gray-950/60 sm:gap-3 sm:px-5">
         <Button
           type="button"
           variant="ghost"

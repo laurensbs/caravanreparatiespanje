@@ -19,12 +19,13 @@ export function DashboardPageCanvas({
   return (
     <div
       className={cn(
-        "animate-fade-in min-h-[calc(100dvh-3.25rem)] bg-[#F9FAFB] px-3 py-4 dark:bg-background",
+        "animate-fade-in min-h-[calc(100dvh-3.25rem)] bg-[#F9FAFB] px-3 py-4 sm:px-4 sm:py-5 dark:bg-background",
         "max-lg:mx-0 max-lg:px-3",
         "-mx-3 md:-mx-4 md:px-4",
         "print:mx-0 print:min-h-0 print:bg-white print:px-0 print:py-0",
         className,
       )}
+      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto max-w-7xl space-y-5 sm:space-y-8">{children}</div>
     </div>

@@ -38,7 +38,12 @@ export default async function DashboardLayout({
               userRole={session.user.role as UserRole}
               feedbackUnreadReplyCount={feedbackUnreadReplyCount}
             />
-            <main className="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-fade-in">
+            <main
+              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 animate-fade-in"
+              style={{
+                paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+              }}
+            >
               {children}
             </main>
             <Toaster

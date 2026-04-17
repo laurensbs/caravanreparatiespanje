@@ -811,7 +811,8 @@ export function CustomerDetail({
               {deleteFromHolded && (
                 <Input
                   type="password"
-                  placeholder="Enter admin password"
+                  placeholder="Enter your account password"
+                  autoComplete="current-password"
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
                 />

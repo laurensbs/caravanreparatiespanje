@@ -15,6 +15,7 @@ import { RotateCcw, Trash2, ArrowLeft } from "lucide-react";
 import { restoreRepairJob, permanentDeleteRepairJob } from "@/actions/repairs";
 import { toast } from "sonner";
 import Link from "next/link";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface DeletedJob {
   id: string;
@@ -65,7 +66,13 @@ export function BinClient({ jobs }: BinClientProps) {
   }
 
   async function handlePermanentDelete(id: string) {
-    if (!confirm("Permanently delete this repair? This cannot be undone.")) return;
+    const ok = await confirmDialog({
+      title: "Permanently delete this repair?",
+      description: "This cannot be undone.",
+      confirmLabel: "Delete permanently",
+      tone: "destructive",
+    });
+    if (!ok) return;
     setLoading(id);
     try {
       await permanentDeleteRepairJob(id);
@@ -95,7 +102,14 @@ export function BinClient({ jobs }: BinClientProps) {
   }
 
   async function handleBulkPermanentDelete() {
-    if (!confirm(`Permanently delete ${selected.size} repair${selected.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    const n = selected.size;
+    const ok = await confirmDialog({
+      title: `Permanently delete ${n} repair${n > 1 ? "s" : ""}?`,
+      description: "This cannot be undone.",
+      confirmLabel: "Delete permanently",
+      tone: "destructive",
+    });
+    if (!ok) return;
     setLoading("bulk");
     try {
       for (const id of selected) {

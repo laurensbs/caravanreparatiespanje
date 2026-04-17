@@ -54,6 +54,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 
 import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/actions/tags";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
@@ -593,7 +594,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   })();
 
   async function handleDelete() {
-    if (!confirm("Move this repair job to the bin? You can restore it later.")) return;
+    const ok = await confirmDialog({
+      title: "Move this repair to the bin?",
+      description: "You can restore it from the bin later.",
+      confirmLabel: "Move to bin",
+      tone: "destructive",
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
       await deleteRepairJob(job.id);

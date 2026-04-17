@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ExternalLink, Phone, Mail, User } from "lucide-react";
 import { createSupplier, updateSupplier, deleteSupplier } from "@/actions/parts";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Supplier {
   id: string;
@@ -47,8 +48,13 @@ export function SuppliersClient({ suppliers }: SuppliersClientProps) {
     setDialogOpen(true);
   }
 
-  function handleDelete(supplier: Supplier) {
-    if (!confirm(`Delete supplier "${supplier.name}"? Parts linked to this supplier will be unlinked.`)) return;
+  async function handleDelete(supplier: Supplier) {
+    const ok = await confirmDialog({
+      title: `Delete supplier "${supplier.name}"?`,
+      description: "Parts linked to this supplier will be unlinked.",
+      tone: "destructive",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteSupplier(supplier.id);
       router.refresh();

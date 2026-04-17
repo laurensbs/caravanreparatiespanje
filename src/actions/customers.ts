@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { customers, repairJobs, units, customerTags } from "@/lib/db/schema";
+import { customers, repairJobs, units, customerTags, users } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
+import { compare } from "bcryptjs";
 
 function capitalizeWords(name: string): string {
   return name
@@ -215,7 +216,7 @@ export async function getAllCustomers() {
 }
 
 export async function deleteCustomer(id: string, deleteFromHolded?: boolean, password?: string) {
-  await requireRole("admin");
+  const session = await requireRole("admin");
 
   const [customer] = await db
     .select()
@@ -225,9 +226,24 @@ export async function deleteCustomer(id: string, deleteFromHolded?: boolean, pas
 
   if (!customer) throw new Error("Customer not found");
 
-  // If deleting from Holded too, require password
+  // Deleting from Holded is irreversible, so we double-gate it with the
+  // caller's own account password instead of a shared secret. We look up
+  // the currently signed-in user's hash and compare using bcrypt.
   if (deleteFromHolded) {
-    if (password !== "admin1234") throw new Error("Incorrect password");
+    if (!password || !password.trim()) {
+      throw new Error("Password required to also delete from Holded");
+    }
+    const [actor] = await db
+      .select({ passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, session.user.id!))
+      .limit(1);
+    if (!actor?.passwordHash) {
+      throw new Error("Cannot verify your account password");
+    }
+    const ok = await compare(password, actor.passwordHash);
+    if (!ok) throw new Error("Incorrect password");
+
     if (customer.holdedContactId) {
       try {
         const { deleteContact } = await import("@/lib/holded/invoices");

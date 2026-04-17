@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeedbackProductUpdates } from "./feedback-product-updates";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type FeedbackItem = {
   id: string;
@@ -125,8 +126,13 @@ export function FeedbackClient({
     });
   }
 
-  function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this?")) return;
+  async function handleDelete(id: string) {
+    const ok = await confirmDialog({
+      title: "Delete this feedback item?",
+      description: "This cannot be undone.",
+      tone: "destructive",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteFeedback(id);
     });

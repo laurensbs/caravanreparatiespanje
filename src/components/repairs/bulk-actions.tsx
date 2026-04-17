@@ -11,6 +11,7 @@ import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { X, Check, Trash2 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface BulkActionsProps {
   selectedIds: string[];
@@ -46,7 +47,14 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
   }
 
   async function handleBulkDelete() {
-    if (!confirm(`Move ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""} to the bin?`)) return;
+    const n = selectedIds.length;
+    const ok = await confirmDialog({
+      title: `Move ${n} repair job${n > 1 ? "s" : ""} to the bin?`,
+      description: "You can restore them from the bin later.",
+      confirmLabel: "Move to bin",
+      tone: "destructive",
+    });
+    if (!ok) return;
     setLoading(true);
     try {
       await bulkDeleteRepairJobs(selectedIds);

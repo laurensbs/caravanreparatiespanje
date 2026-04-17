@@ -6,6 +6,7 @@ import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageLoginForm } from "@/components/garage/login-form";
 import { GarageIdleLock } from "@/components/garage/idle-lock";
 import { RouteProgress } from "@/components/layout/route-progress";
+import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 
 export const metadata = {
   title: "Garage — Caravan Repairs",
@@ -60,6 +61,7 @@ export default async function GarageLayout({
           toastOptions={sonnerToastOptions}
         />
       </div>
+      <ConfirmDialogHost />
     </LanguageProvider>
   );
 }

@@ -34,6 +34,7 @@ import {
   Package, Home, AlertTriangle, CheckCircle,
 } from "lucide-react";
 import { createPart, updatePart, deletePart, createPartCategory, deletePartCategory } from "@/actions/parts";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 
@@ -139,8 +140,13 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
     setDialogOpen(true);
   }
 
-  function handleDelete(part: Part) {
-    if (!confirm(`Delete "${part.name}"?`)) return;
+  async function handleDelete(part: Part) {
+    const ok = await confirmDialog({
+      title: `Delete "${part.name}"?`,
+      description: "This part will be removed from the catalog.",
+      tone: "destructive",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deletePart(part.id);
       router.refresh();

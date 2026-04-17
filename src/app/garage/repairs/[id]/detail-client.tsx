@@ -23,6 +23,7 @@ import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ChevronLeft,
   RefreshCw,
@@ -167,14 +168,21 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
   }, [timer.startedAt]);
 
   const handleStop = async () => {
-    const confirmed = window.confirm(
-      t(
-        `Pause timer for ${timer.userName ?? "worker"}? Time is saved on this repair for billing.`,
-        `¿Pausar temporizador de ${timer.userName ?? "trabajador"}? El tiempo queda registrado en esta reparación.`,
-        `Timer pauzeren voor ${timer.userName ?? "werker"}? Tijd wordt opgeslagen op deze klus voor facturatie.`
-      )
-    );
-    if (!confirmed) return;
+    const ok = await confirmDialog({
+      title: t(
+        `Pause timer for ${timer.userName ?? "worker"}?`,
+        `¿Pausar temporizador de ${timer.userName ?? "trabajador"}?`,
+        `Timer pauzeren voor ${timer.userName ?? "werker"}?`,
+      ),
+      description: t(
+        "Time is saved on this repair for billing.",
+        "El tiempo queda registrado en esta reparación.",
+        "Tijd wordt opgeslagen op deze klus voor facturatie.",
+      ),
+      confirmLabel: t("Pause", "Pausar", "Pauzeren"),
+      cancelLabel: t("Keep running", "Seguir", "Laten lopen"),
+    });
+    if (!ok) return;
     hapticTap();
     await stopTimer(repairJobId, timer.userId);
     onStop();

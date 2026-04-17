@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Plus, X, Trash2 } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export interface TagItem {
   id: string;
@@ -63,9 +64,14 @@ export function TagPicker({ allTags, activeTags, onAdd, onRemove, onCreate, onDe
     });
   }
 
-  function handleDelete(tagId: string, tagName: string) {
+  async function handleDelete(tagId: string, tagName: string) {
     if (!onDelete) return;
-    if (!confirm(`Delete tag "${tagName}"?`)) return;
+    const ok = await confirmDialog({
+      title: `Delete tag "${tagName}"?`,
+      description: "This removes the tag from everywhere it is applied.",
+      tone: "destructive",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await onDelete(tagId);
     });

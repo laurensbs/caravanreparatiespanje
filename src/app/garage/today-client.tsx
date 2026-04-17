@@ -21,6 +21,7 @@ import {
   X,
   MessageSquare,
 } from "lucide-react";
+import { toast } from "sonner";
 
 /* ─── Types ─── */
 
@@ -295,11 +296,19 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                           await toggleMyWorker(repairId, user.id);
                         }
                         await startTimer(repairId, user.id);
+                        const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
+                        toast.success(
+                          `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${workerName}`
+                        );
                       } catch {
-                        // Timer may already be running — continue to navigate
+                        // Timer may already be running — continue and refresh state
+                        const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
+                        toast.message(
+                          `${t("Timer already running for", "Temporizador ya activo para", "Timer loopt al voor")} ${workerName}`
+                        );
                       }
                       setWorkerPickerRepairId(null);
-                      router.push(`/garage/repairs/${repairId}`);
+                      router.refresh();
                     });
                   }}
                   className="flex items-center gap-3 h-14 px-4 rounded-xl bg-white/[0.06] border border-white/[0.06] hover:bg-white/[0.12] active:scale-[0.97] transition-all disabled:opacity-50"
@@ -317,9 +326,17 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                 setWorkerPickerRepairId(null);
                 router.push(`/garage/repairs/${repairId}`);
               }}
+              className="w-full mt-3 h-11 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition-all"
+            >
+              {t("Open job details", "Abrir detalles", "Open klusdetails")}
+            </button>
+            <button
+              onClick={() => {
+                setWorkerPickerRepairId(null);
+              }}
               className="w-full mt-4 h-11 rounded-xl text-sm font-medium text-white/40 hover:text-white/60 hover:bg-white/[0.04] transition-all"
             >
-              {t("Skip — just view", "Saltar — solo ver", "Overslaan — alleen bekijken")}
+              {t("Close", "Cerrar", "Sluiten")}
             </button>
           </div>
         </div>
@@ -395,6 +412,13 @@ function JobCard({ repair, t, activeTimers, onTap }: { repair: RepairItem; t: (e
             <span className="text-xs text-white/20">· {repair.unitBrand} {repair.unitModel}</span>
           )}
         </div>
+
+        {(repair.unitStorageLocation || repair.unitCurrentPosition) && (
+          <p className="text-[12px] text-white/35 truncate mb-2">
+            📍 {repair.unitStorageLocation || t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
+            {repair.unitCurrentPosition ? ` · ${repair.unitCurrentPosition}` : ""}
+          </p>
+        )}
 
         {repair.title && <p className="text-[13px] text-white/25 truncate mb-2.5">{repair.title}</p>}
         {!repair.title && <div className="mb-1.5" />}

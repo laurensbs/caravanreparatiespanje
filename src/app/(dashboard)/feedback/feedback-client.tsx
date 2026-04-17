@@ -137,26 +137,16 @@ export function FeedbackClient({
 
   return (
     <div className="animate-fade-in">
-      <header className="border-b border-border/60 bg-gradient-to-r from-muted/20 via-transparent to-cyan-500/[0.04] px-4 py-5 sm:px-6 sm:py-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Feedback</h1>
-            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Suggest improvements or report issues. Managers can reply in the thread. Below you will find what has shipped recently; after
-              that, your open and resolved requests. When there is an unread reply, a dot appears on the Feedback icon in the top bar until you
-              open this page.
-            </p>
-          </div>
-          <Button
-            type="button"
-            onClick={() => setShowForm(!showForm)}
-            className="h-11 w-full shrink-0 touch-manipulation gap-2 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.98] sm:h-11 sm:w-auto sm:px-6"
-          >
-            <MessageSquarePlus className="h-4 w-4" aria-hidden />
-            {showForm ? "Close form" : "New request"}
-          </Button>
-        </div>
-      </header>
+      <div className="flex items-center justify-end gap-2 border-b border-border/60 px-4 py-3 sm:px-6">
+        <Button
+          type="button"
+          onClick={() => setShowForm(!showForm)}
+          className="h-10 w-full shrink-0 touch-manipulation gap-2 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.98] sm:h-9 sm:w-auto"
+        >
+          <MessageSquarePlus className="h-4 w-4" aria-hidden />
+          {showForm ? "Close form" : "New request"}
+        </Button>
+      </div>
 
       <div className="space-y-6 border-b border-border/40 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         <FeedbackProductUpdates openRequestCount={openItems.length} doneRequestCount={closedItems.length} />

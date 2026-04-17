@@ -1,0 +1,14 @@
+---
+description: Na schema/migratie-wijzigingen altijd git pushen en productie-DB noemen.
+alwaysApply: true
+---
+
+# Deploy: database + git
+
+Wanneer je **Drizzle-schema**, **nieuwe of aangepaste SQL in `drizzle/`**, of code toevoegt die **nieuwe DB-kolommen of enums** verwacht:
+
+1. **Commit en push** de wijzigingen naar `main` (of de actieve release-branch) zodra ze klaar zijn — niet wachten op een apart verzoek.
+2. **Vermeld expliciet** in je antwoord aan de gebruiker dat de **productiedatabase** dezelfde migratie moet hebben (Neon SQL Editor, `npm run db:migrate`, of hun vaste proces). Geef zo nodig de exacte `ALTER TABLE` / bestandsnaam.
+3. Als productie een generieke Next.js-fout geeft (“Server Components render”), denk eerst aan **schema drift**: code is nieuwer dan de database.
+
+Geen extra markdown-documenten aanmaken tenzij de gebruiker daarom vraagt.

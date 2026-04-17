@@ -1,8 +1,5 @@
 import { getRepairJobs, getRepairStatusCounts, type RepairFilters } from "@/actions/repairs";
 import { getLocations } from "@/actions/locations";
-import { getAllCustomers } from "@/actions/customers";
-import { getParts, getPartCategories } from "@/actions/parts";
-import { getAllUnits } from "@/actions/units";
 import { getTags } from "@/actions/tags";
 import { RepairTable } from "@/components/repairs/repair-table";
 import { RepairFiltersBar } from "@/components/repairs/repair-filters";
@@ -36,15 +33,14 @@ export default async function RepairsPage({ searchParams }: Props) {
     page: params.page ? parseInt(params.page) : 1,
   };
 
-  const [{ jobs, total }, locationsList, customersList, partsCatalog, allTags, unitsList, statusCounts, partCategories] = await Promise.all([
+  // The NewRepairDialog now lazy-loads its supporting lists (customers,
+  // parts, units, part categories) on first open, so this page only
+  // selects what the table + filters actually need up-front.
+  const [{ jobs, total }, locationsList, allTags, statusCounts] = await Promise.all([
     getRepairJobs(filters),
     getLocations(),
-    getAllCustomers(),
-    getParts(),
     getTags(),
-    getAllUnits(),
     getRepairStatusCounts(),
-    getPartCategories(),
   ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -81,15 +77,7 @@ export default async function RepairsPage({ searchParams }: Props) {
             )}
           </>
         }
-        actions={
-          <NewRepairDialog
-            locations={filteredLocations}
-            customers={customersList}
-            partsCatalog={partsCatalog}
-            partCategories={partCategories}
-            units={unitsList}
-          />
-        }
+        actions={<NewRepairDialog locations={filteredLocations} />}
       />
 
       {/* Quick filters — horizontal scroll on narrow screens */}

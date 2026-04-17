@@ -5,9 +5,6 @@ import { PipelineSummary } from "@/components/repair-progress";
 import { GarageAttentionWidget } from "@/components/garage-sync-ui";
 
 import { getLocations } from "@/actions/locations";
-import { getAllCustomers } from "@/actions/customers";
-import { getParts, getPartCategories } from "@/actions/parts";
-import { getAllUnits } from "@/actions/units";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
   Wrench, AlertTriangle, ArrowRight, PhoneOff,
@@ -26,16 +23,15 @@ import { cn } from "@/lib/utils";
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
 export default async function DashboardPage() {
-  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, customersList, partsCatalog, dashboardSuggestions, unitsList, partCategories, garageAttention] =
+  // The dashboard used to eagerly SELECT every customer, unit, part, and
+  // part category only to hand them to the NewRepairDialog. The dialog
+  // now lazy-loads those lists on first open, so this page stays lean.
+  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, dashboardSuggestions, garageAttention] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
       getLocations(),
-      getAllCustomers(),
-      getParts(),
       getDashboardSuggestions(),
-      getAllUnits(),
-      getPartCategories(),
       getGarageAttentionItems(),
     ]);
 
@@ -60,15 +56,7 @@ export default async function DashboardPage() {
         eyebrow="Operations"
         title="Dashboard"
         description="Overview of repair operations across locations."
-        actions={
-          <NewRepairDialog
-            locations={filteredLocations}
-            customers={customersList}
-            partsCatalog={partsCatalog}
-            partCategories={partCategories}
-            units={unitsList}
-          />
-        }
+        actions={<NewRepairDialog locations={filteredLocations} />}
       />
 
       {/* ── Quick Filter Pills ─────────────────────────────── */}

@@ -42,7 +42,8 @@ import type { PartCategory } from "@/components/parts/parts-client";
 
 interface NewRepairDialogProps {
   locations: { id: string; name: string }[];
-  customers: { id: string; name: string }[];
+  /** Optional: when omitted, the dialog lazy-loads on first open. */
+  customers?: { id: string; name: string }[];
   partsCatalog?: CatalogPart[];
   partCategories?: PartCategory[];
   units?: UnitOption[];
@@ -64,7 +65,13 @@ const QUICK_STATUSES = [
   { value: "in_inspection", label: "In Inspection" },
 ];
 
-export function NewRepairDialog({ locations, customers, partsCatalog = [], partCategories = [], units = [] }: NewRepairDialogProps) {
+export function NewRepairDialog({
+  locations,
+  customers: initialCustomers,
+  partsCatalog: initialPartsCatalog,
+  partCategories: initialPartCategories,
+  units: initialUnits,
+}: NewRepairDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -77,6 +84,38 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], partC
   const [partsExpanded, setPartsExpanded] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+
+  // Lazy bootstrap: if the caller didn't preload the supporting lists,
+  // fetch them the first time the dialog is opened. Keeps the dashboard
+  // free from having to SELECT every customer/unit/part on every visit.
+  const [customers, setCustomers] = useState(initialCustomers ?? []);
+  const [units, setUnits] = useState<UnitOption[]>(initialUnits ?? []);
+  const [partsCatalog, setPartsCatalog] = useState<CatalogPart[]>(initialPartsCatalog ?? []);
+  const [partCategories, setPartCategories] = useState<PartCategory[]>(initialPartCategories ?? []);
+  const [bootstrapping, setBootstrapping] = useState(false);
+  const bootstrappedRef = useRef(Boolean(initialCustomers));
+
+  useEffect(() => {
+    if (!open || bootstrappedRef.current || bootstrapping) return;
+    setBootstrapping(true);
+    (async () => {
+      try {
+        const { getNewRepairDialogData } = await import(
+          "@/actions/new-repair-dialog-data"
+        );
+        const data = await getNewRepairDialogData();
+        setCustomers(data.customers);
+        setUnits(data.units);
+        setPartsCatalog(data.partsCatalog);
+        setPartCategories(data.partCategories as unknown as PartCategory[]);
+        bootstrappedRef.current = true;
+      } catch {
+        toast.error("Could not load lists. Close and retry.");
+      } finally {
+        setBootstrapping(false);
+      }
+    })();
+  }, [open, bootstrapping]);
 
   const config = JOB_TYPE_CONFIG[jobType];
 

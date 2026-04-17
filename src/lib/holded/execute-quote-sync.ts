@@ -14,11 +14,20 @@ import {
 export type HoldedQuoteSyncStats = {
   discovered: number;
   quoteApprovalsSynced: number;
+  quoteDeclinesSynced: number;
+  repairsAutoCreated: number;
   errors: number;
   quotesTotal: number;
   customersResolved: number;
   holdedContactBackfilled: number;
 };
+
+function deriveTitleFromQuote(q: { docNumber?: string | null; desc?: string | null; products?: Array<{ name?: string | null }> | null }): string {
+  const firstLine = q.products?.find((p) => p.name && p.name.trim().length > 1)?.name?.trim();
+  const descFirstLine = q.desc?.split(/\n/).map((s) => s.trim()).find((s) => s.length > 2);
+  const candidate = firstLine || descFirstLine || q.docNumber || "Holded quote";
+  return candidate.slice(0, 480);
+}
 
 /** Same logic as the cron job: discover quote links, sync approval from Holded. */
 export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
@@ -29,6 +38,8 @@ export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
   const stats: HoldedQuoteSyncStats = {
     discovered: 0,
     quoteApprovalsSynced: 0,
+    quoteDeclinesSynced: 0,
+    repairsAutoCreated: 0,
     errors: 0,
     quotesTotal: 0,
     customersResolved: 0,
@@ -124,30 +135,82 @@ export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
       const chosen = pickRepairForHoldedDocument(qText, matchFields, q.date * 1000);
       const matched = chosen ? unlinked.find((r) => r.id === chosen.id) : undefined;
 
-      if (!matched) continue;
+      if (matched) {
+        await db
+          .update(repairJobs)
+          .set({
+            holdedQuoteId: q.id,
+            holdedQuoteNum: q.docNumber,
+            holdedQuoteDate: q.date ? new Date(q.date * 1000) : new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(repairJobs.id, matched.id));
 
-      await db
-        .update(repairJobs)
-        .set({
+        await db.insert(repairJobEvents).values({
+          repairJobId: matched.id,
+          eventType: "quote_discovered",
+          fieldChanged: "holdedQuoteId",
+          oldValue: "",
+          newValue: q.docNumber ?? q.id,
+          comment: `Quote ${q.docNumber ?? q.id} linked from Holded sync`,
+        });
+
+        matched.holdedQuoteId = q.id;
+        repairByQuoteId.set(q.id, matched);
+        stats.discovered++;
+        continue;
+      }
+
+      // No repair matched. Auto-create a provisional repairJob so a Holded-only
+      // quote (someone created it manually in Holded) shows up in the panel.
+      const approved = q.status === 1 || (typeof q.approvedAt === "number" && q.approvedAt > 0);
+      const declined = q.status === -1;
+      const initialStatus = declined ? "rejected" : approved ? "scheduled" : "waiting_approval";
+      const initialResponse = declined ? "declined" : approved ? "approved" : "waiting_response";
+
+      const [created] = await db
+        .insert(repairJobs)
+        .values({
+          customerId,
+          title: deriveTitleFromQuote(q),
+          descriptionRaw: q.desc?.slice(0, 4000) ?? null,
+          status: initialStatus,
+          customerResponseStatus: initialResponse,
           holdedQuoteId: q.id,
           holdedQuoteNum: q.docNumber,
           holdedQuoteDate: q.date ? new Date(q.date * 1000) : new Date(),
-          updatedAt: new Date(),
+          statusReason: "Auto-created from Holded quote",
+          createdAt: q.date ? new Date(q.date * 1000) : new Date(),
         })
-        .where(eq(repairJobs.id, matched.id));
+        .returning({ id: repairJobs.id });
 
-      await db.insert(repairJobEvents).values({
-        repairJobId: matched.id,
-        eventType: "quote_discovered",
-        fieldChanged: "holdedQuoteId",
-        oldValue: "",
-        newValue: q.docNumber ?? q.id,
-        comment: `Quote ${q.docNumber ?? q.id} linked from Holded sync`,
-      });
+      if (created) {
+        await db.insert(repairJobEvents).values({
+          repairJobId: created.id,
+          eventType: "quote_discovered",
+          fieldChanged: "auto_created",
+          oldValue: "",
+          newValue: q.docNumber ?? q.id,
+          comment: `Auto-created from Holded quote ${q.docNumber ?? q.id}. Review the work order.`,
+        });
 
-      matched.holdedQuoteId = q.id;
-      repairByQuoteId.set(q.id, matched);
-      stats.discovered++;
+        const newRecord = {
+          id: created.id,
+          customerId,
+          holdedQuoteId: q.id,
+          publicCode: null,
+          spreadsheetInternalId: null,
+          title: deriveTitleFromQuote(q),
+          createdAt: q.date ? new Date(q.date * 1000) : new Date(),
+          completedAt: null,
+          registration: null,
+        };
+        const list = repairsByCustomer.get(customerId) ?? [];
+        list.push(newRecord);
+        repairsByCustomer.set(customerId, list);
+        repairByQuoteId.set(q.id, newRecord);
+        stats.repairsAutoCreated++;
+      }
     } catch {
       stats.errors++;
     }
@@ -171,6 +234,32 @@ export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
       if (!q) continue;
 
       const approved = q.status === 1 || (typeof q.approvedAt === "number" && q.approvedAt > 0);
+      const declined = q.status === -1;
+
+      // ── Decline path: Holded quote was cancelled / declined.
+      if (declined) {
+        if (repair.customerResponseStatus === "declined") continue;
+        const updates: Record<string, unknown> = {
+          customerResponseStatus: "declined",
+          updatedAt: new Date(),
+        };
+        if (repair.status === "waiting_approval") {
+          updates.status = "rejected";
+        }
+        await db.update(repairJobs).set(updates).where(eq(repairJobs.id, repair.id));
+        await db.insert(repairJobEvents).values({
+          repairJobId: repair.id,
+          eventType: "quote_approval_synced",
+          fieldChanged: "holded_quote",
+          oldValue: `${repair.customerResponseStatus} / ${repair.status}`,
+          newValue: `declined / ${updates.status ?? repair.status}`,
+          comment: `Holded quote ${q.docNumber ?? q.id} declined / cancelled in Holded`,
+        });
+        stats.quoteDeclinesSynced++;
+        continue;
+      }
+
+      // ── Approval path.
       if (!approved) continue;
       if (repair.customerResponseStatus === "declined") continue;
 

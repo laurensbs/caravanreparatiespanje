@@ -13,7 +13,6 @@ import {
   ChevronsRight,
   Package,
   Receipt,
-  Trash2,
   CalendarDays,
   Warehouse,
   ExternalLink,
@@ -45,7 +44,6 @@ const navItems: NavItem[] = [
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data" },
   // FINANCE
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
-  { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
 
 interface SidebarProps {

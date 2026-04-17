@@ -4,16 +4,19 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
   X, ChevronRight, ArrowLeft,
-  Wrench, Receipt, Users, FileText, Package, Lightbulb, HelpCircle,
-  Zap, CheckCircle2, ArrowRight, Send, RotateCcw, Sparkles, Bot,
+  Wrench, Receipt, Users, Package, Lightbulb, HelpCircle,
+  Zap, RotateCcw, Sparkles, Bot, Send,
   ExternalLink, Truck, ClipboardList, Search, Plus, AlertCircle,
   ArrowUpRight, BarChart3, Settings,
+  Inbox, Bell, Clock, AlertTriangle, Check, FileText, Phone, Calendar,
+  DollarSign, MessageSquare, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useAssistantContext, type AssistantPage, type AssistantAction, type RepairContext } from "@/components/assistant-context";
+import { useAssistantContext, type AssistantPage, type AssistantAction, type RepairContext, type InboxItem } from "@/components/assistant-context";
 import { useRouter } from "next/navigation";
 import { STATUS_LABELS, type RepairStatus } from "@/types";
+import { formatDistanceToNow } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -1118,8 +1121,228 @@ interface SmartAssistantProps {
   context?: RepairContext;
 }
 
+// ─── Inbox view (smart notifications) ─────────────────────────
+
+const INBOX_TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
+  create_invoice: { icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
+  follow_up_customer: { icon: Phone, color: "text-teal-600 dark:text-teal-400", bg: "bg-teal-500/10" },
+  order_parts: { icon: Package, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
+  check_delivery: { icon: Truck, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500/10" },
+  schedule_repair: { icon: Calendar, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  send_quote: { icon: DollarSign, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
+  contact_customer: { icon: MessageSquare, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-500/10" },
+  custom: { icon: Pencil, color: "text-muted-foreground", bg: "bg-muted" },
+};
+
+const GARAGE_TRIGGER_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
+  garage_comment: { icon: MessageSquare, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  garage_not_done: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500/10" },
+  garage_task_suggestion: { icon: Calendar, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
+  garage_done: { icon: Check, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
+  garage_feedback: { icon: MessageSquare, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+};
+
+const INBOX_TYPE_LABELS: Record<string, string> = {
+  create_invoice: "Invoice",
+  follow_up_customer: "Follow-up",
+  order_parts: "Parts",
+  check_delivery: "Delivery",
+  schedule_repair: "Schedule",
+  send_quote: "Quote",
+  contact_customer: "Contact",
+  custom: "Custom",
+};
+
+const GARAGE_LABELS: Record<string, string> = {
+  garage_comment: "Garage",
+  garage_not_done: "Garage",
+  garage_task_suggestion: "Garage",
+  garage_done: "Garage",
+  garage_feedback: "Garage",
+};
+
+function inboxConfigFor(item: InboxItem) {
+  if (item.triggerEvent) {
+    const key = item.triggerEvent.split(":")[0];
+    if (GARAGE_TRIGGER_CONFIG[key]) return GARAGE_TRIGGER_CONFIG[key];
+  }
+  return INBOX_TYPE_CONFIG[item.reminderType] ?? INBOX_TYPE_CONFIG.custom;
+}
+
+function inboxLabelFor(item: InboxItem) {
+  if (item.triggerEvent) {
+    const key = item.triggerEvent.split(":")[0];
+    if (GARAGE_LABELS[key]) return GARAGE_LABELS[key];
+  }
+  return INBOX_TYPE_LABELS[item.reminderType] ?? "Custom";
+}
+
+function isOverdue(dueAt: Date | null): boolean {
+  return dueAt ? new Date(dueAt) < new Date() : false;
+}
+
+function InboxView({
+  items,
+  loading,
+  onComplete,
+  onDismiss,
+  onRefresh,
+  onSwitchToAssistant,
+  onClose,
+  router,
+}: {
+  items: InboxItem[];
+  loading: boolean;
+  onComplete: (id: string) => Promise<void>;
+  onDismiss: (id: string) => Promise<void>;
+  onRefresh: () => Promise<void>;
+  onSwitchToAssistant: () => void;
+  onClose: () => void;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const sorted = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const ao = isOverdue(a.dueAt) ? 1 : 0;
+      const bo = isOverdue(b.dueAt) ? 1 : 0;
+      if (ao !== bo) return bo - ao;
+      const ad = a.dueAt ? new Date(a.dueAt).getTime() : Infinity;
+      const bd = b.dueAt ? new Date(b.dueAt).getTime() : Infinity;
+      return ad - bd;
+    });
+  }, [items]);
+
+  if (loading && items.length === 0) {
+    return (
+      <div className="flex items-center justify-center px-6 py-14">
+        <div className="flex gap-1">
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: "0ms" }} />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: "150ms" }} />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: "300ms" }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (sorted.length === 0) {
+    return (
+      <div className="px-6 py-14 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+          <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <p className="text-sm font-medium text-foreground">You&apos;re all caught up</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          We&apos;ll add items here when status changes or the garage nudges you.
+        </p>
+        <button
+          type="button"
+          onClick={onSwitchToAssistant}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <Sparkles className="h-3 w-3" />
+          Ask the assistant
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="py-1">
+      {sorted.map((item) => {
+        const config = inboxConfigFor(item);
+        const label = inboxLabelFor(item);
+        const Icon = config.icon;
+        const overdue = isOverdue(item.dueAt);
+
+        return (
+          <li key={item.id} className="border-b border-border/40 last:border-0">
+            <button
+              type="button"
+              className={cn(
+                "group flex w-full touch-manipulation gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50",
+                overdue && "bg-red-500/[0.06] hover:bg-red-500/10",
+              )}
+              onClick={() => {
+                onClose();
+                if (item.repairJobId) router.push(`/repairs/${item.repairJobId}`);
+              }}
+            >
+              <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", config.bg)}>
+                <Icon className={cn("h-4 w-4", config.color)} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span className={cn("text-[10px] font-semibold uppercase tracking-wide", config.color)}>{label}</span>
+                  {item.autoGenerated && (
+                    <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground/70">Auto</span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-[13px] font-semibold leading-snug text-foreground">{item.title}</p>
+                {item.description ? (
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+                ) : null}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {item.publicCode && (
+                    <span className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400">
+                      {item.publicCode}
+                      {item.customerName ? ` · ${item.customerName}` : ""}
+                    </span>
+                  )}
+                  {item.dueAt && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 text-[11px]",
+                        overdue ? "font-semibold text-red-600 dark:text-red-400" : "text-muted-foreground",
+                      )}
+                    >
+                      {overdue ? <AlertTriangle className="h-3 w-3 shrink-0" /> : <Clock className="h-3 w-3 shrink-0" />}
+                      {formatDistanceToNow(new Date(item.dueAt), { addSuffix: true })}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-start gap-0.5 pt-0.5 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onComplete(item.id);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400"
+                  title="Mark done"
+                  aria-label="Mark inbox item done"
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onDismiss(item.id);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Dismiss"
+                  aria-label="Dismiss inbox item"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function SmartAssistant({ page, pathname, context }: SmartAssistantProps) {
-  const { open, setOpen, dispatchAction } = useAssistantContext();
+  const {
+    open, setOpen, dispatchAction,
+    tab, setTab,
+    inboxItems, inboxLoading, inboxTotalCount,
+    refreshInbox, completeInboxItem, dismissInboxItem,
+  } = useAssistantContext();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -1371,13 +1594,20 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
     .filter((qa): qa is QuickActionDef => !!qa);
   const showHome = messages.length === 0 && !selectedCategory;
 
+  const overdueInboxCount = useMemo(
+    () => inboxItems.filter((r) => r.dueAt && new Date(r.dueAt).getTime() < Date.now()).length,
+    [inboxItems],
+  );
+
+  const inAssistantTab = tab === "assistant";
+
   return (
     <>
       {/* Panel */}
       {open && (
-        <div className="fixed top-14 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-5rem))] flex flex-col rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+        <div className="fixed top-14 right-5 z-50 w-[420px] max-h-[min(640px,calc(100vh-5rem))] flex flex-col rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
           {/* Header — brand gradient, calmer than solid flat cyan */}
-          <div className="px-4 py-3 border-b border-white/10 shrink-0 bg-gradient-to-br from-cyan-600/95 via-teal-700/90 to-slate-800">
+          <div className="px-4 pt-3 pb-2.5 border-b border-white/10 shrink-0 bg-gradient-to-br from-cyan-600/95 via-teal-700/90 to-slate-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 {selectedCategory ? (
@@ -1396,17 +1626,23 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                 )}
                 <div>
                   <h3 className="text-[13px] font-semibold text-white">
-                    {selectedCategory ? CATEGORY_CONFIG[selectedCategory].label : "Smart Assistant"}
+                    {selectedCategory
+                      ? CATEGORY_CONFIG[selectedCategory].label
+                      : tab === "inbox" ? "Inbox" : "Assistant"}
                   </h3>
                   <p className="text-[10px] text-white/65 line-clamp-2 leading-snug">
                     {selectedCategory
                       ? FAQ_ITEMS.filter((f) => f.category === selectedCategory).length + " questions"
-                      : liveSubtitle}
+                      : tab === "inbox"
+                        ? (inboxTotalCount === 0
+                          ? "All caught up — nothing needs you"
+                          : `${inboxTotalCount} open${overdueInboxCount > 0 ? ` · ${overdueInboxCount} overdue` : ""}`)
+                        : liveSubtitle}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                {messages.length > 0 && !selectedCategory && (
+                {inAssistantTab && messages.length > 0 && !selectedCategory && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1427,11 +1663,66 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                 </Button>
               </div>
             </div>
+
+            {/* Tab strip */}
+            {!selectedCategory && (
+              <div className="mt-3 flex items-center gap-1 rounded-lg bg-white/[0.08] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setTab("inbox")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all",
+                    tab === "inbox"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-white/75 hover:text-white",
+                  )}
+                >
+                  <Inbox className="h-3 w-3" />
+                  Inbox
+                  {inboxTotalCount > 0 && (
+                    <span
+                      className={cn(
+                        "ml-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums",
+                        tab === "inbox"
+                          ? overdueInboxCount > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"
+                          : overdueInboxCount > 0 ? "bg-red-500/90 text-white" : "bg-white/20 text-white",
+                      )}
+                    >
+                      {inboxTotalCount > 9 ? "9+" : inboxTotalCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab("assistant")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all",
+                    tab === "assistant"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-white/75 hover:text-white",
+                  )}
+                >
+                  <Sparkles className="h-3 w-3" />
+                  Assistant
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Content area */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
-            {selectedCategory ? (
+            {tab === "inbox" && !selectedCategory ? (
+              <InboxView
+                items={inboxItems}
+                loading={inboxLoading}
+                onComplete={completeInboxItem}
+                onDismiss={dismissInboxItem}
+                onRefresh={refreshInbox}
+                onSwitchToAssistant={() => setTab("assistant")}
+                onClose={() => setOpen(false)}
+                router={router}
+              />
+            ) : selectedCategory ? (
               /* Category browse */
               <div className="p-2 space-y-0.5">
                 {FAQ_ITEMS.filter((f) => f.category === selectedCategory).map((faq) => (
@@ -1643,7 +1934,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
           </div>
 
           {/* Input area */}
-          {!selectedCategory && (
+          {!selectedCategory && tab === "assistant" && (
             <form onSubmit={handleSubmit} className="border-t border-gray-100 dark:border-border bg-white dark:bg-card shrink-0">
               {/* Live suggestion chips */}
               {inputSuggestions.length > 0 && (

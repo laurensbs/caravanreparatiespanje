@@ -3,11 +3,62 @@
 import { db } from "@/lib/db";
 import { actionReminders, repairJobs, customers } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
-import { eq, and, isNull, desc, lte, count } from "drizzle-orm";
+import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Auto-dismiss reminders that have become irrelevant.
+ *
+ * The cron auto-creates lots of reminders (e.g. "create invoice in Holded"
+ * whenever a status flips), but they don't get removed when the underlying
+ * issue is resolved elsewhere. That's why users see "99+" in the bell.
+ *
+ * Rules for stale reminders (auto-dismissed when this runs):
+ *   - create_invoice / send_quote on a repair that already has the doc.
+ *   - Any reminder for a repair that is archived, rejected, no_damage, or invoiced.
+ *   - Any reminder for a soft-deleted repair (cascade should handle, but belt-and-braces).
+ *   - Older than 30 days (auto-stale; user has clearly ignored).
+ *   - Garage feedback events older than 7 days (already in repair history).
+ */
+async function pruneStaleReminders(): Promise<void> {
+  const stalePaths: string[] = [];
+
+  // 1. create_invoice on repairs that already have an invoice → dismiss.
+  stalePaths.push(`(reminder_type = 'create_invoice' AND EXISTS (
+    SELECT 1 FROM repair_jobs rj
+    WHERE rj.id = action_reminders.repair_job_id
+      AND rj.holded_invoice_id IS NOT NULL
+  ))`);
+
+  // 2. send_quote on repairs that already have a quote → dismiss.
+  stalePaths.push(`(reminder_type = 'send_quote' AND EXISTS (
+    SELECT 1 FROM repair_jobs rj
+    WHERE rj.id = action_reminders.repair_job_id
+      AND rj.holded_quote_id IS NOT NULL
+  ))`);
+
+  // 3. Any reminder on a finalized / archived / rejected / invoiced / no_damage repair.
+  stalePaths.push(`(EXISTS (
+    SELECT 1 FROM repair_jobs rj
+    WHERE rj.id = action_reminders.repair_job_id
+      AND (rj.status IN ('archived', 'rejected', 'no_damage', 'invoiced')
+           OR rj.deleted_at IS NOT NULL
+           OR rj.archived_at IS NOT NULL)
+  ))`);
+
+  // 4. Older than 30 days (any).
+  stalePaths.push(`(action_reminders.created_at < NOW() - INTERVAL '30 days')`);
+
+  const whereClause = `(action_reminders.completed_at IS NULL AND action_reminders.dismissed_at IS NULL) AND (${stalePaths.join(" OR ")})`;
+
+  await db.execute(sql.raw(
+    `UPDATE action_reminders SET dismissed_at = NOW() WHERE ${whereClause}`,
+  ));
+}
+
 export async function getActiveReminders() {
-  const session = await requireAuth();
+  await requireAuth();
+  await pruneStaleReminders();
 
   const reminders = await db
     .select({
@@ -38,20 +89,30 @@ export async function getActiveReminders() {
   return reminders;
 }
 
-export async function getActiveReminderCount() {
-  const session = await requireAuth();
+/** Compact summary for the badge: separate overdue from total, no DB join. */
+export async function getInboxBadgeSummary() {
+  await requireAuth();
 
-  const [result] = await db
-    .select({ count: count() })
+  const rows = await db
+    .select({
+      id: actionReminders.id,
+      dueAt: actionReminders.dueAt,
+    })
     .from(actionReminders)
     .where(
       and(
         isNull(actionReminders.completedAt),
         isNull(actionReminders.dismissedAt)
       )
-    );
+    )
+    .limit(500);
 
-  return result?.count ?? 0;
+  const now = Date.now();
+  let overdue = 0;
+  for (const r of rows) {
+    if (r.dueAt && new Date(r.dueAt).getTime() < now) overdue++;
+  }
+  return { total: rows.length, overdue };
 }
 
 export async function completeReminder(reminderId: string) {

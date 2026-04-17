@@ -41,11 +41,20 @@ export type HoldedPaymentSyncStats = {
   discovered: number;
   statusUpdated: number;
   statusAdvanced: number;
+  repairsAutoCreated: number;
   errors: number;
   invoicesTotal: number;
   customersResolved: number;
   holdedContactBackfilled: number;
 };
+
+function deriveTitleFromInvoice(inv: HoldedInvoice): string {
+  const firstItem = inv.items?.find((i) => i.name && i.name.trim().length > 1)?.name?.trim();
+  const firstProduct = inv.products?.find((p) => p.name && p.name.trim().length > 1)?.name?.trim();
+  const descFirstLine = inv.desc?.split(/\n/).map((s) => s.trim()).find((s) => s.length > 2);
+  const candidate = firstItem || firstProduct || descFirstLine || inv.docNumber || "Holded invoice";
+  return candidate.slice(0, 480);
+}
 
 const earlyStatuses = [
   "new",
@@ -71,6 +80,7 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
     discovered: 0,
     statusUpdated: 0,
     statusAdvanced: 0,
+    repairsAutoCreated: 0,
     errors: 0,
     invoicesTotal: 0,
     customersResolved: 0,
@@ -215,14 +225,12 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
       }
       if (!customerId) continue;
 
-      const customerRepairs = repairsByCustomer.get(customerId);
-      if (!customerRepairs) continue;
+      const customerRepairs = repairsByCustomer.get(customerId) ?? [];
 
       const manualOverrideStatuses = ["warranty", "our_costs", "no_damage", "rejected"];
       const unlinkedRepairs = customerRepairs.filter(
         (r) => !r.holdedInvoiceId && !manualOverrideStatuses.includes(r.invoiceStatus),
       );
-      if (unlinkedRepairs.length === 0) continue;
 
       const invText = buildHoldedInvoiceHaystackLower(inv);
 
@@ -236,7 +244,9 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
         completedAt: r.completedAt,
       }));
 
-      const chosen = pickRepairForHoldedDocument(invText, matchFields, inv.date * 1000);
+      const chosen = unlinkedRepairs.length > 0
+        ? pickRepairForHoldedDocument(invText, matchFields, inv.date * 1000)
+        : null;
       const matched = chosen ? unlinkedRepairs.find((r) => r.id === chosen.id) ?? null : null;
 
       if (matched) {
@@ -267,6 +277,61 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
         matched.invoiceStatus = newStatus;
         repairByInvoiceId.set(inv.id, matched);
         stats.discovered++;
+        continue;
+      }
+
+      // No repair matched. Auto-create a provisional repair so a Holded-only
+      // invoice (manually created in Holded) appears in the panel.
+      const finalStatus: "invoiced" | "completed" =
+        newStatus === "paid" || newStatus === "sent" ? "invoiced" : "completed";
+      const invDate = new Date(inv.date * 1000);
+      const [created] = await db
+        .insert(repairJobs)
+        .values({
+          customerId,
+          title: deriveTitleFromInvoice(inv),
+          descriptionRaw: inv.desc?.slice(0, 4000) ?? null,
+          status: finalStatus,
+          invoiceStatus: newStatus,
+          holdedInvoiceId: inv.id,
+          holdedInvoiceNum: inv.docNumber,
+          holdedInvoiceDate: invDate,
+          completedAt: invDate,
+          statusReason: "Auto-created from Holded invoice",
+          createdAt: invDate,
+        })
+        .returning({ id: repairJobs.id });
+
+      if (created) {
+        await db.insert(repairJobEvents).values({
+          repairJobId: created.id,
+          eventType: "invoice_discovered",
+          fieldChanged: "auto_created",
+          oldValue: "",
+          newValue: inv.docNumber,
+          comment: `Auto-created from Holded invoice ${inv.docNumber} (€${inv.total.toFixed(2)}). Review the work order.`,
+        });
+
+        const newRecord = {
+          id: created.id,
+          customerId,
+          holdedInvoiceId: inv.id,
+          holdedInvoiceDate: invDate,
+          invoiceStatus: newStatus,
+          publicCode: null,
+          spreadsheetInternalId: null,
+          title: deriveTitleFromInvoice(inv),
+          status: finalStatus,
+          dueDate: null,
+          createdAt: invDate,
+          completedAt: invDate,
+          registration: null,
+        };
+        const list = repairsByCustomer.get(customerId) ?? [];
+        list.push(newRecord);
+        repairsByCustomer.set(customerId, list);
+        repairByInvoiceId.set(inv.id, newRecord);
+        stats.repairsAutoCreated++;
       }
     } catch {
       stats.errors++;

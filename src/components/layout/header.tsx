@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare, Menu, Trash2 } from "lucide-react";
+import { Search, LogOut, Settings, Sparkles, MessageSquare, Menu, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { ReminderPanel } from "@/components/reminder-panel";
+import { HoverHint, TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandPalette } from "@/components/command-palette";
 import { useAssistantContext } from "@/components/assistant-context";
@@ -46,29 +46,79 @@ function HeaderIconLink({
 }) {
   const showBadge = badgeCount != null && badgeCount > 0;
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="relative h-8 w-8 shrink-0 touch-manipulation rounded-lg"
-      asChild
-    >
-      <Link
-        href={href}
-        title={title}
-        aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
+    <HoverHint label={title} side="bottom">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative h-8 w-8 shrink-0 touch-manipulation rounded-lg"
+        asChild
+      >
+        <Link
+          href={href}
+          aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
+          className={cn(
+            "inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
+            isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100"
+          )}
+        >
+          {children}
+          {showBadge ? (
+            <span className="absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white tabular-nums ring-2 ring-white dark:ring-gray-950">
+              {badgeCount! > 9 ? "9+" : badgeCount}
+            </span>
+          ) : null}
+        </Link>
+      </Button>
+    </HoverHint>
+  );
+}
+
+function HeaderIconButton({
+  title,
+  onClick,
+  children,
+  isActive,
+  badgeCount,
+  badgeTone = "red",
+  ariaLabel,
+}: {
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+  isActive?: boolean;
+  badgeCount?: number;
+  badgeTone?: "red" | "neutral";
+  ariaLabel?: string;
+}) {
+  const showBadge = badgeCount != null && badgeCount > 0;
+  return (
+    <HoverHint label={title} side="bottom">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onClick}
+        aria-label={ariaLabel ?? (showBadge ? `${title}, ${badgeCount} pending` : title)}
         className={cn(
-          "inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
-          isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100"
+          "relative h-8 w-8 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
+          isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100",
         )}
       >
         {children}
         {showBadge ? (
-          <span className="absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white tabular-nums ring-2 ring-white dark:ring-gray-950">
-            {badgeCount! > 99 ? "99+" : badgeCount}
+          <span
+            className={cn(
+              "absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums ring-2 ring-white dark:ring-gray-950",
+              badgeTone === "red"
+                ? "bg-red-500 text-white"
+                : "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900",
+            )}
+          >
+            {badgeCount! > 9 ? "9+" : badgeCount}
           </span>
         ) : null}
-      </Link>
-    </Button>
+      </Button>
+    </HoverHint>
   );
 }
 
@@ -80,12 +130,17 @@ export function Header({
 }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { toggle } = useAssistantContext();
+  const { open: assistantOpen, openWith, inboxTotalCount, inboxBadgeCount } = useAssistantContext();
   const { setMobileOpen } = useSidebar();
   const showSettings = hasMinRole(userRole, "admin");
   const feedbackActive = pathname === "/feedback" || pathname.startsWith("/feedback/");
   const settingsActive = pathname.startsWith("/settings");
   const binActive = pathname.startsWith("/repairs/bin");
+  // Choose what badge to show on the unified Assistant icon:
+  //  – Red, urgent overdue count if any.
+  //  – Otherwise neutral total inbox count (or no badge if zero).
+  const assistantBadge = inboxBadgeCount > 0 ? inboxBadgeCount : inboxTotalCount;
+  const assistantBadgeTone: "red" | "neutral" = inboxBadgeCount > 0 ? "red" : "neutral";
 
   return (
     <>
@@ -118,20 +173,18 @@ export function Header({
           </button>
         </div>
 
+        <TooltipProvider delayDuration={250} disableHoverableContent>
         <div className="flex max-w-[min(60vw,18rem)] shrink-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:max-w-none sm:overflow-visible [&::-webkit-scrollbar]:hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100"
-            title="Smart Assistant"
-            aria-label="Smart Assistant"
-            onClick={() => toggle()}
+          <HeaderIconButton
+            title={inboxTotalCount > 0 ? `Inbox · ${inboxTotalCount}` : "Inbox & Assistant"}
+            ariaLabel="Open inbox and assistant"
+            isActive={assistantOpen}
+            badgeCount={assistantBadge}
+            badgeTone={assistantBadgeTone}
+            onClick={() => openWith(inboxTotalCount > 0 ? "inbox" : "assistant")}
           >
-            <MessageCircleQuestion className="h-4 w-4" />
-          </Button>
-
-          <ReminderPanel />
+            <Sparkles className="h-4 w-4" />
+          </HeaderIconButton>
 
           <HeaderIconLink
             href="/feedback"
@@ -152,7 +205,11 @@ export function Header({
 
           <span className="mx-1.5 hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block" aria-hidden />
 
-          <ThemeToggle />
+          <HoverHint label="Toggle theme" side="bottom">
+            <span className="inline-flex">
+              <ThemeToggle />
+            </span>
+          </HoverHint>
 
           {showSettings ? (
             <HeaderIconLink href="/settings" title="Settings" isActive={settingsActive}>
@@ -208,6 +265,7 @@ export function Header({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        </TooltipProvider>
       </header>
     </>
   );

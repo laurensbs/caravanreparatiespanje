@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  ArrowLeft, Hash, Truck, Calendar, User, Wrench, StickyNote,
+  ArrowLeft, Hash, Truck, Calendar, Wrench, StickyNote,
   MapPin, Ruler, Warehouse, Navigation, Tag, Pencil, Check, X,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { STATUS_LABELS, STATUS_COLORS } from "@/types";
-import type { RepairStatus } from "@/types";
+import { STATUS_LABELS, UNIT_TYPE_LABELS } from "@/types";
+import type { RepairStatus, UnitType } from "@/types";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { addTagToUnit, removeTagFromUnit } from "@/actions/tags";
 import { UnitTypeIconBadge } from "@/components/units/unit-type-icon";
@@ -33,6 +33,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
   const unit = initialUnit;
 
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [showBasics, setShowBasics] = useState(false);
   const [registration, setRegistration] = useState(unit.registration ?? "");
   const [brand, setBrand] = useState(unit.brand ?? "");
   const [model, setModel] = useState(unit.model ?? "");
@@ -70,6 +71,8 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
   }
 
   const unitTitle = [unit.brand, unit.model].filter(Boolean).join(" ") || "Unit";
+  const unitType = (unit.unitType ?? "unknown") as UnitType;
+  const unitTypeLabel = UNIT_TYPE_LABELS[unitType] ?? "Unit";
 
   return (
     <DashboardPageCanvas>
@@ -84,44 +87,49 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
           <div className="flex min-w-0 items-start gap-3">
             <UnitTypeIconBadge unitType={unit.unitType} className="mt-1" />
             <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Unit</p>
-            <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl">{unitTitle}</h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-              {unit.registration && (
-                <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[12px] text-gray-600 dark:bg-gray-800 dark:text-gray-300">{unit.registration}</span>
-              )}
-              {unit.customer && (
-                <>
-                  {unit.registration && <span className="text-gray-300 dark:text-gray-600">·</span>}
-                  <Link href={`/customers/${unit.customer.id}`} className="text-sm text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">
-                    {unit.customer.name}
-                  </Link>
-                </>
-              )}
-              {storageLocation && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600">·</span>
-                  <span className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                    <MapPin className="h-3 w-3" />
-                    {storageLocation}
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">{unitTypeLabel}</p>
+              <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl">{unitTitle}</h1>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[13px] text-gray-500 dark:text-gray-400">
+                {unit.registration && (
+                  <span className="inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    {unit.registration}
                   </span>
-                </>
-              )}
-              {unit.repairJobs.length > 0 && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600">·</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{unit.repairJobs.length} repair{unit.repairJobs.length !== 1 ? "s" : ""}</span>
-                </>
-              )}
-            </div>
-            <div className="mt-2.5">
-              <TagPicker
-                allTags={allTags}
-                activeTags={unit.tags ?? []}
-                onAdd={(tagId) => addTagToUnit(unit.id, tagId)}
-                onRemove={(tagId) => removeTagFromUnit(unit.id, tagId)}
-              />
-            </div>
+                )}
+                {unit.customer && (
+                  <>
+                    {unit.registration && <span className="text-gray-300 dark:text-gray-600">·</span>}
+                    <Link href={`/customers/${unit.customer.id}`} className="text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">
+                      {unit.customer.name}
+                    </Link>
+                  </>
+                )}
+                {storageLocation && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {storageLocation}
+                      {storageType && (
+                        <span className="text-gray-400 dark:text-gray-500">· {storageType.toLowerCase()}</span>
+                      )}
+                    </span>
+                  </>
+                )}
+                {unit.repairJobs.length > 0 && (
+                  <>
+                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                    <span>{unit.repairJobs.length} repair{unit.repairJobs.length !== 1 ? "s" : ""}</span>
+                  </>
+                )}
+              </div>
+              <div className="mt-2.5">
+                <TagPicker
+                  allTags={allTags}
+                  activeTags={unit.tags ?? []}
+                  onAdd={(tagId) => addTagToUnit(unit.id, tagId)}
+                  onRemove={(tagId) => removeTagFromUnit(unit.id, tagId)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -130,42 +138,43 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
       {/* ─── Content grid ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* Left column — Info + Storage + Notes */}
+        {/* Left column — Specifications + Notes */}
         <div className="lg:col-span-5 space-y-6">
 
-          {/* Unit Info */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-            <div className="px-5 pt-5 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Unit Details</p>
+          {/* Specifications (merged details + storage) */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Specifications</p>
+              <button
+                onClick={() => setShowBasics((s) => !s)}
+                className="text-[11px] text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              >
+                {showBasics ? "Hide basics" : "Edit basics"}
+              </button>
             </div>
-            <div className="px-5 pb-5">
-              <InlineRow icon={Hash} label="License Plate" value={registration} field="registration" mono
-                editingField={editingField} saving={isPending} onChange={setRegistration} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
-              <InlineRow icon={Truck} label="Brand" value={brand} field="brand"
-                editingField={editingField} saving={isPending} onChange={setBrand} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
-              <InlineRow icon={Truck} label="Model" value={model} field="model"
-                editingField={editingField} saving={isPending} onChange={setModel} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+            <div className="px-5 pb-4">
+              {showBasics && (
+                <>
+                  <InlineRow icon={Hash} label="License Plate" value={registration} field="registration" mono
+                    editingField={editingField} saving={isPending} onChange={setRegistration} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+                  <InlineRow icon={Truck} label="Brand" value={brand} field="brand"
+                    editingField={editingField} saving={isPending} onChange={setBrand} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+                  <InlineRow icon={Truck} label="Model" value={model} field="model"
+                    editingField={editingField} saving={isPending} onChange={setModel} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
+                </>
+              )}
               <InlineRow icon={Calendar} label="Year" value={year} field="year" type="number"
                 editingField={editingField} saving={isPending} onChange={setYear} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineRow icon={Hash} label="Chassis" value={chassisId} field="chassisId" mono
                 editingField={editingField} saving={isPending} onChange={setChassisId} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineRow icon={Ruler} label="Length" value={length} field="length"
                 editingField={editingField} saving={isPending} onChange={setLength} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
-              {unit.customer && (
-                <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-gray-800">
-                  <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"><User className="h-3.5 w-3.5" /> Owner</span>
-                  <Link href={`/customers/${unit.customer.id}`} className="text-sm font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">{unit.customer.name}</Link>
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Storage & Location */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-            <div className="px-5 pt-5 pb-1">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                <Warehouse className="h-3 w-3" /> Storage & Location
-              </p>
+            {/* Storage & Location — same card, subtle divider */}
+            <div className="px-5 pt-3 pb-2 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1.5">
+              <Warehouse className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Storage</p>
             </div>
             <div className="px-5 pb-5">
               <InlineSelectRow icon={MapPin} label="Location" value={storageLocation} field="storageLocation"
@@ -183,22 +192,24 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
           </div>
 
           {/* Notes */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-            <div className="px-5 pt-5 pb-1">
-              <div className="flex items-center justify-between">
-                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  <StickyNote className="h-3 w-3" /> Notes
-                </p>
-                {editingField !== "notes" && (
-                  <button onClick={() => setEditingField("notes")} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
-                    <Pencil className="h-3 w-3 text-gray-400 dark:text-gray-500" />
-                  </button>
-                )}
-              </div>
+          <div className="group/notes bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="px-5 pt-4 pb-1 flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+                <StickyNote className="h-3 w-3" /> Notes
+              </p>
+              {editingField !== "notes" && notes && (
+                <button
+                  onClick={() => setEditingField("notes")}
+                  className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                  aria-label="Edit notes"
+                >
+                  <Pencil className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+                </button>
+              )}
             </div>
-            <div className="px-5 pb-5 group">
+            <div className="px-5 pb-5">
               {editingField === "notes" ? (
-                <div className="space-y-2 mt-2">
+                <div className="space-y-2 mt-1">
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="text-sm rounded-xl border-gray-200 dark:border-gray-700 resize-none" autoFocus />
                   <div className="flex gap-1.5">
                     <Button size="sm" className="h-7 text-xs rounded-xl px-3" onClick={() => saveField("notes", notes)} disabled={isPending}>Save</Button>
@@ -207,13 +218,13 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 </div>
               ) : (
                 <div
-                  className="mt-2 min-h-[60px] rounded-xl cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 px-3 py-2.5 -mx-3"
+                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 px-3 py-2 -mx-3"
                   onClick={() => setEditingField("notes")}
                 >
                   {notes ? (
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{notes}</p>
                   ) : (
-                    <p className="text-sm text-gray-400 dark:text-gray-500 italic">Click to add notes</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">Click to add notes</p>
                   )}
                 </div>
               )}
@@ -223,43 +234,43 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
 
         {/* Right column — Repairs */}
         <div className="lg:col-span-7">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-            <div className="px-5 pt-5 pb-4">
-              <div className="flex items-center gap-2.5">
-                <Wrench className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repairs</p>
-                {unit.repairJobs.length > 0 && (
-                  <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium px-1.5">
-                    {unit.repairJobs.length}
-                  </span>
-                )}
-              </div>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="px-5 pt-4 pb-3 flex items-center gap-2">
+              <Wrench className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Repairs</p>
+              {unit.repairJobs.length > 0 && (
+                <span className="tabular-nums text-[11px] font-medium text-gray-700 dark:text-gray-200">
+                  {unit.repairJobs.length}
+                </span>
+              )}
             </div>
 
-            <div className="px-5 pb-5">
-              {unit.repairJobs.length === 0 ? (
+            {unit.repairJobs.length === 0 ? (
+              <div className="px-5 pb-5">
                 <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 py-10 text-center">
                   <Wrench className="h-7 w-7 text-gray-300 dark:text-gray-600 mx-auto mb-2.5" />
                   <p className="text-sm text-gray-400 dark:text-gray-500">No repairs for this unit</p>
                 </div>
-              ) : (
-                <div className="space-y-2 max-h-[700px] overflow-y-auto">
-                  {unit.repairJobs.map((job) => (
-                    <Link
-                      key={job.id}
-                      href={`/repairs/${job.id}`}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-150 cursor-pointer group"
-                    >
-                      <div className="min-w-0 mr-3">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">{job.title || "Unnamed"}</p>
-                        <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{job.publicCode}</p>
-                      </div>
-                      <StatusBadge status={job.status as RepairStatus} />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-[700px] overflow-y-auto">
+                {unit.repairJobs.map((job) => (
+                  <Link
+                    key={job.id}
+                    href={`/repairs/${job.id}`}
+                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate transition-colors group-hover:text-sky-700 dark:group-hover:text-sky-400">
+                        {job.title || "Unnamed"}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] text-gray-400 dark:text-gray-500">{job.publicCode}</p>
+                    </div>
+                    <StatusBadge status={job.status as RepairStatus} />
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

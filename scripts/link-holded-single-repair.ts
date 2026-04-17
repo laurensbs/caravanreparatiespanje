@@ -29,7 +29,11 @@ import {
   buildHoldedDocumentSearchText,
   resolveUnitForHoldedManualLink,
 } from "../src/lib/holded/resolve-unit-from-document";
-import { matchesSpreadsheetRefInText, repairPublicCodeAppearsInText } from "../src/lib/holded/repair-ref-match";
+import {
+  compactAlnum,
+  matchesSpreadsheetRefInText,
+  repairPublicCodeAppearsInText,
+} from "../src/lib/holded/repair-ref-match";
 
 const neonSql = neon(process.env.DATABASE_URL!);
 const db = drizzle({ client: neonSql, schema });
@@ -177,23 +181,85 @@ async function main() {
 
   let quotes: HoldedQuote[] = [];
   let invoices: HoldedInvoice[] = [];
+  /** Stored Holded contact is stale / wrong — documents matched by customer name instead. */
+  let allowHoldedContactMismatch = false;
+
+  const nameKey = (customer?.name ?? "").toLowerCase().trim();
+  const stripSalutation = (s: string) =>
+    s
+      .replace(/\b(dhr\/mevr|dhr\.|mevr\.|mr\.|mrs\.|dhr)\b\.?\s*/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const matchName = (contactName: string) => {
+    const n = stripSalutation(contactName.toLowerCase().trim());
+    if (!nameKey || !n) return false;
+    if (n.includes(nameKey) || nameKey.includes(n)) return true;
+    const nk = stripSalutation(nameKey);
+    const tokens = nk
+      .split(/[,/&]+/)
+      .map((p) => stripSalutation(p))
+      .flatMap((p) => p.split(/\s+/))
+      .filter((w) => w.length > 2);
+    if (tokens.length >= 2) {
+      return tokens.every((t) => n.includes(t));
+    }
+    return n.split(/\s+/).some((p) => p.length > 3 && nk.includes(p));
+  };
+
+  async function loadDocumentsByNameScan() {
+    console.log("\nScanning ALL quotes/invoices by customer name (slow)…");
+    const [allQ, allI] = await Promise.all([listAllQuotes(), listAllInvoices()]);
+    const invoiceRowBlob = (i: (typeof allI)[0]) =>
+      [
+        i.desc ?? "",
+        ...(i.items ?? []).map((it) => `${it.name} ${it.desc ?? ""}`),
+        ...(i.products ?? []).map((p) => `${p.name} ${p.desc ?? ""}`),
+      ]
+        .join(" ")
+        .slice(0, 4000);
+    const quoteRowBlob = (q: (typeof allQ)[0]) =>
+      [q.desc ?? "", ...(q.products ?? []).map((p) => `${p.name} ${p.desc ?? ""}`)].join(" ").slice(0, 4000);
+
+    const regCompact =
+      registration && registration.trim().length >= 5 ? compactAlnum(registration) : "";
+
+    const matchesRegistrationBlob = (blob: string) => {
+      if (!regCompact || regCompact.length < 5) return false;
+      return compactAlnum(blob).includes(regCompact);
+    };
+
+    quotes = allQ.filter(
+      (q) =>
+        !usedQuoteIds.has(q.id) &&
+        (matchName(q.contactName) ||
+          matchName((q.desc ?? "").slice(0, 800)) ||
+          matchName(quoteRowBlob(q)) ||
+          matchesRegistrationBlob(quoteRowBlob(q))),
+    );
+    invoices = allI.filter(
+      (i) =>
+        !usedInvoiceIds.has(i.id) &&
+        (matchName(i.contactName) ||
+          matchName((i.desc ?? "").slice(0, 800)) ||
+          matchName(invoiceRowBlob(i)) ||
+          matchesRegistrationBlob(invoiceRowBlob(i))),
+    );
+
+    console.log(`Filtered to ${quotes.length} quotes, ${invoices.length} invoices by contact name.`);
+    allowHoldedContactMismatch = true;
+  }
 
   if (customer?.holdedContactId) {
     console.log("\nFetching Holded documents for contact", customer.holdedContactId);
     quotes = (await listQuotesByContact(customer.holdedContactId)).filter((q) => !usedQuoteIds.has(q.id));
     invoices = (await listInvoicesByContact(customer.holdedContactId)).filter((i) => !usedInvoiceIds.has(i.id));
+    if (quotes.length === 0 && invoices.length === 0) {
+      console.warn("Holded returned no documents for stored contact — trying name scan (contact id may be stale).");
+      await loadDocumentsByNameScan();
+    }
   } else {
-    console.log("\nNo Holded contact on customer — scanning ALL quotes/invoices (slow)…");
-    const [allQ, allI] = await Promise.all([listAllQuotes(), listAllInvoices()]);
-    const nameKey = (customer?.name ?? "").toLowerCase().trim();
-    const matchName = (contactName: string) => {
-      const n = contactName.toLowerCase().trim();
-      if (!nameKey || !n) return false;
-      return n.includes(nameKey) || nameKey.includes(n) || n.split(/\s+/).some((p) => p.length > 3 && nameKey.includes(p));
-    };
-    quotes = allQ.filter((q) => !usedQuoteIds.has(q.id) && matchName(q.contactName));
-    invoices = allI.filter((i) => !usedInvoiceIds.has(i.id) && matchName(i.contactName));
-    console.log(`Filtered to ${quotes.length} quotes, ${invoices.length} invoices by contact name.`);
+    await loadDocumentsByNameScan();
   }
 
   type Ranked<T extends HoldedQuote | HoldedInvoice> = { doc: T; score: number; hay: string };
@@ -241,7 +307,9 @@ async function main() {
 
   async function tryLinkQuote(q: HoldedQuote): Promise<boolean> {
     if (job.holdedQuoteId) return false;
-    if (customer?.holdedContactId && q.contact !== customer.holdedContactId) return false;
+    if (customer?.holdedContactId && q.contact !== customer.holdedContactId && !allowHoldedContactMismatch) {
+      return false;
+    }
     const docText = buildHoldedDocumentSearchText(q);
     const unitRes = resolveUnitForHoldedManualLink({
       jobUnitId: job.unitId,
@@ -256,7 +324,7 @@ async function main() {
     if ("updateUnitId" in unitRes) unitPatch.unitId = unitRes.updateUnitId;
 
     if (!DRY_RUN) {
-      if (customer && !customer.holdedContactId && job.customerId) {
+      if (customer && job.customerId && (!customer.holdedContactId || customer.holdedContactId !== q.contact)) {
         await db
           .update(schema.customers)
           .set({ holdedContactId: q.contact, updatedAt: new Date() })
@@ -288,7 +356,9 @@ async function main() {
 
   async function tryLinkInvoice(inv: HoldedInvoice): Promise<boolean> {
     if (job.holdedInvoiceId) return false;
-    if (customer?.holdedContactId && inv.contact !== customer.holdedContactId) return false;
+    if (customer?.holdedContactId && inv.contact !== customer.holdedContactId && !allowHoldedContactMismatch) {
+      return false;
+    }
     const docText = buildHoldedDocumentSearchText(inv);
     const unitRes = resolveUnitForHoldedManualLink({
       jobUnitId: job.unitId,
@@ -304,7 +374,7 @@ async function main() {
     const invoiceStatus = mapLinkedInvoiceStatusFromHolded(inv);
 
     if (!DRY_RUN) {
-      if (customer && !customer.holdedContactId && job.customerId) {
+      if (customer && job.customerId && (!customer.holdedContactId || customer.holdedContactId !== inv.contact)) {
         await db
           .update(schema.customers)
           .set({ holdedContactId: inv.contact, updatedAt: new Date() })

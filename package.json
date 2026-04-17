@@ -13,7 +13,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/lib/db/seed.ts",
     "holded:backfill-imports": "tsx scripts/backfill-import-refs.ts",
-    "holded:sync-all": "tsx scripts/run-holded-maintenance.ts"
+    "holded:sync-all": "tsx scripts/run-holded-maintenance.ts",
+    "holded:body-link-once": "tsx scripts/one-shot-global-invoice-body-link.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

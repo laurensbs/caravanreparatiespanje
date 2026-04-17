@@ -361,6 +361,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       if (job.holdedInvoiceId) {
         return invoiceStatus === "paid" ? "Payment confirmed" : "Confirm payment";
       }
+      if (!job.holdedQuoteId) return "Link Holded PDF";
       if (panelInvoiceStage) return "Link Holded invoice";
       return "Create invoice";
     }
@@ -400,11 +401,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               : "Invoice sent — confirm when paid",
         };
       }
+      if (!job.holdedQuoteId && !job.holdedInvoiceId) {
+        return {
+          icon: "receipt",
+          subtext:
+            "If the quote or invoice already exists in Holded, paste the link below to attach the PDF.",
+          cta: canLinkHoldedDocuments ? "Link Holded PDF" : undefined,
+        };
+      }
       if (panelInvoiceStage) {
         return {
           icon: "receipt",
           subtext:
-            "Invoice status is set in the panel but no Holded document is linked. Open Financial → Link existing Holded document, or wait for the next sync.",
+            "Invoice status is set in the panel but no Holded invoice is linked yet — it will attach automatically once the next sync finds a match.",
         };
       }
       return { icon: "receipt", subtext: "Create and send the invoice" };
@@ -1130,16 +1139,36 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const val = prompt("Set next action:", displayNextAction);
-                    if (val !== null) setNextAction(val);
-                  }}
-                  className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 font-medium shrink-0 transition-colors"
-                >
-                  Edit
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {nextActionContext.cta === "Link Holded PDF" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById("holded-manual-link");
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "center" });
+                          const input = el.querySelector("input");
+                          if (input instanceof HTMLInputElement) {
+                            window.setTimeout(() => input.focus(), 350);
+                          }
+                        }
+                      }}
+                      className="inline-flex items-center h-7 px-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-semibold transition-colors"
+                    >
+                      Link Holded PDF
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = prompt("Set next action:", displayNextAction);
+                      if (val !== null) setNextAction(val);
+                    }}
+                    className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 font-medium transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -2939,12 +2968,12 @@ function FinancialWorkflow({
         ))}
       </div>
 
-      {canLinkHoldedDocuments && (!job.holdedQuoteId || !job.holdedInvoiceId) && (
+      {canLinkHoldedDocuments && !job.holdedQuoteId && !job.holdedInvoiceId && (
         <HoldedManualLinkForm
           id="holded-manual-link"
           repairJobId={job.id}
-          allowQuote={!job.holdedQuoteId}
-          allowInvoice={!job.holdedInvoiceId}
+          allowQuote
+          allowInvoice
         />
       )}
 

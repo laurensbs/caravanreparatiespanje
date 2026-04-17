@@ -2,11 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useTransition, useRef, useOptimistic } from "react";
-import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
+import { useLanguage } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
-import { garageLock } from "@/actions/garage-auth";
 import { toggleMyWorker, updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import {
@@ -14,6 +13,8 @@ import {
   garageTimerBlockedReason,
   GARAGE_TIMER_NOT_ALLOWED,
 } from "@/lib/garage-timer-policy";
+import { useGarageMe, initials } from "@/lib/garage-me";
+import { GarageMeSheet } from "@/components/garage/me-sheet";
 import {
   RefreshCw,
   ChevronRight,
@@ -21,7 +22,6 @@ import {
   Wrench,
   Clock,
   Package,
-  Lock,
   Search,
   Timer,
   Pause,
@@ -30,6 +30,7 @@ import {
   Sparkles,
   Check,
   CheckCircle2,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -176,7 +177,9 @@ export function GarageTodayClient({
   const [tickedTaskId, setTickedTaskId] = useState<string | null>(null);
   const [isReceivingPart, startReceivePartTransition] = useTransition();
   const [receivedPartId, setReceivedPartId] = useState<string | null>(null);
+  const [meSheetOpen, setMeSheetOpen] = useState(false);
   const prevRepairIdsRef = useRef<Set<string> | null>(null);
+  const { me } = useGarageMe();
 
   useGaragePoll();
 
@@ -235,7 +238,11 @@ export function GarageTodayClient({
   });
   const clock = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const greeting = greetingFor(time, t);
-  const firstName = userName.split(" ")[0] ?? userName;
+  // Prefer the locally-chosen garage worker ("me") — on the shared iPad the
+  // NextAuth `userName` is almost always "Garage" because everyone logs in
+  // with the shared PIN, so it is not personal enough for a greeting.
+  const identityName = me?.name ?? userName;
+  const firstName = identityName.split(" ")[0] ?? identityName;
 
   const grouped = useMemo(() => {
     const map: Record<StatusCategory, RepairItem[]> = {
@@ -294,6 +301,45 @@ export function GarageTodayClient({
     (r) => r.garageAdminMessage && !r.garageAdminMessageReadAt,
   ).length;
 
+  // Every timer currently running for "me" across all jobs on this iPad.
+  // Surfaced as a single "pause mine" chip so the worker can end their
+  // shift in one tap instead of opening each repair.
+  const myActiveTimers = useMemo(
+    () => (me ? activeTimers.filter((at) => at.userId === me.id) : []),
+    [activeTimers, me],
+  );
+
+  function handlePauseAllMine() {
+    if (!me || myActiveTimers.length === 0) return;
+    hapticTap();
+    startPauseTransition(async () => {
+      const results = await Promise.allSettled(
+        myActiveTimers.map((at) => stopTimer(at.repairJobId, me.id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      const stopped = results.length - failed;
+      if (stopped > 0) {
+        toast.success(
+          t(
+            `Paused ${stopped} timer${stopped === 1 ? "" : "s"}`,
+            `${stopped} temporizador${stopped === 1 ? "" : "es"} en pausa`,
+            `${stopped} timer${stopped === 1 ? "" : "s"} gepauzeerd`,
+          ),
+        );
+      }
+      if (failed > 0) {
+        toast.error(
+          t(
+            `${failed} timer${failed === 1 ? "" : "s"} couldn't be paused`,
+            `No se pudieron pausar ${failed}`,
+            `${failed} timer${failed === 1 ? "" : "s"} kon niet gepauzeerd worden`,
+          ),
+        );
+      }
+      router.refresh();
+    });
+  }
+
   const selectableUsers = useMemo(() => {
     const users = getSelectableGarageUsers(allUsers);
     const order = new Map(recentWorkerIds.map((id, idx) => [id, idx]));
@@ -308,163 +354,195 @@ export function GarageTodayClient({
   }, [allUsers, recentWorkerIds]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-950 text-white">
-      {/* ─── Top bar ─── */}
-      <header className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-gray-950/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 ring-1 ring-cyan-400/20">
-              <Wrench className="h-4 w-4 text-cyan-300" />
-            </span>
-            <div className="min-w-0 leading-tight">
-              <p className="truncate text-[13px] font-semibold text-white/85">
-                {greeting}
-                {firstName ? `, ${firstName}` : ""}
-              </p>
-              <p className="truncate text-[11px] text-white/30 capitalize">
-                {formattedDate} · <span className="tabular-nums">{clock}</span>
-              </p>
+    <div className="flex min-h-[100dvh] flex-col bg-gray-950 text-white">
+      {/* Unified sticky shell — keeps top bar, search (mobile), stat strip and
+          tab bar stacked together so they can't overlap when the browser
+          chrome resizes or the stat row wraps on a phone. */}
+      <div className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-gray-950/90 backdrop-blur-xl">
+        <header className="mx-auto max-w-6xl">
+          {/* Row 1: identity + search + refresh */}
+          <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
+            {/* "Me" identity chip */}
+            <button
+              type="button"
+              onClick={() => {
+                hapticTap();
+                setMeSheetOpen(true);
+              }}
+              className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-white/[0.06] bg-white/[0.04] px-2 py-1.5 text-left transition-all active:scale-[0.98] hover:bg-white/[0.07]"
+              aria-label={t("Your profile", "Tu perfil", "Jouw profiel")}
+            >
+              <span
+                className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-bold text-white ${
+                  me
+                    ? "bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-[0_0_0_2px_rgba(34,211,238,0.25)]"
+                    : "bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 ring-1 ring-cyan-400/20"
+                }`}
+              >
+                {me ? initials(me.name) : <Wrench className="h-4 w-4 text-cyan-200" />}
+                {me ? (
+                  <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-gray-950" />
+                ) : null}
+              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-[13px] font-semibold text-white/90">
+                  {me
+                    ? `${greeting}, ${firstName}`
+                    : t("Who's at the iPad?", "¿Quién está en el iPad?", "Wie is aan de iPad?")}
+                </p>
+                <p className="truncate text-[11px] text-white/35 capitalize">
+                  {formattedDate} · <span className="tabular-nums">{clock}</span>
+                </p>
+              </div>
+            </button>
+
+            <div className="ml-auto flex items-center gap-1">
+              {/* My running timers — one-tap pause-all for end of shift */}
+              {myActiveTimers.length > 0 && me ? (
+                <button
+                  type="button"
+                  disabled={isPausing}
+                  onClick={handlePauseAllMine}
+                  className="motion-safe:animate-pop-in flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/15 px-3 text-[12px] font-semibold text-red-200 transition-all active:scale-95 hover:bg-red-500/25 disabled:opacity-50"
+                  aria-label={t(
+                    "Pause all my timers",
+                    "Pausar mis temporizadores",
+                    "Mijn timers pauzeren",
+                  )}
+                >
+                  <Pause className="h-3.5 w-3.5 fill-current" />
+                  <span className="hidden sm:inline">
+                    {t("Pause mine", "Pausar", "Pauzeer mijne")}
+                  </span>
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/30 px-1 text-[10.5px] font-bold tabular-nums">
+                    {myActiveTimers.length}
+                  </span>
+                </button>
+              ) : null}
+              <div className="hidden w-64 md:block lg:w-80">
+                <SearchField search={search} setSearch={setSearch} t={t} />
+              </div>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-white/40 transition-all hover:bg-white/[0.06] active:scale-95"
+                aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
+              >
+                <RefreshCw
+                  className={`h-[18px] w-[18px] ${refreshing ? "animate-spin" : ""}`}
+                />
+              </button>
             </div>
           </div>
 
-          <div className="hidden flex-1 max-w-sm sm:block">
+          {/* Row 2 (mobile-only): search field */}
+          <div className="px-3 pb-2 sm:px-4 md:hidden">
             <SearchField search={search} setSearch={setSearch} t={t} />
           </div>
 
-          <div className="flex items-center gap-1">
-            <LanguageToggle />
-            <button
-              type="button"
-              onClick={handleRefresh}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-white/40 transition-all hover:bg-white/[0.06] active:scale-95"
-              aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
-            >
-              <RefreshCw className={`h-[18px] w-[18px] ${refreshing ? "animate-spin" : ""}`} />
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                hapticTap();
-                await garageLock();
-                router.refresh();
-              }}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-white/40 transition-all hover:bg-white/[0.06] active:scale-95"
-              aria-label={t("Lock", "Bloquear", "Vergrendelen")}
-            >
-              <Lock className="h-[18px] w-[18px]" />
-            </button>
-          </div>
-        </div>
-
-        {/* Search row for mobile. */}
-        <div className="px-4 pb-3 sm:hidden">
-          <SearchField search={search} setSearch={setSearch} t={t} />
-        </div>
-
-        {/* Stat strip (one row, scrollable on mobile). */}
-        <div className="mx-auto max-w-5xl px-4 pb-3">
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
-            <StatPill
-              tone="emerald"
-              icon={<Wrench className="h-3.5 w-3.5" />}
-              label={t("Active now", "Activos ahora", "Nu actief")}
-              value={counts.in_progress}
-              onClick={() => {
-                hapticTap();
-                setActiveTab("in_progress");
-              }}
-            />
-            {stats.urgentCount > 0 ? (
+          {/* Row 3: stat strip */}
+          <div className="px-3 pb-2 sm:px-4 sm:pb-3">
+            <div className="no-scrollbar flex gap-1.5 overflow-x-auto sm:gap-2">
               <StatPill
-                tone="red"
-                icon={<AlertTriangle className="h-3.5 w-3.5" />}
-                label={t("Urgent", "Urgente", "Spoed")}
-                value={stats.urgentCount}
-              />
-            ) : null}
-            {stats.waitingPartsCount > 0 ? (
-              <StatPill
-                tone="amber"
-                icon={<Package className="h-3.5 w-3.5" />}
-                label={t("Need parts", "Faltan piezas", "Onderdelen")}
-                value={stats.waitingPartsCount}
+                tone="emerald"
+                icon={<Wrench className="h-3.5 w-3.5" />}
+                label={t("Active now", "Activos ahora", "Nu actief")}
+                value={counts.in_progress}
                 onClick={() => {
                   hapticTap();
-                  setActiveTab("waiting");
+                  setActiveTab("in_progress");
                 }}
               />
-            ) : null}
-            {counts.check > 0 ? (
-              <StatPill
-                tone="violet"
-                icon={<Sparkles className="h-3.5 w-3.5" />}
-                label={t("Final check", "Control final", "Eindcheck")}
-                value={counts.check}
-                onClick={() => {
-                  hapticTap();
-                  setActiveTab("check");
-                }}
-              />
-            ) : null}
-            {unreadMessages > 0 ? (
-              <StatPill
-                tone="sky"
-                icon={<MessageSquare className="h-3.5 w-3.5" />}
-                label={t("Office", "Oficina", "Kantoor")}
-                value={unreadMessages}
-              />
-            ) : null}
-            {stats.tomorrowCount > 0 ? (
-              <StatPill
-                tone="muted"
-                icon={<Clock className="h-3.5 w-3.5" />}
-                label={t("Tomorrow", "Mañana", "Morgen")}
-                value={stats.tomorrowCount}
-              />
-            ) : null}
-          </div>
-        </div>
-      </header>
-
-      {/* ─── Pill tab bar ─── */}
-      <div className="sticky top-[164px] z-20 border-b border-white/[0.06] bg-gray-950/85 backdrop-blur-xl sm:top-[136px]">
-        <div className="mx-auto max-w-5xl px-4 py-2.5">
-          <div className="no-scrollbar inline-flex w-full gap-1 overflow-x-auto rounded-2xl bg-white/[0.04] p-1">
-            {tabs.map((tab) => {
-              const active = activeTab === tab.key;
-              return (
-                <button
-                  type="button"
-                  key={tab.key}
+              {stats.urgentCount > 0 ? (
+                <StatPill
+                  tone="red"
+                  icon={<AlertTriangle className="h-3.5 w-3.5" />}
+                  label={t("Urgent", "Urgente", "Spoed")}
+                  value={stats.urgentCount}
+                />
+              ) : null}
+              {stats.waitingPartsCount > 0 ? (
+                <StatPill
+                  tone="amber"
+                  icon={<Package className="h-3.5 w-3.5" />}
+                  label={t("Need parts", "Faltan piezas", "Onderdelen")}
+                  value={stats.waitingPartsCount}
                   onClick={() => {
                     hapticTap();
-                    setActiveTab(tab.key);
+                    setActiveTab("waiting");
                   }}
-                  className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-all ${
-                    active
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-white/55 hover:text-white"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {tab.count > 0 ? (
-                    <span
-                      className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ${
-                        active ? "bg-gray-900 text-white" : "bg-white/10 text-white/50"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
+                />
+              ) : null}
+              {counts.check > 0 ? (
+                <StatPill
+                  tone="violet"
+                  icon={<Sparkles className="h-3.5 w-3.5" />}
+                  label={t("Final check", "Control final", "Eindcheck")}
+                  value={counts.check}
+                  onClick={() => {
+                    hapticTap();
+                    setActiveTab("check");
+                  }}
+                />
+              ) : null}
+              {unreadMessages > 0 ? (
+                <StatPill
+                  tone="sky"
+                  icon={<MessageSquare className="h-3.5 w-3.5" />}
+                  label={t("Office", "Oficina", "Kantoor")}
+                  value={unreadMessages}
+                />
+              ) : null}
+              {stats.tomorrowCount > 0 ? (
+                <StatPill
+                  tone="muted"
+                  icon={<Clock className="h-3.5 w-3.5" />}
+                  label={t("Tomorrow", "Mañana", "Morgen")}
+                  value={stats.tomorrowCount}
+                />
+              ) : null}
+            </div>
           </div>
-        </div>
+
+          {/* Row 4: pill tab bar */}
+          <div className="px-3 pb-2.5 sm:px-4">
+            <div className="no-scrollbar inline-flex w-full gap-1 overflow-x-auto rounded-2xl bg-white/[0.04] p-1">
+              {tabs.map((tab) => {
+                const active = activeTab === tab.key;
+                return (
+                  <button
+                    type="button"
+                    key={tab.key}
+                    onClick={() => {
+                      hapticTap();
+                      setActiveTab(tab.key);
+                    }}
+                    className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-all ${
+                      active
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-white/55 hover:text-white"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.count > 0 ? (
+                      <span
+                        className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ${
+                          active ? "bg-gray-900 text-white" : "bg-white/10 text-white/50"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </header>
       </div>
 
       {/* ─── Content ─── */}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 pb-12">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-3 pb-12 sm:px-4 sm:py-4">
         {repairs.length === 0 ? (
           <EmptyState t={t} stats={stats} onRefresh={handleRefresh} refreshing={refreshing} />
         ) : displayRepairs.length === 0 ? (
@@ -474,7 +552,7 @@ export function GarageTodayClient({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {displayRepairs.map((repair, idx) => {
               const timerStartAllowed = canStartGarageTimerOnRepair(repair.status);
               const repairTimers = activeTimers.filter((at) => at.repairJobId === repair.id);
@@ -486,6 +564,7 @@ export function GarageTodayClient({
                   t={t}
                   activeTimers={repairTimers}
                   quickUsers={selectableUsers}
+                  me={me}
                   timerStartAllowed={timerStartAllowed}
                   pauseDisabled={isPausing}
                   tickDisabled={isTicking}
@@ -548,12 +627,25 @@ export function GarageTodayClient({
                   }}
                   onMainTap={() => {
                     hapticTap();
+                    // Already working on it → open the detail page.
                     if (repairTimers.length > 0) {
                       router.push(`/garage/repairs/${repair.id}`);
                       return;
                     }
-                    if (timerStartAllowed) setWorkerPickerRepairId(repair.id);
-                    else router.push(`/garage/repairs/${repair.id}`);
+                    // Not clockable yet (e.g. already completed, waiting parts):
+                    // just open details instead of showing a dead-end picker.
+                    if (!timerStartAllowed) {
+                      router.push(`/garage/repairs/${repair.id}`);
+                      return;
+                    }
+                    // If we know who is at the iPad, skip the picker and go
+                    // straight into the job (detail page handles starting the
+                    // timer there, with the worker pre-selected).
+                    if (me) {
+                      router.push(`/garage/repairs/${repair.id}`);
+                      return;
+                    }
+                    setWorkerPickerRepairId(repair.id);
                   }}
                   onPauseUser={(userId) => {
                     hapticTap();
@@ -611,6 +703,13 @@ export function GarageTodayClient({
           </div>
         )}
       </main>
+
+      {/* ─── Me sheet (worker switcher + language + lock) ─── */}
+      <GarageMeSheet
+        open={meSheetOpen}
+        onClose={() => setMeSheetOpen(false)}
+        users={selectableUsers}
+      />
 
       {/* ─── Worker picker overlay ─── */}
       {workerPickerRepairId && (
@@ -806,6 +905,7 @@ function JobCard({
   t,
   activeTimers,
   quickUsers,
+  me,
   timerStartAllowed,
   pauseDisabled,
   tickDisabled,
@@ -823,6 +923,7 @@ function JobCard({
   t: (en: string, es?: string | null, nl?: string | null) => string;
   activeTimers: ActiveTimerItem[];
   quickUsers: { id: string; name: string | null; role: string | null }[];
+  me: { id: string; name: string } | null;
   timerStartAllowed: boolean;
   pauseDisabled: boolean;
   tickDisabled: boolean;
@@ -836,7 +937,11 @@ function JobCard({
   onReceiveNextPart: (partRequestId: string) => void;
 }) {
   const hasTimer = activeTimers.length > 0;
-  const showQuickStart = timerStartAllowed && quickUsers.length > 0;
+  // When we know who is at the iPad, skip the 2-column user grid and show a
+  // single "Start timer — Felipe" button. Much faster on a shared tablet
+  // because workers don't have to hunt for their name on every job card.
+  const showStartAsMe = timerStartAllowed && !!me && !hasTimer;
+  const showQuickStart = timerStartAllowed && !me && quickUsers.length > 0;
   const showNextTask =
     repair.status === "in_progress" &&
     !!repair.nextTask &&
@@ -844,7 +949,7 @@ function JobCard({
   const showNextPart =
     repair.status === "waiting_parts" && !!repair.nextPart;
   const hasFooter =
-    activeTimers.length > 0 || showQuickStart || showNextTask || showNextPart;
+    activeTimers.length > 0 || showQuickStart || showStartAsMe || showNextTask || showNextPart;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
   const hasUnreadMessage = !!(repair.garageAdminMessage && !repair.garageAdminMessageReadAt);
   const isThisTaskTicking = !!(repair.nextTask && tickedTaskId === repair.nextTask.id);
@@ -862,7 +967,12 @@ function JobCard({
 
   return (
     <div
-      style={{ animationDelay: `${index * 35}ms`, animationFillMode: "backwards" }}
+      // Cap the stagger at ~12 cards so a busy day doesn't look like a
+      // waterfall. Anything past that just fades in instantly.
+      style={{
+        animationDelay: `${Math.min(index, 12) * 30}ms`,
+        animationFillMode: "backwards",
+      }}
       className={`motion-safe:animate-slide-up rounded-2xl border transition-all ${
         hasTimer
           ? "border-sky-400/25 bg-sky-400/[0.06] shadow-[0_0_0_1px_rgba(56,189,248,0.08)]"
@@ -930,12 +1040,20 @@ function JobCard({
             ) : null}
           </div>
 
-          {/* Location */}
+          {/* Location — using an inline pill so it is scannable at a glance
+              while on the workshop floor. Storage location is the bay/zone;
+              current position is an override (e.g. "in the paint booth"). */}
           {repair.unitStorageLocation || repair.unitCurrentPosition ? (
-            <p className="mb-2 truncate text-[12.5px] text-white/35">
-              📍 {repair.unitStorageLocation || t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
-              {repair.unitCurrentPosition ? ` · ${repair.unitCurrentPosition}` : ""}
-            </p>
+            <div className="mb-2 inline-flex max-w-full items-center gap-1 rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[11.5px] font-medium text-white/50">
+              <MapPin className="h-3 w-3 shrink-0 text-white/40" />
+              <span className="truncate">
+                {repair.unitStorageLocation ||
+                  t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
+                {repair.unitCurrentPosition
+                  ? ` · ${repair.unitCurrentPosition}`
+                  : ""}
+              </span>
+            </div>
           ) : null}
 
           {/* Title (1-line) */}
@@ -1105,6 +1223,25 @@ function JobCard({
               </button>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {showStartAsMe && me ? (
+        <div className="border-t border-white/[0.06] px-3 pb-3 pt-2.5 sm:px-4">
+          <button
+            type="button"
+            onClick={() => onQuickStart(me.id)}
+            className="group flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-sky-400/25 bg-sky-500/[0.08] px-4 text-sm font-bold text-sky-200 transition-all active:scale-[0.98] hover:bg-sky-500/[0.15]"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 text-[13px] font-bold text-white">
+              {me.name.charAt(0).toUpperCase()}
+            </span>
+            <span className="tracking-tight">
+              {t("Start timer as", "Iniciar como", "Start timer als")}{" "}
+              {me.name.split(" ")[0]}
+            </span>
+            <Timer className="h-4 w-4 opacity-60 transition-transform group-hover:rotate-12" />
+          </button>
         </div>
       ) : null}
 

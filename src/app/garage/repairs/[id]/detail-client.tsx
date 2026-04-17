@@ -19,6 +19,7 @@ import { stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { inferGarageLanguageFromWorkerName, garageLangManualSessionKey } from "@/lib/garage-lang-by-worker";
+import { useGarageMe } from "@/lib/garage-me";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
@@ -192,11 +193,14 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
     <button
       type="button"
       onClick={handleStop}
-      className="flex items-center gap-2 rounded-xl bg-red-500/15 border border-red-500/25 min-h-11 px-3 py-2 text-sm font-semibold text-red-400 active:bg-red-500/25 transition-all"
+      className="flex shrink-0 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/15 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition-all active:scale-[0.97] active:bg-red-500/25 sm:gap-2 sm:px-3"
+      aria-label={t("Pause timer", "Pausar temporizador", "Timer pauzeren")}
     >
-      <Square className="h-4 w-4 shrink-0 fill-current" />
-      <span className="text-white/70 text-xs font-medium truncate max-w-[5rem]">{timer.userName?.split(" ")[0]}</span>
-      <span className="tabular-nums font-mono text-sm">{elapsed}</span>
+      <Square className="h-3.5 w-3.5 shrink-0 fill-current" />
+      <span className="max-w-[5rem] truncate text-[11px] font-medium text-white/70">
+        {timer.userName?.split(" ")[0]}
+      </span>
+      <span className="font-mono text-[12.5px] tabular-nums">{elapsed}</span>
     </button>
   );
 }
@@ -224,6 +228,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [workerPickerResolve, setWorkerPickerResolve] = useState<((ok: boolean) => void) | null>(null);
   const [lastPickedWorkerId, setLastPickedWorkerId] = useState<string | null>(null);
   const selectableUsers = useMemo(() => getSelectableGarageUsers(allUsers), [allUsers]);
+  const { me } = useGarageMe();
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -231,7 +236,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
   const activeBlockers = repair.blockers.filter(b => b.active);
   const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
-  const activeWorkerId = lastPickedWorkerId ?? repair.workers[0]?.userId ?? null;
+  // Priority for "who am I on this job": explicit tap > device-level "me" >
+  // anyone already clocked in on the repair. This makes a single-tap flow
+  // possible when the iPad already knows the worker.
+  const meIsSelectable = !!me && selectableUsers.some((u) => u.id === me.id);
+  const activeWorkerId =
+    lastPickedWorkerId ??
+    (meIsSelectable ? me!.id : null) ??
+    repair.workers[0]?.userId ??
+    null;
   const activeWorker = selectableUsers.find((u) => u.id === activeWorkerId);
 
   useEffect(() => {
@@ -252,6 +265,18 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   async function ensureActiveWorkerSelected() {
     if (activeWorker?.id) return true;
+    // Fast path: the iPad already knows who's at it → silently clock them
+    // in on this job. Avoids a redundant "who are you?" prompt on every
+    // action when we already have the answer.
+    if (meIsSelectable && me) {
+      const isAssigned = repair.workers.some((w) => w.userId === me.id);
+      if (!isAssigned) {
+        await toggleMyWorker(repair.id, me.id);
+      }
+      setLastPickedWorkerId(me.id);
+      router.refresh();
+      return true;
+    }
     const ok = await new Promise<boolean>((resolve) => {
       setWorkerPickerResolve(() => resolve);
       setShowWorkerPicker(true);
@@ -265,6 +290,13 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   // Check if any worker is assigned before starting a task
   async function handleBeforeStart(): Promise<boolean> {
     if (repair.workers.length > 0) return true;
+    // Same fast path as above — no picker if we already know "me".
+    if (meIsSelectable && me) {
+      await toggleMyWorker(repair.id, me.id);
+      setLastPickedWorkerId(me.id);
+      router.refresh();
+      return true;
+    }
     return new Promise<boolean>((resolve) => {
       setWorkerPickerResolve(() => resolve);
       setShowWorkerPicker(true);
@@ -368,22 +400,44 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
+    // `min-h-[100dvh]` handles mobile browser URL bar resize better than `h-screen`
+    // which traps content behind the iOS Safari bottom chrome.
+    <div className="flex min-h-[100dvh] flex-col bg-gray-950">
 
       {/* ─── HEADER ─── */}
-      <header className="safe-area-pt shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-4">
-          {/* Nav row */}
+      <header className="safe-area-pt sticky top-0 z-30 shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
+        <div className="mx-auto max-w-4xl px-3 sm:px-4">
+          {/* Nav row — always contains Back + Lang + Refresh. Running timers
+              live on their own horizontally-scrollable row just below so we
+              never overflow the header on phones when 2-3 people are
+              clocked in on the same job. */}
           <div className="flex h-12 items-center justify-between">
             <button
               type="button"
               onClick={() => router.push("/garage")}
-              className="-ml-2 inline-flex h-10 items-center gap-0.5 rounded-xl px-2 text-sm font-medium text-white/55 transition-all active:scale-95 active:bg-white/[0.06] active:text-white/80"
+              className="-ml-2 inline-flex h-11 items-center gap-0.5 rounded-xl px-2 text-sm font-medium text-white/55 transition-all active:scale-95 active:bg-white/[0.06] active:text-white/80"
             >
               <ChevronLeft className="h-5 w-5" />
               {t("Back", "Atrás", "Terug")}
             </button>
             <div className="flex items-center gap-0.5">
+              <LanguageToggle />
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-white/40 transition-all active:scale-95 active:bg-white/[0.06]"
+                aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Running-timer chips — scroll horizontally on phones, wrap on
+              tablets. Keeping these close to the top makes "Pause" always
+              reachable with one thumb. */}
+          {activeTimers.length > 0 && (
+            <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap">
               {activeTimers.map((timer) => (
                 <HeaderTimerDisplay
                   key={timer.id}
@@ -393,17 +447,8 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   onStop={() => router.refresh()}
                 />
               ))}
-              <LanguageToggle />
-              <button
-                type="button"
-                onClick={handleRefresh}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-white/40 transition-all active:scale-95 active:bg-white/[0.06]"
-                aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </button>
             </div>
-          </div>
+          )}
 
           {/* Vehicle identity */}
           <div className="pb-3">
@@ -465,8 +510,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </header>
 
       {/* ─── CONTENT AREA ─── */}
-      <main className="flex-1 overflow-y-auto pb-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      {/* pb-44 keeps the sticky bottom action bar from covering the last card */}
+      <main className="flex-1 pb-44">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4">
 
           {/* Admin message banner — keeps the latest single message glanceable */}
           {repair.garageAdminMessage && (
@@ -899,7 +945,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </main>
 
       {/* ─── BOTTOM: Action bar + Tab nav ─── */}
-      <div className="safe-area-pb z-30 shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
+      <div className="safe-area-pb fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
         {/* Action buttons */}
         {isActive && (
           <div className="mx-auto max-w-4xl px-4 pb-1 pt-2">

@@ -57,7 +57,7 @@ function HeaderIconLink({
           href={href}
           aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
           className={cn(
-            "inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
+            "group inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
             isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100"
           )}
         >
@@ -100,7 +100,7 @@ function HeaderIconButton({
         onClick={onClick}
         aria-label={ariaLabel ?? (showBadge ? `${title}, ${badgeCount} pending` : title)}
         className={cn(
-          "relative h-9 w-9 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100 sm:h-8 sm:w-8",
+          "group relative h-9 w-9 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100 sm:h-8 sm:w-8",
           isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100",
         )}
       >
@@ -150,11 +150,11 @@ export function Header({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground hover:text-foreground lg:hidden"
+          className="group h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground hover:text-foreground lg:hidden"
           aria-label="Open menu"
           onClick={() => setMobileOpen(true)}
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="icon-pop h-5 w-5" />
         </Button>
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -163,9 +163,9 @@ export function Header({
             onClick={() =>
               document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
             }
-            className="group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/60 px-3 text-sm text-gray-500 shadow-[inset_0_0_0_1px_rgba(15,23,42,0)] transition-all hover:border-gray-200 hover:bg-white hover:text-gray-900 focus-visible:border-gray-300 focus-visible:bg-white focus-visible:outline-none dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-white/[0.06] dark:hover:text-gray-100 sm:max-w-sm lg:max-w-md"
+            className="group group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/60 px-3 text-sm text-gray-500 shadow-[inset_0_0_0_1px_rgba(15,23,42,0)] transition-all hover:border-gray-200 hover:bg-white hover:text-gray-900 focus-visible:border-gray-300 focus-visible:bg-white focus-visible:outline-none dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-white/[0.06] dark:hover:text-gray-100 sm:max-w-sm lg:max-w-md"
           >
-            <Search className="h-3.5 w-3.5 shrink-0 opacity-70 transition-opacity group-hover/search:opacity-100" aria-hidden />
+            <Search className="icon-pop h-3.5 w-3.5 shrink-0 opacity-70 transition-all group-hover/search:opacity-100" aria-hidden />
             <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal">Search work, customers, units…</span>
             <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-medium text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 sm:inline-flex">
               ⌘K
@@ -183,7 +183,7 @@ export function Header({
             badgeTone={assistantBadgeTone}
             onClick={() => openWith(inboxTotalCount > 0 ? "inbox" : "assistant")}
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="icon-wiggle h-4 w-4" />
           </HeaderIconButton>
 
           <HeaderIconLink
@@ -192,7 +192,7 @@ export function Header({
             isActive={feedbackActive}
             badgeCount={feedbackUnreadReplyCount}
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="icon-bob h-4 w-4" />
           </HeaderIconLink>
 
           <HeaderIconLink
@@ -200,7 +200,7 @@ export function Header({
             title="Deleted work orders"
             isActive={binActive}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="icon-wiggle h-4 w-4" />
           </HeaderIconLink>
 
           <span className="mx-1.5 hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block" aria-hidden />
@@ -213,7 +213,7 @@ export function Header({
 
           {showSettings ? (
             <HeaderIconLink href="/settings" title="Settings" isActive={settingsActive}>
-              <Settings className="h-4 w-4" />
+              <Settings className="icon-spin-slow h-4 w-4" />
             </HeaderIconLink>
           ) : null}
 

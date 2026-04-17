@@ -159,7 +159,7 @@ export function Sidebar({ userRole }: SidebarProps) {
       >
         <span
           className={cn(
-            "shrink-0 transition-colors",
+            "icon-pop shrink-0 transition-colors",
             isActive
               ? "text-gray-900 dark:text-gray-50"
               : "text-gray-400 group-hover:text-gray-700 dark:text-gray-500 dark:group-hover:text-gray-200",

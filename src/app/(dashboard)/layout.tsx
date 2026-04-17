@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { getUnreadFeedbackReplyCount } from "@/actions/feedback";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -7,6 +8,7 @@ import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { DashboardContent } from "@/components/layout/dashboard-content";
 import { AssistantProvider } from "@/components/assistant-context";
 import { AssistantShell } from "@/components/assistant-shell";
+import { RouteProgress } from "@/components/layout/route-progress";
 import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import type { UserRole } from "@/types";
@@ -29,6 +31,9 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <AssistantProvider>
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         <div className="flex min-h-screen">
           <Sidebar userRole={session.user.role as UserRole} />
           <DashboardContent>

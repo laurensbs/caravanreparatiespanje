@@ -196,6 +196,45 @@
   .pt-safe {
     padding-top: max(0.75rem, env(safe-area-inset-top));
   }
+
+  /* Icon hover animations. Put `.group` on the parent button/link and
+     combine with the helpers below on the icon itself. Animations only
+     run under `motion-safe` – users with `prefers-reduced-motion` see
+     static icons. */
+  .icon-nudge {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .group:hover .icon-nudge,
+  .group\/nav:hover .icon-nudge {
+    transform: translateX(1.5px);
+  }
+  .icon-bob {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .group:hover .icon-bob {
+    transform: translateY(-1.5px);
+  }
+  .icon-wiggle {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .group:hover .icon-wiggle {
+      animation: iconWiggle 420ms ease-in-out;
+    }
+    .group:hover .icon-spin-slow {
+      animation: iconSpin 1.2s linear;
+    }
+  }
+  .icon-pop {
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .group:hover .icon-pop {
+    transform: scale(1.08);
+  }
+  .group:active .icon-pop {
+    transform: scale(0.96);
+  }
 }
 
 /* Respect users who prefer reduced motion – drop every decorative animation. */
@@ -235,6 +274,29 @@
 @keyframes popIn {
   0% { opacity: 0; transform: scale(0.92) translateY(4px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Icon micro-animations — applied on hover of a `.group` wrapper. We never
+   animate the icon itself on mount (too busy). These fire only when the
+   user hovers the surrounding button/link, so they feel like a response
+   instead of decoration. */
+@keyframes iconNudgeRight {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+@keyframes iconWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+@keyframes iconSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes iconBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
 /* Print styles for planning calendar */

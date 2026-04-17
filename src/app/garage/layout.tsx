@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import { LanguageProvider } from "@/components/garage/language-toggle";
 import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageLoginForm } from "@/components/garage/login-form";
 import { GarageIdleLock } from "@/components/garage/idle-lock";
+import { RouteProgress } from "@/components/layout/route-progress";
 
 export const metadata = {
   title: "Garage — Caravan Repairs",
@@ -41,6 +43,9 @@ export default async function GarageLayout({
 
   return (
     <LanguageProvider>
+      <Suspense fallback={null}>
+        <RouteProgress />
+      </Suspense>
       <div className="flex min-h-screen flex-col bg-gray-950">
         <GarageIdleLock />
         {children}

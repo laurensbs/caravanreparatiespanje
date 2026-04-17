@@ -6,24 +6,36 @@ import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   function toggle() {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    setTheme(isDark ? "light" : "dark");
   }
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      className="h-8 w-8 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100"
+      className="group relative h-8 w-8 shrink-0 touch-manipulation overflow-hidden rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100"
       onClick={toggle}
       aria-label="Toggle theme"
     >
-      {resolvedTheme === "dark" ? (
-        <Sun className="h-4 w-4 transition-transform duration-300 hover:rotate-45" />
-      ) : (
-        <Moon className="h-4 w-4 transition-transform duration-300 hover:-rotate-12" />
-      )}
+      {/* Both icons are rendered; we crossfade + rotate between them on theme
+          change, and add a tiny rotation on hover so the button feels alive. */}
+      <Sun
+        className={`absolute h-4 w-4 transition-all duration-300 ease-out group-hover:rotate-45 ${
+          isDark
+            ? "rotate-0 scale-100 opacity-100"
+            : "-rotate-90 scale-75 opacity-0"
+        }`}
+      />
+      <Moon
+        className={`absolute h-4 w-4 transition-all duration-300 ease-out group-hover:-rotate-12 ${
+          isDark
+            ? "rotate-90 scale-75 opacity-0"
+            : "rotate-0 scale-100 opacity-100"
+        }`}
+      />
     </Button>
   );
 }

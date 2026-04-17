@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare, Menu } from "lucide-react";
+import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare, Menu, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -83,7 +83,9 @@ export function Header({
   const { toggle } = useAssistantContext();
   const { setMobileOpen } = useSidebar();
   const showSettings = hasMinRole(userRole, "admin");
+  const showAudit = hasMinRole(userRole, "admin");
   const feedbackActive = pathname === "/feedback" || pathname.startsWith("/feedback/");
+  const auditActive = pathname === "/audit" || pathname.startsWith("/audit/");
   const settingsActive = pathname.startsWith("/settings");
 
   return (
@@ -132,16 +134,20 @@ export function Header({
 
           <ReminderPanel />
 
-          <span className="hidden lg:inline-flex">
-            <HeaderIconLink
-              href="/feedback"
-              title="Feedback"
-              isActive={feedbackActive}
-              badgeCount={feedbackUnreadReplyCount}
-            >
-              <MessageSquare className="h-4 w-4" />
+          <HeaderIconLink
+            href="/feedback"
+            title="Feedback"
+            isActive={feedbackActive}
+            badgeCount={feedbackUnreadReplyCount}
+          >
+            <MessageSquare className="h-4 w-4" />
+          </HeaderIconLink>
+
+          {showAudit ? (
+            <HeaderIconLink href="/audit" title="Audit log" isActive={auditActive}>
+              <Shield className="h-4 w-4" />
             </HeaderIconLink>
-          </span>
+          ) : null}
 
           <ThemeToggle />
 

@@ -33,6 +33,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FeedbackProductUpdates } from "./feedback-product-updates";
 
 type FeedbackItem = {
   id: string;
@@ -141,8 +142,9 @@ export function FeedbackClient({
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Feedback</h1>
             <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Suggest improvements or report issues. Managers can reply in the thread. When there is an unread reply, a dot appears on the
-              Feedback icon in the header (on larger screens) until you open this page.
+              Suggest improvements or report issues. Managers can reply in the thread. Below you will find what has shipped recently; after
+              that, your open and resolved requests. When there is an unread reply, a dot appears on the Feedback icon in the top bar until you
+              open this page.
             </p>
           </div>
           <Button
@@ -157,6 +159,8 @@ export function FeedbackClient({
       </header>
 
       <div className="space-y-6 border-b border-border/40 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+        <FeedbackProductUpdates openRequestCount={openItems.length} doneRequestCount={closedItems.length} />
+
         {showForm && (
           <Card className="animate-slide-up border-primary/20 shadow-sm">
             <CardHeader className="space-y-1 px-4 pt-4 sm:px-6 sm:pt-6">

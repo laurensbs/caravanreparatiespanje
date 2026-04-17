@@ -18,8 +18,6 @@ import {
   Warehouse,
   ExternalLink,
   ClipboardList,
-  MessageSquare,
-  Shield,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -40,7 +38,6 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations" },
-  { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Garage", href: "/api/garage-reset", icon: <Warehouse className="h-[18px] w-[18px]" />, group: "Operations" },
   // DATA
   { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data" },
@@ -48,7 +45,6 @@ const navItems: NavItem[] = [
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data" },
   // FINANCE
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
-  { label: "Audit", href: "/audit", icon: <Shield className="h-[18px] w-[18px]" />, group: "Admin", minRole: "admin" },
   { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
 
@@ -146,12 +142,7 @@ export function Sidebar({ userRole }: SidebarProps) {
   const bottomItems = filteredItems.filter((item) => item.bottom);
 
   function NavLink({ item }: { item: NavItem }) {
-    const isActive =
-      item.href === "/"
-        ? pathname === "/"
-        : item.href === "/feedback"
-          ? pathname === "/feedback" || pathname.startsWith("/feedback/")
-          : pathname.startsWith(item.href);
+    const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
     const linkProps = item.external ? { target: "_blank", rel: "noopener" } : {};
 

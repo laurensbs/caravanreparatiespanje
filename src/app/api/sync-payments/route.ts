@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, customers } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, customers, units } from "@/lib/db/schema";
 import { eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, getInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
@@ -21,6 +21,10 @@ function holdedInvoiceStatus(invoice: HoldedInvoice): "draft" | "sent" | "paid" 
   if (invoice.status === 2) {
     const remaining = getPartiallyPaidRemaining(invoice);
     if (remaining !== null && remaining <= PAYMENT_TOLERANCE_EUR) return "paid";
+    // List payload sometimes lacks `due`/`payments` even after detail fetch — micro-balance noise
+    if (remaining === null && invoice.total > 0 && invoice.total <= PAYMENT_TOLERANCE_EUR * 2) {
+      return "paid";
+    }
   }
   if (invoice.draft || !invoice.docNumber || invoice.docNumber === "---") return "draft";
   return "sent";
@@ -80,8 +84,10 @@ export async function GET(request: Request) {
         dueDate: repairJobs.dueDate,
         createdAt: repairJobs.createdAt,
         completedAt: repairJobs.completedAt,
+        registration: units.registration,
       })
       .from(repairJobs)
+      .leftJoin(units, eq(repairJobs.unitId, units.id))
       .where(isNull(repairJobs.deletedAt));
 
     const allCustomers = await db
@@ -218,6 +224,14 @@ export async function GET(request: Request) {
         let matched = unlinkedRepairs.find(r =>
           r.publicCode && invText.includes(r.publicCode.toLowerCase())
         );
+
+        // Strategy 1b: unit registration / kenteken in invoice lines
+        if (!matched) {
+          matched = unlinkedRepairs.find((r) => {
+            const reg = r.registration?.trim().toLowerCase();
+            return reg && reg.length >= 3 && invText.includes(reg);
+          });
+        }
 
         // Strategy 2: Match by title keywords in invoice text
         if (!matched) {

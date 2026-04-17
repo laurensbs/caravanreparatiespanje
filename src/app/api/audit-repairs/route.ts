@@ -18,6 +18,9 @@ function holdedInvoiceStatus(inv: HoldedInvoice): "draft" | "sent" | "paid" {
   if (inv.status === 2) {
     const remaining = getPartiallyPaidRemaining(inv);
     if (remaining !== null && remaining <= PAYMENT_TOLERANCE_EUR) return "paid";
+    if (remaining === null && inv.total > 0 && inv.total <= PAYMENT_TOLERANCE_EUR * 2) {
+      return "paid";
+    }
   }
   if (inv.draft || !inv.docNumber || inv.docNumber === "---") return "draft";
   return "sent";

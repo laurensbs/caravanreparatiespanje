@@ -253,13 +253,13 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
-    try {
-      await updateRepairJob(jobId, { status: newStatus as any });
-      toast.success(`Status → ${STATUS_LABELS[newStatus as RepairStatus]}`);
-      router.refresh();
-    } catch {
-      toast.error("Failed to update status");
+    const res = await updateRepairJob(jobId, { status: newStatus as RepairStatus });
+    if (!res.ok) {
+      toast.error(res.message);
+      return;
     }
+    toast.success(`Status → ${STATUS_LABELS[newStatus as RepairStatus]}`);
+    router.refresh();
   }
 
   const clearSelection = () => setSelected(new Set());

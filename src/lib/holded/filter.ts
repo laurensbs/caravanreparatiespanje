@@ -17,6 +17,18 @@ const NON_REPAIR_KEYWORDS = [
   "naar de camping",
 ];
 
+/** If present, invoice is treated as workshop repair billing (do not exclude as "stalling/transport only"). */
+const REPAIR_BILLING_HINTS = [
+  "reparatie",
+  "werkorder",
+  "werkplaats",
+  "caravan repair",
+  "repair job",
+  "onderhoud",
+  "inspection",
+  "keuring",
+];
+
 /** Check if a Holded invoice is non-repair (transport, storage, etc.) */
 export function isNonRepairInvoice(inv: HoldedInvoice): boolean {
   // Check tags
@@ -33,7 +45,18 @@ export function isNonRepairInvoice(inv: HoldedInvoice): boolean {
     ...(inv.products ?? []).map(p => `${p.name ?? ""} ${p.desc ?? ""}`),
   ].join(" ").toLowerCase();
 
-  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
+  if (REPAIR_BILLING_HINTS.some((h) => textToCheck.includes(h))) {
+    return false;
+  }
+
+  const keywordHits = NON_REPAIR_KEYWORDS.filter((kw) => textToCheck.includes(kw));
+  const lineCount = (inv.items?.length ?? 0) + (inv.products?.length ?? 0);
+  // Multi-line repair invoices sometimes mention "transport" on one line — require 2 hits or a short doc
+  if (lineCount >= 2 && keywordHits.length === 1) {
+    return false;
+  }
+
+  return keywordHits.length > 0;
 }
 
 /** Check if a Holded quote is non-repair */
@@ -43,7 +66,17 @@ export function isNonRepairQuote(q: HoldedQuote): boolean {
     ...(q.products ?? []).map(p => `${p.name ?? ""} ${p.desc ?? ""}`),
   ].join(" ").toLowerCase();
 
-  return NON_REPAIR_KEYWORDS.some(kw => textToCheck.includes(kw));
+  if (REPAIR_BILLING_HINTS.some((h) => textToCheck.includes(h))) {
+    return false;
+  }
+
+  const keywordHits = NON_REPAIR_KEYWORDS.filter((kw) => textToCheck.includes(kw));
+  const lineCount = q.products?.length ?? 0;
+  if (lineCount >= 2 && keywordHits.length === 1) {
+    return false;
+  }
+
+  return keywordHits.length > 0;
 }
 
 /** Check if a Holded invoice has no meaningful content (blank API response) */

@@ -10,6 +10,12 @@ import { NewCustomerDialog } from "@/components/customers/new-customer-dialog";
 import { HoldedHint } from "@/components/holded-hint";
 import { CustomersTableClient } from "@/components/customers/customer-quickview";
 import { BusinessesTableClient } from "@/components/customers/businesses-table";
+import {
+  DashboardPageCanvas,
+  DashboardPageHeader,
+  dashboardPanelClass,
+} from "@/components/layout/dashboard-surface";
+import { cn } from "@/lib/utils";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
@@ -89,21 +95,22 @@ export default async function CustomersPage({ searchParams }: Props) {
   const displayTotal = isBusiness ? suppliersList.length : total;
 
   return (
-    <div className="space-y-5">
+    <DashboardPageCanvas>
+    <div className="space-y-6 sm:space-y-8">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Contacts</h1>
-          <p className="text-sm text-muted-foreground">
+        <div className="min-w-0 space-y-3">
+          <DashboardPageHeader title="Contacts" />
+          <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
             {displayTotal} {isBusiness ? "business" : "contact"}
             {displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}
             {!isBusiness && " · tap a row for a quick view, or open the full record for edits and history"}
           </p>
           {!isBusiness && (
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl pt-1">
-              The same contact record is used on <strong className="font-medium text-foreground">work orders</strong>,{" "}
-              <strong className="font-medium text-foreground">planning</strong>, and the{" "}
-              <strong className="font-medium text-foreground">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
+            <p className="max-w-3xl text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+              The same contact record is used on <strong className="font-medium text-gray-900 dark:text-gray-100">work orders</strong>,{" "}
+              <strong className="font-medium text-gray-900 dark:text-gray-100">planning</strong>, and the{" "}
+              <strong className="font-medium text-gray-900 dark:text-gray-100">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
             </p>
           )}
         </div>
@@ -113,7 +120,7 @@ export default async function CustomersPage({ searchParams }: Props) {
       </div>
 
       {/* ── Tabs (scroll on narrow screens, touch-friendly) ─ */}
-      <div className="border-b border-border">
+      <div className="border-b border-gray-200 dark:border-gray-800">
         <div className="-mb-px flex gap-1 overflow-x-auto pb-px sm:gap-8">
           {CONTACT_TYPE_TABS.map((tab) => {
             const isActive = activeTab === tab.value;
@@ -155,27 +162,27 @@ export default async function CustomersPage({ searchParams }: Props) {
       )}
 
       {/* ── Table (horizontal scroll on small screens — keeps all columns) ─ */}
-      <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+      <div className={cn("overflow-hidden", dashboardPanelClass)}>
         <div className="max-h-[min(70vh,calc(100vh-14rem))] overflow-auto overscroll-contain sm:max-h-[calc(100vh-16rem)]">
           <table className="w-full min-w-[44rem]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-border/80 bg-muted/40 backdrop-blur-sm dark:bg-muted/60">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:px-5">Name</th>
+              <tr className="border-b border-gray-100 bg-gray-50/90 backdrop-blur-sm dark:border-gray-800 dark:bg-white/[0.04]">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 sm:px-5 dark:text-gray-500">Name</th>
                 {isBusiness ? (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Contact Person</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Phone</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Email</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Website</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Holded</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Contact Person</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Phone</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Email</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Website</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Holded</th>
                   </>
                 ) : (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Type</th>
-                    <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Repairs</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Phone</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Email</th>
-                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Updated</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Type</th>
+                    <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Repairs</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Phone</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Email</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Updated</th>
                   </>
                 )}
               </tr>
@@ -190,5 +197,6 @@ export default async function CustomersPage({ searchParams }: Props) {
       </div>
 
     </div>
+    </DashboardPageCanvas>
   );
 }

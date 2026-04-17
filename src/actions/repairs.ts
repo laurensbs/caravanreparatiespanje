@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { repairJobs, repairJobEvents, repairJobTags, repairTasks, customers, units, locations, users, tags } from "@/lib/db/schema";
+import type { InferSelectModel } from "drizzle-orm";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
@@ -10,6 +11,88 @@ import { clearGarageAttention } from "./garage-sync";
 import { generatePublicCode } from "@/lib/utils";
 import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+export type RepairJobRow = InferSelectModel<typeof repairJobs>;
+
+export type UpdateRepairJobResult =
+  | { ok: true; job: RepairJobRow }
+  | {
+      ok: false;
+      code: "validation" | "not_found" | "server_error";
+      message: string;
+      zodIssues?: { path: string; message: string }[];
+    };
+
+/** Columns the panel may patch via `updateRepairJob` (never Holded IDs — use holded actions). */
+const REPAIR_JOB_PATCH_KEYS = [
+  "publicCode",
+  "locationId",
+  "customerId",
+  "unitId",
+  "title",
+  "descriptionRaw",
+  "descriptionNormalized",
+  "partsNeededRaw",
+  "notesRaw",
+  "extraNotesRaw",
+  "internalComments",
+  "status",
+  "priority",
+  "businessProcessType",
+  "jobType",
+  "assignedUserId",
+  "estimatedCost",
+  "actualCost",
+  "internalCost",
+  "estimatedHours",
+  "actualHours",
+  "invoiceStatus",
+  "customerResponseStatus",
+  "dueDate",
+  "bayReference",
+  "warrantyInternalCostFlag",
+  "prepaidFlag",
+  "waterDamageRiskFlag",
+  "safetyFlag",
+  "tyresFlag",
+  "lightsFlag",
+  "brakesFlag",
+  "windowsFlag",
+  "sealsFlag",
+  "partsRequiredFlag",
+  "followUpRequiredFlag",
+  "customFlags",
+  "nextAction",
+  "currentBlocker",
+] as const;
+
+type PatchKey = (typeof REPAIR_JOB_PATCH_KEYS)[number];
+
+function buildAllowlistedRepairUpdate(
+  parsed: Partial<Record<PatchKey, unknown>> & { dueDate?: string | null },
+  existing: RepairJobRow
+): Record<string, unknown> {
+  const set: Record<string, unknown> = { updatedAt: new Date() };
+
+  for (const key of REPAIR_JOB_PATCH_KEYS) {
+    if (key === "dueDate") {
+      if (parsed.dueDate !== undefined) {
+        set.dueDate = parsed.dueDate ? new Date(parsed.dueDate) : null;
+      }
+      continue;
+    }
+    const v = parsed[key as PatchKey];
+    if (v !== undefined) {
+      set[key] = v;
+    }
+  }
+
+  if (parsed.status === "completed" && existing.status !== "completed") {
+    set.completedAt = new Date();
+  }
+
+  return set;
+}
 
 export type RepairFilters = {
   q?: string;
@@ -352,71 +435,89 @@ export async function createRepairJob(data: unknown) {
   return job;
 }
 
-export async function updateRepairJob(id: string, data: unknown) {
-  const session = await requireRole("staff");
-  const parsed = repairJobSchema.parse(data);
-
-  const [existing] = await db
-    .select()
-    .from(repairJobs)
-    .where(eq(repairJobs.id, id))
-    .limit(1);
-
-  if (!existing) throw new Error("Job not found");
-
-  const changes: Record<string, { from: unknown; to: unknown }> = {};
-  const trackFields = ["status", "priority", "locationId", "assignedUserId", "invoiceStatus", "customerResponseStatus"] as const;
-  const eventValues: { repairJobId: string; userId: string; eventType: string; fieldChanged: string; oldValue: string; newValue: string }[] = [];
-
-  for (const field of trackFields) {
-    if (parsed[field] !== undefined && parsed[field] !== existing[field]) {
-      changes[field] = { from: existing[field], to: parsed[field] };
-      eventValues.push({
-        repairJobId: id,
-        userId: session.user.id,
-        eventType: "field_changed",
-        fieldChanged: field,
-        oldValue: String(existing[field] ?? ""),
-        newValue: String(parsed[field] ?? ""),
-      });
+export async function updateRepairJob(id: string, data: unknown): Promise<UpdateRepairJobResult> {
+  try {
+    const session = await requireRole("staff");
+    const parsedResult = repairJobSchema.safeParse(data);
+    if (!parsedResult.success) {
+      const zodIssues = parsedResult.error.issues.map((i) => ({
+        path: i.path.join(".") || "(root)",
+        message: i.message,
+      }));
+      const first = zodIssues[0];
+      return {
+        ok: false,
+        code: "validation",
+        message: first ? `${first.path}: ${first.message}` : "Validation failed",
+        zodIssues,
+      };
     }
+    const parsed = parsedResult.data;
+
+    const [existing] = await db
+      .select()
+      .from(repairJobs)
+      .where(eq(repairJobs.id, id))
+      .limit(1);
+
+    if (!existing) {
+      return { ok: false, code: "not_found", message: "Job not found" };
+    }
+
+    const changes: Record<string, { from: unknown; to: unknown }> = {};
+    const trackFields = ["status", "priority", "locationId", "assignedUserId", "invoiceStatus", "customerResponseStatus"] as const;
+    const eventValues: { repairJobId: string; userId: string; eventType: string; fieldChanged: string; oldValue: string; newValue: string }[] = [];
+
+    for (const field of trackFields) {
+      if (parsed[field] !== undefined && parsed[field] !== existing[field]) {
+        changes[field] = { from: existing[field], to: parsed[field] };
+        eventValues.push({
+          repairJobId: id,
+          userId: session.user.id,
+          eventType: "field_changed",
+          fieldChanged: field,
+          oldValue: String(existing[field] ?? ""),
+          newValue: String(parsed[field] ?? ""),
+        });
+      }
+    }
+
+    if (eventValues.length > 0) {
+      await db.insert(repairJobEvents).values(eventValues);
+    }
+
+    const updateSet = buildAllowlistedRepairUpdate(parsed, existing);
+
+    const [updated] = await db
+      .update(repairJobs)
+      .set(updateSet as typeof repairJobs.$inferInsert)
+      .where(eq(repairJobs.id, id))
+      .returning();
+
+    if (!updated) {
+      return { ok: false, code: "not_found", message: "Job not found after update" };
+    }
+
+    if (Object.keys(changes).length > 0) {
+      await createAuditLog("update", "repair_job", id, changes);
+    }
+
+    if (changes.status || changes.customerResponseStatus) {
+      await autoGenerateReminder(
+        id,
+        parsed.status ?? existing.status,
+        parsed.customerResponseStatus ?? existing.customerResponseStatus
+      );
+    }
+
+    revalidatePath("/repairs");
+    revalidatePath(`/repairs/${id}`);
+    revalidatePath("/");
+    return { ok: true, job: updated };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Update failed";
+    return { ok: false, code: "server_error", message };
   }
-
-  if (eventValues.length > 0) {
-    await db.insert(repairJobEvents).values(eventValues);
-  }
-
-  const [updated] = await db
-    .update(repairJobs)
-    .set({
-      ...parsed,
-      dueDate: parsed.dueDate ? new Date(parsed.dueDate) : undefined,
-      updatedAt: new Date(),
-      completedAt:
-        parsed.status === "completed" && existing.status !== "completed"
-          ? new Date()
-          : undefined,
-    })
-    .where(eq(repairJobs.id, id))
-    .returning();
-
-  if (Object.keys(changes).length > 0) {
-    await createAuditLog("update", "repair_job", id, changes);
-  }
-
-  // Auto-generate reminders based on status/response changes
-  if (changes.status || changes.customerResponseStatus) {
-    await autoGenerateReminder(
-      id,
-      parsed.status ?? existing.status,
-      parsed.customerResponseStatus ?? existing.customerResponseStatus
-    );
-  }
-
-  revalidatePath("/repairs");
-  revalidatePath(`/repairs/${id}`);
-  revalidatePath("/");
-  return updated;
 }
 
 export async function bulkUpdateRepairJobs(data: unknown) {

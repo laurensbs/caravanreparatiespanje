@@ -1030,6 +1030,8 @@ export const feedback = pgTable(
     description: text("description"),
     status: feedbackStatusEnum("status").notNull().default("open"),
     adminNotes: text("admin_notes"),
+    /** True when team replied in admin_notes; cleared when author opens /feedback. */
+    authorHasUnreadResponse: boolean("author_has_unread_response").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

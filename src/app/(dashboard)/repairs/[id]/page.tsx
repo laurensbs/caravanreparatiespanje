@@ -11,6 +11,9 @@ import { getEstimateLineItems, getDismissedWorkshopItems } from "@/actions/estim
 import { getRepairPhotos } from "@/actions/photos";
 import { getJobTimeEntries, getJobActiveTimers } from "@/actions/time-entries";
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasMinRole } from "@/lib/auth-utils";
+import type { UserRole } from "@/types";
 import { RepairDetail } from "@/components/repairs/repair-detail";
 import type { Metadata } from "next";
 
@@ -64,6 +67,10 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     ? await getCustomerRepairs(job.customerId, job.id)
     : [];
 
+  const session = await auth();
+  const canLinkHoldedDocuments =
+    !!session?.user?.role && hasMinRole(session.user.role as UserRole, "manager");
+
   return (
     <RepairDetail
       job={job}
@@ -94,6 +101,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),
         defaultTax: parseFloat(settings.default_tax_percent ?? "21"),
       }}
+      canLinkHoldedDocuments={canLinkHoldedDocuments}
     />
   );
 }

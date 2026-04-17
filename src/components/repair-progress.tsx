@@ -305,14 +305,15 @@ export function PipelineSummary({ repairs, className }: PipelineSummaryProps) {
       </div>
 
       {/* Summary text */}
-      <p className="text-xs text-gray-500 dark:text-muted-foreground">
-        {PIPELINE_SEGMENTS.map((s, i) => (
-          <span key={s.key}>
-            {i > 0 && <span className="mx-1.5">·</span>}
-            <Link href={s.href} className="hover:text-gray-900 dark:hover:text-foreground transition-colors">
-              {counts[s.key]} {s.label}
-            </Link>
-          </span>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500 dark:text-muted-foreground">
+        {PIPELINE_SEGMENTS.map((s) => (
+          <Link
+            key={s.key}
+            href={s.href}
+            className="transition-colors hover:text-gray-900 dark:hover:text-foreground"
+          >
+            {counts[s.key]} {s.label}
+          </Link>
         ))}
       </p>
     </div>

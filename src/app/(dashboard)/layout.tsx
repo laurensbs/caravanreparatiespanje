@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { getUnreadFeedbackReplyCount } from "@/actions/feedback";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
@@ -21,6 +22,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const feedbackUnreadReplyCount = session.user.id
+    ? await getUnreadFeedbackReplyCount(session.user.id)
+    : 0;
+
   return (
     <SidebarProvider>
       <AssistantProvider>
@@ -31,6 +36,7 @@ export default async function DashboardLayout({
               userName={session.user.name}
               userEmail={session.user.email}
               userRole={session.user.role as UserRole}
+              feedbackUnreadReplyCount={feedbackUnreadReplyCount}
             />
             <main className="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-fade-in">
               {children}

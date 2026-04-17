@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   createFeedback,
   updateFeedbackStatus,
   updateFeedbackAdminNotes,
   deleteFeedback,
+  markFeedbackRepliesSeen,
 } from "@/actions/feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +41,7 @@ type FeedbackItem = {
   description: string | null;
   status: "open" | "in_progress" | "done" | "dismissed";
   adminNotes: string | null;
+  authorHasUnreadResponse?: boolean;
   createdAt: Date;
   updatedAt: Date;
   user: { id: string; name: string } | null;
@@ -82,11 +85,24 @@ export function FeedbackClient({
   currentUserId,
   userRole,
 }: FeedbackClientProps) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const isAdmin = userRole === "admin" || userRole === "manager";
+
+  /** Snapshot of server “unread reply” flags on first paint so ribbons stay after mark-seen + refresh. */
+  const [initialUnreadReplyIds] = useState(
+    () => new Set(items.filter((i) => i.authorHasUnreadResponse).map((i) => i.id))
+  );
+
+  useEffect(() => {
+    void (async () => {
+      await markFeedbackRepliesSeen();
+      router.refresh();
+    })();
+  }, [router]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -121,27 +137,29 @@ export function FeedbackClient({
 
   return (
     <div className="animate-fade-in">
-      <header className="border-b border-border/60 bg-muted/15 px-4 py-4 sm:px-6 sm:py-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <header className="border-b border-border/60 bg-gradient-to-r from-muted/20 via-transparent to-cyan-500/[0.04] px-4 py-5 sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Feedback</h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-              Suggestions, improvements and feature requests
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Feedback</h1>
+            <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted-foreground">
+              Hieronder staat eerst wat er nieuw is in het systeem (in gewone taal, met scroll voor oudere updates). Daaronder kun je zelf een
+              wens doorgeven; managers kunnen daarop antwoorden. Zolang er een ongelezen antwoord is, zie je op een groot scherm een stipje
+              bij het Feedback-icoon tot je deze pagina opent.
             </p>
           </div>
           <Button
             type="button"
             onClick={() => setShowForm(!showForm)}
-            className="h-11 w-full shrink-0 touch-manipulation gap-2 rounded-xl sm:h-10 sm:w-auto"
+            className="h-11 w-full shrink-0 touch-manipulation gap-2 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.98] sm:h-11 sm:w-auto sm:px-6"
           >
             <MessageSquarePlus className="h-4 w-4" aria-hidden />
-            {showForm ? "Close" : "New"}
+            {showForm ? "Close" : "New request"}
           </Button>
         </div>
       </header>
 
-      <div className="space-y-5 border-b border-border/40 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-5">
-        <FeedbackProductUpdates />
+      <div className="space-y-6 border-b border-border/40 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+        <FeedbackProductUpdates openRequestCount={openItems.length} doneRequestCount={closedItems.length} />
 
         {showForm && (
           <Card className="animate-slide-up border-primary/20 shadow-sm">
@@ -185,14 +203,17 @@ export function FeedbackClient({
           </Card>
         )}
 
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm">
-            Open ({openItems.length})
-          </h2>
+        <div id="feedback-queue" className="scroll-mt-6 space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border/50 pb-2">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">Your open requests</h2>
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+              {openItems.length} open
+            </span>
+          </div>
           {openItems.length === 0 ? (
             <Card className="rounded-xl border-dashed">
               <CardContent className="px-4 py-10 text-center text-sm text-muted-foreground sm:py-12">
-                No open feedback. Tap <span className="font-medium text-foreground">New</span> to add something.
+                No open feedback. Tap <span className="font-medium text-foreground">New request</span> to add something.
               </CardContent>
             </Card>
           ) : (
@@ -202,6 +223,7 @@ export function FeedbackClient({
                 item={item}
                 isAdmin={isAdmin}
                 isOwner={item.userId === currentUserId}
+                highlightTeamReply={initialUnreadReplyIds.has(item.id)}
                 onStatusChange={handleStatusChange}
                 onDelete={handleDelete}
                 isPending={isPending}
@@ -211,16 +233,20 @@ export function FeedbackClient({
         </div>
 
         {closedItems.length > 0 && (
-          <div className="space-y-3 border-t border-border/40 pt-5 sm:pt-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm">
-              Completed ({closedItems.length})
-            </h2>
+          <div className="space-y-3 border-t border-border/40 pt-6 sm:pt-8">
+            <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border/50 pb-2">
+              <h2 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">Resolved</h2>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                {closedItems.length} done
+              </span>
+            </div>
             {closedItems.map((item) => (
               <FeedbackCard
                 key={item.id}
                 item={item}
                 isAdmin={isAdmin}
                 isOwner={item.userId === currentUserId}
+                highlightTeamReply={initialUnreadReplyIds.has(item.id)}
                 onStatusChange={handleStatusChange}
                 onDelete={handleDelete}
                 isPending={isPending}
@@ -237,6 +263,7 @@ function FeedbackCard({
   item,
   isAdmin,
   isOwner,
+  highlightTeamReply,
   onStatusChange,
   onDelete,
   isPending,
@@ -244,10 +271,12 @@ function FeedbackCard({
   item: FeedbackItem;
   isAdmin: boolean;
   isOwner: boolean;
+  highlightTeamReply: boolean;
   onStatusChange: (id: string, status: "open" | "in_progress" | "done" | "dismissed") => void;
   onDelete: (id: string) => void;
   isPending: boolean;
 }) {
+  const router = useRouter();
   const config = statusConfig[item.status];
   const StatusIcon = config.icon;
   const [commenting, setCommenting] = useState(false);
@@ -258,6 +287,7 @@ function FeedbackCard({
     startCommentTransition(async () => {
       await updateFeedbackAdminNotes(item.id, comment);
       setCommenting(false);
+      router.refresh();
     });
   }
 
@@ -266,8 +296,20 @@ function FeedbackCard({
   const showDelete = isAdmin || isOwner;
   const showActionRow = showInProgress || showMarkDone || showDelete;
 
+  const showNewReplyRibbon = isOwner && highlightTeamReply && Boolean(item.adminNotes?.trim());
+
   return (
-    <Card className="rounded-xl transition-shadow duration-150 hover:shadow-sm">
+    <Card
+      className={cn(
+        "overflow-hidden rounded-2xl border-border/60 transition-all duration-200 hover:border-border hover:shadow-md",
+        showNewReplyRibbon && "ring-2 ring-cyan-500/25 dark:ring-cyan-400/20"
+      )}
+    >
+      {showNewReplyRibbon ? (
+        <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-cyan-500/15 to-transparent px-4 py-2 text-xs font-semibold text-cyan-900 dark:from-cyan-500/20 dark:text-cyan-100">
+          <span>New reply from the team</span>
+        </div>
+      ) : null}
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
           <div className="flex gap-3 sm:min-w-0 sm:flex-1">

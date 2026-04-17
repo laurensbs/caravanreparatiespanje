@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
+import { toast } from "sonner";
 import { updateRepairJob } from "@/actions/repairs";
 
 interface Job {
@@ -79,7 +80,11 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
       const job = jobs.find((j) => j.id === jobId);
       if (!job || job.status === newStatus) return;
 
-      await updateRepairJob(jobId, { status: newStatus });
+      const res = await updateRepairJob(jobId, { status: newStatus });
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
       router.refresh();
     },
     [jobs, router]

@@ -5,6 +5,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/sync-quotes",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/sync-contacts",
       "schedule": "0 * * * *"
     },

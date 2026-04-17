@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare } from "lucide-react";
+import { Search, LogOut, Settings, MessageCircleQuestion, MessageSquare, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,11 +22,13 @@ import { useAssistantContext } from "@/components/assistant-context";
 import { hasMinRole } from "@/lib/auth-utils";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
+import { useSidebar } from "./sidebar-context";
 
 interface HeaderProps {
   userName: string;
   userEmail: string;
   userRole: UserRole;
+  feedbackUnreadReplyCount?: number;
 }
 
 function HeaderIconLink({
@@ -34,33 +36,52 @@ function HeaderIconLink({
   title,
   children,
   isActive,
+  badgeCount,
 }: {
   href: string;
   title: string;
   children: React.ReactNode;
   isActive: boolean;
+  badgeCount?: number;
 }) {
+  const showBadge = badgeCount != null && badgeCount > 0;
   return (
-    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 touch-manipulation rounded-lg" asChild>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg"
+      asChild
+    >
       <Link
         href={href}
         title={title}
-        aria-label={title}
+        aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
         className={cn(
           "inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
           isActive && "bg-muted/80 text-foreground"
         )}
       >
         {children}
+        {showBadge ? (
+          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cyan-600 px-1 text-[10px] font-bold text-white tabular-nums dark:bg-cyan-500">
+            {badgeCount! > 99 ? "99+" : badgeCount}
+          </span>
+        ) : null}
       </Link>
     </Button>
   );
 }
 
-export function Header({ userName, userEmail, userRole }: HeaderProps) {
+export function Header({
+  userName,
+  userEmail,
+  userRole,
+  feedbackUnreadReplyCount = 0,
+}: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { toggle } = useAssistantContext();
+  const { setMobileOpen } = useSidebar();
   const showSettings = hasMinRole(userRole, "admin");
   const feedbackActive = pathname === "/feedback" || pathname.startsWith("/feedback/");
   const settingsActive = pathname.startsWith("/settings");
@@ -68,24 +89,35 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-border/60 bg-card/85 px-3 backdrop-blur-xl supports-[backdrop-filter]:bg-card/70 sm:gap-3 sm:px-5">
-        <button
+      <header className="sticky top-0 z-30 flex h-12 min-w-0 items-center gap-2 border-b border-border/60 bg-card/85 px-3 backdrop-blur-xl supports-[backdrop-filter]:bg-card/70 sm:gap-3 sm:px-5">
+        <Button
           type="button"
-          onClick={() =>
-            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
-          }
-          className="flex max-w-sm flex-1 cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-all hover:border-border hover:bg-muted/70"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground hover:text-foreground lg:hidden"
+          aria-label="Open menu"
+          onClick={() => setMobileOpen(true)}
         >
-          <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          <span className="min-w-0 flex-1 truncate text-left text-xs">Search…</span>
-          <kbd className="pointer-events-none hidden rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
-            ⌘K
-          </kbd>
-        </button>
+          <Menu className="h-5 w-5" />
+        </Button>
 
-        <div className="flex-1" />
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+            }
+            className="flex min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-all hover:border-border hover:bg-muted/70 sm:max-w-sm lg:max-w-md"
+          >
+            <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left text-xs">Search…</span>
+            <kbd className="pointer-events-none hidden shrink-0 rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+              ⌘K
+            </kbd>
+          </button>
+        </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-1">
+        <div className="flex max-w-[min(50vw,14rem)] shrink-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden sm:max-w-none sm:overflow-visible sm:gap-1">
           <Button
             type="button"
             variant="ghost"
@@ -100,9 +132,16 @@ export function Header({ userName, userEmail, userRole }: HeaderProps) {
 
           <ReminderPanel />
 
-          <HeaderIconLink href="/feedback" title="Feedback" isActive={feedbackActive}>
-            <MessageSquare className="h-4 w-4" />
-          </HeaderIconLink>
+          <span className="hidden lg:inline-flex">
+            <HeaderIconLink
+              href="/feedback"
+              title="Feedback"
+              isActive={feedbackActive}
+              badgeCount={feedbackUnreadReplyCount}
+            >
+              <MessageSquare className="h-4 w-4" />
+            </HeaderIconLink>
+          </span>
 
           <ThemeToggle />
 

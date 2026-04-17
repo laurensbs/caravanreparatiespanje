@@ -27,7 +27,16 @@ import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
-import { createHoldedInvoice, sendHoldedInvoice, createHoldedQuote, sendHoldedQuote, verifyHoldedDocuments, deleteHoldedQuote, deleteHoldedInvoice } from "@/actions/holded";
+import {
+  createHoldedInvoice,
+  sendHoldedInvoice,
+  createHoldedQuote,
+  sendHoldedQuote,
+  verifyHoldedDocuments,
+  deleteHoldedQuote,
+  deleteHoldedInvoice,
+  linkHoldedDocumentToRepair,
+} from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
 import { updatePartRequestStatus } from "@/actions/parts";
@@ -147,6 +156,8 @@ interface RepairDetailProps {
   activeTimers?: any[];
   syncState?: any;
   garageActivity?: any[];
+  /** Manager+ — show “link existing Holded document” in Financial */
+  canLinkHoldedDocuments?: boolean;
 }
 
 /* ─── Add Item Dropdown ─── */
@@ -242,7 +253,7 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
   );
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [] }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [], canLinkHoldedDocuments = false }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -533,7 +544,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   async function handleSave() {
     setSaving(true);
     try {
-      await updateRepairJob(job.id, {
+      const res = await updateRepairJob(job.id, {
         title: title || null,
         descriptionRaw: description || null,
         status,
@@ -558,11 +569,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         nextAction: nextAction || null,
         currentBlocker: currentBlocker || null,
       });
+      if (!res.ok) {
+        const hint =
+          res.zodIssues?.slice(0, 4).map((i) => `${i.path}: ${i.message}`).join(" · ") ?? "";
+        toast.error(res.message, hint ? { description: hint } : undefined);
+        return;
+      }
       router.refresh();
       toast.success("Changes saved");
       router.push(backTo ?? "/repairs");
-    } catch {
-      toast.error("Failed to save. Please try again.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -1644,6 +1661,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               partRequests={partRequests}
               findings={findings}
               initialDismissed={initialDismissed}
+              canLinkHoldedDocuments={canLinkHoldedDocuments}
             />
 
             </details>
@@ -1990,14 +2008,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             customers={allCustomers}
             onSelect={async (customerId) => {
               if (!customerId) return;
-              try {
-                await updateRepairJob(job.id, { customerId });
-                toast.success("Customer linked");
-                setShowCustomerLinker(false);
-                router.refresh();
-              } catch {
-                toast.error("Failed to link customer");
+              const res = await updateRepairJob(job.id, { customerId });
+              if (!res.ok) {
+                toast.error(res.message);
+                return;
               }
+              toast.success("Customer linked");
+              setShowCustomerLinker(false);
+              router.refresh();
             }}
           />
         </DialogContent>
@@ -2015,14 +2033,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 type="button"
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-150"
                 onClick={async () => {
-                  try {
-                    await updateRepairJob(job.id, { assignedUserId: u.id });
-                    toast.success(`Assigned to ${u.name}`);
-                    setShowUserAssigner(false);
-                    router.refresh();
-                  } catch {
-                    toast.error("Failed to assign");
+                  const res = await updateRepairJob(job.id, { assignedUserId: u.id });
+                  if (!res.ok) {
+                    toast.error(res.message);
+                    return;
                   }
+                  toast.success(`Assigned to ${u.name}`);
+                  setShowUserAssigner(false);
+                  router.refresh();
                 }}
               >
                 <User className="h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -2636,6 +2654,7 @@ function FinancialWorkflow({
   handleDiscountChange, router,
   tasks, partRequests, findings,
   initialDismissed,
+  canLinkHoldedDocuments = false,
 }: {
   job: any;
   estimatedCost: string;
@@ -2675,8 +2694,11 @@ function FinancialWorkflow({
   partRequests: PartRequestItem[];
   findings: FindingItem[];
   initialDismissed: DismissedWorkshopItem[];
+  canLinkHoldedDocuments?: boolean;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [linkKind, setLinkKind] = useState<"quote" | "invoice">("invoice");
+  const [linkDocId, setLinkDocId] = useState("");
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
   const [dismissed, setDismissed] = useState<DismissedWorkshopItem[]>(initialDismissed);
@@ -2764,6 +2786,55 @@ function FinancialWorkflow({
           </div>
         ))}
       </div>
+
+      {canLinkHoldedDocuments && (
+        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-white/[0.03]">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            Link existing Holded document
+          </p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            If a quote or invoice already exists in Holded, paste its document ID here. Customer must match the Holded contact (or the customer has no Holded ID yet — we will set it from the document).
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Select value={linkKind} onValueChange={(v) => setLinkKind(v as "quote" | "invoice")}>
+              <SelectTrigger className="h-9 w-full rounded-lg sm:w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="quote">Estimate</SelectItem>
+                <SelectItem value="invoice">Invoice</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Holded document ID"
+              value={linkDocId}
+              onChange={(e) => setLinkDocId(e.target.value)}
+              className="h-9 flex-1 rounded-lg font-mono text-sm"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-9 shrink-0 rounded-lg"
+              disabled={!!loading || !linkDocId.trim()}
+              onClick={() =>
+                handleAction("linkHolded", async () => {
+                  const res = await linkHoldedDocumentToRepair(job.id, linkKind, linkDocId);
+                  if (!res.ok) {
+                    toast.error(res.message);
+                    return;
+                  }
+                  toast.success(linkKind === "quote" ? "Quote linked" : "Invoice linked");
+                  setLinkDocId("");
+                  router.refresh();
+                })
+              }
+            >
+              {loading === "linkHolded" ? <Spinner className="h-3.5 w-3.5" /> : "Link"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ─── Workshop sync banner ─── */}
       {hasWorkshopPending && (

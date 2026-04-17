@@ -13,6 +13,12 @@ import { type PlanningLang, getLocaleStrings, formatWeekRange } from "@/lib/plan
 import { getPlannedRepairs, scheduleRepair, type PlannedRepair } from "@/actions/planning";
 import { AddRepairDialog } from "./add-repair-dialog";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import {
+  DashboardPageCanvas,
+  DashboardPageHeader,
+  dashboardPanelClass,
+} from "@/components/layout/dashboard-surface";
 
 // Location → dot color mapping
 const LOCATION_COLORS: Record<string, string> = {};
@@ -187,95 +193,112 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
   const totalCount = filteredRepairs.length;
 
   return (
-    <div className="space-y-5 print:space-y-2">
-      {/* Title + subtitle + controls (mobile-first) */}
-      <div className="space-y-4 print:hidden">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">{t.planning}</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{t.pageSubtitle}</p>
-        </div>
+    <DashboardPageCanvas>
+      <div className="space-y-6 print:space-y-2 sm:space-y-8">
+        {/* Title + subtitle + controls (mobile-first) */}
+        <div className="space-y-4 print:hidden sm:space-y-5">
+          <DashboardPageHeader title={t.planning} description={t.pageSubtitle} />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-lg touch-manipulation"
-                onClick={() => navigateWeek(-1)}
-                aria-label={ariaPrevWeek}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button type="button" variant="outline" size="sm" className="h-10 rounded-lg px-3 text-sm touch-manipulation" onClick={goToThisWeek}>
-                {t.thisWeek}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-lg touch-manipulation"
-                onClick={() => navigateWeek(1)}
-                aria-label={ariaNextWeek}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className={cn(dashboardPanelClass, "p-3 sm:p-4")}>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 shrink-0 rounded-xl border-gray-200 bg-white touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]"
+                      onClick={() => navigateWeek(-1)}
+                      aria-label={ariaPrevWeek}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-10 rounded-xl border-gray-200 bg-white px-3 text-sm touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]"
+                      onClick={goToThisWeek}
+                    >
+                      {t.thisWeek}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 shrink-0 rounded-xl border-gray-200 bg-white touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]"
+                      onClick={() => navigateWeek(1)}
+                      aria-label={ariaNextWeek}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <span className="text-sm font-medium tabular-nums text-gray-600 dark:text-gray-300">
+                    {formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}
+                  </span>
+                  {isPending ? (
+                    <span className="text-xs text-gray-400 animate-pulse dark:text-gray-500">{t.searching}</span>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                  <Select value={filterUser} onValueChange={setFilterUser}>
+                    <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-gray-200 bg-white text-sm touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]">
+                      <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t.allStaff}</SelectItem>
+                      {staff.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
+                    <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-gray-200 bg-white text-sm touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]">
+                      <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">EN</SelectItem>
+                      <SelectItem value="nl">NL</SelectItem>
+                      <SelectItem value="es">ES</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 w-full gap-2 rounded-xl border-gray-200 bg-white text-sm touch-manipulation min-[400px]:w-auto dark:border-gray-700 dark:bg-white/[0.04]"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="h-4 w-4 shrink-0" />
+                    {t.print}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {totalCount === 0 ? t.weekRepairsNone : t.weekRepairsSome.replace("{n}", String(totalCount))}
+                </p>
+                <Link
+                  href="/repairs"
+                  className="shrink-0 touch-manipulation text-sm font-medium text-gray-900 underline-offset-4 transition-colors hover:underline dark:text-gray-100"
+                >
+                  {t.browseWorkOrders} →
+                </Link>
+              </div>
             </div>
-            <span className="text-sm text-muted-foreground font-medium tabular-nums">
-              {formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}
-            </span>
-            {isPending && <span className="text-xs text-muted-foreground animate-pulse">{t.searching}</span>}
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-            <Select value={filterUser} onValueChange={setFilterUser}>
-              <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] text-sm rounded-lg touch-manipulation">
-                <Filter className="h-3.5 w-3.5 mr-1 shrink-0" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.allStaff}</SelectItem>
-                {staff.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
-              <SelectTrigger className="h-10 w-full min-[400px]:w-24 text-sm rounded-lg touch-manipulation">
-                <Globe className="h-3.5 w-3.5 mr-1 shrink-0" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">EN</SelectItem>
-                <SelectItem value="nl">NL</SelectItem>
-                <SelectItem value="es">ES</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button type="button" variant="outline" size="sm" className="h-10 rounded-lg text-sm gap-2 touch-manipulation w-full min-[400px]:w-auto" onClick={() => window.print()}>
-              <Printer className="h-4 w-4 shrink-0" />
-              {t.print}
-            </Button>
-          </div>
+          <p className="hidden text-xs text-gray-500 md:block dark:text-gray-400">{t.dragHint}</p>
         </div>
-
-        {/* Week summary strip — scannable like a Vercel “usage” row */}
-        <div className="flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {totalCount === 0 ? t.weekRepairsNone : t.weekRepairsSome.replace("{n}", String(totalCount))}
-          </p>
-          <Link
-            href="/repairs"
-            className="text-sm font-medium text-primary hover:underline shrink-0 touch-manipulation py-1"
-          >
-            {t.browseWorkOrders} →
-          </Link>
-        </div>
-
-        <p className="hidden text-xs text-muted-foreground md:block">{t.dragHint}</p>
-      </div>
 
       {/* Print header */}
       <div className="hidden print:block">
@@ -288,9 +311,11 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
       {/* Location legend */}
       {locationLegend.length > 0 && (
-        <div className="rounded-xl border border-border/80 bg-card px-3 py-2.5 print:hidden">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t.location}</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <div className={cn(dashboardPanelClass, "px-4 py-3 print:hidden")}>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            {t.location}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
             {locationLegend.map((l) => (
               <span key={l.id} className="flex items-center gap-1.5">
                 <span className={`h-2.5 w-2.5 rounded-full ${l.dot}`} />
@@ -302,7 +327,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
       )}
 
       {/* Day list */}
-      <div className="space-y-3 print:space-y-4">
+      <div className="space-y-3 print:space-y-4 sm:space-y-4">
         {days.map((day, dayIdx) => {
           const dayRepairs = repairsForDay(dayIdx);
           const isToday = day.toDateString() === todayStr;
@@ -311,49 +336,69 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
           return (
             <div
               key={dayIdx}
-              className={`rounded-xl border border-border/80 overflow-hidden transition-colors print:break-inside-avoid print:border-gray-300 shadow-sm ${
-                isToday ? "border-primary/35 bg-primary/[0.03] ring-1 ring-primary/10" : "bg-card"
-              } ${dragRepairId ? "hover:border-primary/45" : ""}`}
+              className={cn(
+                dashboardPanelClass,
+                "animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
+                isToday &&
+                  "ring-2 ring-gray-900/[0.07] dark:ring-white/[0.12] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06)]",
+                dragRepairId && "hover:border-gray-300 dark:hover:border-gray-600",
+              )}
+              style={{ animationDelay: `${Math.min(dayIdx * 40, 200)}ms`, animationFillMode: "backwards" }}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, dayIdx)}
             >
               {/* Day header */}
-              <div className={`flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border/60 print:border-gray-300 ${
-                isToday ? "bg-primary/[0.07]" : "bg-muted/25"
-              }`}>
+              <div
+                className={cn(
+                  "flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 print:border-gray-300 dark:border-gray-800",
+                  isToday ? "bg-gray-50/90 dark:bg-white/[0.05]" : "bg-gray-50/50 dark:bg-white/[0.02]",
+                )}
+              >
                 <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className={`text-sm font-semibold ${isToday ? "text-primary" : "text-foreground"}`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                     {t.days[dayIdx]}
                   </span>
-                  <span className={`text-sm tabular-nums ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                  <span
+                    className={cn(
+                      "text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100",
+                      isToday && "text-gray-900 dark:text-white",
+                    )}
+                  >
                     {day.getDate()} {t.months[day.getMonth()]}
                   </span>
-                  {dayRepairs.length > 0 && (
-                    <Badge variant="secondary" className="text-[10px] h-5 px-2 print:hidden">
+                  {dayRepairs.length > 0 ? (
+                    <Badge
+                      variant="secondary"
+                      className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-gray-800 dark:text-gray-200"
+                    >
                       {dayRepairs.length}
                     </Badge>
-                  )}
+                  ) : null}
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 shrink-0 px-3 text-xs font-medium touch-manipulation print:hidden"
+                  className="h-9 shrink-0 rounded-xl border-gray-200 bg-white px-3 text-xs font-medium touch-manipulation print:hidden dark:border-gray-700 dark:bg-white/[0.06]"
                   onClick={() => openAddDialog(dayIdx)}
                 >
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
                   {t.addRepair}
                 </Button>
               </div>
 
               {/* Repairs */}
               {isEmpty ? (
-                <div className="flex min-h-[4.5rem] flex-col justify-center px-4 py-4 print:min-h-0 print:py-2">
-                  <p className="text-sm text-muted-foreground print:text-gray-500">{t.noRepairsScheduled}</p>
-                  <p className="mt-1 text-xs text-muted-foreground/90 leading-snug print:hidden">{t.emptyDayHint}</p>
+                <div className="flex min-h-[5rem] flex-col justify-center px-5 py-5 print:min-h-0 print:py-2">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 print:text-gray-700">
+                    {t.noRepairsScheduled}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-gray-500 print:hidden dark:text-gray-400">
+                    {t.emptyDayHint}
+                  </p>
                 </div>
               ) : (
-                <div className="divide-y divide-border/60 print:divide-gray-200">
+                <div className="divide-y divide-gray-100 print:divide-gray-200 dark:divide-gray-800">
                   {dayRepairs.map((r) => (
                     <RepairRow
                       key={r.id}
@@ -378,7 +423,8 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
         lang={lang}
         onAdded={onRepairAdded}
       />
-    </div>
+      </div>
+    </DashboardPageCanvas>
   );
 }
 
@@ -409,9 +455,11 @@ function RepairRow({
       draggable
       onDragStart={(e) => { e.stopPropagation(); onDragStart(e, repair.id); }}
       onDragEnd={onDragEnd}
-      className={`flex min-h-[3.25rem] items-start gap-3 px-3 py-3 hover:bg-muted/40 active:bg-muted/55 transition-colors cursor-grab active:cursor-grabbing group print:min-h-0 print:cursor-default print:py-2 ${
-        isDragging ? "opacity-40" : ""
-      }`}
+      className={cn(
+        "group flex min-h-[3.25rem] cursor-grab touch-manipulation items-start gap-3 px-4 py-3.5 transition-all duration-150 active:cursor-grabbing print:min-h-0 print:cursor-default print:py-2",
+        "hover:bg-gray-50/90 active:bg-gray-100/80 dark:hover:bg-white/[0.04] dark:active:bg-white/[0.06]",
+        isDragging && "opacity-40",
+      )}
     >
       {/* Drag handle + time */}
       <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
@@ -428,9 +476,11 @@ function RepairRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-semibold truncate">{repair.title ?? repair.publicCode ?? "—"}</span>
+          <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {repair.title ?? repair.publicCode ?? "—"}
+          </span>
           {repair.publicCode && (
-            <span className="hidden font-mono text-[10px] text-muted-foreground sm:inline shrink-0 tabular-nums">
+            <span className="hidden shrink-0 font-mono text-[10px] text-gray-400 tabular-nums sm:inline dark:text-gray-500">
               #{repair.publicCode}
             </span>
           )}
@@ -440,7 +490,7 @@ function RepairRow({
         </div>
 
         {/* Meta: customer, unit, location */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground print:text-gray-600">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 print:text-gray-600 dark:text-gray-400">
           {repair.customerName && (
             <span className="flex items-center gap-1">
               <User className="h-3 w-3 print:hidden" />

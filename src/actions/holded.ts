@@ -448,6 +448,134 @@ export async function getHoldedStatus() {
 
 // ─── Get Holded contact details ───
 
+const LINK_INVOICE_PAYMENT_TOLERANCE_EUR = 0.05;
+
+function mapLinkedInvoiceStatusFromHolded(inv: HoldedInvoice): "draft" | "sent" | "paid" {
+  if (inv.status === 1) return "paid";
+  if (inv.status === 2) {
+    if (typeof inv.due === "number" && Math.abs(inv.due) <= LINK_INVOICE_PAYMENT_TOLERANCE_EUR) {
+      return "paid";
+    }
+    if (inv.payments && inv.payments.length > 0) {
+      const paid = inv.payments.reduce((s, p) => s + (p.amount ?? 0), 0);
+      const remaining = Math.max(0, inv.total - paid);
+      if (remaining <= LINK_INVOICE_PAYMENT_TOLERANCE_EUR) return "paid";
+    }
+  }
+  if (inv.draft || !inv.docNumber || inv.docNumber === "---") return "draft";
+  return "sent";
+}
+
+/**
+ * Manually attach an existing Holded estimate or invoice to this repair (validates via Holded API).
+ * Manager-only. Does not create documents in Holded.
+ */
+export async function linkHoldedDocumentToRepair(
+  repairJobId: string,
+  kind: "quote" | "invoice",
+  rawDocumentId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const session = await requireRole("manager");
+    if (!isHoldedConfigured()) return { ok: false, message: "Holded not configured" };
+
+    const documentId = rawDocumentId.trim();
+    if (!documentId) return { ok: false, message: "Enter a Holded document ID" };
+
+    const [job] = await db.select().from(repairJobs).where(eq(repairJobs.id, repairJobId)).limit(1);
+    if (!job) return { ok: false, message: "Repair not found" };
+
+    let customer: (typeof customers.$inferSelect) | null = null;
+    if (job.customerId) {
+      const [c] = await db.select().from(customers).where(eq(customers.id, job.customerId)).limit(1);
+      customer = c ?? null;
+    }
+
+    if (kind === "quote") {
+      if (job.holdedQuoteId) {
+        return { ok: false, message: "This repair already has a linked quote. Remove or unlink it first." };
+      }
+      const q = await getQuote(documentId);
+      if (customer?.holdedContactId && q.contact !== customer.holdedContactId) {
+        return {
+          ok: false,
+          message: "That estimate belongs to a different Holded contact than the customer on this work order.",
+        };
+      }
+      if (customer && !customer.holdedContactId && job.customerId) {
+        await db
+          .update(customers)
+          .set({ holdedContactId: q.contact, updatedAt: new Date() })
+          .where(eq(customers.id, job.customerId));
+      }
+      await db
+        .update(repairJobs)
+        .set({
+          holdedQuoteId: q.id,
+          holdedQuoteNum: q.docNumber || q.id,
+          holdedQuoteDate: q.date ? new Date(q.date * 1000) : new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(repairJobs.id, repairJobId));
+
+      await db.insert(repairJobEvents).values({
+        repairJobId,
+        userId: session.user.id,
+        eventType: "holded_quote_linked",
+        fieldChanged: "holdedQuoteId",
+        oldValue: "",
+        newValue: q.docNumber ?? q.id,
+        comment: `Manually linked Holded estimate ${q.docNumber ?? q.id}`,
+      });
+    } else {
+      if (job.holdedInvoiceId) {
+        return { ok: false, message: "This repair already has a linked invoice." };
+      }
+      const inv = await getInvoice(documentId);
+      if (customer?.holdedContactId && inv.contact !== customer.holdedContactId) {
+        return {
+          ok: false,
+          message: "That invoice belongs to a different Holded contact than the customer on this work order.",
+        };
+      }
+      if (customer && !customer.holdedContactId && job.customerId) {
+        await db
+          .update(customers)
+          .set({ holdedContactId: inv.contact, updatedAt: new Date() })
+          .where(eq(customers.id, job.customerId));
+      }
+      const invoiceStatus = mapLinkedInvoiceStatusFromHolded(inv);
+      await db
+        .update(repairJobs)
+        .set({
+          holdedInvoiceId: inv.id,
+          holdedInvoiceNum: inv.docNumber || inv.id,
+          holdedInvoiceDate: inv.date ? new Date(inv.date * 1000) : new Date(),
+          invoiceStatus,
+          updatedAt: new Date(),
+        })
+        .where(eq(repairJobs.id, repairJobId));
+
+      await db.insert(repairJobEvents).values({
+        repairJobId,
+        userId: session.user.id,
+        eventType: "holded_invoice_linked",
+        fieldChanged: "holdedInvoiceId",
+        oldValue: "",
+        newValue: inv.docNumber ?? inv.id,
+        comment: `Manually linked Holded invoice ${inv.docNumber ?? inv.id} (${invoiceStatus})`,
+      });
+    }
+
+    revalidatePath(`/repairs/${repairJobId}`);
+    revalidatePath("/repairs");
+    return { ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Could not link document";
+    return { ok: false, message };
+  }
+}
+
 export async function getCustomerHoldedContact(
   customerId: string,
 ): Promise<HoldedContact | null> {

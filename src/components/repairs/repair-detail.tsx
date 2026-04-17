@@ -607,6 +607,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   // ── Smart suggestion action states ──
   const [showCustomerLinker, setShowCustomerLinker] = useState(false);
   const [showUserAssigner, setShowUserAssigner] = useState(false);
+  const [inlineHoldedLinkOpen, setInlineHoldedLinkOpen] = useState(false);
   const descriptionRef = useRef<HTMLDivElement>(null);
   const communicationRef = useRef<HTMLDivElement>(null);
   const costRef = useRef<HTMLDivElement>(null);
@@ -1144,18 +1145,25 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <button
                       type="button"
                       onClick={() => {
-                        const el = document.getElementById("holded-manual-link");
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth", block: "center" });
-                          const input = el.querySelector("input");
-                          if (input instanceof HTMLInputElement) {
-                            window.setTimeout(() => input.focus(), 350);
-                          }
+                        setInlineHoldedLinkOpen((v) => !v);
+                        if (!inlineHoldedLinkOpen) {
+                          window.setTimeout(() => {
+                            const input = document.querySelector<HTMLInputElement>(
+                              "#inline-holded-link input[type='text'], #inline-holded-link input:not([type])",
+                            );
+                            input?.focus();
+                          }, 100);
                         }
                       }}
-                      className="inline-flex items-center h-7 px-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-semibold transition-colors"
+                      aria-expanded={inlineHoldedLinkOpen}
+                      className={cn(
+                        "inline-flex items-center h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-colors",
+                        inlineHoldedLinkOpen
+                          ? "bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-950/60 dark:text-violet-200 dark:hover:bg-violet-900/60"
+                          : "bg-violet-600 hover:bg-violet-500 text-white",
+                      )}
                     >
-                      Link Holded PDF
+                      {inlineHoldedLinkOpen ? "Close" : "Link Holded PDF"}
                     </button>
                   )}
                   <button
@@ -1170,6 +1178,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </button>
                 </div>
               </div>
+              {canLinkHoldedDocuments &&
+                nextActionContext.cta === "Link Holded PDF" &&
+                inlineHoldedLinkOpen && (
+                  <div
+                    id="inline-holded-link"
+                    className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3"
+                  >
+                    <HoldedManualLinkForm
+                      repairJobId={job.id}
+                      allowQuote
+                      allowInvoice
+                      variant="compact"
+                      className="bg-transparent border-0 p-0 dark:bg-transparent"
+                    />
+                  </div>
+                )}
             </div>
           )}
 
@@ -2967,15 +2991,6 @@ function FinancialWorkflow({
           </div>
         ))}
       </div>
-
-      {canLinkHoldedDocuments && !job.holdedQuoteId && !job.holdedInvoiceId && (
-        <HoldedManualLinkForm
-          id="holded-manual-link"
-          repairJobId={job.id}
-          allowQuote
-          allowInvoice
-        />
-      )}
 
       {/* ─── Workshop sync banner ─── */}
       {hasWorkshopPending && (

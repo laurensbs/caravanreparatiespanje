@@ -68,13 +68,16 @@ export type LinkHoldedForCustomerResult = {
   invoicesSkipped: string[];
   quotesSkipped: string[];
   errors: string[];
+  /** When counts match, invoices were paired to repairs by invoice date vs repair date (weak match). */
+  invoicesLinkedBySequentialFallback: number;
 };
 
 export async function linkHoldedDocumentsForCustomer(
   customerId: string,
-  options?: { dryRun?: boolean },
+  options?: { dryRun?: boolean; sequentialDateFallback?: boolean },
 ): Promise<LinkHoldedForCustomerResult> {
   const dryRun = options?.dryRun ?? false;
+  const sequentialDateFallback = options?.sequentialDateFallback ?? false;
   const result: LinkHoldedForCustomerResult = {
     customerId,
     holdedContactId: "",
@@ -83,6 +86,7 @@ export async function linkHoldedDocumentsForCustomer(
     invoicesSkipped: [],
     quotesSkipped: [],
     errors: [],
+    invoicesLinkedBySequentialFallback: 0,
   };
 
   const [customer] = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
@@ -225,6 +229,86 @@ export async function linkHoldedDocumentsForCustomer(
       });
     } catch (e) {
       result.errors.push(`invoice ${summary.id}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  // ─── Optional: pair remaining invoices to repairs by date order (same count) ───
+  if (sequentialDateFallback) {
+    const unlinkedSequential = customerRepairs.filter(
+      (r) => !r.holdedInvoiceId && !manualInvoiceStatuses.includes(r.invoiceStatus),
+    );
+    const orphanInvoices: HoldedInvoice[] = [];
+    for (const summary of onContact) {
+      try {
+        if (linkedInvoiceIds.has(summary.id)) continue;
+
+        let inv = await getInvoice(summary.id);
+        if (inv.status === 2 && getPartiallyPaidRemaining(inv) === null) {
+          try {
+            const detail = await getInvoice(inv.id);
+            if (detail.payments) inv.payments = detail.payments;
+            if (typeof detail.due === "number") inv.due = detail.due;
+          } catch {
+            /* keep */
+          }
+        }
+
+        if (inv.total === 0 && !inv.desc) continue;
+        if (isNonRepairInvoice(inv)) continue;
+        orphanInvoices.push(inv);
+      } catch (e) {
+        result.errors.push(`invoice ${summary.id} (sequential): ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
+    if (orphanInvoices.length > 0 && orphanInvoices.length === unlinkedSequential.length) {
+      orphanInvoices.sort((a, b) => a.date - b.date);
+      unlinkedSequential.sort(
+        (a, b) =>
+          (a.completedAt ?? a.createdAt).getTime() - (b.completedAt ?? b.createdAt).getTime(),
+      );
+
+      for (let i = 0; i < orphanInvoices.length; i++) {
+        const inv = orphanInvoices[i]!;
+        const matched = unlinkedSequential[i]!;
+        const newStatus = holdedInvoicePanelStatus(inv);
+        const advanceStatus =
+          (newStatus === "paid" || newStatus === "sent") && earlyStatuses.includes(matched.status);
+
+        if (!dryRun) {
+          await db
+            .update(repairJobs)
+            .set({
+              holdedInvoiceId: inv.id,
+              holdedInvoiceNum: inv.docNumber,
+              holdedInvoiceDate: new Date(inv.date * 1000),
+              invoiceStatus: newStatus,
+              ...(advanceStatus
+                ? { status: "invoiced" as const, completedAt: matched.completedAt ?? new Date() }
+                : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(repairJobs.id, matched.id));
+
+          await db.insert(repairJobEvents).values({
+            repairJobId: matched.id,
+            eventType: "invoice_discovered",
+            fieldChanged: "holdedInvoiceId",
+            oldValue: "",
+            newValue: inv.docNumber ?? inv.id,
+            comment: `Invoice linked (sequential date fallback) — ${inv.docNumber ?? inv.id}`,
+          });
+          matched.holdedInvoiceId = inv.id;
+          linkedInvoiceIds.add(inv.id);
+        }
+
+        result.invoicesLinked.push({
+          invoiceId: inv.id,
+          docNumber: inv.docNumber ?? inv.id,
+          repairId: matched.id,
+        });
+        result.invoicesLinkedBySequentialFallback++;
+      }
     }
   }
 

@@ -120,7 +120,7 @@ async function afterMergePushAndOptionalLink(carlosCustomerId: string, alsoLink:
   await pushContactToHolded(carlosCustomerId).catch((e) => console.warn("pushContactToHolded:", e));
   if (alsoLink) {
     const { linkHoldedDocumentsForCustomer } = await import("../src/lib/holded/link-holded-for-customer");
-    const link = await linkHoldedDocumentsForCustomer(carlosCustomerId, { dryRun: false });
+    const link = await linkHoldedDocumentsForCustomer(carlosCustomerId, { dryRun: false, sequentialDateFallback: true });
     console.log(
       "Repairs gekoppeld — facturen:",
       link.invoicesLinked.length,

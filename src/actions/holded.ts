@@ -33,6 +33,7 @@ import {
   resolveUnitForHoldedManualLink,
 } from "@/lib/holded/resolve-unit-from-document";
 import { matchesSpreadsheetRefInText, repairPublicCodeAppearsInText } from "@/lib/holded/repair-ref-match";
+import { linkHoldedDocumentsForCustomer } from "@/lib/holded/link-holded-for-customer";
 
 // ─── Invoice creation from repair ───
 
@@ -1032,4 +1033,25 @@ export async function deleteHoldedInvoice(repairJobId: string) {
 
   revalidatePath(`/repairs/${repairJobId}`);
   return { deleted: true };
+}
+
+// ─── Link Holded invoices/quotes on a contact to this customer’s repairs (cron logic, scoped) ───
+
+export async function syncCustomerHoldedRepairLinks(customerId: string) {
+  await requireRole("manager");
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const res = await linkHoldedDocumentsForCustomer(customerId, { sequentialDateFallback: true });
+
+  revalidatePath(`/customers/${customerId}`);
+  revalidatePath("/customers");
+  revalidatePath("/repairs");
+  for (const x of res.invoicesLinked) {
+    revalidatePath(`/repairs/${x.repairId}`);
+  }
+  for (const x of res.quotesLinked) {
+    revalidatePath(`/repairs/${x.repairId}`);
+  }
+
+  return res;
 }

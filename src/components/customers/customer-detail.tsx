@@ -12,6 +12,7 @@ import {
   ArrowLeft, Save, Phone, Mail, StickyNote, Wrench, Truck,
   Receipt, ExternalLink, Building2, User, MapPin, Pencil,
   RefreshCw, Plus, X as XIcon, Trash2, FileText, Hash, Globe, Check,
+  Link2,
 } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
@@ -27,6 +28,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { addTagToCustomer, removeTagFromCustomer } from "@/actions/tags";
+import { syncCustomerHoldedRepairLinks } from "@/actions/holded";
 
 interface CustomerDetailProps {
   customer: any;
@@ -34,11 +36,20 @@ interface CustomerDetailProps {
   holdedQuotes: any[];
   allTags?: TagItem[];
   customerTags?: TagItem[];
+  canSyncHoldedRepairLinks?: boolean;
 }
 
-export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], allTags = [], customerTags = [] }: CustomerDetailProps) {
+export function CustomerDetail({
+  customer,
+  holdedInvoices,
+  holdedQuotes = [],
+  allTags = [],
+  customerTags = [],
+  canSyncHoldedRepairLinks = false,
+}: CustomerDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [holdedLinkSyncing, setHoldedLinkSyncing] = useState(false);
 
   const [name, setName] = useState(customer.name);
   const [phone, setPhone] = useState(customer.phone ?? "");
@@ -91,6 +102,30 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
       toast.error("Failed to save");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function runHoldedRepairLinkSync() {
+    if (holdedLinkSyncing) return;
+    setHoldedLinkSyncing(true);
+    try {
+      const res = await syncCustomerHoldedRepairLinks(customer.id);
+      const n = res.invoicesLinked.length + res.quotesLinked.length;
+      const seq = res.invoicesLinkedBySequentialFallback;
+      if (res.errors.length > 0) {
+        toast.error(res.errors.join("; "));
+      } else if (n === 0) {
+        toast.message("Geen nieuwe koppelingen — documenten staan mogelijk al op een werkorder of er is geen betrouwbare match.");
+      } else {
+        toast.success(
+          `${n} document${n === 1 ? "" : "en"} gekoppeld aan werkorders${seq > 0 ? ` (${seq} via datumvolgorde)` : ""}.`,
+        );
+      }
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Koppelen mislukt");
+    } finally {
+      setHoldedLinkSyncing(false);
     }
   }
 
@@ -484,6 +519,29 @@ export function CustomerDetail({ customer, holdedInvoices, holdedQuotes = [], al
                       />
                     </Link>
                   ))}
+                </div>
+              )}
+              {canSyncHoldedRepairLinks && customer.holdedContactId && customer.repairJobs.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-border">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full rounded-xl gap-2 text-[13px]"
+                    disabled={holdedLinkSyncing}
+                    onClick={runHoldedRepairLinkSync}
+                  >
+                    {holdedLinkSyncing ? (
+                      <Spinner className="h-3.5 w-3.5" />
+                    ) : (
+                      <Link2 className="h-3.5 w-3.5" />
+                    )}
+                    Koppel Holded-facturen en -offertes aan werkorders
+                  </Button>
+                  <p className="text-[11px] text-gray-500 dark:text-muted-foreground mt-1.5 leading-snug">
+                    Gebruikt hetzelfde zoeken als de achtergrond-sync. Bij gelijk aantal open werkorders en facturen kan ook
+                    datumvolgorde helpen.
+                  </p>
                 </div>
               )}
             </div>

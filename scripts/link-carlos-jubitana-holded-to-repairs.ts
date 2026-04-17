@@ -8,6 +8,7 @@
  *
  *   npx tsx scripts/link-carlos-jubitana-holded-to-repairs.ts
  *   npx tsx scripts/link-carlos-jubitana-holded-to-repairs.ts --dry-run
+ *   npx tsx scripts/link-carlos-jubitana-holded-to-repairs.ts --no-sequential
  */
 import dotenv from "dotenv";
 dotenv.config({ path: ".env" });
@@ -21,6 +22,7 @@ import { isHoldedConfigured } from "../src/lib/holded/client";
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
+  const sequentialDateFallback = !process.argv.includes("--no-sequential");
 
   if (!process.env.DATABASE_URL) {
     console.error("DATABASE_URL missing");
@@ -41,7 +43,7 @@ async function main() {
   console.log("Customer:", carlos.name, carlos.id);
   console.log("Holded contact:", carlos.holdedContactId ?? "(none — run push/merge first)");
 
-  const res = await linkHoldedDocumentsForCustomer(carlos.id, { dryRun });
+  const res = await linkHoldedDocumentsForCustomer(carlos.id, { dryRun, sequentialDateFallback });
 
   console.log("\n--- Invoices linked ---");
   for (const x of res.invoicesLinked) {
@@ -59,6 +61,9 @@ async function main() {
   }
   if (res.errors.length > 0) {
     console.log("Errors:", res.errors.join("; "));
+  }
+  if (res.invoicesLinkedBySequentialFallback > 0) {
+    console.log(`Sequential date fallback links: ${res.invoicesLinkedBySequentialFallback}`);
   }
   console.log(dryRun ? "\n--dry-run: no DB writes for links." : "\nDone.");
 }

@@ -1,19 +1,23 @@
-function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-muted ${className}`} />;
-}
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
   return (
-    <div className="space-y-5 motion-safe:animate-fade-in">
-      <Skeleton className="h-5 w-32 rounded-full" />
-      <div className="space-y-3">
-        <Skeleton className="h-12 w-72" />
-        <Skeleton className="h-4 w-96" />
+    <div className="animate-fade-in space-y-5">
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-24 rounded-full" />
+        <Skeleton className="h-8 w-48 sm:h-9" />
+        <Skeleton className="h-3.5 w-64 opacity-70" />
       </div>
-      <Skeleton className="h-11 w-full rounded-xl" />
+      <Skeleton className="h-10 w-full rounded-xl sm:w-auto sm:max-w-xl" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="opacity-0 animate-fade-in"
+            style={{ animationDelay: `${i * 50}ms`, animationFillMode: "forwards" }}
+          >
+            <Skeleton className="h-32 w-full rounded-2xl" />
+          </div>
         ))}
       </div>
     </div>

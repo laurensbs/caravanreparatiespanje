@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shield } from "lucide-react";
 import Link from "next/link";
+import { AuditFilters } from "./audit-filters";
 
 export default async function AuditLogPage({
   searchParams,
@@ -161,61 +162,12 @@ export default async function AuditLogPage({
         })}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 rounded-lg border bg-card p-3 items-center">
-        <select
-          name="entity"
-          defaultValue={params.entity ?? ""}
-          className="rounded-lg border px-3 h-8 text-xs bg-background"
-          onChange={(e) => {
-            const val = e.target.value;
-            const p = new URLSearchParams();
-            if (params.action) p.set("action", params.action);
-            if (val) p.set("entity", val);
-            if (params.dateFrom) p.set("dateFrom", params.dateFrom);
-            if (params.dateTo) p.set("dateTo", params.dateTo);
-            window.location.href = `/audit?${p.toString()}`;
-          }}
-        >
-          <option value="">All Entities</option>
-          <option value="repair_job">Repair Jobs</option>
-          <option value="customer">Contacts</option>
-          <option value="unit">Units</option>
-          <option value="user">Users</option>
-          <option value="import">Imports</option>
-        </select>
-        <input
-          type="date"
-          defaultValue={params.dateFrom ?? ""}
-          className="rounded-lg border px-3 h-8 text-xs bg-background"
-          onChange={(e) => {
-            const p = new URLSearchParams();
-            if (params.action) p.set("action", params.action);
-            if (params.entity) p.set("entity", params.entity);
-            if (e.target.value) p.set("dateFrom", e.target.value);
-            if (params.dateTo) p.set("dateTo", params.dateTo);
-            window.location.href = `/audit?${p.toString()}`;
-          }}
-        />
-        <input
-          type="date"
-          defaultValue={params.dateTo ?? ""}
-          className="rounded-lg border px-3 h-8 text-xs bg-background"
-          onChange={(e) => {
-            const p = new URLSearchParams();
-            if (params.action) p.set("action", params.action);
-            if (params.entity) p.set("entity", params.entity);
-            if (params.dateFrom) p.set("dateFrom", params.dateFrom);
-            if (e.target.value) p.set("dateTo", e.target.value);
-            window.location.href = `/audit?${p.toString()}`;
-          }}
-        />
-        {(params.action || params.entity || params.dateFrom || params.dateTo) && (
-          <Link href="/audit" className="text-xs text-muted-foreground hover:text-foreground ml-1">
-            Clear filters
-          </Link>
-        )}
-      </div>
+      <AuditFilters
+        action={params.action}
+        entity={params.entity}
+        dateFrom={params.dateFrom}
+        dateTo={params.dateTo}
+      />
 
       {/* Log table */}
       <div className="rounded-lg border bg-card overflow-hidden">

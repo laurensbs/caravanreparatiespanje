@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo, useTransition, useRef } from "react";
+import { useState, useEffect, useMemo, useTransition, useRef, useOptimistic } from "react";
 import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
@@ -126,7 +126,7 @@ function greetingFor(d: Date, t: (en: string, es: string, nl: string) => string)
 /* ─── Main ─── */
 
 export function GarageTodayClient({
-  repairs,
+  repairs: serverRepairs,
   userName,
   stats,
   activeTimers = [],
@@ -134,6 +134,36 @@ export function GarageTodayClient({
 }: Props) {
   const { t, lang } = useLanguage();
   const router = useRouter();
+
+  // ── Optimistic layer ──
+  // Task ticks and "part received" taps dispatch optimistic updates that
+  // immediately clear the pill on the card. The server action runs in the
+  // background; when it resolves we refresh, which replaces the optimistic
+  // state with the authoritative server state.
+  type OptimisticAction =
+    | { type: "tickTask"; repairId: string; taskId: string }
+    | { type: "receivePart"; repairId: string; partId: string };
+
+  const [repairs, applyOptimistic] = useOptimistic(
+    serverRepairs,
+    (state, action: OptimisticAction) => {
+      switch (action.type) {
+        case "tickTask":
+          return state.map((r) =>
+            r.id === action.repairId && r.nextTask?.id === action.taskId
+              ? { ...r, nextTask: null }
+              : r,
+          );
+        case "receivePart":
+          return state.map((r) =>
+            r.id === action.repairId && r.nextPart?.id === action.partId
+              ? { ...r, nextPart: null }
+              : r,
+          );
+      }
+    },
+  );
+
   const [time, setTime] = useState(() => new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<StatusCategory | "all">("in_progress");
@@ -467,6 +497,11 @@ export function GarageTodayClient({
                     hapticSuccess();
                     setReceivedPartId(partRequestId);
                     startReceivePartTransition(async () => {
+                      applyOptimistic({
+                        type: "receivePart",
+                        repairId: repair.id,
+                        partId: partRequestId,
+                      });
                       try {
                         await garageMarkPartReceived(partRequestId);
                         toast.success(
@@ -491,6 +526,11 @@ export function GarageTodayClient({
                     hapticSuccess();
                     setTickedTaskId(taskId);
                     startTickTransition(async () => {
+                      applyOptimistic({
+                        type: "tickTask",
+                        repairId: repair.id,
+                        taskId,
+                      });
                       try {
                         await updateTaskStatus(taskId, "done");
                         toast.success(

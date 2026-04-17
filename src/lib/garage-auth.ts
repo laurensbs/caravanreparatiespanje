@@ -1,10 +1,25 @@
 import { cookies } from "next/headers";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { auth } from "@/lib/auth";
 
-const GARAGE_PIN = "1234";
 const COOKIE_NAME = "garage_auth";
 const SESSION_DURATION = 4 * 60 * 60; // 4 hours in seconds
+
+/**
+ * Garage shared PIN. Read from `GARAGE_PIN` env var. In development we
+ * fall back to `"1234"` so onboarding stays frictionless; in production
+ * we hard-fail if it isn't set so nobody accidentally ships the default.
+ */
+function getGaragePin(): string {
+  const envPin = process.env.GARAGE_PIN?.trim();
+  if (envPin) return envPin;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "GARAGE_PIN is not set. Define it in your deployment environment.",
+    );
+  }
+  return "1234";
+}
 
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -16,9 +31,19 @@ function sign(value: string): string {
   return createHmac("sha256", getSecret()).update(value).digest("hex");
 }
 
+function constantTimeEquals(a: string, b: string): boolean {
+  // Pad to equal length so `timingSafeEqual` doesn't throw and so that the
+  // comparison cost is constant regardless of where the first mismatch
+  // occurs. A length mismatch is still a mismatch but is leaked.
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
+
 /** Verify the garage PIN and set a signed session cookie (4 hours) */
 export async function verifyGaragePin(pin: string): Promise<boolean> {
-  if (pin !== GARAGE_PIN) return false;
+  if (!constantTimeEquals(pin, getGaragePin())) return false;
 
   const timestamp = Date.now().toString();
   const signature = sign(`garage:${timestamp}`);
@@ -48,9 +73,8 @@ export async function isGarageAuthenticated(): Promise<boolean> {
   const timestamp = token.substring(0, dotIdx);
   const providedSig = token.substring(dotIdx + 1);
 
-  // Verify signature
   const expectedSig = sign(`garage:${timestamp}`);
-  if (providedSig !== expectedSig) return false;
+  if (!constantTimeEquals(providedSig, expectedSig)) return false;
 
   // Check expiry (4 hours)
   const ts = parseInt(timestamp, 10);

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useTransition, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useLanguage } from "@/components/garage/language-toggle";
+import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
@@ -17,6 +17,7 @@ import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
+import { inferGarageLanguageFromWorkerName, garageLangManualSessionKey } from "@/lib/garage-lang-by-worker";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
@@ -37,6 +38,7 @@ import {
   CheckCircle2,
   XCircle,
   Square,
+  X,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -193,7 +195,7 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
 /* ─── Main ─── */
 
 export function GarageRepairDetailClient({ repair, currentUserId, currentUserName, partCategories, activeTimers, allUsers }: Props) {
-  const { t } = useLanguage();
+  const { t, setLang } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("tasks");
   const [problemTaskId, setProblemTaskId] = useState<string | null>(null);
@@ -220,7 +222,24 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
   const activeBlockers = repair.blockers.filter(b => b.active);
   const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
-  const activeWorker = selectableUsers.find((u) => u.id === (lastPickedWorkerId ?? repair.workers[0]?.userId));
+  const activeWorkerId = lastPickedWorkerId ?? repair.workers[0]?.userId ?? null;
+  const activeWorker = selectableUsers.find((u) => u.id === activeWorkerId);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (sessionStorage.getItem(garageLangManualSessionKey(repair.id))) return;
+    } catch {
+      return;
+    }
+    const workerDisplayName =
+      activeWorker?.name ??
+      repair.workers.find((w) => w.userId === activeWorkerId)?.userName ??
+      null;
+    const inferred = inferGarageLanguageFromWorkerName(workerDisplayName);
+    if (!inferred) return;
+    setLang(inferred);
+  }, [repair.id, activeWorkerId, activeWorker?.name, repair.workers, setLang]);
 
   async function ensureActiveWorkerSelected() {
     if (activeWorker?.id) return true;
@@ -354,12 +373,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               <ChevronLeft className="h-5 w-5" />
               {t("Back", "Atrás", "Terug")}
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {/* Active timers in header */}
               {activeTimers.map((timer) => (
                 <HeaderTimerDisplay key={timer.id} timer={timer} repairJobId={repair.id} t={t} onStop={() => router.refresh()} />
               ))}
+              <LanguageToggle />
               <button
+                type="button"
                 onClick={handleRefresh}
                 className="h-9 w-9 flex items-center justify-center rounded-lg text-white/40 active:bg-white/[0.06]"
               >
@@ -472,57 +493,80 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           {/* ═══ TAB: TASKS ═══ */}
           {activeTab === "tasks" && (
             <div className="space-y-4">
-              {/* Active worker context for shared tablet */}
-              <div className="flex items-center justify-between rounded-xl bg-sky-400/[0.06] border border-sky-400/20 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wide text-sky-400/70 font-semibold">
-                    {t("Active worker", "Trabajador activo", "Actieve werker")}
-                  </p>
-                  <p className="text-sm text-sky-300 font-medium truncate">
-                    {activeWorker?.name ?? t("Not selected", "No seleccionado", "Niet geselecteerd")}
-                  </p>
+              {/* Team: tap name = who gets task/timer; ✕ = remove from job */}
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-white/35 font-semibold mb-2">
+                  {t("Team on this job", "Equipo en este trabajo", "Team op deze klus")}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectableUsers.map((user) => {
+                    const isAssigned = repair.workers.some((w) => w.userId === user.id);
+                    const isActive = activeWorkerId === user.id;
+                    return (
+                      <div
+                        key={user.id}
+                        className={`inline-flex items-stretch rounded-full overflow-hidden min-h-11 border transition-all ${
+                          isActive
+                            ? "border-sky-400/50 bg-sky-400/[0.08] ring-1 ring-sky-400/25"
+                            : isAssigned
+                              ? "border-emerald-400/25 bg-emerald-400/[0.06]"
+                              : "border-white/[0.08] bg-white/[0.03]"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            hapticTap();
+                            if (isAssigned) {
+                              setLastPickedWorkerId(user.id);
+                              return;
+                            }
+                            startTransition(async () => {
+                              await toggleMyWorker(repair.id, user.id);
+                              setLastPickedWorkerId(user.id);
+                              router.refresh();
+                            });
+                          }}
+                          disabled={isPending}
+                          className={`inline-flex items-center gap-2 pl-3 pr-2 py-2.5 text-base font-medium transition-all active:scale-[0.99] disabled:opacity-50 ${
+                            isAssigned ? "text-emerald-200" : "text-white/55"
+                          }`}
+                        >
+                          <span
+                            className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold text-white shrink-0 ${
+                              isAssigned ? "bg-emerald-500" : "bg-white/20"
+                            }`}
+                          >
+                            {(user.name ?? "?").charAt(0).toUpperCase()}
+                          </span>
+                          <span className="max-w-[140px] truncate">{user.name}</span>
+                          {isAssigned && <span className="text-emerald-400 text-xs font-bold">✓</span>}
+                        </button>
+                        {isAssigned && (
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              hapticTap();
+                              startTransition(async () => {
+                                await toggleMyWorker(repair.id, user.id);
+                                if (lastPickedWorkerId === user.id) {
+                                  setLastPickedWorkerId(null);
+                                }
+                                router.refresh();
+                              });
+                            }}
+                            className="shrink-0 px-2.5 border-l border-white/10 text-white/35 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 disabled:opacity-40"
+                            aria-label={t("Remove from job", "Quitar del trabajo", "Van klus halen")}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowWorkerPicker(true)}
-                  className="rounded-xl min-h-11 px-4 text-sm font-semibold text-sky-300 bg-sky-400/10 border border-sky-400/20 active:scale-[0.98]"
-                >
-                  {t("Switch", "Cambiar", "Wissel")}
-                </button>
-              </div>
-
-              {/* Workers + Timer */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {selectableUsers.map((user) => {
-                  const isAssigned = repair.workers.some(w => w.userId === user.id);
-                  return (
-                    <button
-                      type="button"
-                      key={user.id}
-                      onClick={() => {
-                        hapticTap();
-                        startTransition(async () => {
-                          await toggleMyWorker(repair.id, user.id);
-                          router.refresh();
-                        });
-                      }}
-                      disabled={isPending}
-                      className={`inline-flex items-center gap-2 rounded-full min-h-11 px-4 py-2.5 text-base font-medium transition-all active:scale-[0.97] ${
-                        isAssigned
-                          ? "bg-emerald-400/10 border border-emerald-400/20 text-emerald-400"
-                          : "bg-white/[0.03] border border-white/[0.06] text-white/50"
-                      }`}
-                    >
-                      <span className={`flex items-center justify-center h-6 w-6 rounded-full text-[10px] font-bold text-white ${
-                        isAssigned ? "bg-emerald-500" : "bg-white/20"
-                      }`}>
-                        {(user.name ?? "?").charAt(0).toUpperCase()}
-                      </span>
-                      {user.name}
-                      {isAssigned && <span className="text-emerald-500 text-xs">✓</span>}
-                    </button>
-                  );
-                })}
               </div>
 
               {/* Flags */}
@@ -573,7 +617,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                         onUpdate={handleRefresh}
                         onProblem={(id) => setProblemTaskId(id)}
                         onBeforeStart={handleBeforeStart}
-                        workerId={lastPickedWorkerId ?? repair.workers[0]?.userId}
+                        workerId={activeWorkerId ?? undefined}
                         photos={repair.photos.filter((p) => p.repairTaskId === task.id).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
                       />
                     ))}

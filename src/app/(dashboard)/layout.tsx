@@ -7,6 +7,7 @@ import { DashboardContent } from "@/components/layout/dashboard-content";
 import { AssistantProvider } from "@/components/assistant-context";
 import { AssistantShell } from "@/components/assistant-shell";
 import { Toaster } from "sonner";
+import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import type { UserRole } from "@/types";
 
 export default async function DashboardLayout({
@@ -34,7 +35,17 @@ export default async function DashboardLayout({
             <main className="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-fade-in">
               {children}
             </main>
-            <Toaster richColors position="bottom-right" toastOptions={{ className: "rounded-lg" }} />
+            <Toaster
+              theme="system"
+              position="bottom-right"
+              offset={{ bottom: "1rem", right: "1rem" }}
+              closeButton
+              duration={4500}
+              visibleToasts={4}
+              gap={10}
+              richColors
+              toastOptions={sonnerToastOptions}
+            />
             <AssistantShell />
           </DashboardContent>
         </div>

@@ -67,13 +67,13 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
   );
 
   return (
-    <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-100 dark:border-border p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative flex-1 min-w-0 sm:max-w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+    <div className="rounded-xl border border-border/80 bg-card p-4 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+        <div className="relative min-w-0 flex-1 lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search contacts..."
-            className="pl-9 pr-8 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm"
+            placeholder="Search contacts…"
+            className="h-11 touch-manipulation rounded-xl border-border bg-background pl-9 pr-9 text-sm"
             value={searchInput}
             onChange={handleSearchChange}
           />
@@ -92,7 +92,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
           value={currentFilters.repairStatus ?? "all"}
           onValueChange={(val) => updateFilter("repairStatus", val)}
         >
-          <SelectTrigger className="w-56 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm text-gray-700 dark:text-foreground">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm lg:w-56">
             <SelectValue placeholder="Repair status" />
           </SelectTrigger>
           <SelectContent>
@@ -107,7 +107,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
           value={currentFilters.locationId ?? "all"}
           onValueChange={(val) => updateFilter("locationId", val)}
         >
-          <SelectTrigger className="w-40 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm text-gray-700 dark:text-foreground">
+          <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl border-border bg-background text-sm lg:w-44">
             <SelectValue placeholder="Location" />
           </SelectTrigger>
           <SelectContent>
@@ -123,7 +123,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
             value={currentFilters.tagId ?? "all"}
             onValueChange={(val) => updateFilter("tagId", val)}
           >
-            <SelectTrigger className="w-40 h-10 rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border text-sm text-gray-700 dark:text-foreground">
+            <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl border-border bg-background text-sm lg:w-44">
               <SelectValue placeholder="Tag" />
             </SelectTrigger>
             <SelectContent>
@@ -140,29 +140,31 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
           </Select>
         )}
 
-        <Input
-          type="date"
-          className="w-[140px] h-10 text-sm rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border"
-          value={currentFilters.dateFrom ?? ""}
-          onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
-          placeholder="From"
-        />
-        <Input
-          type="date"
-          className="w-[140px] h-10 text-sm rounded-xl bg-white dark:bg-card border-gray-200 dark:border-border"
-          value={currentFilters.dateTo ?? ""}
-          onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
-          placeholder="To"
-        />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
+          <Input
+            type="date"
+            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
+            value={currentFilters.dateFrom ?? ""}
+            onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+            aria-label="Updated from"
+          />
+          <Input
+            type="date"
+            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
+            value={currentFilters.dateTo ?? ""}
+            onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+            aria-label="Updated to"
+          />
+        </div>
 
         {hasActiveFilters && (
           <button
             type="button"
             onClick={clearFilters}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground touch-manipulation lg:h-auto lg:justify-start lg:border-0 lg:px-0 lg:hover:bg-transparent"
           >
             <X className="h-3.5 w-3.5" />
-            Clear
+            Clear filters
           </button>
         )}
       </div>

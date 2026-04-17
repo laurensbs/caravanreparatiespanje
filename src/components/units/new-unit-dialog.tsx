@@ -15,7 +15,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
+import { UNIT_TYPE_LABELS } from "@/types";
+import type { UnitType } from "@/types";
 import { toast } from "sonner";
 import { CustomerSearch } from "@/components/customers/customer-search";
 
@@ -29,6 +38,7 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [unitType, setUnitType] = useState<UnitType>("caravan");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,6 +48,7 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
     const fd = new FormData(e.currentTarget);
     try {
       const unit = await createUnit({
+        unitType,
         registration: fd.get("registration") || undefined,
         brand: fd.get("brand") || undefined,
         model: fd.get("model") || undefined,
@@ -53,6 +64,7 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
       });
       setOpen(false);
       setCustomerId(null);
+      setUnitType("caravan");
       toast.success("Unit created");
       router.push(`/units/${unit.id}`);
       router.refresh();
@@ -63,9 +75,9 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setCustomerId(null); }}>
-      <Button onClick={() => setOpen(true)} size="sm" className="h-8 rounded-lg gap-1.5 text-xs font-medium">
-        <Plus className="h-3.5 w-3.5" />
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setCustomerId(null); setUnitType("caravan"); } }}>
+      <Button type="button" onClick={() => setOpen(true)} className="h-11 touch-manipulation gap-2 rounded-xl px-4 shadow-sm">
+        <Plus className="h-4 w-4" />
         Add Unit
       </Button>
       <DialogContent className="max-w-md">
@@ -86,6 +98,21 @@ export function NewUnitDialog({ customers = [] }: NewUnitDialogProps) {
                 onSelect={setCustomerId}
               />
             </div>
+          </div>
+          <div>
+            <Label className="text-xs">Vehicle type</Label>
+            <Select value={unitType} onValueChange={(v) => setUnitType(v as UnitType)}>
+              <SelectTrigger className="mt-1 h-10 rounded-lg">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(UNIT_TYPE_LABELS) as UnitType[]).map((key) => (
+                  <SelectItem key={key} value={key}>
+                    {UNIT_TYPE_LABELS[key]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

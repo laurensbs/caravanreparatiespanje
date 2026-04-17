@@ -29,6 +29,8 @@ import {
   MessageSquare,
   Pencil,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { FeedbackProductUpdates } from "./feedback-product-updates";
 
 type FeedbackItem = {
   id: string;
@@ -118,106 +120,115 @@ export function FeedbackClient({
   const closedItems = items.filter((i) => i.status === "done" || i.status === "dismissed");
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight">Feedback</h1>
-          <p className="text-xs text-muted-foreground">
-            Suggestions, improvements and feature requests
-          </p>
+    <div className="animate-fade-in">
+      <header className="border-b border-border/60 bg-muted/15 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Feedback</h1>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Suggestions, improvements and feature requests
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setShowForm(!showForm)}
+            className="h-11 w-full shrink-0 touch-manipulation gap-2 rounded-xl sm:h-10 sm:w-auto"
+          >
+            <MessageSquarePlus className="h-4 w-4" aria-hidden />
+            {showForm ? "Close" : "New"}
+          </Button>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="gap-2 rounded-lg" size="sm">
-          <MessageSquarePlus className="h-4 w-4" />
-          New
-        </Button>
-      </div>
+      </header>
 
-      {showForm && (
-        <Card className="animate-slide-up border-primary/20">
-          <CardHeader>
-            <CardTitle className="text-lg">New Feedback</CardTitle>
-            <CardDescription>
-              What would you like changed or added?
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                placeholder="Title (e.g. 'Search by registration')"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                autoFocus
-              />
-              <Textarea
-                placeholder="Description (optional) — explain what you mean..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isPending || !title.trim()}>
-                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Submit
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <div className="space-y-5 border-b border-border/40 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-5">
+        <FeedbackProductUpdates />
 
-      {/* Open items */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Open ({openItems.length})
-        </h2>
-        {openItems.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No open feedback. Click &quot;New&quot; to add something.
+        {showForm && (
+          <Card className="animate-slide-up border-primary/20 shadow-sm">
+            <CardHeader className="space-y-1 px-4 pt-4 sm:px-6 sm:pt-6">
+              <CardTitle className="text-lg sm:text-xl">New feedback</CardTitle>
+              <CardDescription className="text-sm">What would you like changed or added?</CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  placeholder="Title (e.g. search by registration)"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  autoFocus
+                  className="h-11 touch-manipulation rounded-xl text-base sm:text-sm"
+                />
+                <Textarea
+                  placeholder="Description (optional) — explain what you mean…"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  className="min-h-[120px] touch-manipulation resize-y rounded-xl text-base sm:text-sm"
+                />
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto"
+                    onClick={() => setShowForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isPending || !title.trim()} className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto">
+                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+                    Submit
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
-        ) : (
-          openItems.map((item) => (
-            <FeedbackCard
-              key={item.id}
-              item={item}
-              isAdmin={isAdmin}
-              isOwner={item.userId === currentUserId}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-              isPending={isPending}
-            />
-          ))
+        )}
+
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm">
+            Open ({openItems.length})
+          </h2>
+          {openItems.length === 0 ? (
+            <Card className="rounded-xl border-dashed">
+              <CardContent className="px-4 py-10 text-center text-sm text-muted-foreground sm:py-12">
+                No open feedback. Tap <span className="font-medium text-foreground">New</span> to add something.
+              </CardContent>
+            </Card>
+          ) : (
+            openItems.map((item) => (
+              <FeedbackCard
+                key={item.id}
+                item={item}
+                isAdmin={isAdmin}
+                isOwner={item.userId === currentUserId}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDelete}
+                isPending={isPending}
+              />
+            ))
+          )}
+        </div>
+
+        {closedItems.length > 0 && (
+          <div className="space-y-3 border-t border-border/40 pt-5 sm:pt-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm">
+              Completed ({closedItems.length})
+            </h2>
+            {closedItems.map((item) => (
+              <FeedbackCard
+                key={item.id}
+                item={item}
+                isAdmin={isAdmin}
+                isOwner={item.userId === currentUserId}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDelete}
+                isPending={isPending}
+              />
+            ))}
+          </div>
         )}
       </div>
-
-      {/* Closed items */}
-      {closedItems.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Completed ({closedItems.length})
-          </h2>
-          {closedItems.map((item) => (
-            <FeedbackCard
-              key={item.id}
-              item={item}
-              isAdmin={isAdmin}
-              isOwner={item.userId === currentUserId}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-              isPending={isPending}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -250,116 +261,145 @@ function FeedbackCard({
     });
   }
 
+  const showInProgress = isAdmin && item.status === "open";
+  const showMarkDone = isAdmin && (item.status === "open" || item.status === "in_progress");
+  const showDelete = isAdmin || isOwner;
+  const showActionRow = showInProgress || showMarkDone || showDelete;
+
   return (
-    <Card className="transition-all duration-150 hover:shadow-sm">
-      <CardContent className="py-4">
-        <div className="flex items-start gap-3">
-          <StatusIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium">{item.title}</span>
-              <Badge className={config.className} variant={config.variant}>
-                {config.label}
-              </Badge>
-            </div>
-            {item.description && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {item.description}
-              </p>
-            )}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{item.user?.name ?? "Unknown"}</span>
-              <span>·</span>
-              <span>
-                {new Date(item.createdAt).toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </span>
-            </div>
+    <Card className="rounded-xl transition-shadow duration-150 hover:shadow-sm">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className="flex gap-3 sm:min-w-0 sm:flex-1">
+            <StatusIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground sm:h-5" aria-hidden />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+                <span className="text-base font-semibold leading-snug sm:text-[15px]">{item.title}</span>
+                <Badge className={cn("w-fit shrink-0 rounded-full px-2.5 py-0.5 text-xs", config.className)} variant={config.variant}>
+                  {config.label}
+                </Badge>
+              </div>
+              {item.description ? (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span>{item.user?.name ?? "Unknown"}</span>
+                <span className="hidden sm:inline">·</span>
+                <span>
+                  {new Date(item.createdAt).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
 
-            {/* Admin comment display / edit */}
-            {commenting ? (
-              <div className="mt-2 space-y-1.5">
-                <Textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  rows={2}
-                  className="text-sm"
-                  autoFocus
-                />
-                <div className="flex gap-1.5">
-                  <Button size="sm" className="h-7 text-xs rounded-lg" onClick={handleSaveComment} disabled={savingComment}>
-                    {savingComment && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-                    Save
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setComment(item.adminNotes ?? ""); setCommenting(false); }}>
-                    Cancel
-                  </Button>
+              {commenting ? (
+                <div className="space-y-2 border-t border-border/50 pt-3">
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Add a comment…"
+                    rows={3}
+                    className="min-h-[88px] touch-manipulation resize-y rounded-xl text-sm"
+                    autoFocus
+                  />
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 touch-manipulation rounded-xl sm:h-9 sm:px-4"
+                      onClick={() => {
+                        setComment(item.adminNotes ?? "");
+                        setCommenting(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="button" className="h-11 touch-manipulation rounded-xl sm:h-9 sm:px-4" onClick={handleSaveComment} disabled={savingComment}>
+                      {savingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+                      Save
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ) : item.adminNotes ? (
-              <div
-                className="group/comment mt-2 rounded-md bg-muted/50 px-3 py-2 text-sm cursor-pointer hover:bg-muted/70 transition-colors"
-                onClick={() => setCommenting(true)}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-xs text-muted-foreground flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3" /> Response
-                  </span>
-                  <Pencil className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover/comment:opacity-100 transition-opacity" />
-                </div>
-                <p className="mt-0.5 whitespace-pre-wrap">{item.adminNotes}</p>
-              </div>
-            ) : (
-              <button
-                onClick={() => setCommenting(true)}
-                className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <MessageSquare className="h-3 w-3" />
-                Add comment
-              </button>
-            )}
+              ) : item.adminNotes ? (
+                <button
+                  type="button"
+                  className="group/comment mt-1 w-full rounded-xl border border-transparent bg-muted/50 px-3 py-3 text-left transition-colors hover:bg-muted/70 active:bg-muted/80 sm:mt-0 sm:px-3 sm:py-2"
+                  onClick={() => setCommenting(true)}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                      <MessageSquare className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      Response
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground sm:hidden">
+                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                      Edit
+                    </span>
+                    <Pencil className="hidden h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/comment:opacity-100 sm:block" aria-hidden />
+                  </div>
+                  <p className="mt-1.5 whitespace-pre-wrap text-sm">{item.adminNotes}</p>
+                </button>
+              ) : isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setCommenting(true)}
+                  className="mt-1 flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/30 hover:text-foreground sm:mt-0 sm:w-auto sm:justify-start sm:px-0 sm:py-1"
+                >
+                  <MessageSquare className="h-4 w-4 shrink-0" aria-hidden />
+                  Add comment
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 shrink-0">
-            {isAdmin && item.status === "open" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onStatusChange(item.id, "in_progress")}
-                disabled={isPending}
-                title="Mark in progress"
-              >
-                <Clock className="h-4 w-4" />
-              </Button>
-            )}
-            {isAdmin && (item.status === "open" || item.status === "in_progress") && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onStatusChange(item.id, "done")}
-                disabled={isPending}
-                title="Mark done"
-              >
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-              </Button>
-            )}
-            {(isAdmin || isOwner) && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onDelete(item.id)}
-                disabled={isPending}
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            )}
-          </div>
+          {showActionRow ? (
+            <div className="flex flex-wrap items-stretch justify-stretch gap-2 border-t border-border/50 pt-3 sm:w-auto sm:shrink-0 sm:flex-col sm:items-stretch sm:justify-start sm:border-t-0 sm:pt-0">
+              {showInProgress && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 min-w-[2.75rem] flex-1 touch-manipulation rounded-xl sm:h-9 sm:w-9 sm:flex-none"
+                  onClick={() => onStatusChange(item.id, "in_progress")}
+                  disabled={isPending}
+                  aria-label="Mark in progress"
+                  title="Mark in progress"
+                >
+                  <Clock className="h-4 w-4" />
+                </Button>
+              )}
+              {showMarkDone && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 min-w-[2.75rem] flex-1 touch-manipulation rounded-xl sm:h-9 sm:w-9 sm:flex-none"
+                  onClick={() => onStatusChange(item.id, "done")}
+                  disabled={isPending}
+                  aria-label="Mark done"
+                  title="Mark done"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                </Button>
+              )}
+              {showDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 min-w-[2.75rem] flex-1 touch-manipulation rounded-xl text-destructive hover:text-destructive sm:h-9 sm:w-9 sm:flex-none"
+                  onClick={() => onDelete(item.id)}
+                  disabled={isPending}
+                  aria-label="Delete feedback"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>

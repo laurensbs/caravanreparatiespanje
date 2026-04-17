@@ -20,7 +20,7 @@ import {
   JOB_TYPE_LABELS, JOB_TYPE_COLORS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, DismissedWorkshopItem, JobType } from "@/types";
-import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check, Play } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check, Play, Send } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -290,6 +290,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [garageMessage, setGarageMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
 
+  async function handleSendGarageMessage() {
+    const text = garageMessage.trim();
+    if (!text || sendingMessage) return;
+    setSendingMessage(true);
+    try {
+      await sendMessageToGarage(job.id, text);
+      setGarageMessage("");
+      toast.success("Message delivered — the garage sees it on this repair in their app.");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send message");
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
   // Flag definitions for rendering
   const allFlags = [
     { label: "Water Damage", value: waterDamageFlag, set: setWaterDamageFlag, danger: true },
@@ -372,7 +388,20 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   })();
 
   const displayNextAction = nextAction || computedNextAction;
-  const displayBlocker = currentBlocker || computedBlocker;
+
+  /** Auto “blocker” hint that only repeats the next-action subtext (e.g. waiting on customer) */
+  const autoBlockerRedundant =
+    !currentBlocker &&
+    Boolean(computedBlocker) &&
+    (status === "waiting_customer" ||
+      (Boolean(nextActionContext.subtext) &&
+        computedBlocker.toLowerCase().trim() === nextActionContext.subtext.toLowerCase().trim()));
+
+  /** Extra line inside the status card — manual blocker or a non-duplicate auto hint */
+  const secondaryNotice =
+    currentBlocker || (computedBlocker && !autoBlockerRedundant ? computedBlocker : null);
+
+  const showStatusFocusCard = Boolean(displayNextAction) || Boolean(secondaryNotice);
 
   // Financial stage for summary bar
   // Keep local estimateLines in sync with prop
@@ -689,6 +718,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     approved: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
                     declined: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
                     no_response: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+                    reply_not_required:
+                      "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-600",
                   }}
                 />
                 <InlinePillPicker
@@ -907,21 +938,33 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          NEXT ACTION BLOCK
+          STATUS FOCUS — next action + optional extra notice (single card)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {(displayNextAction || displayBlocker) && (
-        <div className="space-y-3">
+      {showStatusFocusCard && (
+        <div
+          className={cn(
+            "rounded-2xl border shadow-sm transition-all duration-150 overflow-hidden",
+            secondaryNotice
+              ? "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 ring-1 ring-amber-200/60 dark:ring-amber-900/40"
+              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+          )}
+        >
           {displayNextAction && (
-            <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-5 py-4 shadow-sm transition-all duration-150">
+            <div className="px-5 py-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className={cn(
-                    "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
-                    status === "blocked" ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
-                      : status === "ready_for_check" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      : ["completed", "invoiced"].includes(status) ? "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400"
-                      : "bg-[#0CC0DF]/10 text-[#0CC0DF]"
-                  )}>
+                  <div
+                    className={cn(
+                      "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+                      status === "blocked"
+                        ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
+                        : status === "ready_for_check"
+                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                          : ["completed", "invoiced"].includes(status)
+                            ? "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400"
+                            : "bg-[#0CC0DF]/10 text-[#0CC0DF]"
+                    )}
+                  >
                     {nextActionContext.icon === "search" && <Search className="h-4 w-4" />}
                     {nextActionContext.icon === "clipboard" && <ClipboardCheck className="h-4 w-4" />}
                     {nextActionContext.icon === "wrench" && <Wrench className="h-4 w-4" />}
@@ -932,21 +975,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {nextActionContext.icon === "flag" && <Flag className="h-4 w-4" />}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold mb-0.5">Next action</p>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold mb-0.5">
+                      Next action
+                    </p>
                     {nextAction ? (
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{nextAction}</p>
-                        <button onClick={() => setNextAction("")} className="text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setNextAction("")}
+                          className="text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0"
+                        >
                           <XIcon className="h-3 w-3" />
                         </button>
                       </div>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => {
                           const val = prompt("Next action:", computedNextAction);
                           if (val !== null) setNextAction(val);
                         }}
-                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate block"
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate block text-left"
                       >
                         {computedNextAction}
                       </button>
@@ -957,6 +1007,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
                     const val = prompt("Set next action:", displayNextAction);
                     if (val !== null) setNextAction(val);
@@ -968,37 +1019,51 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               </div>
             </div>
           )}
-          {displayBlocker && (
-            <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/60 px-6 py-4 transition-all duration-150">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-amber-700/70 dark:text-amber-400/70 font-semibold flex items-center gap-1.5">
-                    <AlertTriangle className="h-3 w-3" /> Blocker
-                  </p>
-                  {currentBlocker ? (
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{currentBlocker}</p>
-                      <button onClick={() => setCurrentBlocker("")} className="text-amber-400 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 p-1 rounded-lg transition-all duration-150">
-                        <XIcon className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        const val = prompt("Current blocker:", computedBlocker);
-                        if (val !== null) setCurrentBlocker(val);
-                      }}
-                      className="text-sm font-medium text-amber-900/80 dark:text-amber-200/80 hover:text-amber-900 dark:hover:text-amber-200 transition-all duration-150"
-                    >
-                      {computedBlocker}
-                      <span className="text-xs text-amber-700/40 dark:text-amber-400/40 font-normal ml-2">auto</span>
-                    </button>
-                  )}
-                </div>
-              </div>
 
+          {secondaryNotice && (
+            <div
+              className={cn(
+                "px-5 flex gap-3",
+                displayNextAction
+                  ? "py-3.5 border-t border-amber-100/80 bg-amber-50/50 dark:border-amber-800/40 dark:bg-amber-950/25"
+                  : "py-4 bg-amber-50/60 dark:bg-amber-950/30"
+              )}
+            >
+              <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-wider text-amber-800/80 dark:text-amber-400/80 font-semibold mb-0.5">
+                  {currentBlocker ? "Blocker" : "Detail"}
+                </p>
+                {currentBlocker ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-amber-950 dark:text-amber-100">{currentBlocker}</p>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentBlocker("")}
+                      className="text-amber-500 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 p-1 rounded-lg transition-all duration-150"
+                    >
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = prompt("Current blocker:", computedBlocker);
+                      if (val !== null) setCurrentBlocker(val);
+                    }}
+                    className="text-sm font-medium text-amber-900 dark:text-amber-100/90 hover:text-amber-950 dark:hover:text-amber-50 transition-all duration-150 text-left"
+                  >
+                    {secondaryNotice}
+                    <span className="text-xs text-amber-700/50 dark:text-amber-400/50 font-normal ml-2">auto</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
+
         </div>
       )}
 
@@ -1386,58 +1451,64 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               )}
 
               {/* ── Send Direct Message to Garage ── */}
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2">Send Direct Message to Garage</p>
+              <div className="rounded-xl bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2">
+                  Send Direct Message to Garage
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
+                  Appears on the garage tablet for this job. The team can mark it read there; you can clear it below when it is handled.
+                </p>
                 {syncState?.garageAdminMessage && (
-                  <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/50 px-3 py-2.5 mb-2">
-                    <p className="text-xs text-sky-800 dark:text-sky-300 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>
+                  <div className="rounded-xl bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-gray-700 px-3 py-2.5 mb-3">
+                    <p className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>
                     <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-[10px] text-sky-400">
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">
                         {syncState.garageAdminMessageAt ? format(new Date(syncState.garageAdminMessageAt), "HH:mm") : ""}
                       </span>
                       <button
+                        type="button"
                         onClick={async () => {
                           await clearGarageMessage(job.id);
                           router.refresh();
+                          toast.success("Garage message cleared");
                         }}
-                        className="text-[10px] text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 font-medium"
+                        className="text-[10px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                       >
                         Clear
                       </button>
                     </div>
                   </div>
                 )}
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
+                    type="text"
                     value={garageMessage}
                     onChange={(e) => setGarageMessage(e.target.value)}
-                    placeholder="Type a message for the garage team..."
-                    className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-300 dark:focus:ring-sky-700 dark:text-gray-100"
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter" && garageMessage.trim() && !sendingMessage) {
-                        setSendingMessage(true);
-                        await sendMessageToGarage(job.id, garageMessage.trim());
-                        setGarageMessage("");
-                        setSendingMessage(false);
-                        router.refresh();
-                        toast.success("Message sent to garage");
+                    placeholder="Type a message for the garage team…"
+                    className="flex-1 min-w-0 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.04] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300/70 dark:focus:ring-gray-600"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSendGarageMessage();
                       }
                     }}
                   />
                   <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     disabled={!garageMessage.trim() || sendingMessage}
-                    onClick={async () => {
-                      setSendingMessage(true);
-                      await sendMessageToGarage(job.id, garageMessage.trim());
-                      setGarageMessage("");
-                      setSendingMessage(false);
-                      router.refresh();
-                      toast.success("Message sent to garage");
-                    }}
-                    className="rounded-xl h-9 px-3 bg-sky-500 hover:bg-sky-600 text-white text-xs"
+                    onClick={() => void handleSendGarageMessage()}
+                    className="shrink-0 rounded-xl h-[38px] px-4 text-sm font-medium border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/10"
                   >
-                    {sendingMessage ? <Spinner className="h-3 w-3" /> : "Send"}
+                    {sendingMessage ? (
+                      <Spinner className="h-3.5 w-3.5" />
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                        Send
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -1735,11 +1806,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {/* Customer response */}
               <div>
                 <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Response</Label>
+                <p className="mt-1 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
+                  <span className="font-medium text-gray-500 dark:text-gray-400">No reply expected</span> — use when the job is waiting (e.g. on you or a supplier) but{" "}
+                  <span className="italic">no</span> customer answer is needed. Those jobs stay out of follow-up / &quot;no response&quot; lists.
+                </p>
                 <Select value={customerResponseStatus} onValueChange={setCustomerResponseStatus}>
-                  <SelectTrigger className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1.5 h-11 text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {Object.entries(CUSTOMER_RESPONSE_LABELS).map(([val, label]) => (
-                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                      <SelectItem key={val} value={val}>
+                        {label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

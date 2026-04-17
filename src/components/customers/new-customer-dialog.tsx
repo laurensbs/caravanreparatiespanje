@@ -53,13 +53,14 @@ export function NewCustomerDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <button
+      <Button
+        type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 bg-[#0CC0DF] text-white text-sm font-medium rounded-xl px-4 py-2.5 shadow-sm hover:bg-[#0bb0cc] transition-all duration-150"
+        className="h-11 touch-manipulation gap-2 rounded-xl px-4 shadow-sm"
       >
-        <Plus className="h-3.5 w-3.5" />
+        <Plus className="h-4 w-4" />
         Add Contact
-      </button>
+      </Button>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>New Contact</DialogTitle>

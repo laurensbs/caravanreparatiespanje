@@ -240,6 +240,7 @@ export default async function DashboardPage() {
                     contacted: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
                     approved: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
                     declined: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+                    reply_not_required: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300",
                   };
                   return (
                   <Link

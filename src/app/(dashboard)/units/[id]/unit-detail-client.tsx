@@ -17,6 +17,7 @@ import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { addTagToUnit, removeTagFromUnit } from "@/actions/tags";
+import { UnitTypeIconBadge } from "@/components/units/unit-type-icon";
 
 type UnitData = NonNullable<Awaited<ReturnType<typeof import("@/actions/units").getUnitById>>>;
 
@@ -77,8 +78,10 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
           <ArrowLeft className="h-3.5 w-3.5" />
           Units
         </Link>
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <UnitTypeIconBadge unitType={unit.unitType} className="mt-1" />
+            <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{unitTitle}</h1>
             <div className="flex items-center gap-3 mt-1.5">
               {unit.registration && (
@@ -115,6 +118,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 onAdd={(tagId) => addTagToUnit(unit.id, tagId)}
                 onRemove={(tagId) => removeTagFromUnit(unit.id, tagId)}
               />
+            </div>
             </div>
           </div>
         </div>

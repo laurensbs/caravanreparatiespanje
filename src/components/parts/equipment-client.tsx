@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Plus, Wrench, X, Loader2 } from "lucide-react";
+import { Check, Plus, Wrench, Loader2 } from "lucide-react";
 import { createPartRequest, updatePartRequestStatus } from "@/actions/parts";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -73,7 +73,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Heat gun, Rivet tool, Sealant..."
-              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500/40 transition-all placeholder:text-gray-400 dark:placeholder:text-white/20"
+              className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
               autoFocus
               onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) handleAdd(); if (e.key === "Escape") setShowAdd(false); }}
             />
@@ -86,22 +86,24 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional details..."
-              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500/40 transition-all placeholder:text-gray-400 dark:placeholder:text-white/20"
+              className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
               onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) handleAdd(); if (e.key === "Escape") setShowAdd(false); }}
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
             <button
+              type="button"
               onClick={() => { setShowAdd(false); setName(""); setNotes(""); }}
-              className="flex-1 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.06] py-2.5 text-sm font-semibold text-gray-600 dark:text-white/50 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+              className="min-h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:bg-white/10 sm:min-h-0 sm:flex-1 sm:py-2.5"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleAdd}
               disabled={!name.trim() || pending}
               className={cn(
-                "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all",
+                "min-h-11 w-full touch-manipulation rounded-xl py-3 text-sm font-semibold transition-all sm:min-h-0 sm:flex-1 sm:py-2.5",
                 name.trim() && !pending
                   ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-[0.98]"
                   : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/20 cursor-not-allowed"
@@ -113,8 +115,9 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => setShowAdd(true)}
-          className="w-full rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 py-3 text-sm font-medium text-gray-500 dark:text-white/30 hover:border-gray-300 dark:hover:border-white/20 hover:text-gray-600 dark:hover:text-white/50 transition-all flex items-center justify-center gap-2"
+          className="flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-3.5 text-sm font-medium text-gray-500 transition-all hover:border-gray-300 hover:text-gray-600 dark:border-white/10 dark:text-white/30 dark:hover:border-white/20 dark:hover:text-white/50"
         >
           <Plus className="h-4 w-4" /> Add equipment request
         </button>
@@ -127,31 +130,38 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
             <div
               key={req.id}
               className={cn(
-                "group flex items-start gap-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] p-4 transition-all",
+                "group flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-all dark:border-white/[0.08] dark:bg-white/[0.02] sm:flex-row sm:items-start sm:gap-3",
                 pending && "opacity-50"
               )}
             >
-              <button
-                onClick={() => handleCheck(req.id)}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-gray-300 dark:border-white/20 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group/check mt-0.5"
-                title="Mark as received"
-              >
-                <Check className="h-3.5 w-3.5 text-emerald-500 opacity-0 group-hover/check:opacity-100 transition-opacity" />
-              </button>
-              <div className="flex-1 min-w-0">
-                <span className="font-semibold text-[15px] text-gray-900 dark:text-white">
+              <div className="flex items-center gap-3 sm:block sm:shrink-0 sm:pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleCheck(req.id)}
+                  className="group/check flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border-2 border-gray-300 transition-colors hover:border-emerald-400 hover:bg-emerald-50 dark:border-white/20 dark:hover:bg-emerald-500/10 sm:h-8 sm:w-8"
+                  title="Mark as received"
+                >
+                  <Check className="h-4 w-4 text-emerald-500 opacity-70 transition-opacity group-hover/check:opacity-100 sm:h-3.5 sm:w-3.5 sm:opacity-0 sm:group-hover/check:opacity-100" />
+                </button>
+                <div className="flex min-w-0 flex-1 items-center gap-2 sm:hidden">
+                  <span className={cn("h-2 w-2 shrink-0 rounded-full", req.status === "ordered" ? "bg-blue-400" : req.status === "shipped" ? "bg-violet-400" : "bg-amber-400")} />
+                  <span className="text-xs font-medium capitalize text-gray-400 dark:text-white/30">{req.status}</span>
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[15px] font-semibold text-gray-900 dark:text-white">
                   {req.partName ?? "—"}
                 </span>
                 {req.notes && (
-                  <p className="text-xs text-gray-400 dark:text-white/25 mt-0.5 leading-relaxed">{req.notes}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-gray-400 dark:text-white/25">{req.notes}</p>
                 )}
                 {req.jobRef && (
-                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5">{req.jobRef}</p>
+                  <p className="mt-0.5 text-xs text-blue-500 dark:text-blue-400">{req.jobRef}</p>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
                 <span className={cn("h-2 w-2 rounded-full", req.status === "ordered" ? "bg-blue-400" : req.status === "shipped" ? "bg-violet-400" : "bg-amber-400")} />
-                <span className="text-xs font-medium text-gray-400 dark:text-white/30 capitalize">{req.status}</span>
+                <span className="text-xs font-medium capitalize text-gray-400 dark:text-white/30">{req.status}</span>
               </div>
             </div>
           ))}
@@ -177,10 +187,10 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
           {done.map((req) => (
             <div
               key={req.id}
-              className="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/[0.02] p-3 transition-all"
+              className="flex min-h-11 items-center gap-3 rounded-xl bg-gray-50 p-3 transition-all dark:bg-white/[0.02]"
             >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
-                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/15 sm:h-6 sm:w-6">
+                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 sm:h-3.5 sm:w-3.5" />
               </div>
               <span className="text-sm text-gray-400 dark:text-white/30 line-through">
                 {req.partName ?? "—"}

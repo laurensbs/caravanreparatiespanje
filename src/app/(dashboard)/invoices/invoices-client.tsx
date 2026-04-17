@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, Filter, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2 } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
@@ -15,6 +15,7 @@ import { markInvoicePaid, sendPaymentReminder, dismissQuote, setQuoteNote, conve
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { HoldedHint } from "@/components/holded-hint";
 
 interface Invoice {
   id: string;
@@ -196,6 +197,11 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
     setDateTo("");
   }
 
+  function goTab(next: Tab) {
+    setTab(next);
+    router.replace(next === "invoices" ? "/invoices" : `/invoices?tab=${next}`, { scroll: false });
+  }
+
   function openInvoiceInHolded(inv: Invoice) {
     window.open(`/api/holded/pdf?type=invoice&id=${inv.id}`, "_blank");
   }
@@ -252,276 +258,350 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
   const estimatesTotal = filteredOverdueEstimates.reduce((sum, q) => sum + (q.total ?? 0), 0);
   const totalOverdueCount = filteredOverdue.length + filteredOverdueEstimates.length;
 
+  const tabBtn =
+    "flex min-h-12 min-w-[calc(50%-6px)] shrink-0 snap-center touch-manipulation items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:min-h-11 sm:min-w-0 sm:flex-1 sm:py-2 sm:text-sm";
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-lg font-bold tracking-tight">Invoices & Quotes</h1>
-        <p className="text-xs text-muted-foreground">
+    <div className="animate-fade-in">
+      <header className="border-b border-border/60 bg-muted/15 px-4 py-4 sm:px-6 sm:py-5">
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Invoices &amp; quotes</h1>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           {tab === "invoices"
             ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
             : tab === "quotes"
-            ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
-            : `${filteredOverdue.length} overdue invoice${filteredOverdue.length !== 1 ? "s" : ""}${filteredOverdueEstimates.length > 0 ? ` + ${filteredOverdueEstimates.length} uninvoiced quote${filteredOverdueEstimates.length !== 1 ? "s" : ""}` : ""}${hasActiveFilters ? ` (${overdue.length + overdueEstimates.length} total)` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`
-          }
+              ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
+              : `${filteredOverdue.length} overdue invoice${filteredOverdue.length !== 1 ? "s" : ""}${filteredOverdueEstimates.length > 0 ? ` + ${filteredOverdueEstimates.length} uninvoiced quote${filteredOverdueEstimates.length !== 1 ? "s" : ""}` : ""}${hasActiveFilters ? ` (${overdue.length + overdueEstimates.length} total)` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`}
         </p>
-      </div>
+        <HoldedHint variant="readonly" className="mt-4">
+          Lists are synced from Holded (repair-related documents only). PDF links open Holded documents; repair codes
+          link to jobs in this panel. Mark paid and reminders use Holded where applicable.
+        </HoldedHint>
+      </header>
 
-      {/* Tab selector */}
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl w-fit">
-        <button
-          type="button"
-          onClick={() => setTab("invoices")}
+      <div className="space-y-5 border-b border-border/40 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-5">
+        {/* Tab selector */}
+        <div
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-            tab === "invoices" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+            "flex w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-border/50 bg-muted/40 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden snap-x snap-mandatory sm:snap-none"
           )}
         >
-          <Receipt className="h-3 w-3" />
-          Invoices ({invoices.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("quotes")}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-            tab === "quotes" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <FileText className="h-3 w-3" />
-          Quotes ({quotes.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("overdue")}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-            tab === "overdue" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <AlertTriangle className="h-3 w-3" />
-          Overdue ({totalOverdueCount})
-          {totalOverdueCount > 0 && (
-            <span className="ml-0.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold px-1">
-              {totalOverdueCount}
+          <button
+            type="button"
+            onClick={() => goTab("invoices")}
+            className={cn(tabBtn, tab === "invoices" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+          >
+            <Receipt className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+            <span className="truncate">
+              Invoices <span className="tabular-nums text-muted-foreground">({invoices.length})</span>
             </span>
-          )}
-        </button>
-      </div>
-
-      {/* Shared filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder={tab === "invoices" ? "Search invoices..." : tab === "quotes" ? "Search quotes..." : "Search overdue..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 pl-8 text-xs rounded-lg"
-          />
+          </button>
+          <button
+            type="button"
+            onClick={() => goTab("quotes")}
+            className={cn(tabBtn, tab === "quotes" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+          >
+            <FileText className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+            <span className="truncate">
+              Quotes <span className="tabular-nums text-muted-foreground">({quotes.length})</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => goTab("overdue")}
+            className={cn(tabBtn, tab === "overdue" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+            <span className="truncate">
+              Overdue <span className="tabular-nums text-muted-foreground">({totalOverdueCount})</span>
+            </span>
+            {totalOverdueCount > 0 && (
+              <span className="ml-0.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white sm:hidden">
+                {totalOverdueCount}
+              </span>
+            )}
+          </button>
         </div>
-        {tab === "invoices" && (
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-            <SelectTrigger className="h-8 w-[120px] text-xs rounded-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All status</SelectItem>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="partial">Partial</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-        <Input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="h-8 w-[130px] text-xs rounded-lg"
-        />
-        <Input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="h-8 w-[130px] text-xs rounded-lg"
-        />
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
-            <X className="h-3 w-3 mr-1" />
-            Clear
-          </Button>
-        )}
-      </div>
+
+        {/* Shared filters */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="relative min-w-0 w-full sm:max-w-md sm:flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={tab === "invoices" ? "Search invoices…" : tab === "quotes" ? "Search quotes…" : "Search overdue…"}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-11 touch-manipulation rounded-xl pl-10 text-sm"
+            />
+          </div>
+          {tab === "invoices" && (
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl text-sm sm:w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All status</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-11 touch-manipulation rounded-xl text-sm"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-11 touch-manipulation rounded-xl text-sm"
+            />
+          </div>
+          {hasActiveFilters && (
+            <Button variant="outline" className="h-11 w-full touch-manipulation sm:w-auto" onClick={clearFilters}>
+              <X className="mr-2 h-4 w-4" />
+              Clear filters
+            </Button>
+          )}
+        </div>
 
       {tab === "invoices" && (
         <>
-          {/* Invoice summary cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        <Card className="rounded-xl">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
-            <p className="text-xl font-bold tabular-nums">{filtered.length}</p>
-            <p className="text-[11px] text-muted-foreground">invoices</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] text-emerald-600 uppercase tracking-wider">Paid</p>
-            <p className="text-xl font-bold text-emerald-600 tabular-nums">{paidCount}</p>
-            <p className="text-[11px] text-muted-foreground">invoices</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] text-red-600 uppercase tracking-wider">Unpaid</p>
-            <p className="text-xl font-bold text-red-600 tabular-nums">{unpaidCount}</p>
-            <p className="text-[11px] text-muted-foreground">invoices</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-[11px] text-amber-600 uppercase tracking-wider">Partial</p>
-            <p className="text-xl font-bold text-amber-600 tabular-nums">{filtered.filter(i => i.status === 2).length}</p>
-            <p className="text-[11px] text-muted-foreground">invoices</p>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
+                <p className="text-xl font-bold tabular-nums">{filtered.length}</p>
+                <p className="text-[11px] text-muted-foreground">invoices</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-emerald-600 uppercase tracking-wider">Paid</p>
+                <p className="text-xl font-bold text-emerald-600 tabular-nums">{paidCount}</p>
+                <p className="text-[11px] text-muted-foreground">invoices</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-red-600 uppercase tracking-wider">Unpaid</p>
+                <p className="text-xl font-bold text-red-600 tabular-nums">{unpaidCount}</p>
+                <p className="text-[11px] text-muted-foreground">invoices</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-[11px] text-amber-600 uppercase tracking-wider">Partial</p>
+                <p className="text-xl font-bold text-amber-600 tabular-nums">{filtered.filter(i => i.status === 2).length}</p>
+                <p className="text-[11px] text-muted-foreground">invoices</p>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Table */}
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 z-10 bg-card">
-              <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Invoice</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Description</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Receipt className="h-8 w-8 opacity-20" />
-                      <p className="font-medium text-sm">
-                        {hasActiveFilters ? "No invoices match filters" : "No invoices found"}
-                      </p>
-                      {hasActiveFilters && (
-                        <Button variant="ghost" size="sm" className="text-xs" onClick={clearFilters}>
-                          Clear filters
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((inv, idx) => {
+          {filtered.length === 0 ? (
+            <div className="rounded-xl border bg-card py-14 text-center">
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <Receipt className="h-10 w-10 opacity-20" />
+                <p className="font-medium text-sm">{hasActiveFilters ? "No invoices match filters" : "No invoices found"}</p>
+                {hasActiveFilters && (
+                  <Button variant="outline" className="mt-2 touch-manipulation" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 lg:hidden">
+                {filtered.map((inv) => {
                   const isDraft = inv.status === 0 && (inv as any).draft === 1;
                   return (
-                  <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
-                    <TableCell>
-                      {isDraft ? (
-                        <span className="font-medium text-[13px] text-muted-foreground">
-                          {inv.docNumber || "Draft"}
-                        </span>
-                      ) : (
-                        <a
-                          href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
-                        >
-                          {inv.docNumber}
-                          <ExternalLink className="h-2.5 w-2.5" />
-                        </a>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
-                      {inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}
-                    </TableCell>
-                    <TableCell className="text-[13px] text-muted-foreground max-w-[200px] truncate">
-                      {inv.desc || "—"}
-                    </TableCell>
-                    <TableCell>
-                      {inv.status === 1 ? (
-                        <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400">
-                          Paid
-                        </Badge>
-                      ) : inv.status === 2 ? (
-                        <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400">
-                          Partial
-                        </Badge>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleMarkPaid(inv)}
-                          disabled={actionLoading === `pay-${inv.id}`}
-                          className="cursor-pointer"
-                          title="Click to mark as paid"
-                        >
-                          <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900 transition-colors">
-                            {actionLoading === `pay-${inv.id}` ? "Updating..." : "Unpaid"}
-                          </Badge>
-                        </button>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {inv.repairJobId ? (
-                        <Link
-                          href={`/repairs/${inv.repairJobId}`}
-                          className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-                        >
-                          <Wrench className="h-2.5 w-2.5" />
-                          {inv.repairPublicCode}
-                        </Link>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          title="View PDF"
-                          onClick={() => openInvoiceInHolded(inv)}
-                        >
-                          <ExternalLink className="h-3 w-3" />
+                    <div key={inv.id} className="rounded-xl border border-border/80 bg-card p-4 shadow-sm">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          {isDraft ? (
+                            <span className="font-semibold text-foreground">{inv.docNumber || "Draft"}</span>
+                          ) : (
+                            <a
+                              href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex min-h-11 touch-manipulation items-center gap-1.5 font-semibold text-primary hover:underline"
+                            >
+                              {inv.docNumber}
+                              <ExternalLink className="h-4 w-4 shrink-0" />
+                            </a>
+                          )}
+                          <p className="mt-1 text-sm text-muted-foreground">{inv.customerName ?? inv.contactName}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                            {inv.desc ? ` · ${inv.desc}` : ""}
+                          </p>
+                        </div>
+                        <div className="shrink-0">
+                          {inv.status === 1 ? (
+                            <Badge variant="secondary" className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400">
+                              Paid
+                            </Badge>
+                          ) : inv.status === 2 ? (
+                            <Badge variant="secondary" className="rounded-full bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400">
+                              Partial
+                            </Badge>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkPaid(inv)}
+                              disabled={actionLoading === `pay-${inv.id}`}
+                              className="touch-manipulation"
+                              title="Mark as paid in Holded"
+                            >
+                              <Badge variant="secondary" className="rounded-full bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400">
+                                {actionLoading === `pay-${inv.id}` ? "…" : "Unpaid"}
+                              </Badge>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
+                        {inv.repairJobId ? (
+                          <Button variant="outline" size="sm" className="h-10 touch-manipulation rounded-xl" asChild>
+                            <Link href={`/repairs/${inv.repairJobId}`}>
+                              <Wrench className="mr-1.5 h-4 w-4" />
+                              {inv.repairPublicCode}
+                            </Link>
+                          </Button>
+                        ) : null}
+                        <Button type="button" variant="secondary" className="h-10 touch-manipulation rounded-xl" onClick={() => openInvoiceInHolded(inv)}>
+                          <ExternalLink className="mr-1.5 h-4 w-4" />
+                          PDF
                         </Button>
-                        {inv.repairJobId && (
+                        {inv.repairJobId ? (
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            title="Send via email"
+                            type="button"
+                            variant="default"
+                            className="h-10 touch-manipulation rounded-xl"
                             disabled={actionLoading === `send-${inv.id}`}
                             onClick={() => handleSendEmail(inv)}
                           >
-                            <Send className="h-3 w-3" />
+                            <Send className="mr-1.5 h-4 w-4" />
+                            Email
                           </Button>
-                        )}
+                        ) : null}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                  );})
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-xl border bg-card lg:block">
+                <div className="max-h-[min(70vh,720px)] overflow-y-auto xl:max-h-[calc(100vh-20rem)]">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-card">
+                      <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Invoice</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Description</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((inv, idx) => {
+                        const isDraft = inv.status === 0 && (inv as any).draft === 1;
+                        return (
+                          <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                            <TableCell>
+                              {isDraft ? (
+                                <span className="text-[13px] font-medium text-muted-foreground">{inv.docNumber || "Draft"}</span>
+                              ) : (
+                                <a
+                                  href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+                                >
+                                  {inv.docNumber}
+                                  <ExternalLink className="h-2.5 w-2.5" />
+                                </a>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
+                            <TableCell className="whitespace-nowrap text-[13px] text-muted-foreground">
+                              {inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate text-[13px] text-muted-foreground">{inv.desc || "—"}</TableCell>
+                            <TableCell>
+                              {inv.status === 1 ? (
+                                <Badge variant="secondary" className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0 text-[10px] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                                  Paid
+                                </Badge>
+                              ) : inv.status === 2 ? (
+                                <Badge variant="secondary" className="rounded-full border-amber-200 bg-amber-50 px-2 py-0 text-[10px] text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                                  Partial
+                                </Badge>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkPaid(inv)}
+                                  disabled={actionLoading === `pay-${inv.id}`}
+                                  className="cursor-pointer"
+                                  title="Click to mark as paid"
+                                >
+                                  <Badge variant="secondary" className="rounded-full border-red-200 bg-red-50 px-2 py-0 text-[10px] text-red-700 transition-colors hover:bg-red-100 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900">
+                                    {actionLoading === `pay-${inv.id}` ? "Updating…" : "Unpaid"}
+                                  </Badge>
+                                </button>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {inv.repairJobId ? (
+                                <Link href={`/repairs/${inv.repairJobId}`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+                                  <Wrench className="h-2.5 w-2.5" />
+                                  {inv.repairPublicCode}
+                                </Link>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+                                <Button variant="ghost" size="icon" className="h-9 w-9" title="View PDF" onClick={() => openInvoiceInHolded(inv)}>
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                                {inv.repairJobId ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9"
+                                    title="Send via email"
+                                    disabled={actionLoading === `send-${inv.id}`}
+                                    onClick={() => handleSendEmail(inv)}
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
       {tab === "quotes" && (
-        /* ─── Quotes Tab ─── */
         <>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-            <Card className="rounded-xl">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Card className="rounded-xl sm:col-span-1">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
                 <p className="text-xl font-bold tabular-nums">{quotes.length}</p>
@@ -535,7 +615,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
                 <p className="text-[11px] text-muted-foreground">quotes</p>
               </CardContent>
             </Card>
-            <Card className="rounded-xl">
+            <Card className="col-span-2 rounded-xl sm:col-span-1">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-blue-600 uppercase tracking-wider">Linked</p>
                 <p className="text-xl font-bold text-blue-600 tabular-nums">{quotes.filter(q => q.repairJobId).length}</p>
@@ -544,96 +624,139 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             </Card>
           </div>
 
-          <div className="rounded-xl border bg-card overflow-hidden">
-            <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
-                  <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Quote</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredQuotes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <FileText className="h-8 w-8 opacity-20" />
-                          <p className="font-medium text-sm">No quotes found</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredQuotes.map((q, idx) => {
-                      const isDraft = (q as any).draft === 1;
-                      return (
-                      <TableRow key={q.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
-                        <TableCell>
+          {filteredQuotes.length === 0 ? (
+            <div className="rounded-xl border bg-card py-14 text-center text-muted-foreground">
+              <FileText className="mx-auto h-10 w-10 opacity-20" />
+              <p className="mt-2 font-medium text-sm">No quotes found</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 lg:hidden">
+                {filteredQuotes.map((q) => {
+                  const isDraft = (q as any).draft === 1;
+                  return (
+                    <div key={q.id} className="rounded-xl border border-border/80 bg-card p-4 shadow-sm">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
                           {isDraft ? (
-                            <span className="font-medium text-[13px] text-muted-foreground">
-                              {q.docNumber || "Draft"}
-                            </span>
+                            <span className="font-semibold">{q.docNumber || "Draft"}</span>
                           ) : (
                             <a
                               href={`/api/holded/pdf?type=estimate&id=${q.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
+                              className="inline-flex min-h-11 touch-manipulation items-center gap-1.5 font-semibold text-primary hover:underline"
                             >
                               {q.docNumber}
-                              <ExternalLink className="h-2.5 w-2.5" />
+                              <ExternalLink className="h-4 w-4 shrink-0" />
                             </a>
                           )}
-                        </TableCell>
-                        <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
-                        <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
-                          {q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}
-                        </TableCell>
-                        <TableCell className="text-[13px] font-medium tabular-nums text-right">
-                          €{q.total?.toFixed(2) ?? "0.00"}
-                        </TableCell>
-                        <TableCell>
-                          {q.approvedAt ? (
-                            <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400">
-                              Approved
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="rounded-full text-[10px] px-2 py-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400">
-                              Pending
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {q.repairJobId ? (
-                            <Link
-                              href={`/repairs/${q.repairJobId}`}
-                              className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-                            >
-                              <Wrench className="h-2.5 w-2.5" />
-                              {q.repairPublicCode}
+                          <p className="mt-1 text-sm text-muted-foreground">{q.customerName ?? q.contactName}</p>
+                          <p className="mt-2 text-lg font-semibold tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                          </p>
+                        </div>
+                        {q.approvedAt ? (
+                          <Badge variant="secondary" className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400">
+                            Approved
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="rounded-full bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400">
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="mt-3 border-t border-border/50 pt-3">
+                        {q.repairJobId ? (
+                          <Button variant="outline" size="sm" className="h-10 w-full touch-manipulation rounded-xl sm:w-auto" asChild>
+                            <Link href={`/repairs/${q.repairJobId}`}>
+                              <Wrench className="mr-1.5 h-4 w-4" />
+                              Repair {q.repairPublicCode}
                             </Link>
-                          ) : (
-                            <span className="text-[11px] text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
+                          </Button>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No repair linked — open in Holded from PDF.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-xl border bg-card lg:block">
+                <div className="max-h-[min(70vh,720px)] overflow-y-auto xl:max-h-[calc(100vh-20rem)]">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-card">
+                      <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Quote</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Contact</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider">Amount</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
                       </TableRow>
-                      );})
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredQuotes.map((q, idx) => {
+                        const isDraft = (q as any).draft === 1;
+                        return (
+                          <TableRow key={q.id} className="interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                            <TableCell>
+                              {isDraft ? (
+                                <span className="text-[13px] font-medium text-muted-foreground">{q.docNumber || "Draft"}</span>
+                              ) : (
+                                <a
+                                  href={`/api/holded/pdf?type=estimate&id=${q.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+                                >
+                                  {q.docNumber}
+                                  <ExternalLink className="h-2.5 w-2.5" />
+                                </a>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
+                            <TableCell className="whitespace-nowrap text-[13px] text-muted-foreground">
+                              {q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                            </TableCell>
+                            <TableCell className="text-right text-[13px] font-medium tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</TableCell>
+                            <TableCell>
+                              {q.approvedAt ? (
+                                <Badge variant="secondary" className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0 text-[10px] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                                  Approved
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="rounded-full border-blue-200 bg-blue-50 px-2 py-0 text-[10px] text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                                  Pending
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {q.repairJobId ? (
+                                <Link href={`/repairs/${q.repairJobId}`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+                                  <Wrench className="h-2.5 w-2.5" />
+                                  {q.repairPublicCode}
+                                </Link>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
       {tab === "overdue" && (
-        /* ─── Overdue Tab ─── */
         <>
-          {/* Overdue summary */}
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Card className="rounded-xl border-red-200 dark:border-red-900">
               <CardContent className="pt-4 pb-3">
                 <p className="text-[11px] text-red-600 uppercase tracking-wider">Overdue</p>
@@ -664,338 +787,616 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             </Card>
           </div>
 
-          {/* Reminder stage guide */}
-          <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[12px] text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300">
-            <Info className="h-3.5 w-3.5 shrink-0" />
-            <span>
+          <div className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-xs leading-relaxed text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300 sm:flex-row sm:items-start sm:text-sm">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <p>
               <strong>30–60 days:</strong> Holded sends automatic reminders — no action needed.{" "}
-              <strong>60–90 days:</strong> Manual email available.{" "}
-              <strong>90+ days:</strong> Consider calling the customer.
-            </span>
+              <strong>60–90 days:</strong> Manual email from here. <strong>90+ days:</strong> Prefer calling the customer; email is a fallback.
+            </p>
           </div>
 
           {filteredOverdue.length === 0 ? (
-            <div className="rounded-xl border bg-card p-12 text-center">
+            <div className="rounded-xl border bg-card px-4 py-12 text-center sm:py-14">
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <AlertTriangle className="h-8 w-8 opacity-20" />
+                <AlertTriangle className="h-10 w-10 opacity-20" />
                 <p className="font-medium text-sm">{hasActiveFilters ? "No overdue invoices match filters" : "No overdue invoices"}</p>
-                <p className="text-xs">{hasActiveFilters ? "Try adjusting your search" : "All invoices have been paid within 30 days"}</p>
+                <p className="max-w-sm text-xs">{hasActiveFilters ? "Try adjusting your search or dates." : "All repair invoices are paid within the overdue window, or none are linked yet."}</p>
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={clearFilters}>
+                  <Button variant="outline" className="mt-2 touch-manipulation" onClick={clearFilters}>
                     Clear filters
                   </Button>
                 )}
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border bg-card overflow-hidden">
-              <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 z-10 bg-card">
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Invoice</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Reminded</TableHead>
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOverdue.map((inv, idx) => (
-                      <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
-                        <TableCell>
-                          <a
-                            href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
-                          >
-                            {inv.docNumber || "—"}
-                            <ExternalLink className="h-2.5 w-2.5" />
-                          </a>
-                        </TableCell>
-                        <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
-                        <TableCell className="text-[11px] text-muted-foreground max-w-[150px] truncate">
-                          {inv.customerEmail || <span className="italic">No email</span>}
-                        </TableCell>
-                        <TableCell className="text-[13px] font-medium tabular-nums text-right">
-                          €{inv.total?.toFixed(2) ?? "0.00"}
-                        </TableCell>
-                        <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
-                          {inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "rounded-full text-[10px] px-2 py-0",
-                              inv.daysOverdue > 90
-                                ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400"
-                                : inv.daysOverdue > 60
-                                ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400"
-                                : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400"
-                            )}
-                          >
-                            <Clock className="h-2.5 w-2.5 mr-0.5" />
-                            {inv.daysOverdue}d
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">
-                          {inv.lastPaymentReminderAt
-                            ? new Date(inv.lastPaymentReminderAt).toLocaleDateString("nl-NL")
-                            : <span className="text-muted-foreground/50">—</span>}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-1">
-                            {actionLoading === `reminder-${inv.id}` ? (
-                              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" disabled>
-                                <span className="animate-spin">⏳</span> Sending…
-                              </Button>
-                            ) : confirmReminder === inv.id ? (
-                              <div className="flex items-center gap-1">
-                                <span className="text-[11px] text-amber-600 font-medium">Send?</span>
-                                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-green-600 hover:text-green-700" onClick={() => handleSendReminder(inv)}>✓</Button>
-                                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground" onClick={() => setConfirmReminder(null)}>✕</Button>
-                              </div>
-                            ) : inv.daysOverdue < 60 ? (
-                              <span className="text-[11px] text-muted-foreground flex items-center gap-1" title="Holded sends automatic reminders during the first 60 days">
-                                <Clock className="h-3 w-3" /> Auto reminders
-                              </span>
-                            ) : inv.daysOverdue >= 90 ? (
-                              <>
-                                <Badge variant="outline" className="text-[10px] gap-1 border-orange-300 text-orange-700 dark:border-orange-800 dark:text-orange-400">
-                                  <Phone className="h-2.5 w-2.5" /> Call
-                                </Badge>
-                                <Button
-                                  variant="ghost" size="sm"
-                                  className="h-7 text-xs gap-1 text-muted-foreground"
-                                  disabled={!inv.customerEmail}
-                                  onClick={() => setConfirmReminder(inv.id)}
-                                  title={inv.customerEmail ? `Fallback: email ${inv.customerEmail}` : "No email on file"}
-                                >
-                                  <Send className="h-3 w-3" /> Email
-                                </Button>
-                              </>
-                            ) : (
-                              <Button
-                                variant="ghost" size="sm"
-                                className="h-7 text-xs gap-1"
-                                disabled={!inv.customerEmail}
-                                onClick={() => setConfirmReminder(inv.id)}
-                                title={inv.customerEmail ? `Send reminder to ${inv.customerEmail}` : "No email on file"}
-                              >
-                                <Send className="h-3 w-3" /> Remind
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                              disabled={actionLoading === `pay-${inv.id}`}
-                              onClick={() => handleMarkPaid(inv)}
-                              title="Mark as paid"
-                            >
-                              {actionLoading === `pay-${inv.id}` ? "..." : "✓ Paid"}
+            <>
+              <div className="space-y-3 lg:hidden">
+                {filteredOverdue.map((inv) => (
+                  <div key={inv.id} className="rounded-xl border border-border/80 bg-card p-4 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <a
+                        href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 touch-manipulation items-center gap-1.5 font-semibold text-primary hover:underline"
+                      >
+                        {inv.docNumber || "—"}
+                        <ExternalLink className="h-4 w-4 shrink-0" />
+                      </a>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "shrink-0 rounded-full text-xs",
+                          inv.daysOverdue > 90
+                            ? "border-red-200 bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+                            : inv.daysOverdue > 60
+                              ? "border-orange-200 bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
+                              : "border-amber-200 bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                        )}
+                      >
+                        <Clock className="mr-0.5 inline h-3 w-3" />
+                        {inv.daysOverdue}d overdue
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-sm font-medium">{inv.customerName ?? inv.contactName}</p>
+                    <p className="break-all text-xs text-muted-foreground">{inv.customerEmail || "No email on file"}</p>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                      <span className="font-semibold tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</span>
+                      <span className="text-muted-foreground">{inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Reminded:{" "}
+                        {inv.lastPaymentReminderAt ? new Date(inv.lastPaymentReminderAt).toLocaleDateString("nl-NL") : "—"}
+                      </span>
+                    </div>
+                    {inv.repairJobId ? (
+                      <Button variant="outline" size="sm" className="mt-3 h-10 w-full touch-manipulation rounded-xl sm:w-auto" asChild>
+                        <Link href={`/repairs/${inv.repairJobId}`}>
+                          <Wrench className="mr-1.5 h-4 w-4" />
+                          Repair {inv.repairPublicCode}
+                        </Link>
+                      </Button>
+                    ) : null}
+                    <div className="mt-3 flex flex-col gap-2 border-t border-border/50 pt-3 sm:flex-row sm:flex-wrap">
+                      {actionLoading === `reminder-${inv.id}` ? (
+                        <Button variant="secondary" className="h-11 touch-manipulation" disabled>
+                          Sending…
+                        </Button>
+                      ) : confirmReminder === inv.id ? (
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+                          <span className="text-sm font-medium text-amber-600">Send reminder email?</span>
+                          <div className="flex gap-2">
+                            <Button className="h-11 flex-1 touch-manipulation sm:flex-none" onClick={() => handleSendReminder(inv)}>
+                              Send
+                            </Button>
+                            <Button variant="outline" className="h-11 flex-1 touch-manipulation sm:flex-none" onClick={() => setConfirmReminder(null)}>
+                              Cancel
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                      ) : inv.daysOverdue < 60 ? (
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-4 w-4 shrink-0" />
+                          Holded auto-reminders (first 60 days)
+                        </p>
+                      ) : inv.daysOverdue >= 90 ? (
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+                          <Badge variant="outline" className="h-10 w-fit justify-center gap-1 border-orange-300 text-orange-700 dark:border-orange-800 dark:text-orange-400">
+                            <Phone className="h-4 w-4" /> Call customer
+                          </Badge>
+                          <Button
+                            variant="secondary"
+                            className="h-11 touch-manipulation"
+                            disabled={!inv.customerEmail}
+                            onClick={() => setConfirmReminder(inv.id)}
+                          >
+                            <Send className="mr-2 h-4 w-4" />
+                            Email instead
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          className="h-11 w-full touch-manipulation sm:w-auto"
+                          disabled={!inv.customerEmail}
+                          onClick={() => setConfirmReminder(inv.id)}
+                        >
+                          <Send className="mr-2 h-4 w-4" />
+                          Send reminder
+                        </Button>
+                      )}
+                      <Button
+                        variant="default"
+                        className="h-11 touch-manipulation sm:ml-auto"
+                        disabled={actionLoading === `pay-${inv.id}`}
+                        onClick={() => handleMarkPaid(inv)}
+                      >
+                        {actionLoading === `pay-${inv.id}` ? "…" : "Mark paid (Holded)"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+
+              <div className="hidden overflow-hidden rounded-xl border bg-card lg:block">
+                <div className="max-h-[min(70vh,720px)] overflow-y-auto xl:max-h-[calc(100vh-20rem)]">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-card">
+                      <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Invoice</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider">Amount</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Reminded</TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOverdue.map((inv, idx) => (
+                          <TableRow key={inv.id} className="group interactive-row table-row-animate" style={{ animationDelay: `${idx * 15}ms` }}>
+                          <TableCell>
+                            <a
+                              href={`/api/holded/pdf?type=invoice&id=${inv.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+                            >
+                              {inv.docNumber || "—"}
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          </TableCell>
+                          <TableCell className="text-[13px]">{inv.customerName ?? inv.contactName}</TableCell>
+                          <TableCell className="max-w-[150px] truncate text-[11px] text-muted-foreground">
+                            {inv.customerEmail || <span className="italic">No email</span>}
+                          </TableCell>
+                          <TableCell className="text-right text-[13px] font-medium tabular-nums">€{inv.total?.toFixed(2) ?? "0.00"}</TableCell>
+                          <TableCell className="whitespace-nowrap text-[13px] text-muted-foreground">
+                            {inv.date ? new Date(inv.date * 1000).toLocaleDateString("nl-NL") : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "rounded-full px-2 py-0 text-[10px]",
+                                inv.daysOverdue > 90
+                                  ? "border-red-200 bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+                                  : inv.daysOverdue > 60
+                                    ? "border-orange-200 bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
+                                    : "border-amber-200 bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                              )}
+                            >
+                              <Clock className="mr-0.5 h-2.5 w-2.5" />
+                              {inv.daysOverdue}d
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-[11px] text-muted-foreground">
+                            {inv.lastPaymentReminderAt ? new Date(inv.lastPaymentReminderAt).toLocaleDateString("nl-NL") : <span className="text-muted-foreground/50">—</span>}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center justify-end gap-1">
+                              {actionLoading === `reminder-${inv.id}` ? (
+                                <Button variant="ghost" size="sm" className="h-8 text-xs" disabled>
+                                  Sending…
+                                </Button>
+                              ) : confirmReminder === inv.id ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[11px] font-medium text-amber-600">Send?</span>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-green-600" onClick={() => handleSendReminder(inv)}>
+                                    ✓
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setConfirmReminder(null)}>
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : inv.daysOverdue < 60 ? (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground" title="Holded sends automatic reminders during the first 60 days">
+                                  <Clock className="h-3 w-3" /> Auto
+                                </span>
+                              ) : inv.daysOverdue >= 90 ? (
+                                <>
+                                  <Badge variant="outline" className="gap-1 border-orange-300 text-[10px] text-orange-700 dark:border-orange-800 dark:text-orange-400">
+                                    <Phone className="h-2.5 w-2.5" /> Call
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    disabled={!inv.customerEmail}
+                                    onClick={() => setConfirmReminder(inv.id)}
+                                  >
+                                    <Send className="h-3 w-3" /> Email
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button variant="ghost" size="sm" className="h-8 text-xs" disabled={!inv.customerEmail} onClick={() => setConfirmReminder(inv.id)}>
+                                  <Send className="h-3 w-3" /> Remind
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" className="h-8 text-xs" disabled={actionLoading === `pay-${inv.id}`} onClick={() => handleMarkPaid(inv)}>
+                                {actionLoading === `pay-${inv.id}` ? "…" : "Paid"}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
           )}
 
-          {/* ─── Uninvoiced Quotes Section ─── */}
           {filteredOverdueEstimates.length > 0 && (
             <>
-              <div className="flex items-center gap-2 pt-2">
-                <h3 className="text-sm font-semibold">Uninvoiced quotes</h3>
-                <Badge variant="secondary" className="text-[10px] rounded-full bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
+              <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-base font-semibold">Uninvoiced quotes</h3>
+                <Badge variant="secondary" className="w-fit rounded-full border-amber-200 bg-amber-50 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
                   {filteredOverdueEstimates.length} · €{estimatesTotal.toFixed(2)}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span>These quotes were sent to customers but never converted to invoices. Review each quote and convert it in Holded, or dismiss it if no action is needed.</span>
+              <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200 sm:text-sm">
+                <div className="flex gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <p>
+                    Sent in Holded but not converted to an invoice. Convert here (creates invoice in Holded), add a note for your team, or dismiss when no follow-up is needed. Linked repairs open in this app.
+                  </p>
+                </div>
               </div>
-              <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
+
+              <div className="space-y-3 lg:hidden">
+                {filteredOverdueEstimates.map((q) => {
+                  const convertedAt = convertedRows[q.id];
+                  const reason =
+                    convertedAt ? (
+                      <span className="inline-flex items-center gap-1 font-medium text-green-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Converted {convertedAt.toLocaleDateString("en-GB")}
+                      </span>
+                    ) : q.note ? (
+                      <span className="italic text-foreground/80">{q.note}</span>
+                    ) : q.repairJobId ? (
+                      "Repair done — quote not converted to invoice yet."
+                    ) : q.desc ? (
+                      `Sent: ${q.desc}`
+                    ) : (
+                      "Quote sent — not converted to invoice."
+                    );
+                  return (
+                    <Fragment key={q.id}>
+                      <div className={cn("rounded-xl border border-border/80 bg-card p-4 shadow-sm", convertedAt && "opacity-60")}>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <a
+                              href={`/api/holded/pdf?type=estimate&id=${q.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex min-h-11 touch-manipulation items-center gap-1.5 font-semibold text-primary hover:underline"
+                            >
+                              {q.docNumber || "—"}
+                              <ExternalLink className="h-4 w-4 shrink-0" />
+                            </a>
+                            <a
+                              href={`https://app.holded.com/contacts/${q.contact}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Open contact in Holded ↗
+                            </a>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "shrink-0 rounded-full text-xs",
+                              q.daysOverdue > 90
+                                ? "border-red-200 bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+                                : q.daysOverdue > 60
+                                  ? "border-orange-200 bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
+                                  : "border-amber-200 bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                            )}
+                          >
+                            <Clock className="mr-0.5 inline h-3 w-3" />
+                            {q.daysOverdue}d
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-sm font-medium">{q.customerName ?? q.contactName}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{reason}</p>
+                        <p className="mt-2 text-lg font-semibold tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</p>
+                        <p className="text-xs text-muted-foreground">{q.date ? new Date(q.date * 1000).toLocaleDateString("nl-NL") : "—"}</p>
+                        {q.repairJobId ? (
+                          <Button variant="outline" size="sm" className="mt-3 h-10 w-full touch-manipulation rounded-xl" asChild>
+                            <Link href={`/repairs/${q.repairJobId}`}>
+                              <Wrench className="mr-1.5 h-4 w-4" />
+                              {q.repairPublicCode || "Open repair"}
+                            </Link>
+                          </Button>
+                        ) : null}
+                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          <Button
+                            type="button"
+                            className="h-11 touch-manipulation"
+                            disabled={!!actionLoading || !!convertedRows[q.id]}
+                            onClick={async () => {
+                              setActionLoading(`convert-${q.id}`);
+                              try {
+                                const res = await convertAndSendQuote(q.id, q.customerEmail);
+                                setConvertedRows(prev => ({ ...prev, [q.id]: new Date() }));
+                                toast.success(`Invoice ${res.docNumber ?? ""} created${q.customerEmail ? " and sent" : ""}`);
+                                setTimeout(() => router.refresh(), 1500);
+                              } catch (err) {
+                                const msg = err instanceof Error ? err.message : "Failed to convert";
+                                toast.error(msg);
+                              } finally {
+                                setActionLoading(null);
+                              }
+                            }}
+                          >
+                            {actionLoading === `convert-${q.id}` ? "…" : "Make invoice"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-11 touch-manipulation"
+                            onClick={() => {
+                              setNoteEditing(noteEditing === q.id ? null : q.id);
+                              setNoteValue(q.note ?? "");
+                            }}
+                          >
+                            Note
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-11 touch-manipulation text-destructive hover:text-destructive"
+                            disabled={actionLoading === `dismiss-${q.id}`}
+                            onClick={async () => {
+                              setActionLoading(`dismiss-${q.id}`);
+                              try {
+                                await dismissQuote(q.id);
+                                toast.success(`${q.docNumber} dismissed`);
+                                router.refresh();
+                              } catch {
+                                toast.error("Failed to dismiss");
+                              } finally {
+                                setActionLoading(null);
+                              }
+                            }}
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
+                      </div>
+                      {noteEditing === q.id && (
+                        <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                          <Textarea
+                            value={noteValue}
+                            onChange={(e) => setNoteValue(e.target.value)}
+                            placeholder="Note for your team (e.g. customer declined, follow up next month)…"
+                            className="min-h-[88px] resize-none text-sm"
+                            autoFocus
+                          />
+                          <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                            <Button variant="outline" className="h-11 touch-manipulation sm:min-w-[100px]" onClick={() => setNoteEditing(null)}>
+                              Cancel
+                            </Button>
+                            <Button
+                              className="h-11 touch-manipulation sm:min-w-[100px]"
+                              disabled={actionLoading === `note-${q.id}`}
+                              onClick={async () => {
+                                setActionLoading(`note-${q.id}`);
+                                try {
+                                  await setQuoteNote(q.id, noteValue);
+                                  toast.success("Note saved");
+                                  setNoteEditing(null);
+                                  router.refresh();
+                                } catch {
+                                  toast.error("Failed to save note");
+                                } finally {
+                                  setActionLoading(null);
+                                }
+                              }}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-xl border bg-card lg:block">
+                <div className="max-h-[min(70vh,720px)] overflow-y-auto xl:max-h-[calc(100vh-20rem)]">
                   <Table>
                     <TableHeader className="sticky top-0 z-10 bg-card">
-                      <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                      <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Quote</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Customer</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Reason</TableHead>
-                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-right">Amount</TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider">Amount</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Date</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Overdue</TableHead>
                         <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Repair</TableHead>
-                        <TableHead className="text-[11px] font-semibold uppercase tracking-wider w-[80px]"></TableHead>
+                        <TableHead className="w-[120px] text-[11px] font-semibold uppercase tracking-wider" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredOverdueEstimates.map((q, idx) => {
                         const convertedAt = convertedRows[q.id];
                         return (
-                        <>
-                        <TableRow key={q.id} className={cn("group interactive-row table-row-animate", convertedAt && "opacity-60")} style={{ animationDelay: `${idx * 15}ms` }}>
-                          <TableCell>
-                            <a
-                              href={`https://app.holded.com/contacts/${q.contact}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium text-[13px] text-primary hover:underline inline-flex items-center gap-1"
-                            >
-                              {q.docNumber || "—"}
-                              <ExternalLink className="h-2.5 w-2.5" />
-                            </a>
-                          </TableCell>
-                          <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
-                          <TableCell className="text-[12px] text-muted-foreground max-w-[200px]">
-                            {convertedAt ? (
-                              <span className="inline-flex items-center gap-1 text-green-600 font-medium">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Converted {convertedAt.toLocaleDateString("en-GB")}
-                              </span>
-                            ) : q.note
-                              ? <span className="italic text-foreground/70">{q.note}</span>
-                              : q.repairJobId
-                              ? "Repair done, quote not converted to invoice"
-                              : q.desc
-                              ? `Sent: ${q.desc}`
-                              : "Quote sent, not converted to invoice"}
-                          </TableCell>
-                          <TableCell className="text-[13px] font-medium tabular-nums text-right">
-                            €{q.total?.toFixed(2) ?? "0.00"}
-                          </TableCell>
-                          <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap">
-                            {q.date ? new Date(q.date * 1000).toLocaleDateString("en-GB") : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "rounded-full text-[10px] px-2 py-0",
-                                q.daysOverdue > 90
-                                  ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400"
-                                  : q.daysOverdue > 60
-                                  ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400"
-                                  : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400"
-                              )}
-                            >
-                              <Clock className="h-2.5 w-2.5 mr-0.5" />
-                              {q.daysOverdue}d
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {q.repairJobId ? (
-                              <Link href={`/repairs/${q.repairJobId}`} className="text-[11px] text-primary hover:underline">
-                                {q.repairPublicCode || "View"}
-                              </Link>
-                            ) : (
-                              <span className="text-[11px] text-muted-foreground/50">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                title="Make invoice — convert to invoice and send"
-                                className="p-1 rounded hover:bg-green-50 text-muted-foreground hover:text-green-700 transition-colors"
-                                disabled={!!actionLoading || !!convertedRows[q.id]}
-                                onClick={async () => {
-                                  setActionLoading(`convert-${q.id}`);
-                                  try {
-                                    const res = await convertAndSendQuote(q.id, q.customerEmail);
-                                    setConvertedRows(prev => ({ ...prev, [q.id]: new Date() }));
-                                    toast.success(`Invoice ${res.docNumber ?? ""} created${q.customerEmail ? " and sent" : ""}`);
-                                    setTimeout(() => router.refresh(), 1500);
-                                  } catch (err) {
-                                    const msg = err instanceof Error ? err.message : "Failed to convert";
-                                    toast.error(msg);
-                                  } finally { setActionLoading(null); }
-                                }}
-                              >
-                                {actionLoading === `convert-${q.id}`
-                                  ? <span className="h-3.5 w-3.5 block animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                  : <Receipt className="h-3.5 w-3.5" />}
-                              </button>
-                              <button
-                                title="Add note"
-                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                onClick={() => {
-                                  setNoteEditing(noteEditing === q.id ? null : q.id);
-                                  setNoteValue(q.note ?? "");
-                                }}
-                              >
-                                <MessageSquare className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                title="Dismiss — hide from this list"
-                                className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                                onClick={async () => {
-                                  setActionLoading(`dismiss-${q.id}`);
-                                  try {
-                                    await dismissQuote(q.id);
-                                    toast.success(`${q.docNumber} dismissed`);
-                                    router.refresh();
-                                  } catch { toast.error("Failed to dismiss"); }
-                                  finally { setActionLoading(null); }
-                                }}
-                                disabled={actionLoading === `dismiss-${q.id}`}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                        {noteEditing === q.id && (
-                          <TableRow key={`${q.id}-note`}>
-                            <TableCell colSpan={8} className="py-2 px-4 bg-muted/30">
-                              <div className="flex items-end gap-2">
-                                <Textarea
-                                  value={noteValue}
-                                  onChange={e => setNoteValue(e.target.value)}
-                                  placeholder="Add a note about this quote (e.g. customer declined, follow up next month)…"
-                                  className="text-[12px] min-h-[56px] resize-none"
-                                  autoFocus
-                                />
-                                <div className="flex flex-col gap-1">
-                                  <Button
-                                    size="sm"
-                                    className="h-7 text-[11px]"
-                                    onClick={async () => {
-                                      setActionLoading(`note-${q.id}`);
-                                      try {
-                                        await setQuoteNote(q.id, noteValue);
-                                        toast.success("Note saved");
-                                        setNoteEditing(null);
-                                        router.refresh();
-                                      } catch { toast.error("Failed to save note"); }
-                                      finally { setActionLoading(null); }
-                                    }}
-                                    disabled={actionLoading === `note-${q.id}`}
+                          <Fragment key={q.id}>
+                            <TableRow className={cn("group interactive-row table-row-animate", convertedAt && "opacity-60")} style={{ animationDelay: `${idx * 15}ms` }}>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <a
+                                    href={`/api/holded/pdf?type=estimate&id=${q.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
                                   >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 text-[11px]"
-                                    onClick={() => setNoteEditing(null)}
+                                    {q.docNumber || "—"}
+                                    <ExternalLink className="h-2.5 w-2.5" />
+                                  </a>
+                                  <a
+                                    href={`https://app.holded.com/contacts/${q.contact}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block text-[11px] text-muted-foreground hover:text-foreground"
                                   >
-                                    Cancel
-                                  </Button>
+                                    Holded contact ↗
+                                  </a>
                                 </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                        </>
+                              </TableCell>
+                              <TableCell className="text-[13px]">{q.customerName ?? q.contactName}</TableCell>
+                              <TableCell className="max-w-[220px] text-[12px] text-muted-foreground">
+                                {convertedAt ? (
+                                  <span className="inline-flex items-center gap-1 font-medium text-green-600">
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                    Converted {convertedAt.toLocaleDateString("en-GB")}
+                                  </span>
+                                ) : q.note ? (
+                                  <span className="italic text-foreground/70">{q.note}</span>
+                                ) : q.repairJobId ? (
+                                  "Repair done, quote not converted to invoice"
+                                ) : q.desc ? (
+                                  `Sent: ${q.desc}`
+                                ) : (
+                                  "Quote sent, not converted to invoice"
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right text-[13px] font-medium tabular-nums">€{q.total?.toFixed(2) ?? "0.00"}</TableCell>
+                              <TableCell className="whitespace-nowrap text-[13px] text-muted-foreground">
+                                {q.date ? new Date(q.date * 1000).toLocaleDateString("en-GB") : "—"}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="secondary"
+                                  className={cn(
+                                    "rounded-full px-2 py-0 text-[10px]",
+                                    q.daysOverdue > 90
+                                      ? "border-red-200 bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+                                      : q.daysOverdue > 60
+                                        ? "border-orange-200 bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
+                                        : "border-amber-200 bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                                  )}
+                                >
+                                  <Clock className="mr-0.5 h-2.5 w-2.5" />
+                                  {q.daysOverdue}d
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {q.repairJobId ? (
+                                  <Link href={`/repairs/${q.repairJobId}`} className="text-[11px] text-primary hover:underline">
+                                    {q.repairPublicCode || "View"}
+                                  </Link>
+                                ) : (
+                                  <span className="text-[11px] text-muted-foreground/50">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+                                  <button
+                                    type="button"
+                                    title="Convert to invoice in Holded"
+                                    className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-green-50 hover:text-green-700"
+                                    disabled={!!actionLoading || !!convertedRows[q.id]}
+                                    onClick={async () => {
+                                      setActionLoading(`convert-${q.id}`);
+                                      try {
+                                        const res = await convertAndSendQuote(q.id, q.customerEmail);
+                                        setConvertedRows(prev => ({ ...prev, [q.id]: new Date() }));
+                                        toast.success(`Invoice ${res.docNumber ?? ""} created${q.customerEmail ? " and sent" : ""}`);
+                                        setTimeout(() => router.refresh(), 1500);
+                                      } catch (err) {
+                                        const msg = err instanceof Error ? err.message : "Failed to convert";
+                                        toast.error(msg);
+                                      } finally {
+                                        setActionLoading(null);
+                                      }
+                                    }}
+                                  >
+                                    {actionLoading === `convert-${q.id}` ? (
+                                      <span className="block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    ) : (
+                                      <Receipt className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="Add note"
+                                    className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                    onClick={() => {
+                                      setNoteEditing(noteEditing === q.id ? null : q.id);
+                                      setNoteValue(q.note ?? "");
+                                    }}
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="Dismiss"
+                                    className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                                    disabled={actionLoading === `dismiss-${q.id}`}
+                                    onClick={async () => {
+                                      setActionLoading(`dismiss-${q.id}`);
+                                      try {
+                                        await dismissQuote(q.id);
+                                        toast.success(`${q.docNumber} dismissed`);
+                                        router.refresh();
+                                      } catch {
+                                        toast.error("Failed to dismiss");
+                                      } finally {
+                                        setActionLoading(null);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            {noteEditing === q.id && (
+                              <TableRow>
+                                <TableCell colSpan={8} className="bg-muted/30 px-4 py-3">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                                    <Textarea
+                                      value={noteValue}
+                                      onChange={(e) => setNoteValue(e.target.value)}
+                                      placeholder="Add a note about this quote…"
+                                      className="min-h-[72px] flex-1 resize-none text-sm"
+                                      autoFocus
+                                    />
+                                    <div className="flex shrink-0 flex-col-reverse gap-2 sm:flex-col">
+                                      <Button
+                                        className="h-10 touch-manipulation"
+                                        disabled={actionLoading === `note-${q.id}`}
+                                        onClick={async () => {
+                                          setActionLoading(`note-${q.id}`);
+                                          try {
+                                            await setQuoteNote(q.id, noteValue);
+                                            toast.success("Note saved");
+                                            setNoteEditing(null);
+                                            router.refresh();
+                                          } catch {
+                                            toast.error("Failed to save note");
+                                          } finally {
+                                            setActionLoading(null);
+                                          }
+                                        }}
+                                      >
+                                        Save
+                                      </Button>
+                                      <Button variant="ghost" className="h-10 touch-manipulation" onClick={() => setNoteEditing(null)}>
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Fragment>
                         );
                       })}
                     </TableBody>
@@ -1006,6 +1407,7 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

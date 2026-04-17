@@ -61,6 +61,7 @@ export const customerResponseEnum = pgEnum("customer_response_status", [
   "approved",
   "declined",
   "no_response",
+  "reply_not_required",
 ]);
 
 export const invoiceStatusEnum = pgEnum("invoice_status", [

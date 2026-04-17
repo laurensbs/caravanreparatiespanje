@@ -59,6 +59,7 @@ export async function getUnits(filters: { q?: string; tagId?: string; dateFrom?:
         brand: units.brand,
         model: units.model,
         year: units.year,
+        unitType: units.unitType,
         chassisId: units.chassisId,
         length: units.length,
         storageLocation: units.storageLocation,

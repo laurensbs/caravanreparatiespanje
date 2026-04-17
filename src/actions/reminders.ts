@@ -145,7 +145,8 @@ export async function autoGenerateReminder(
       description: "A quote needs to be prepared and sent to the customer.",
     },
     {
-      condition: (status) => status === "waiting_customer",
+      condition: (status, response) =>
+        status === "waiting_customer" && response !== "reply_not_required",
       type: "follow_up_customer",
       title: "Follow up with customer",
       description:

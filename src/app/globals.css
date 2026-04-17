@@ -194,7 +194,10 @@
   }
 }
 
-/* Garage portal: iPad safe-area bottom padding */
+/* Garage portal: iPad safe-area padding */
+.safe-area-pt {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
 .safe-area-pb {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }

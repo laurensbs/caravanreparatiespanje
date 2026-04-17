@@ -21,6 +21,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pencil, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
+import { UnitTypeIconBadge } from "./unit-type-icon";
+import { UNIT_TYPE_LABELS } from "@/types";
+import type { UnitType } from "@/types";
 
 interface UnitRow {
   id: string;
@@ -28,6 +31,7 @@ interface UnitRow {
   brand: string | null;
   model: string | null;
   year: number | null;
+  unitType?: string | null;
   chassisId: string | null;
   length: string | null;
   storageLocation: string | null;
@@ -53,12 +57,19 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [unitTags, setUnitTags] = useState<TagItem[]>([]);
+  const [editUnitType, setEditUnitType] = useState<UnitType>("unknown");
 
   useEffect(() => {
     if (open && allTags.length > 0) {
       getUnitTags(unit.id).then(setUnitTags);
     }
   }, [open, unit.id, allTags.length]);
+
+  useEffect(() => {
+    const u = unit.unitType;
+    if (u === "caravan" || u === "trailer" || u === "camper" || u === "unknown") setEditUnitType(u);
+    else setEditUnitType("unknown");
+  }, [open, unit.id, unit.unitType]);
 
   const handleSave = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,6 +79,7 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
     startTransition(async () => {
       try {
         await updateUnit(unit.id, {
+          unitType: editUnitType,
           registration: fd.get("registration") || null,
           brand: fd.get("brand") || null,
           model: fd.get("model") || null,
@@ -86,7 +98,7 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
         setError(err?.message ?? "Failed to save");
       }
     });
-  }, [unit.id, router]);
+  }, [unit.id, router, editUnitType]);
 
   const handleClose = useCallback((v: boolean) => {
     if (!v) setEditing(false);
@@ -96,20 +108,28 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <div className="flex items-center justify-between pr-8">
-            <DialogTitle className="text-lg">
-              {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unit"}
-            </DialogTitle>
-            <div className="flex items-center gap-2">
+        <DialogHeader className="px-6 pb-0 pt-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:pr-8">
+            <div className="flex min-w-0 items-start gap-3">
+              <UnitTypeIconBadge unitType={unit.unitType} size="sm" className="mt-0.5" />
+              <div className="min-w-0">
+                <DialogTitle className="text-lg font-semibold leading-tight">
+                  {[unit.brand, unit.model].filter(Boolean).join(" ") || "Unit"}
+                </DialogTitle>
+                <p className="mt-1 font-mono text-xs text-muted-foreground tabular-nums">
+                  {unit.registration ?? "—"}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               {!editing && (
-                <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-                  <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                <Button type="button" size="sm" variant="outline" className="h-9 touch-manipulation text-xs" onClick={() => setEditing(true)}>
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                 </Button>
               )}
-              <Button size="sm" variant="ghost" asChild>
+              <Button type="button" size="sm" variant="default" className="h-9 touch-manipulation text-xs" asChild>
                 <Link href={`/units/${unit.id}`}>
-                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> Full page
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" /> Full page
                 </Link>
               </Button>
             </div>
@@ -123,6 +143,21 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
                 <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
               )}
               <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="u-type">Vehicle type</Label>
+                  <Select value={editUnitType} onValueChange={(v) => setEditUnitType(v as UnitType)}>
+                    <SelectTrigger id="u-type" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(UNIT_TYPE_LABELS) as UnitType[]).map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {UNIT_TYPE_LABELS[key]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label htmlFor="u-reg">License Plate</Label>
                   <Input id="u-reg" name="registration" defaultValue={unit.registration ?? ""} className="mt-1" />
@@ -194,6 +229,14 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
           ) : (
             <div className="space-y-4 px-6 pb-6 pt-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
+                <DetailField
+                  label="Type"
+                  value={
+                    unit.unitType && unit.unitType in UNIT_TYPE_LABELS
+                      ? UNIT_TYPE_LABELS[unit.unitType as UnitType]
+                      : UNIT_TYPE_LABELS.unknown
+                  }
+                />
                 <DetailField label="License Plate" value={unit.registration} mono />
                 <DetailField label="Brand" value={unit.brand} />
                 <DetailField label="Model" value={unit.model} />

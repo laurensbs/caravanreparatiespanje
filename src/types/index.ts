@@ -53,7 +53,8 @@ export type CustomerResponseStatus =
   | "waiting_response"
   | "approved"
   | "declined"
-  | "no_response";
+  | "no_response"
+  | "reply_not_required";
 
 export type InvoiceStatus =
   | "not_invoiced"
@@ -233,6 +234,7 @@ export const CUSTOMER_RESPONSE_LABELS: Record<CustomerResponseStatus, string> = 
   approved: "Approved",
   declined: "Declined",
   no_response: "No Response",
+  reply_not_required: "No reply expected",
 };
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {

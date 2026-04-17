@@ -39,7 +39,7 @@ export const repairJobSchema = z.object({
   ]).optional(),
   customerResponseStatus: z.enum([
     "not_contacted", "contacted", "waiting_response",
-    "approved", "declined", "no_response",
+    "approved", "declined", "no_response", "reply_not_required",
   ]).optional(),
   dueDate: z.string().datetime().nullable().optional(),
   bayReference: z.string().max(100).optional(),

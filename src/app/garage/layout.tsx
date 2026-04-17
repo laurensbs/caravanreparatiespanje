@@ -1,5 +1,6 @@
 import { LanguageProvider } from "@/components/garage/language-toggle";
 import { Toaster } from "sonner";
+import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageLoginForm } from "@/components/garage/login-form";
 import { GarageIdleLock } from "@/components/garage/idle-lock";
@@ -24,7 +25,17 @@ export default async function GarageLayout({
     return (
       <LanguageProvider>
         <GarageLoginForm />
-        <Toaster richColors position="top-center" toastOptions={{ className: "rounded-2xl" }} />
+        <Toaster
+          theme="system"
+          richColors
+          position="top-center"
+          offset={{ top: "0.75rem" }}
+          closeButton
+          duration={4500}
+          visibleToasts={4}
+          gap={10}
+          toastOptions={sonnerToastOptions}
+        />
       </LanguageProvider>
     );
   }
@@ -34,7 +45,17 @@ export default async function GarageLayout({
       <div className="flex min-h-screen flex-col bg-gray-950">
         <GarageIdleLock />
         {children}
-        <Toaster richColors position="top-center" toastOptions={{ className: "rounded-2xl" }} />
+        <Toaster
+          theme="system"
+          richColors
+          position="top-center"
+          offset={{ top: "0.75rem" }}
+          closeButton
+          duration={4500}
+          visibleToasts={4}
+          gap={10}
+          toastOptions={sonnerToastOptions}
+        />
       </div>
     </LanguageProvider>
   );

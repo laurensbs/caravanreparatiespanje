@@ -10,8 +10,6 @@ import {
   Wrench,
   Users,
   Truck,
-  Settings,
-  MessageSquare,
   ChevronsLeft,
   ChevronsRight,
   Package,
@@ -48,9 +46,6 @@ const navItems: NavItem[] = [
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data" },
   // FINANCE
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
-  // OTHER
-  { label: "Feedback", href: "/feedback", icon: <MessageSquare className="h-[18px] w-[18px]" /> },
-  { label: "Settings", href: "/settings", icon: <Settings className="h-[18px] w-[18px]" />, minRole: "admin" },
   { label: "Bin", href: "/repairs/bin", icon: <Trash2 className="h-[18px] w-[18px]" />, bottom: true },
 ];
 

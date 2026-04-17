@@ -1,13 +1,9 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useMemo } from "react";
 import { Bell, Clock, AlertTriangle, Check, X, FileText, Phone, Package, Truck, Calendar, DollarSign, MessageSquare, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   getActiveReminders,
   getActiveReminderCount,
@@ -16,24 +12,25 @@ import {
 } from "@/actions/reminders";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const REMINDER_TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  create_invoice: { icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
-  follow_up_customer: { icon: Phone, color: "text-emerald-600", bg: "bg-emerald-50" },
-  order_parts: { icon: Package, color: "text-purple-600", bg: "bg-purple-50" },
-  check_delivery: { icon: Truck, color: "text-indigo-600", bg: "bg-indigo-50" },
-  schedule_repair: { icon: Calendar, color: "text-sky-600", bg: "bg-sky-50" },
-  send_quote: { icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50" },
-  contact_customer: { icon: MessageSquare, color: "text-teal-600", bg: "bg-teal-50" },
-  custom: { icon: Pencil, color: "text-gray-600", bg: "bg-gray-100" },
+  create_invoice: { icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
+  follow_up_customer: { icon: Phone, color: "text-teal-600 dark:text-teal-400", bg: "bg-teal-500/10" },
+  order_parts: { icon: Package, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
+  check_delivery: { icon: Truck, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500/10" },
+  schedule_repair: { icon: Calendar, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  send_quote: { icon: DollarSign, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
+  contact_customer: { icon: MessageSquare, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-500/10" },
+  custom: { icon: Pencil, color: "text-muted-foreground", bg: "bg-muted" },
 };
 
 const GARAGE_TRIGGER_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  garage_comment: { icon: MessageSquare, color: "text-sky-600", bg: "bg-sky-50" },
-  garage_not_done: { icon: AlertTriangle, color: "text-orange-600", bg: "bg-orange-50" },
-  garage_task_suggestion: { icon: Calendar, color: "text-violet-600", bg: "bg-violet-50" },
-  garage_done: { icon: Check, color: "text-emerald-600", bg: "bg-emerald-50" },
-  garage_feedback: { icon: MessageSquare, color: "text-sky-600", bg: "bg-sky-50" },
+  garage_comment: { icon: MessageSquare, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  garage_not_done: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500/10" },
+  garage_task_suggestion: { icon: Calendar, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
+  garage_done: { icon: Check, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
+  garage_feedback: { icon: MessageSquare, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -66,10 +63,7 @@ export function ReminderPanel() {
 
   async function loadReminders() {
     try {
-      const [data, c] = await Promise.all([
-        getActiveReminders(),
-        getActiveReminderCount(),
-      ]);
+      const [data, c] = await Promise.all([getActiveReminders(), getActiveReminderCount()]);
       setReminders(data);
       setCount(c);
     } catch {
@@ -91,6 +85,17 @@ export function ReminderPanel() {
     if (!dueAt) return false;
     return new Date(dueAt) < new Date();
   }
+
+  const sortedReminders = useMemo(() => {
+    return [...reminders].sort((a, b) => {
+      const ao = isOverdue(a.dueAt) ? 1 : 0;
+      const bo = isOverdue(b.dueAt) ? 1 : 0;
+      if (ao !== bo) return bo - ao;
+      const ad = a.dueAt ? new Date(a.dueAt).getTime() : Infinity;
+      const bd = b.dueAt ? new Date(b.dueAt).getTime() : Infinity;
+      return ad - bd;
+    });
+  }, [reminders]);
 
   function getConfig(reminder: Reminder) {
     if (reminder.triggerEvent) {
@@ -129,147 +134,145 @@ export function ReminderPanel() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-lg">
-          <Bell className="h-4 w-4" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg"
+          title="Reminders"
+          aria-label={count > 0 ? `Reminders, ${count} open` : "Reminders"}
+        >
+          <Bell className="h-4 w-4 text-muted-foreground" />
           {count > 0 && (
-            <span className={`absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ${
-              overdueCount > 0 ? "bg-red-500" : "bg-[#0CC0DF]"
-            }`}>
+            <span
+              className={cn(
+                "absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white tabular-nums",
+                overdueCount > 0 ? "bg-red-500" : "bg-cyan-600 dark:bg-cyan-500"
+              )}
+            >
               {count > 99 ? "99+" : count}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[420px] rounded-2xl border border-gray-200/60 p-0 shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Action Reminders</h3>
-            {overdueCount > 0 && (
-              <p className="text-[11px] text-red-500 font-medium mt-0.5">
-                {overdueCount} overdue
-              </p>
-            )}
-          </div>
-          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-600 tabular-nums">
-            {count}
-          </span>
-        </div>
-
-        {/* Body */}
-        <div className="max-h-[440px] overflow-y-auto overscroll-contain">
-          {reminders.length === 0 ? (
-            <div className="py-16 px-8 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-                <Check className="h-5 w-5 text-emerald-500" />
-              </div>
-              <p className="text-sm font-medium text-gray-900">You're all caught up</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Reminders appear when repair statuses change
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-[min(100vw-1.25rem,420px)] overflow-hidden rounded-2xl border border-border/80 bg-popover p-0 shadow-xl dark:bg-popover"
+      >
+        <div className="border-b border-border/60 bg-gradient-to-r from-cyan-500/[0.06] to-transparent px-4 py-3.5 sm:px-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight text-foreground">Reminders</h3>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {count === 0 ? "Nothing that needs your attention" : "Tap a row to open the repair"}
               </p>
             </div>
+            {count > 0 && (
+              <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold tabular-nums text-muted-foreground">
+                {count}
+                {overdueCount > 0 && (
+                  <span className="ml-1.5 text-red-600 dark:text-red-400">· {overdueCount} late</span>
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="max-h-[min(70vh,440px)] overflow-y-auto overscroll-contain">
+          {sortedReminders.length === 0 ? (
+            <div className="px-6 py-14 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+                <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="text-sm font-medium text-foreground">You&apos;re up to date</p>
+              <p className="mt-1 text-xs text-muted-foreground">We&apos;ll add items when status changes or the garage nudges you.</p>
+            </div>
           ) : (
-            <div className="py-1.5">
-              {reminders.map((reminder) => {
+            <ul className="py-1">
+              {sortedReminders.map((reminder) => {
                 const config = getConfig(reminder);
                 const label = getLabel(reminder);
                 const Icon = config.icon;
                 const overdue = isOverdue(reminder.dueAt);
 
                 return (
-                  <button
-                    key={reminder.id}
-                    type="button"
-                    className={`group relative w-full text-left px-5 py-3.5 transition-colors cursor-pointer hover:bg-gray-50 ${
-                      overdue ? "bg-red-50/40" : ""
-                    }`}
-                    onClick={() => {
-                      setOpen(false);
-                      if (reminder.repairJobId) {
-                        router.push(`/repairs/${reminder.repairJobId}`);
-                      }
-                    }}
-                  >
-                    <div className="flex items-start gap-3.5">
-                      {/* Icon */}
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${config.bg}`}>
-                        <Icon className={`h-4 w-4 ${config.color}`} />
+                  <li key={reminder.id} className="border-b border-border/40 last:border-0">
+                    <button
+                      type="button"
+                      className={cn(
+                        "group flex w-full touch-manipulation gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 sm:px-5",
+                        overdue && "bg-red-500/[0.06] hover:bg-red-500/10"
+                      )}
+                      onClick={() => {
+                        setOpen(false);
+                        if (reminder.repairJobId) router.push(`/repairs/${reminder.repairJobId}`);
+                      }}
+                    >
+                      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", config.bg)}>
+                        <Icon className={cn("h-4 w-4", config.color)} />
                       </div>
 
-                      {/* Content */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${config.color}`}>
-                            {label}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <span className={cn("text-[10px] font-semibold uppercase tracking-wide", config.color)}>{label}</span>
                           {reminder.autoGenerated && (
-                            <span className="text-[9px] font-medium text-gray-300 uppercase tracking-wider">
-                              auto
-                            </span>
+                            <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground/70">Auto</span>
                           )}
                         </div>
-                        <p className="text-[13px] font-medium text-gray-900 mt-0.5 leading-snug">
-                          {reminder.title}
-                        </p>
-                        {reminder.description && (
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                            {reminder.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-1.5">
+                        <p className="mt-0.5 text-[13px] font-semibold leading-snug text-foreground">{reminder.title}</p>
+                        {reminder.description ? (
+                          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{reminder.description}</p>
+                        ) : null}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                           {reminder.publicCode && (
-                            <span className="text-[11px] font-medium text-[#0CC0DF]">
+                            <span className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400">
                               {reminder.publicCode}
                               {reminder.customerName ? ` · ${reminder.customerName}` : ""}
                             </span>
                           )}
                           {reminder.dueAt && (
                             <span
-                              className={`flex items-center gap-1 text-[11px] ${
-                                overdue
-                                  ? "text-red-500 font-semibold"
-                                  : "text-gray-400"
-                              }`}
-                            >
-                              {overdue ? (
-                                <AlertTriangle className="h-3 w-3" />
-                              ) : (
-                                <Clock className="h-3 w-3" />
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[11px]",
+                                overdue ? "font-semibold text-red-600 dark:text-red-400" : "text-muted-foreground"
                               )}
-                              {formatDistanceToNow(new Date(reminder.dueAt), {
-                                addSuffix: true,
-                              })}
+                            >
+                              {overdue ? <AlertTriangle className="h-3 w-3 shrink-0" /> : <Clock className="h-3 w-3 shrink-0" />}
+                              {formatDistanceToNow(new Date(reminder.dueAt), { addSuffix: true })}
                             </span>
                           )}
                         </div>
+                        <p className="mt-1 text-[11px] font-medium text-cyan-600 dark:text-cyan-400 sm:hidden">Open repair →</p>
                       </div>
 
-                      {/* Actions — show on hover */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
+                      <div className="flex shrink-0 items-start gap-0.5 pt-0.5 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                         <button
                           type="button"
                           onClick={(e) => handleComplete(e, reminder.id)}
                           disabled={isPending}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-emerald-500 hover:bg-emerald-50 transition-colors"
-                          title="Complete"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400"
+                          title="Mark done"
+                          aria-label="Mark reminder done"
                         >
-                          <Check className="h-3.5 w-3.5" />
+                          <Check className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           onClick={(e) => handleDismiss(e, reminder.id)}
                           disabled={isPending}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           title="Dismiss"
+                          aria-label="Dismiss reminder"
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </div>
       </PopoverContent>

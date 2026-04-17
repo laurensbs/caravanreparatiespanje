@@ -87,7 +87,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
 
   return (
     <>
-      <tbody className="divide-y divide-gray-50">
+      <tbody className="divide-y divide-border/60">
         {allCustomers.length === 0 ? (
           <tr>
             <td colSpan={6} className="py-20 text-center">
@@ -102,39 +102,43 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
           allCustomers.map((c) => (
             <tr
               key={c.id}
-              className="group cursor-pointer hover:bg-gray-50 dark:hover:bg-accent transition-colors duration-150"
+              className="group cursor-pointer touch-manipulation transition-colors duration-150 hover:bg-muted/50 active:bg-muted/70"
               onClick={() => setSelected(c)}
             >
-              <td className="px-5 py-3.5">
-                <span className="text-sm font-medium text-gray-900 group-hover:text-[#0CC0DF] transition-colors">
+              <td className="px-4 py-4 sm:px-5">
+                <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                   {c.name}
                 </span>
+                {c.phone && (
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground md:hidden">{c.phone}</p>
+                )}
               </td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-4 sm:px-5">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="rounded-full bg-gray-100 dark:bg-muted px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-muted-foreground">
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                     {c.contactType === "business" ? "Business" : "Person"}
                   </span>
                   {c.holdedContactId && (
-                    <span className="text-emerald-500" title="Linked to Holded">
+                    <span className="text-emerald-600 dark:text-emerald-400" title="Linked to Holded">
                       <ExternalLink className="h-3 w-3" />
                     </span>
                   )}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-center">
-                {c.repairCount > 0 ? (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-100 dark:bg-muted px-1.5 text-xs font-medium text-gray-600 dark:text-muted-foreground">
-                    {c.repairCount}
-                  </span>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
+              <td className="px-4 py-4 text-center sm:px-5">
+                <span
+                  className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums ${
+                    c.repairCount > 0 ? "bg-muted text-muted-foreground" : "text-muted-foreground/70"
+                  }`}
+                  title="Work orders linked to this contact"
+                >
+                  {c.repairCount}
+                </span>
               </td>
-              <td className="px-5 py-3.5 text-sm text-gray-500">{c.phone || <span className="text-gray-300">—</span>}</td>
-              <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">{c.email || <span className="text-gray-300">—</span>}</td>
-              <td className="px-5 py-3.5 text-right">
-                <SmartDate date={c.updatedAt} className="text-xs text-gray-400" />
+              <td className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">{c.phone || <span className="text-muted-foreground/40">—</span>}</td>
+              <td className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">{c.email || <span className="text-muted-foreground/40">—</span>}</td>
+              <td className="px-4 py-4 text-right sm:px-5">
+                <SmartDate date={c.updatedAt} className="text-xs text-muted-foreground" />
               </td>
             </tr>
           ))
@@ -266,17 +270,20 @@ function CustomerQuickView({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0">
-        <DialogHeader className="px-6 pt-5 pb-3 border-b shrink-0">
-          <div className="flex items-center justify-between pr-8">
-            <div>
-              <DialogTitle className="text-lg font-extrabold">{c.name}</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-0.5">
+        <DialogHeader className="shrink-0 border-b px-6 pb-3 pt-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:pr-8">
+            <div className="min-w-0">
+              <DialogTitle className="text-lg font-semibold leading-tight">{c.name}</DialogTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {[c.phone, c.email].filter(Boolean).join(" · ") || "No contact info"}
               </p>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Changes apply to this contact on all work orders and in the garage. Holded-linked contacts also sync phone, email, and address to accounting.
+              </p>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               {!editing && (
-                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => {
+                <Button size="sm" variant="outline" className="h-10 touch-manipulation text-xs" onClick={() => {
                   setName(c.name);
                   setPhone(c.phone ?? "");
                   setEmail(c.email ?? "");
@@ -286,12 +293,12 @@ function CustomerQuickView({
                   setPostalCode(fullData?.postalCode ?? "");
                   setEditing(true);
                 }}>
-                  <Pencil className="h-3 w-3 mr-1" /> Edit
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                 </Button>
               )}
-              <Button size="sm" variant="ghost" className="h-7 text-xs" asChild>
+              <Button size="sm" variant="default" className="h-10 touch-manipulation text-xs" asChild>
                 <Link href={`/customers/${customer.id}`}>
-                  <ExternalLink className="h-3 w-3 mr-1" /> Full page
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" /> Full page
                 </Link>
               </Button>
             </div>

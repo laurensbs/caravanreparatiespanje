@@ -152,12 +152,13 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
 
   return (
     <div className="space-y-4">
-      {/* Category filter buttons */}
-      <div className="flex flex-wrap gap-2">
+      {/* Category filter buttons — horizontal scroll on narrow screens */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
+          type="button"
           onClick={() => setActiveCategory(null)}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer",
+            "inline-flex shrink-0 touch-manipulation items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-medium transition-all active:scale-[0.98] sm:py-1.5",
             !activeCategory ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 hover:bg-muted"
           )}
         >
@@ -170,10 +171,11 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
           const CatIcon = ICON_MAP[cat.icon] ?? Package;
           return (
             <button
+              type="button"
               key={cat.key}
               onClick={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer",
+                "inline-flex shrink-0 touch-manipulation items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-medium transition-all active:scale-[0.98] sm:py-1.5",
                 activeCategory === cat.key ? `${cat.color} shadow-sm` : `bg-muted/60 hover:bg-muted`
               )}
             >
@@ -185,12 +187,12 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
         })}
         {/* Add category */}
         {showAddCategory ? (
-          <div className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 ring-1 ring-border/50 bg-card">
+          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-card px-2 py-1.5 ring-1 ring-border/50">
             <Input
               value={newCategoryLabel}
               onChange={(e) => setNewCategoryLabel(e.target.value)}
               placeholder="Category name..."
-              className="h-7 w-32 text-xs"
+              className="h-9 w-36 min-w-[8rem] text-xs touch-manipulation sm:h-7 sm:w-32"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newCategoryLabel.trim()) {
@@ -231,8 +233,9 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setShowAddCategory(true)}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer border border-dashed border-border/50 bg-muted/40 hover:bg-muted/60 text-muted-foreground"
+            className="inline-flex shrink-0 touch-manipulation items-center gap-1 rounded-lg border border-dashed border-border/50 bg-muted/40 px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all hover:bg-muted/60 active:scale-[0.98] sm:py-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
             Category
@@ -241,24 +244,25 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
       </div>
 
       {/* Search + stock filter + add button */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2 items-center flex-1">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative min-w-0 flex-1 sm:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search parts..."
-              className="pl-9"
+              placeholder="Search parts…"
+              className="h-11 touch-manipulation pl-10"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           {(lowStockCount > 0 || outOfStockCount > 0) && (
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {outOfStockCount > 0 && (
                 <button
+                  type="button"
                   onClick={() => setStockFilter(stockFilter === "out_of_stock" ? "all" : "out_of_stock")}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer",
+                    "inline-flex touch-manipulation items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition-all sm:py-1",
                     stockFilter === "out_of_stock"
                       ? "bg-red-600 text-white"
                       : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100"
@@ -270,9 +274,10 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
               )}
               {lowStockCount > 0 && (
                 <button
+                  type="button"
                   onClick={() => setStockFilter(stockFilter === "low_stock" ? "all" : "low_stock")}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer",
+                    "inline-flex touch-manipulation items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition-all sm:py-1",
                     stockFilter === "low_stock"
                       ? "bg-amber-600 text-white"
                       : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 hover:bg-amber-100"
@@ -286,12 +291,12 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button type="button" onClick={openCreate} className="h-11 w-full touch-manipulation gap-2 sm:h-10 sm:w-auto">
+              <Plus className="h-4 w-4" />
               Add Part
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl p-0 gap-0 border-gray-100 dark:border-white/10">
+          <DialogContent className="max-h-[min(92vh,900px)] gap-0 border-gray-100 p-0 dark:border-white/10 sm:max-w-2xl">
             <PartForm
               part={editingPart}
               suppliers={suppliers}
@@ -321,100 +326,190 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border bg-card overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-10"></TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Part #</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead>Our Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead className="hidden lg:table-cell">Order</TableHead>
-                <TableHead className="w-20"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((part) => {
-                const cat = categoryMap[part.category ?? "services"];
-                const CatIcon = cat?.icon ?? Package;
-                const markup = part.markupPercent ? parseFloat(part.markupPercent) : defaultMarkup;
-                const cost = part.defaultCost ? parseFloat(part.defaultCost) : null;
-                const ourPrice = cost !== null ? cost * (1 + markup / 100) : null;
-                const isLowStock = part.stockQuantity > 0 && part.stockQuantity <= part.minStockLevel;
-                const isOutOfStock = part.minStockLevel > 0 && part.stockQuantity <= 0;
-                return (
-                <TableRow key={part.id}>
-                  <TableCell>
-                    <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground")}>
-                      <CatIcon className="h-3.5 w-3.5" />
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <p className="font-medium text-sm">{part.name}</p>
-                    {part.description && (
-                      <p className="text-[11px] text-muted-foreground truncate max-w-xs">{part.description}</p>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{part.partNumber ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{cost !== null ? `€${cost.toFixed(2)}` : "—"}</TableCell>
-                  <TableCell className="text-sm font-medium">
-                    {ourPrice !== null ? `€${ourPrice.toFixed(2)}` : "—"}
-                  </TableCell>
-                  <TableCell>
+        <>
+          {/* Mobile / tablet: card list */}
+          <div className="space-y-3 lg:hidden">
+            {filtered.map((part) => {
+              const cat = categoryMap[part.category ?? "services"];
+              const CatIcon = cat?.icon ?? Package;
+              const markup = part.markupPercent ? parseFloat(part.markupPercent) : defaultMarkup;
+              const cost = part.defaultCost ? parseFloat(part.defaultCost) : null;
+              const ourPrice = cost !== null ? cost * (1 + markup / 100) : null;
+              const isLowStock = part.stockQuantity > 0 && part.stockQuantity <= part.minStockLevel;
+              const isOutOfStock = part.minStockLevel > 0 && part.stockQuantity <= 0;
+              return (
+                <div
+                  key={part.id}
+                  className="rounded-xl border border-border/80 bg-card p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", cat?.color ?? "bg-muted text-muted-foreground")}>
+                        <CatIcon className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground">{part.name}</p>
+                        {part.description && (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{part.description}</p>
+                        )}
+                        <p className="mt-1 font-mono text-xs text-muted-foreground">{part.partNumber ?? "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button type="button" variant="outline" size="icon" className="h-10 w-10 touch-manipulation" onClick={() => openEdit(part)} aria-label="Edit part">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 touch-manipulation text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(part)}
+                        disabled={isPending}
+                        aria-label="Delete part"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 text-sm">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Cost</p>
+                      <p className="font-medium tabular-nums">{cost !== null ? `€${cost.toFixed(2)}` : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Our price</p>
+                      <p className="font-semibold tabular-nums text-foreground">{ourPrice !== null ? `€${ourPrice.toFixed(2)}` : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                     {part.minStockLevel > 0 ? (
                       <span className={cn(
-                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
                         isOutOfStock ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" :
                         isLowStock ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
                         "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
                       )}>
-                        {isOutOfStock || isLowStock ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
-                        {part.stockQuantity}
+                        {isOutOfStock || isLowStock ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />}
+                        Stock: {part.stockQuantity}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">Stock not tracked</span>
                     )}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
                     {part.orderUrl ? (
                       <a
                         href={part.orderUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
-                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-primary touch-manipulation hover:bg-muted/50"
                       >
-                        <ExternalLink className="h-3 w-3" />
-                        Order
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Order link
                       </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(part)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(part)}
-                        disabled={isPending}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden overflow-x-auto rounded-lg border border-border/80 bg-card lg:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-10" />
+                  <TableHead>Name</TableHead>
+                  <TableHead>Part #</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Our Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead className="hidden xl:table-cell">Order</TableHead>
+                  <TableHead className="w-24" />
                 </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((part) => {
+                  const cat = categoryMap[part.category ?? "services"];
+                  const CatIcon = cat?.icon ?? Package;
+                  const markup = part.markupPercent ? parseFloat(part.markupPercent) : defaultMarkup;
+                  const cost = part.defaultCost ? parseFloat(part.defaultCost) : null;
+                  const ourPrice = cost !== null ? cost * (1 + markup / 100) : null;
+                  const isLowStock = part.stockQuantity > 0 && part.stockQuantity <= part.minStockLevel;
+                  const isOutOfStock = part.minStockLevel > 0 && part.stockQuantity <= 0;
+                  return (
+                  <TableRow key={part.id}>
+                    <TableCell>
+                      <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground")}>
+                        <CatIcon className="h-3.5 w-3.5" />
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <p className="text-sm font-medium">{part.name}</p>
+                      {part.description && (
+                        <p className="max-w-xs truncate text-[11px] text-muted-foreground">{part.description}</p>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{part.partNumber ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{cost !== null ? `€${cost.toFixed(2)}` : "—"}</TableCell>
+                    <TableCell className="text-sm font-medium">
+                      {ourPrice !== null ? `€${ourPrice.toFixed(2)}` : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {part.minStockLevel > 0 ? (
+                        <span className={cn(
+                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                          isOutOfStock ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" :
+                          isLowStock ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
+                          "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        )}>
+                          {isOutOfStock || isLowStock ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
+                          {part.stockQuantity}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      {part.orderUrl ? (
+                        <a
+                          href={part.orderUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Order
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => openEdit(part)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(part)}
+                          disabled={isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );
@@ -637,24 +732,24 @@ function PartForm({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 sm:px-8 border-t border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3">
+      <div className="flex flex-col-reverse gap-3 border-t border-gray-100 px-6 py-4 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between sm:px-8">
         {!isEditing && (
-          <p className="text-xs text-gray-400 dark:text-slate-500 hidden sm:block">
+          <p className="hidden text-center text-xs text-gray-400 dark:text-slate-500 sm:block sm:text-left">
             New parts are also synced to Holded.
           </p>
         )}
-        <div className={cn("flex items-center gap-3", isEditing && "ml-auto")}>
+        <div className={cn("flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3", isEditing && "sm:ml-auto")}>
           <button
             type="button"
             onClick={onCancel}
-            className="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors px-1"
+            className="min-h-11 touch-manipulation rounded-xl border border-border bg-background px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 sm:min-h-0 sm:border-0 sm:bg-transparent sm:px-1"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending || !name.trim()}
-            className="inline-flex items-center justify-center rounded-xl bg-[#0CC0DF] text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-[#0ab5d2] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+            className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending
               ? (isEditing ? "Saving…" : "Creating…")

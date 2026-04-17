@@ -28,7 +28,8 @@ export function AssistantShell() {
   return (
     <SmartAssistant
       page={page}
-      context={page === "repair-detail" ? repairContext ?? undefined : undefined}
+      pathname={pathname}
+      context={repairContext ?? undefined}
     />
   );
 }

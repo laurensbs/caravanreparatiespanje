@@ -98,7 +98,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   const router = useRouter();
   const [time, setTime] = useState(() => new Date());
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<StatusCategory | "all">("all");
+  const [activeTab, setActiveTab] = useState<StatusCategory | "all">("in_progress");
   const [search, setSearch] = useState("");
   const [workerPickerRepairId, setWorkerPickerRepairId] = useState<string | null>(null);
   const [recentWorkerIds, setRecentWorkerIds] = useState<string[]>([]);
@@ -192,8 +192,8 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   }, [activeTab, grouped, search]);
 
   const tabs: { key: StatusCategory | "all"; label: string; count: number }[] = [
-    { key: "all", label: t("All", "Todo", "Alles"), count: repairs.length },
     { key: "in_progress", label: t("Active", "Activo", "Actief"), count: counts.in_progress },
+    { key: "all", label: t("All", "Todos", "Alles"), count: repairs.length },
     { key: "waiting", label: t("Waiting", "Espera", "Wachten"), count: counts.waiting },
     { key: "check", label: t("Check", "Control", "Check"), count: counts.check },
     { key: "done", label: t("Done", "Hecho", "Klaar"), count: counts.done },
@@ -487,7 +487,8 @@ function JobCard({
   onQuickStart: (userId: string) => void;
 }) {
   const hasTimer = activeTimers.length > 0;
-  const hasFooter = activeTimers.length > 0 || quickUsers.length > 0;
+  const showQuickStart = timerStartAllowed && quickUsers.length > 0;
+  const hasFooter = activeTimers.length > 0 || showQuickStart;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
 
   return (
@@ -534,12 +535,6 @@ function JobCard({
             )}
             <ChevronRight className="h-5 w-5 text-white/15 ml-auto shrink-0 group-hover:text-white/30 transition-colors" />
           </div>
-
-          {!timerStartAllowed && (
-            <p className="text-xs text-amber-400/90 font-medium mb-2">
-              {t("Open job to set active before starting a timer", "Abre el trabajo para activarlo antes del temporizador", "Open de klus om op Actief te zetten voor een timer")}
-            </p>
-          )}
 
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-sm text-white/50 truncate">
@@ -623,7 +618,7 @@ function JobCard({
         </div>
       )}
 
-      {quickUsers.length > 0 && (
+      {showQuickStart && (
         <div className="px-4 pb-4 flex flex-col gap-2 border-t border-white/[0.06] pt-3">
           <span className="text-[11px] uppercase tracking-wide text-white/35 font-bold">
             {t("Start timer", "Iniciar temporizador", "Timer starten")}
@@ -634,16 +629,8 @@ function JobCard({
                 key={user.id}
                 type="button"
                 onClick={() => onQuickStart(user.id)}
-                className={`w-full inline-flex items-center justify-center gap-2 min-h-[52px] px-3 rounded-xl border text-base font-bold transition-all active:scale-[0.97] ${
-                  timerStartAllowed
-                    ? "bg-sky-500/15 border-sky-400/30 text-sky-200 hover:bg-sky-500/25"
-                    : "bg-white/[0.04] border-white/[0.08] text-white/25"
-                }`}
-                title={
-                  timerStartAllowed
-                    ? `${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`
-                    : garageTimerBlockedReason(repair.status, t)
-                }
+                className="w-full inline-flex items-center justify-center gap-2 min-h-[52px] px-3 rounded-xl border text-base font-bold transition-all active:scale-[0.97] bg-sky-500/15 border-sky-400/30 text-sky-200 hover:bg-sky-500/25"
+                title={`${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`}
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm">
                   {(user.name ?? "?").charAt(0).toUpperCase()}

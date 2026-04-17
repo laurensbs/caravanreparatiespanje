@@ -42,6 +42,19 @@ export interface PlanningStrings {
   priority: string;
   status: string;
   assignedTo: string;
+
+  /** Short page purpose (shown under title) */
+  pageSubtitle: string;
+  /** Per-day empty body (below title row) */
+  emptyDayHint: string;
+  /** Week strip when count > 0; use {n} for number */
+  weekRepairsSome: string;
+  /** Week strip when nothing scheduled */
+  weekRepairsNone: string;
+  /** Hint under toolbar on md+ */
+  dragHint: string;
+  /** Link to work orders list */
+  browseWorkOrders: string;
 }
 
 const en: PlanningStrings = {
@@ -73,6 +86,13 @@ const en: PlanningStrings = {
   priority: "Priority",
   status: "Status",
   assignedTo: "Assigned to",
+  pageSubtitle:
+    "Repairs with a due date in this week. Drag a row to another day to reschedule, or add from your backlog.",
+  emptyDayHint: "Nothing due — tap Add to place a repair on this day.",
+  weekRepairsSome: "{n} repairs with a due date this week",
+  weekRepairsNone: "No repairs with a due date this week",
+  dragHint: "Tip: drag a repair to another day to change its due date.",
+  browseWorkOrders: "All work orders",
 };
 
 const nl: PlanningStrings = {
@@ -104,6 +124,13 @@ const nl: PlanningStrings = {
   priority: "Prioriteit",
   status: "Status",
   assignedTo: "Toegewezen aan",
+  pageSubtitle:
+    "Reparaties met een streefdatum in deze week. Sleep een regel naar een andere dag om te verplaatsen, of voeg toe vanuit je wachtrij.",
+  emptyDayHint: "Niets ingepland — tik op Toevoegen om hier een reparatie te zetten.",
+  weekRepairsSome: "{n} reparaties met streefdatum deze week",
+  weekRepairsNone: "Geen reparaties met streefdatum deze week",
+  dragHint: "Tip: sleep een reparatie naar een andere dag om de streefdatum aan te passen.",
+  browseWorkOrders: "Alle werkorders",
 };
 
 const es: PlanningStrings = {
@@ -135,6 +162,13 @@ const es: PlanningStrings = {
   priority: "Prioridad",
   status: "Estado",
   assignedTo: "Asignado a",
+  pageSubtitle:
+    "Reparaciones con fecha prevista en esta semana. Arrastra una fila a otro día para reprogramar, o añade desde el backlog.",
+  emptyDayHint: "Nada programado — pulsa Añadir para colocar una reparación en este día.",
+  weekRepairsSome: "{n} reparaciones con fecha prevista esta semana",
+  weekRepairsNone: "No hay reparaciones con fecha prevista esta semana",
+  dragHint: "Consejo: arrastra una reparación a otro día para cambiar la fecha prevista.",
+  browseWorkOrders: "Todas las órdenes",
 };
 
 const locales: Record<PlanningLang, PlanningStrings> = { en, nl, es };

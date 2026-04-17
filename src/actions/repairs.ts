@@ -8,7 +8,7 @@ import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
 import { clearGarageAttention } from "./garage-sync";
 import { generatePublicCode } from "@/lib/utils";
-import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
+import { eq, ne, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type RepairFilters = {
@@ -710,6 +710,7 @@ export async function getFollowUpItems() {
       and(
         isNull(repairJobs.archivedAt),
         isNull(repairJobs.deletedAt),
+        ne(repairJobs.customerResponseStatus, "reply_not_required"),
         or(
           // Waiting for customer with no contact or old contact
           and(

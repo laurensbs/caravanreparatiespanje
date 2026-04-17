@@ -57,15 +57,15 @@ export function SuppliersClient({ suppliers }: SuppliersClientProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-stretch sm:justify-end">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button type="button" onClick={openCreate} className="h-11 w-full touch-manipulation gap-2 sm:h-10 sm:w-auto">
+              <Plus className="h-4 w-4" />
               Add Supplier
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-h-[min(90vh,640px)] overflow-y-auto sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editing ? "Edit Supplier" : "Add Supplier"}</DialogTitle>
             </DialogHeader>
@@ -87,22 +87,24 @@ export function SuppliersClient({ suppliers }: SuppliersClientProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {suppliers.map((s) => (
-            <Card key={s.id} className="relative group">
+            <Card key={s.id} className="group relative">
               <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base">{s.name}</CardTitle>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base leading-snug">{s.name}</CardTitle>
+                  <div className="flex shrink-0 gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                    <Button type="button" variant="outline" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => openEdit(s)} aria-label="Edit supplier">
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      type="button"
+                      variant="outline"
                       size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      className="h-9 w-9 touch-manipulation text-destructive hover:text-destructive"
                       onClick={() => handleDelete(s)}
                       disabled={isPending}
+                      aria-label="Delete supplier"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -205,14 +207,14 @@ function SupplierForm({
         <Label htmlFor="sup-contact">Contact Person</Label>
         <Input id="sup-contact" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Name" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="sup-phone">Phone</Label>
-          <Input id="sup-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 ..." />
+          <Input id="sup-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 ..." className="h-11 touch-manipulation" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="sup-email">Email</Label>
-          <Input id="sup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@..." />
+          <Input id="sup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@..." className="h-11 touch-manipulation" />
         </div>
       </div>
       <div className="space-y-2">
@@ -223,8 +225,8 @@ function SupplierForm({
         <Label htmlFor="sup-notes">Notes</Label>
         <Textarea id="sup-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Delivery times, payment terms..." rows={2} />
       </div>
-      <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isPending || !name.trim()}>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button type="submit" disabled={isPending || !name.trim()} className="h-11 w-full touch-manipulation sm:h-10 sm:w-auto">
           {isPending ? "Saving..." : supplier ? "Update" : "Create"}
         </Button>
       </div>

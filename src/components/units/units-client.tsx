@@ -15,6 +15,9 @@ import {
 import { Search, X, Truck, Loader2 } from "lucide-react";
 import { UnitDialog } from "./unit-dialog";
 import { NewUnitDialog } from "./new-unit-dialog";
+import { UnitTypeIconBadge } from "./unit-type-icon";
+import { UNIT_TYPE_LABELS } from "@/types";
+import type { UnitType } from "@/types";
 
 interface TagItem {
   id: string;
@@ -28,6 +31,7 @@ interface UnitRow {
   brand: string | null;
   model: string | null;
   year: number | null;
+  unitType: string | null;
   chassisId: string | null;
   length: string | null;
   storageLocation: string | null;
@@ -121,25 +125,37 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
     timerRef.current = setTimeout(() => updateParams({ q: q || undefined }), 300);
   }
 
+  function unitTypeLabel(raw: string | null | undefined): string {
+    if (raw === "caravan" || raw === "trailer" || raw === "camper" || raw === "unknown") {
+      return UNIT_TYPE_LABELS[raw as UnitType];
+    }
+    return UNIT_TYPE_LABELS.unknown;
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight">Units</h1>
-          <p className="text-xs text-muted-foreground">
+    <div className="space-y-5 animate-fade-in">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Units</h1>
+          <p className="text-sm text-muted-foreground">
             {total} unit{total !== 1 ? "s" : ""} registered
           </p>
+          <p className="max-w-2xl pt-1 text-sm leading-relaxed text-muted-foreground">
+            Icons show vehicle type (caravan, trailer, camper). The same unit is linked from work orders, planning, and the garage.
+          </p>
         </div>
-        <NewUnitDialog customers={customers} />
+        <div className="shrink-0">
+          <NewUnitDialog customers={customers} />
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:flex-wrap">
-        <div className="relative flex-1 min-w-0 sm:max-w-64">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-4 shadow-sm lg:flex-row lg:flex-wrap lg:items-end">
+        <div className="relative min-w-0 flex-1 lg:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search license plate, brand, model..."
-              className="w-full pl-8 h-8 text-xs rounded-lg"
+              placeholder="Search license plate, brand, model…"
+              className="h-11 w-full touch-manipulation rounded-xl border-border bg-background pl-10 pr-3 text-sm"
               value={searchInput}
               onChange={handleSearchChange}
             />
@@ -150,7 +166,7 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
             value={currentTagId ?? "all"}
             onValueChange={(v) => updateParams({ tagId: v === "all" ? undefined : v })}
           >
-            <SelectTrigger className="w-[160px] h-8 text-xs rounded-lg">
+            <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl border-border bg-background text-sm lg:w-48">
               <SelectValue placeholder="Tag" />
             </SelectTrigger>
             <SelectContent>
@@ -167,38 +183,41 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
           </Select>
         )}
 
-        <Input
-          type="date"
-          className="w-[130px] h-8 text-xs rounded-lg"
-          value={currentDateFrom ?? ""}
-          onChange={(e) => updateParams({ dateFrom: e.target.value || undefined })}
-          placeholder="From"
-        />
-        <Input
-          type="date"
-          className="w-[130px] h-8 text-xs rounded-lg"
-          value={currentDateTo ?? ""}
-          onChange={(e) => updateParams({ dateTo: e.target.value || undefined })}
-          placeholder="To"
-        />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
+          <Input
+            type="date"
+            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
+            value={currentDateFrom ?? ""}
+            onChange={(e) => updateParams({ dateFrom: e.target.value || undefined })}
+            aria-label="Registered from"
+          />
+          <Input
+            type="date"
+            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
+            value={currentDateTo ?? ""}
+            onChange={(e) => updateParams({ dateTo: e.target.value || undefined })}
+            aria-label="Registered to"
+          />
+        </div>
 
         {(currentQ || currentTagId || currentDateFrom || currentDateTo) && (
           <Button
-            variant="ghost"
-            size="sm"
+            type="button"
+            variant="outline"
+            className="h-11 touch-manipulation gap-2 sm:h-10"
             onClick={() => {
               setSearchInput("");
               router.push("/units");
             }}
           >
-            <X className="mr-1 h-4 w-4" /> Clear
+            <X className="h-4 w-4" /> Clear filters
           </Button>
         )}
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border/50 bg-card">
-        <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+      {/* List */}
+      <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+        <div className="max-h-[min(70vh,calc(100vh-14rem))] overflow-y-auto overscroll-contain sm:max-h-[calc(100vh-16rem)]">
           {allUnits.length === 0 ? (
             <div className="py-16 text-center">
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -208,25 +227,46 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-border/60">
               {allUnits.map((u, idx) => (
                 <div
                   key={u.id}
-                  className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/40 cursor-pointer animate-slide-up"
+                  role="button"
+                  tabIndex={0}
+                  className="flex cursor-pointer touch-manipulation flex-col gap-3 px-4 py-4 transition-colors animate-slide-up hover:bg-muted/45 active:bg-muted/60 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-3.5"
                   style={{ animationDelay: `${idx * 20}ms`, animationFillMode: "backwards" }}
                   onClick={() => setSelectedUnit(u)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedUnit(u);
+                    }
+                  }}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-mono text-sm font-medium group-hover:text-primary transition-colors">
-                      {u.registration ?? "—"}
-                    </span>
-                    {u.brand && (
-                      <span className="text-xs text-muted-foreground">
-                        {u.brand}{u.model ? ` ${u.model}` : ""}{u.year ? ` (${u.year})` : ""}
-                      </span>
-                    )}
+                  <div className="flex min-w-0 gap-3 sm:flex-1 sm:items-center">
+                    <UnitTypeIconBadge unitType={u.unitType} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                          {u.registration ?? "—"}
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:hidden">
+                          {unitTypeLabel(u.unitType)}
+                        </span>
+                      </div>
+                      {(u.brand || u.model || u.year) && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
+                          {[u.brand, u.model].filter(Boolean).join(" ")}
+                          {u.year ? ` · ${u.year}` : ""}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0 ml-4">{u.customerName ?? "—"}</span>
+                  <div className="flex shrink-0 justify-end border-t border-border/50 pt-2 sm:border-0 sm:pt-0 sm:pl-2">
+                    <span className="truncate text-right text-sm text-muted-foreground sm:max-w-[14rem] lg:max-w-[22rem]">
+                      {u.customerName ?? <span className="text-muted-foreground/50">No owner</span>}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

@@ -92,8 +92,9 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
           </div>
           <p className="text-sm text-gray-500 dark:text-white/40 mb-4">No part requests yet</p>
           <button
+            type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 dark:bg-white px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
           >
             <Plus className="h-4 w-4" /> Add request
           </button>
@@ -106,14 +107,15 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
   return (
     <div className="space-y-5">
       {/* Filter + Add */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-white/[0.06] p-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="-mx-1 flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1 px-1 dark:bg-white/[0.06] [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
           {FILTERS.map(f => (
             <button
+              type="button"
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "px-3.5 py-2 text-[13px] font-medium rounded-lg transition-all",
+                "shrink-0 touch-manipulation rounded-lg px-3.5 py-2.5 text-[13px] font-medium transition-all sm:py-2",
                 filter === f.key
                   ? "bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white"
                   : "text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60"
@@ -132,8 +134,9 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
           ))}
         </div>
         <button
+          type="button"
           onClick={() => setShowAdd(true)}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 dark:bg-white px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+          className="inline-flex min-h-11 w-full shrink-0 touch-manipulation items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 sm:w-auto sm:py-2.5"
         >
           <Plus className="h-4 w-4" /> Add
         </button>
@@ -149,38 +152,46 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
             <div
               key={req.id}
               className={cn(
-                "group rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] p-4 transition-all",
+                "group rounded-xl border border-gray-200 bg-white p-4 transition-all dark:border-white/[0.08] dark:bg-white/[0.02]",
                 pending && "opacity-50"
               )}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-3">
                 {/* Checkbox / status action */}
-                <div className="pt-0.5">
+                <div className="flex items-center gap-3 sm:block sm:pt-0.5">
                   {req.status === "requested" ? (
                     <button
+                      type="button"
                       onClick={() => handleStatusChange(req.id, "ordered")}
-                      className="flex h-6 w-6 items-center justify-center rounded-lg border-2 border-amber-300 dark:border-amber-500/40 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors group/check"
+                      className="group/check flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border-2 border-amber-300 transition-colors hover:bg-amber-50 dark:border-amber-500/40 dark:hover:bg-amber-500/10 sm:h-8 sm:w-8"
                       title="Mark as ordered"
                     >
-                      <Package className="h-3.5 w-3.5 text-amber-400 opacity-0 group-hover/check:opacity-100 transition-opacity" />
+                      <Package className="h-4 w-4 text-amber-400 opacity-80 transition-opacity group-hover/check:opacity-100 sm:h-3.5 sm:w-3.5 sm:opacity-0 sm:group-hover/check:opacity-100" />
                     </button>
                   ) : ["ordered", "shipped"].includes(req.status) ? (
                     <button
+                      type="button"
                       onClick={() => handleStatusChange(req.id, "received")}
-                      className="flex h-6 w-6 items-center justify-center rounded-lg border-2 border-blue-300 dark:border-blue-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group/check"
+                      className="group/check flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border-2 border-blue-300 transition-colors hover:bg-emerald-50 dark:border-blue-500/40 dark:hover:bg-emerald-500/10 sm:h-8 sm:w-8"
                       title="Mark as received"
                     >
-                      <Check className="h-3.5 w-3.5 text-emerald-500 opacity-0 group-hover/check:opacity-100 transition-opacity" />
+                      <Check className="h-4 w-4 text-emerald-500 opacity-80 transition-opacity group-hover/check:opacity-100 sm:h-3.5 sm:w-3.5 sm:opacity-0 sm:group-hover/check:opacity-100" />
                     </button>
                   ) : req.status === "received" ? (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
-                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/15 sm:h-8 sm:w-8">
+                      <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 sm:h-3.5 sm:w-3.5" />
                     </div>
                   ) : null}
+                  <div className="flex min-w-0 flex-1 items-center gap-2 sm:hidden">
+                    <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_DOT[req.status])} />
+                    <span className="text-xs font-medium text-gray-500 dark:text-white/40">
+                      {STATUS_LABEL[req.status] ?? req.status}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className={cn("font-semibold text-[15px]", req.status === "received" ? "line-through text-gray-400 dark:text-white/30" : "text-gray-900 dark:text-white")}>
                       {req.partName ?? "—"}
@@ -198,7 +209,7 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                       <ArrowRight className="h-3 w-3" />
                     </Link>
                     {req.jobTitle && (
-                      <span className="text-xs text-gray-400 dark:text-white/25 truncate max-w-[200px]">{req.jobTitle}</span>
+                      <span className="max-w-full truncate text-xs text-gray-400 dark:text-white/25 sm:max-w-[240px]">{req.jobTitle}</span>
                     )}
                   </div>
                   {req.notes && (
@@ -206,8 +217,8 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                   )}
                 </div>
 
-                {/* Status pill */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* Status pill — desktop */}
+                <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
                   <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[req.status])} />
                   <span className="text-xs font-medium text-gray-500 dark:text-white/40">
                     {STATUS_LABEL[req.status] ?? req.status}
@@ -296,7 +307,7 @@ export function AddRequestDialog({ open, onClose, requestType }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl border-0 shadow-2xl">
+      <DialogContent className="max-h-[min(92vh,720px)] max-w-md overflow-y-auto overflow-x-hidden rounded-2xl border-0 p-0 shadow-2xl">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
           <DialogHeader>
@@ -336,8 +347,9 @@ export function AddRequestDialog({ open, onClose, requestType }: {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedRepair(null)}
-                  className="ml-3 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/10 dark:hover:text-white/60 transition-colors"
+                  className="ml-3 flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white/60 sm:h-8 sm:w-8"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -349,7 +361,7 @@ export function AddRequestDialog({ open, onClose, requestType }: {
                   value={repairQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search by ref, customer, plate..."
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500/40 transition-all placeholder:text-gray-400 dark:placeholder:text-white/20"
+                  className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
                   autoFocus
                 />
                 {searching && (
@@ -359,9 +371,10 @@ export function AddRequestDialog({ open, onClose, requestType }: {
                   <div className="absolute z-10 mt-1.5 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-xl max-h-52 overflow-y-auto">
                     {repairResults.map((r) => (
                       <button
+                        type="button"
                         key={r.id}
                         onClick={() => { setSelectedRepair(r); setRepairResults([]); setRepairQuery(""); }}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors border-b border-gray-100 dark:border-white/[0.06] last:border-0"
+                        className="min-h-12 w-full touch-manipulation border-b border-gray-100 px-4 py-3 text-left transition-colors last:border-0 hover:bg-gray-50 dark:border-white/[0.06] dark:hover:bg-white/[0.06]"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{r.publicCode}</span>
@@ -388,49 +401,51 @@ export function AddRequestDialog({ open, onClose, requestType }: {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={requestType === "equipment" ? "e.g. Heat gun, Rivet tool..." : "e.g. Brake pads, Window seal..."}
-              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500/40 transition-all placeholder:text-gray-400 dark:placeholder:text-white/20"
+              className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
             />
           </div>
 
           {/* Quantity + Notes row */}
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
             {requestType === "part" && (
-              <div className="w-24">
+              <div className="w-full sm:w-24">
                 <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">Qty</label>
                 <input
                   type="number"
                   min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] px-4 py-3 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500/40 transition-all"
+                  className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm tabular-nums transition-all focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
                 />
               </div>
             )}
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">Notes</label>
               <input
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional details..."
-                className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500/40 transition-all placeholder:text-gray-400 dark:placeholder:text-white/20"
+                className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02]">
+        <div className="flex flex-col-reverse gap-2 border-t border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-white/[0.06] dark:bg-white/[0.02] sm:flex-row sm:gap-3">
           <button
+            type="button"
             onClick={handleClose}
-            className="flex-1 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.06] py-3 text-sm font-semibold text-gray-700 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+            className="min-h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/60 dark:hover:bg-white/10 sm:min-h-0 sm:flex-1"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!isValid || isPending}
             className={cn(
-              "flex-1 rounded-xl py-3 text-sm font-semibold transition-all",
+              "min-h-11 w-full touch-manipulation rounded-xl py-3 text-sm font-semibold transition-all sm:min-h-0 sm:flex-1",
               isValid && !isPending
                 ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-[0.98]"
                 : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/20 cursor-not-allowed"

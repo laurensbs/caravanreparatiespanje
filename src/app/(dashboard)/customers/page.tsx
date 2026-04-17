@@ -2,7 +2,7 @@ import { getCustomers, type CustomerFilters } from "@/actions/customers";
 import { getLocations } from "@/actions/locations";
 import { getSuppliers } from "@/actions/parts";
 import { getTags } from "@/actions/tags";
-import { Users, Building2, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CustomerFiltersBar } from "@/components/customers/customer-filters";
@@ -19,24 +19,48 @@ const CONTACT_TYPE_TABS = [
   { value: "business", label: "Businesses" },
 ] as const;
 
+function qp(params: Record<string, string | string[] | undefined>, key: string): string | undefined {
+  const v = params[key];
+  if (v === undefined) return undefined;
+  const s = Array.isArray(v) ? v[0] : v;
+  return s || undefined;
+}
+
+/** Keep search, repair filter, location, tags, and dates when switching tabs */
+function customersListHref(
+  params: Record<string, string | string[] | undefined>,
+  tab: (typeof CONTACT_TYPE_TABS)[number]["value"],
+): string {
+  const p = new URLSearchParams();
+  for (const key of ["q", "repairStatus", "locationId", "tagId", "dateFrom", "dateTo", "page"] as const) {
+    const v = qp(params, key);
+    if (v && key !== "page") p.set(key, v);
+    else if (v && key === "page" && v !== "1") p.set("page", v);
+  }
+  if (tab !== "all") p.set("contactType", tab);
+  const s = p.toString();
+  return s ? `/customers?${s}` : "/customers";
+}
+
 interface Props {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function CustomersPage({ searchParams }: Props) {
   const params = await searchParams;
-  const page = params.page ? parseInt(params.page) : 1;
-  const activeTab = params.contactType ?? "all";
+  const pageRaw = qp(params, "page");
+  const page = pageRaw ? Math.max(1, parseInt(pageRaw, 10) || 1) : 1;
+  const activeTab = qp(params, "contactType") ?? "all";
   const isBusiness = activeTab === "business";
 
   const filters: CustomerFilters = {
-    q: params.q,
-    contactType: isBusiness ? undefined : params.contactType,
-    repairStatus: params.repairStatus,
-    locationId: params.locationId,
-    tagId: params.tagId,
-    dateFrom: params.dateFrom,
-    dateTo: params.dateTo,
+    q: qp(params, "q"),
+    contactType: isBusiness ? undefined : qp(params, "contactType"),
+    repairStatus: qp(params, "repairStatus"),
+    locationId: qp(params, "locationId"),
+    tagId: qp(params, "tagId"),
+    dateFrom: qp(params, "dateFrom"),
+    dateTo: qp(params, "dateTo"),
     page,
   };
 
@@ -48,12 +72,13 @@ export default async function CustomersPage({ searchParams }: Props) {
   ]);
 
   // Filter suppliers by search query if present
-  const suppliersList = params.q
+  const qStr = qp(params, "q");
+  const suppliersList = qStr
     ? allSuppliers.filter(s =>
-        s.name.toLowerCase().includes(params.q!.toLowerCase()) ||
-        s.contactName?.toLowerCase().includes(params.q!.toLowerCase()) ||
-        s.email?.toLowerCase().includes(params.q!.toLowerCase()) ||
-        s.phone?.includes(params.q!)
+        s.name.toLowerCase().includes(qStr.toLowerCase()) ||
+        s.contactName?.toLowerCase().includes(qStr.toLowerCase()) ||
+        s.email?.toLowerCase().includes(qStr.toLowerCase()) ||
+        s.phone?.includes(qStr)
       )
     : allSuppliers;
 
@@ -64,39 +89,49 @@ export default async function CustomersPage({ searchParams }: Props) {
   const displayTotal = isBusiness ? suppliersList.length : total;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Contacts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {displayTotal} {isBusiness ? "business" : "contact"}{displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Contacts</h1>
+          <p className="text-sm text-muted-foreground">
+            {displayTotal} {isBusiness ? "business" : "contact"}
+            {displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}
+            {!isBusiness && " · tap a row for a quick view, or open the full record for edits and history"}
           </p>
+          {!isBusiness && (
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl pt-1">
+              The same contact record is used on <strong className="font-medium text-foreground">work orders</strong>,{" "}
+              <strong className="font-medium text-foreground">planning</strong>, and the{" "}
+              <strong className="font-medium text-foreground">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
+            </p>
+          )}
         </div>
-        <NewCustomerDialog />
+        <div className="shrink-0 sm:pt-0.5">
+          <NewCustomerDialog />
+        </div>
       </div>
 
-      {/* ── Tabs ───────────────────────────────────────── */}
-      <div className="flex gap-6 border-b border-gray-200">
-        {CONTACT_TYPE_TABS.map((tab) => {
-          const isActive = (params.contactType ?? "all") === tab.value;
-          const href = tab.value === "all"
-            ? `/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}) }).toString()}`
-            : `/customers?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.repairStatus ? { repairStatus: params.repairStatus } : {}), ...(params.locationId ? { locationId: params.locationId } : {}), contactType: tab.value }).toString()}`;
-          return (
-            <Link
-              key={tab.value}
-              href={href}
-              className={`pb-2.5 text-sm font-medium border-b-2 transition-colors ${
-                isActive
-                  ? "border-[#0CC0DF] text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
+      {/* ── Tabs (scroll on narrow screens, touch-friendly) ─ */}
+      <div className="border-b border-border">
+        <div className="-mb-px flex gap-1 overflow-x-auto pb-px sm:gap-8">
+          {CONTACT_TYPE_TABS.map((tab) => {
+            const isActive = activeTab === tab.value;
+            return (
+              <Link
+                key={tab.value}
+                href={customersListHref(params, tab.value)}
+                className={`shrink-0 touch-manipulation border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:px-0 sm:py-2.5 ${
+                  isActive
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Filters ────────────────────────────────────── */}
@@ -119,28 +154,28 @@ export default async function CustomersPage({ searchParams }: Props) {
         </HoldedHint>
       )}
 
-      {/* ── Table ──────────────────────────────────────── */}
-      <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border overflow-hidden">
-        <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
-          <table className="w-full">
+      {/* ── Table (horizontal scroll on small screens — keeps all columns) ─ */}
+      <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+        <div className="max-h-[min(70vh,calc(100vh-14rem))] overflow-auto overscroll-contain sm:max-h-[calc(100vh-16rem)]">
+          <table className="w-full min-w-[44rem]">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50/80 dark:bg-muted/80 backdrop-blur-sm border-b border-gray-100 dark:border-border">
-                <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Name</th>
+              <tr className="border-b border-border/80 bg-muted/40 backdrop-blur-sm dark:bg-muted/60">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:px-5">Name</th>
                 {isBusiness ? (
                   <>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Contact Person</th>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Phone</th>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3 hidden md:table-cell">Email</th>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3 hidden md:table-cell">Website</th>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Holded</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Contact Person</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Phone</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Email</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Website</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Holded</th>
                   </>
                 ) : (
                   <>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Type</th>
-                    <th className="text-center text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Repairs</th>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Phone</th>
-                    <th className="text-left text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3 hidden md:table-cell">Email</th>
-                    <th className="text-right text-xs font-medium uppercase tracking-wider text-gray-400 px-5 py-3">Updated</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Type</th>
+                    <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Repairs</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Phone</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">Email</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Updated</th>
                   </>
                 )}
               </tr>

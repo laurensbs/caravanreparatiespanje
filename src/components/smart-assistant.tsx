@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAssistantContext, type AssistantPage, type AssistantAction, type RepairContext } from "@/components/assistant-context";
 import { useRouter } from "next/navigation";
+import { STATUS_LABELS, type RepairStatus } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -789,7 +790,19 @@ const DEBUG_PATTERNS: [RegExp, (ctx?: RepairContext) => string][] = [
   }],
 ];
 
-function detectIntent(query: string, context?: RepairContext): Intent {
+function faqSearchQuery(query: string, context?: RepairContext, page?: AssistantPage): string {
+  const q = query.trim();
+  const job = context?.job;
+  const bias: string[] = [];
+  if (job?.status) bias.push(String(job.status).replace(/_/g, " "));
+  if (job?.jobType) bias.push(String(job.jobType));
+  if (job?.publicCode) bias.push(String(job.publicCode));
+  if (page) bias.push(page.replace(/-/g, " "));
+  if (!bias.length) return q;
+  return q + " " + bias.join(" ");
+}
+
+function detectIntent(query: string, context?: RepairContext, page?: AssistantPage): Intent {
   const q = query.trim();
 
   for (const [pattern, action] of NAV_PATTERNS) {
@@ -806,7 +819,7 @@ function detectIntent(query: string, context?: RepairContext): Intent {
     if (pattern.test(q)) return { type: "debug", response: handler(context) };
   }
 
-  const results = searchFaq(q, FAQ_ITEMS);
+  const results = searchFaq(faqSearchQuery(q, context, page), FAQ_ITEMS);
   if (results.length > 0 && results[0].score >= 20) {
     return { type: "question", faq: results[0].faq };
   }
@@ -992,6 +1005,83 @@ const PAGE_LABELS: Record<AssistantPage, string> = {
   "feedback": "Feedback",
 };
 
+function repairStatusLabel(status: string | undefined): string {
+  if (!status) return "";
+  const s = status as RepairStatus;
+  return STATUS_LABELS[s] ?? status.replace(/_/g, " ");
+}
+
+function jobHeadline(job: Record<string, unknown>): string {
+  const unit = job.unit as { registration?: string | null } | null | undefined;
+  return (
+    (job.unitRegistration as string | undefined) ||
+    unit?.registration ||
+    (job.publicCode as string | undefined) ||
+    (typeof job.title === "string" ? job.title.trim() : "") ||
+    "Work order"
+  );
+}
+
+/** Second line under "Smart Assistant" — route + live job when available */
+function buildLiveContextSubtitle(
+  page: AssistantPage,
+  pathname: string,
+  context?: RepairContext,
+): string {
+  const job = context?.job as Record<string, unknown> | undefined;
+
+  if (page === "repair-detail") {
+    if (job) {
+      const reg = jobHeadline(job);
+      const cust = (job.customer as { name?: string } | null)?.name || (job.customerName as string | undefined);
+      const st = repairStatusLabel(job.status as string);
+      return [reg, cust, st].filter(Boolean).join(" · ");
+    }
+    return "Open a repair to attach live context";
+  }
+
+  if (page === "repair-new") return "Describe the job · pick customer & unit";
+
+  if (page === "repairs") {
+    if (pathname.includes("/repairs/board")) return "Kanban · drag cards to update status";
+    return "Search, filters, and quick views";
+  }
+
+  if (page === "customers") {
+    const segs = pathname.split("/").filter(Boolean);
+    if (segs.length >= 2 && segs[0] === "customers") {
+      try {
+        return "Contact · " + decodeURIComponent(segs[1]).slice(0, 44);
+      } catch {
+        return "Contact · " + segs[1].slice(0, 44);
+      }
+    }
+    return "Synced with Holded";
+  }
+
+  if (page === "parts") return "Catalog, pricing, and requests";
+
+  if (page === "invoices") return "Payment status from Holded";
+
+  if (page === "planning") return "Schedule and capacity";
+
+  if (page === "settings") return "Account, pricing, workshops";
+
+  if (page === "audit") return "Who changed what";
+
+  if (page === "feedback") return "Suggestions and issues";
+
+  if (page === "units") {
+    const segs = pathname.split("/").filter(Boolean);
+    if (segs.length >= 2) return "Vehicle · " + segs[1].slice(0, 32);
+    return "Fleet and storage";
+  }
+
+  if (page === "dashboard") return "Overview and shortcuts";
+
+  return PAGE_LABELS[page];
+}
+
 const PAGE_RELEVANT_CATEGORIES: Record<AssistantPage, FaqCategory[]> = {
   "dashboard": ["getting-started", "garage"],
   "repairs": ["work-orders", "getting-started"],
@@ -1024,10 +1114,11 @@ const PAGE_QUICK_ACTIONS: Record<AssistantPage, string[]> = {
 
 interface SmartAssistantProps {
   page: AssistantPage;
+  pathname: string;
   context?: RepairContext;
 }
 
-export function SmartAssistant({ page, context }: SmartAssistantProps) {
+export function SmartAssistant({ page, pathname, context }: SmartAssistantProps) {
   const { open, setOpen, dispatchAction } = useAssistantContext();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
@@ -1052,6 +1143,22 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
   );
 
   const relevantCategories = PAGE_RELEVANT_CATEGORIES[page] ?? [];
+  const sortedCategoryEntries = useMemo(() => {
+    return (Object.entries(CATEGORY_CONFIG) as [FaqCategory, (typeof CATEGORY_CONFIG)[FaqCategory]][]).sort(
+      ([a], [b]) => {
+        const ar = relevantCategories.includes(a) ? 0 : 1;
+        const br = relevantCategories.includes(b) ? 0 : 1;
+        if (ar !== br) return ar - br;
+        return CATEGORY_CONFIG[a].label.localeCompare(CATEGORY_CONFIG[b].label);
+      },
+    );
+  }, [relevantCategories]);
+
+  const liveSubtitle = useMemo(
+    () => buildLiveContextSubtitle(page, pathname, context),
+    [page, pathname, context],
+  );
+
   const relevantFaq = useMemo(
     () => FAQ_ITEMS.filter(
       (f) => relevantCategories.includes(f.category) || f.pages?.includes(page),
@@ -1132,7 +1239,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
         return;
       }
 
-      const intent = detectIntent(query, context);
+      const intent = detectIntent(query, context, page);
 
       if (intent.type === "navigate" && intent.action) {
         const msg: ChatMessage = {
@@ -1209,7 +1316,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
       setMessages((prev) => [...prev, msg]);
       setIsTyping(false);
     }, 200 + Math.random() * 200);
-  }, [context, relevantFaq, executeAction]);
+  }, [context, relevantFaq, executeAction, page]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -1223,7 +1330,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
       answerQuestion(qa.label);
     } else {
       // Action — execute directly
-      const intent = detectIntent(qa.label);
+      const intent = detectIntent(qa.label, context, page);
       if (intent?.action) {
         executeAction(intent.action);
       } else {
@@ -1268,9 +1375,9 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
     <>
       {/* Panel */}
       {open && (
-        <div className="fixed top-14 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-5rem))] flex flex-col rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
-          {/* Header — Mollie-style gradient */}
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-border bg-gradient-to-r from-[#0CC0DF] to-[#0AA0C0] shrink-0">
+        <div className="fixed top-14 right-5 z-50 w-[400px] max-h-[min(600px,calc(100vh-5rem))] flex flex-col rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+          {/* Header — brand gradient, calmer than solid flat cyan */}
+          <div className="px-4 py-3 border-b border-white/10 shrink-0 bg-gradient-to-br from-cyan-600/95 via-teal-700/90 to-slate-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 {selectedCategory ? (
@@ -1291,10 +1398,10 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                   <h3 className="text-[13px] font-semibold text-white">
                     {selectedCategory ? CATEGORY_CONFIG[selectedCategory].label : "Smart Assistant"}
                   </h3>
-                  <p className="text-[10px] text-white/50">
+                  <p className="text-[10px] text-white/65 line-clamp-2 leading-snug">
                     {selectedCategory
                       ? FAQ_ITEMS.filter((f) => f.category === selectedCategory).length + " questions"
-                      : PAGE_LABELS[page]}
+                      : liveSubtitle}
                   </p>
                 </div>
               </div>
@@ -1345,9 +1452,35 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
             ) : showHome ? (
               /* Home / empty state */
               <div className="p-3 space-y-3">
+                {context?.job && page === "repair-detail" && (
+                  <div className="rounded-xl border border-primary/15 bg-primary/[0.04] px-3 py-2.5 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+                        {jobHeadline(context.job as Record<string, unknown>)}
+                      </p>
+                      <span className="shrink-0 text-[9px] font-medium uppercase tracking-wide text-primary whitespace-nowrap">
+                        {repairStatusLabel((context.job as { status?: string }).status)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">
+                      {(context.job as { customer?: { name?: string }; customerName?: string }).customer?.name ||
+                        (context.job as { customerName?: string }).customerName ||
+                        "Customer"}{" "}
+                      ·{" "}
+                      {(context.job as { jobType?: string }).jobType
+                        ? String((context.job as { jobType?: string }).jobType).replace(/_/g, " ")
+                        : "Repair"}{" "}
+                      ·{" "}
+                      {(context.job as { publicCode?: string }).publicCode
+                        ? `#${(context.job as { publicCode?: string }).publicCode}`
+                        : "Office view"}
+                    </p>
+                  </div>
+                )}
+
                 {workOrderTips.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-[#0CC0DF] uppercase tracking-wider mb-1.5 px-1 flex items-center gap-1">
+                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-1.5 px-1 flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       For this work order
                     </p>
@@ -1357,9 +1490,9 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                           key={tip.id}
                           type="button"
                           onClick={() => handleTipClick(tip)}
-                          className="w-full text-left rounded-xl px-3 py-2 bg-[#0CC0DF]/5 border border-[#0CC0DF]/10 hover:bg-[#0CC0DF]/10 transition-colors group"
+                          className="w-full text-left rounded-xl px-3 py-2 bg-primary/[0.06] border border-primary/15 hover:bg-primary/10 transition-colors group"
                         >
-                          <p className="text-[12px] font-medium text-[#0CC0DF] dark:text-[#0CC0DF] leading-snug">
+                          <p className="text-[12px] font-medium text-primary leading-snug">
                             {tip.question}
                           </p>
                         </button>
@@ -1390,34 +1523,36 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                 )}
 
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
-                    Browse by topic
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1 flex flex-wrap items-center gap-x-1.5 gap-y-0">
+                    <span>Browse by topic</span>
+                    {relevantCategories.length > 0 && (
+                      <span className="normal-case font-medium text-primary/80">· suggested first</span>
+                    )}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {(Object.entries(CATEGORY_CONFIG) as [FaqCategory, (typeof CATEGORY_CONFIG)[FaqCategory]][]).map(
-                      ([key, config]) => {
-                        const count = FAQ_ITEMS.filter((f) => f.category === key).length;
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => setSelectedCategory(key)}
-                            className={cn(
-                              "flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all hover:bg-gray-50 dark:hover:bg-accent active:scale-[0.98]",
-                              relevantCategories.includes(key)
-                                ? "border-[#0CC0DF]/20 bg-[#0CC0DF]/5"
-                                : "border-gray-100 dark:border-border",
-                            )}
-                          >
-                            <span className={config.color}>{config.icon}</span>
-                            <div>
-                              <span className="text-[11px] font-medium block leading-tight text-gray-700 dark:text-foreground">{config.label}</span>
-                              <span className="text-[9px] text-gray-400 dark:text-muted-foreground/60">{count} questions</span>
-                            </div>
-                          </button>
-                        );
-                      },
-                    )}
+                    {sortedCategoryEntries.map(([key, config]) => {
+                      const count = FAQ_ITEMS.filter((f) => f.category === key).length;
+                      const suggested = relevantCategories.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSelectedCategory(key)}
+                          className={cn(
+                            "flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all hover:bg-muted/50 active:scale-[0.98]",
+                            suggested
+                              ? "border-primary/25 bg-primary/[0.06]"
+                              : "border-border/80 opacity-[0.92] hover:opacity-100",
+                          )}
+                        >
+                          <span className={config.color}>{config.icon}</span>
+                          <div className="min-w-0">
+                            <span className="text-[11px] font-medium block leading-tight text-foreground truncate">{config.label}</span>
+                            <span className="text-[9px] text-muted-foreground/70">{count} questions</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1428,7 +1563,7 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                   <div key={msg.id}>
                     {msg.role === "user" ? (
                       <div className="flex justify-end">
-                        <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 bg-[#0CC0DF] text-white">
+                        <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 bg-primary text-primary-foreground">
                           <p className="text-[12px] leading-relaxed">{msg.content}</p>
                         </div>
                       </div>
@@ -1532,14 +1667,16 @@ export function SmartAssistant({ page, context }: SmartAssistantProps) {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask or do anything…"
-                  className="h-9 text-xs rounded-xl flex-1 border border-gray-200 dark:border-border px-3 bg-transparent focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]/30 disabled:opacity-50"
+                  className="h-9 text-xs rounded-xl flex-1 border border-border bg-muted/20 px-3 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/30 disabled:opacity-50"
                   disabled={isTyping}
                 />
                 <Button
                   type="submit"
                   size="icon"
-                  className="h-9 w-9 rounded-xl shrink-0 bg-[#0CC0DF] hover:bg-[#0ab0cc] border-0"
+                  variant="outline"
+                  className="h-9 w-9 rounded-xl shrink-0 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   disabled={!inputValue.trim() || isTyping}
+                  title="Send"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </Button>

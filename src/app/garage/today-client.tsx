@@ -7,7 +7,7 @@ import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
 import { garageLock } from "@/actions/garage-auth";
-import { toggleMyWorker, updateTaskStatus } from "@/actions/garage";
+import { toggleMyWorker, updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import {
   canStartGarageTimerOnRepair,
@@ -68,6 +68,12 @@ type RepairItem = {
     titleEs: string | null;
     titleNl: string | null;
     status: "pending" | "in_progress";
+  } | null;
+  nextPart: {
+    id: string;
+    name: string;
+    status: "requested" | "ordered" | "shipped";
+    expectedDelivery: Date | string | null;
   } | null;
 };
 
@@ -138,6 +144,8 @@ export function GarageTodayClient({
   const [isPausing, startPauseTransition] = useTransition();
   const [isTicking, startTickTransition] = useTransition();
   const [tickedTaskId, setTickedTaskId] = useState<string | null>(null);
+  const [isReceivingPart, startReceivePartTransition] = useTransition();
+  const [receivedPartId, setReceivedPartId] = useState<string | null>(null);
   const prevRepairIdsRef = useRef<Set<string> | null>(null);
 
   useGaragePoll();
@@ -452,6 +460,32 @@ export function GarageTodayClient({
                   pauseDisabled={isPausing}
                   tickDisabled={isTicking}
                   tickedTaskId={tickedTaskId}
+                  receivePartDisabled={isReceivingPart}
+                  receivedPartId={receivedPartId}
+                  onReceiveNextPart={(partRequestId) => {
+                    if (!repair.nextPart || repair.nextPart.id !== partRequestId) return;
+                    hapticSuccess();
+                    setReceivedPartId(partRequestId);
+                    startReceivePartTransition(async () => {
+                      try {
+                        await garageMarkPartReceived(partRequestId);
+                        toast.success(
+                          t("Part received", "Pieza recibida", "Onderdeel binnen"),
+                        );
+                      } catch {
+                        setReceivedPartId(null);
+                        toast.error(
+                          t(
+                            "Could not mark received",
+                            "No se pudo marcar como recibido",
+                            "Kon niet als binnen markeren",
+                          ),
+                        );
+                      }
+                      router.refresh();
+                      setTimeout(() => setReceivedPartId(null), 800);
+                    });
+                  }}
                   onTickNextTask={(taskId) => {
                     if (!repair.nextTask || repair.nextTask.id !== taskId) return;
                     hapticSuccess();
@@ -736,10 +770,13 @@ function JobCard({
   pauseDisabled,
   tickDisabled,
   tickedTaskId,
+  receivePartDisabled,
+  receivedPartId,
   onMainTap,
   onPauseUser,
   onQuickStart,
   onTickNextTask,
+  onReceiveNextPart,
 }: {
   repair: RepairItem;
   index: number;
@@ -750,10 +787,13 @@ function JobCard({
   pauseDisabled: boolean;
   tickDisabled: boolean;
   tickedTaskId: string | null;
+  receivePartDisabled: boolean;
+  receivedPartId: string | null;
   onMainTap: () => void;
   onPauseUser: (userId: string) => void;
   onQuickStart: (userId: string) => void;
   onTickNextTask: (taskId: string) => void;
+  onReceiveNextPart: (partRequestId: string) => void;
 }) {
   const hasTimer = activeTimers.length > 0;
   const showQuickStart = timerStartAllowed && quickUsers.length > 0;
@@ -761,12 +801,23 @@ function JobCard({
     repair.status === "in_progress" &&
     !!repair.nextTask &&
     repair.tasks.total > 0;
-  const hasFooter = activeTimers.length > 0 || showQuickStart || showNextTask;
+  const showNextPart =
+    repair.status === "waiting_parts" && !!repair.nextPart;
+  const hasFooter =
+    activeTimers.length > 0 || showQuickStart || showNextTask || showNextPart;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
   const hasUnreadMessage = !!(repair.garageAdminMessage && !repair.garageAdminMessageReadAt);
   const isThisTaskTicking = !!(repair.nextTask && tickedTaskId === repair.nextTask.id);
+  const isThisPartReceiving = !!(repair.nextPart && receivedPartId === repair.nextPart.id);
   const nextTaskTitle = repair.nextTask
     ? t(repair.nextTask.title, repair.nextTask.titleEs, repair.nextTask.titleNl)
+    : "";
+  const nextPartStatusLabel = repair.nextPart
+    ? repair.nextPart.status === "shipped"
+      ? t("Shipped — confirm arrival", "Enviado — confirmar llegada", "Onderweg — bevestig binnenkomst")
+      : repair.nextPart.status === "ordered"
+        ? t("Ordered — mark received", "Pedido — marcar recibido", "Besteld — markeer binnen")
+        : t("Requested — mark received", "Solicitado — marcar recibido", "Aangevraagd — markeer binnen")
     : "";
 
   return (
@@ -946,6 +997,48 @@ function JobCard({
                 }`}
               >
                 {nextTaskTitle}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showNextPart && repair.nextPart ? (
+        <div className="border-t border-white/[0.06] px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              disabled={receivePartDisabled}
+              onClick={() => onReceiveNextPart(repair.nextPart!.id)}
+              aria-label={t("Mark part received", "Marcar pieza recibida", "Markeer onderdeel binnen")}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 disabled:cursor-progress ${
+                isThisPartReceiving
+                  ? "border-emerald-400/60 bg-emerald-400/20 text-emerald-200"
+                  : "border-amber-400/30 bg-amber-400/[0.08] text-amber-200 hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-200"
+              }`}
+            >
+              {isThisPartReceiving ? (
+                <CheckCircle2 className="h-4.5 w-4.5 motion-safe:animate-pop-in" />
+              ) : (
+                <Package className="h-4 w-4" />
+              )}
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[10.5px] font-bold uppercase tracking-wider text-amber-200/70">
+                {nextPartStatusLabel}
+              </p>
+              <p
+                className={`truncate text-[13px] font-medium leading-tight ${
+                  isThisPartReceiving ? "text-emerald-200 line-through opacity-70" : "text-white/85"
+                }`}
+              >
+                {repair.nextPart.name}
+                {repair.parts.pending > 1 ? (
+                  <span className="ml-1.5 text-white/35">
+                    +{repair.parts.pending - 1}{" "}
+                    {t("more", "más", "meer")}
+                  </span>
+                ) : null}
               </p>
             </div>
           </div>

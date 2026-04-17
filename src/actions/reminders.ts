@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { actionReminders, repairJobs, customers } from "@/lib/db/schema";
+import { actionReminders, repairJobs, customers, repairMessages } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -89,30 +89,47 @@ export async function getActiveReminders() {
   return reminders;
 }
 
-/** Compact summary for the badge: separate overdue from total, no DB join. */
+/** Compact summary for the badge: separate overdue from total, no DB join.
+ *  Unread garage replies are counted as overdue (they always need a glance). */
 export async function getInboxBadgeSummary() {
   await requireAuth();
 
-  const rows = await db
-    .select({
-      id: actionReminders.id,
-      dueAt: actionReminders.dueAt,
-    })
-    .from(actionReminders)
-    .where(
-      and(
-        isNull(actionReminders.completedAt),
-        isNull(actionReminders.dismissedAt)
+  const [rows, garageRow] = await Promise.all([
+    db
+      .select({
+        id: actionReminders.id,
+        dueAt: actionReminders.dueAt,
+      })
+      .from(actionReminders)
+      .where(
+        and(
+          isNull(actionReminders.completedAt),
+          isNull(actionReminders.dismissedAt),
+        ),
       )
-    )
-    .limit(500);
+      .limit(500),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(repairMessages)
+      .where(
+        and(
+          eq(repairMessages.direction, "garage_to_admin"),
+          isNull(repairMessages.readAt),
+        ),
+      ),
+  ]);
 
   const now = Date.now();
   let overdue = 0;
   for (const r of rows) {
     if (r.dueAt && new Date(r.dueAt).getTime() < now) overdue++;
   }
-  return { total: rows.length, overdue };
+  const garageUnread = Number(garageRow[0]?.count ?? 0);
+  return {
+    total: rows.length + garageUnread,
+    overdue: overdue + garageUnread,
+    garageUnread,
+  };
 }
 
 export async function completeReminder(reminderId: string) {

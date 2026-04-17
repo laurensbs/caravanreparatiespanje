@@ -334,6 +334,69 @@ export async function getGarageRepairsToday() {
     ])
   );
 
+  // Pick the "next part to receive" per job for one-tap mark-received from
+  // the Today card. Prefer a shipped part (closest to arrival), fall back to
+  // ordered, then requested. Within a status, the earliest expected delivery
+  // wins; if no ETA exists, the oldest request wins.
+  const candidatePartRequests = await db
+    .select({
+      id: partRequests.id,
+      repairJobId: partRequests.repairJobId,
+      partName: partRequests.partName,
+      status: partRequests.status,
+      expectedDelivery: partRequests.expectedDelivery,
+      createdAt: partRequests.createdAt,
+    })
+    .from(partRequests)
+    .where(
+      and(
+        inArray(partRequests.repairJobId, jobIds),
+        sql`${partRequests.status} in ('requested', 'ordered', 'shipped')`,
+      ),
+    );
+
+  const STATUS_PRIORITY: Record<string, number> = { shipped: 0, ordered: 1, requested: 2 };
+  type NextPartInternal = {
+    id: string;
+    name: string;
+    status: "requested" | "ordered" | "shipped";
+    expectedDelivery: Date | null;
+    createdAt: number;
+  };
+  const nextPartMap = new Map<string, NextPartInternal>();
+  for (const pr of candidatePartRequests) {
+    if (!pr.repairJobId) continue;
+    const candidate: NextPartInternal = {
+      id: pr.id,
+      name: pr.partName,
+      status: pr.status as "requested" | "ordered" | "shipped",
+      expectedDelivery: pr.expectedDelivery ? new Date(pr.expectedDelivery) : null,
+      createdAt: pr.createdAt ? new Date(pr.createdAt).getTime() : Infinity,
+    };
+    const existing = nextPartMap.get(pr.repairJobId);
+    if (!existing) {
+      nextPartMap.set(pr.repairJobId, candidate);
+      continue;
+    }
+    const a = STATUS_PRIORITY[candidate.status] ?? 9;
+    const b = STATUS_PRIORITY[existing.status] ?? 9;
+    if (a < b) {
+      nextPartMap.set(pr.repairJobId, candidate);
+      continue;
+    }
+    if (a === b) {
+      const at = candidate.expectedDelivery?.getTime();
+      const bt = existing.expectedDelivery?.getTime();
+      if (at != null && bt != null) {
+        if (at < bt) nextPartMap.set(pr.repairJobId, candidate);
+      } else if (at != null && bt == null) {
+        nextPartMap.set(pr.repairJobId, candidate);
+      } else if (at == null && bt == null) {
+        if (candidate.createdAt < existing.createdAt) nextPartMap.set(pr.repairJobId, candidate);
+      }
+    }
+  }
+
   // Get workers per job
   const workers = await db
     .select({
@@ -363,14 +426,25 @@ export async function getGarageRepairsToday() {
 
   const timeMap = new Map(timeTotals.map((t) => [t.repairJobId, Number(t.totalMinutes)]));
 
-  return jobs.map((job) => ({
-    ...job,
-    tasks: countsMap.get(job.id) ?? { total: 0, done: 0, problem: 0 },
-    parts: partsMap.get(job.id) ?? { total: 0, received: 0, pending: 0 },
-    workers: workersMap.get(job.id) ?? [],
-    totalMinutes: timeMap.get(job.id) ?? 0,
-    nextTask: nextTaskMap.get(job.id) ?? null,
-  }));
+  return jobs.map((job) => {
+    const np = nextPartMap.get(job.id);
+    return {
+      ...job,
+      tasks: countsMap.get(job.id) ?? { total: 0, done: 0, problem: 0 },
+      parts: partsMap.get(job.id) ?? { total: 0, received: 0, pending: 0 },
+      workers: workersMap.get(job.id) ?? [],
+      totalMinutes: timeMap.get(job.id) ?? 0,
+      nextTask: nextTaskMap.get(job.id) ?? null,
+      nextPart: np
+        ? {
+            id: np.id,
+            name: np.name,
+            status: np.status,
+            expectedDelivery: np.expectedDelivery,
+          }
+        : null,
+    };
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -824,6 +898,78 @@ export async function garageRequestPart(
   await recordGarageUpdate(repairJobId, "part_requested", ctx.userId);
 
   return request;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MARK PART RECEIVED (garage-callable; mirrors admin updatePartRequestStatus)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function garageMarkPartReceived(partRequestId: string) {
+  const ctx = await requireAnyAuth();
+
+  const [pr] = await db
+    .update(partRequests)
+    .set({ status: "received", receivedDate: new Date(), updatedAt: new Date() })
+    .where(eq(partRequests.id, partRequestId))
+    .returning({
+      repairJobId: partRequests.repairJobId,
+      partName: partRequests.partName,
+    });
+
+  if (!pr || !pr.repairJobId) return { success: true };
+
+  // If all non-equipment parts are now received and the repair was in
+  // waiting_parts, flip back to todo so it shows up as actionable again.
+  const [pendingRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(partRequests)
+    .where(
+      and(
+        eq(partRequests.repairJobId, pr.repairJobId),
+        sql`${partRequests.status} in ('requested', 'ordered', 'shipped')`,
+      ),
+    );
+  if (Number(pendingRow?.count ?? 0) === 0) {
+    const [job] = await db
+      .select({ status: repairJobs.status })
+      .from(repairJobs)
+      .where(eq(repairJobs.id, pr.repairJobId));
+    if (job?.status === "waiting_parts") {
+      await db
+        .update(repairJobs)
+        .set({ status: "todo", updatedAt: new Date() })
+        .where(eq(repairJobs.id, pr.repairJobId));
+    }
+  }
+
+  // Audit + notify office so admins see the part has landed.
+  await db.insert(repairJobEvents).values({
+    repairJobId: pr.repairJobId,
+    userId: ctx.userId,
+    eventType: "part_received",
+    fieldChanged: "part_request_status",
+    newValue: "received",
+    comment: `Part received in garage: "${pr.partName}"`,
+  });
+
+  const [jobInfo] = await db
+    .select({ publicCode: repairJobs.publicCode })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, pr.repairJobId));
+  await notifyOffice(
+    pr.repairJobId,
+    `📦 Part received — ${jobInfo?.publicCode ?? ""}`,
+    `"${pr.partName}"`,
+    "garage_part_received",
+  );
+
+  await recordGarageUpdate(pr.repairJobId, "part_received", ctx.userId);
+
+  revalidatePath(`/garage/repairs/${pr.repairJobId}`);
+  revalidatePath(`/repairs/${pr.repairJobId}`);
+  revalidatePath("/parts");
+
+  return { success: true };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

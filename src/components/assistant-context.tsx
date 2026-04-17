@@ -7,6 +7,10 @@ import {
   completeReminder as completeReminderAction,
   dismissReminder as dismissReminderAction,
 } from "@/actions/reminders";
+import {
+  getUnreadGarageRepliesSummary,
+  markGarageRepliesRead,
+} from "@/actions/garage-sync";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -31,6 +35,7 @@ export type AssistantAction =
 export type AssistantTab = "inbox" | "assistant";
 
 export type InboxItem = Awaited<ReturnType<typeof getActiveReminders>>[number];
+export type GarageReplyItem = Awaited<ReturnType<typeof getUnreadGarageRepliesSummary>>[number];
 
 export interface AssistantContextValue {
   // Page & repair context
@@ -52,9 +57,11 @@ export interface AssistantContextValue {
   inboxLoading: boolean;
   inboxBadgeCount: number;   // overdue count, capped at 9 (UI shows 9+ above that)
   inboxTotalCount: number;
+  garageReplies: GarageReplyItem[];
   refreshInbox: () => Promise<void>;
   completeInboxItem: (id: string) => Promise<void>;
   dismissInboxItem: (id: string) => Promise<void>;
+  acknowledgeGarageReplies: (repairJobId: string) => Promise<void>;
 
   // Action dispatch — host pages register a handler
   dispatchAction: (action: AssistantAction) => void;
@@ -74,9 +81,11 @@ const AssistantContext = createContext<AssistantContextValue>({
   inboxLoading: false,
   inboxBadgeCount: 0,
   inboxTotalCount: 0,
+  garageReplies: [],
   refreshInbox: async () => {},
   completeInboxItem: async () => {},
   dismissInboxItem: async () => {},
+  acknowledgeGarageReplies: async () => {},
   dispatchAction: () => {},
   registerActionHandler: () => {},
 });
@@ -91,6 +100,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   const [inboxLoading, setInboxLoading] = useState(false);
   const [inboxBadgeCount, setInboxBadgeCount] = useState(0);
   const [inboxTotalCount, setInboxTotalCount] = useState(0);
+  const [garageReplies, setGarageReplies] = useState<GarageReplyItem[]>([]);
   const inFlight = useRef(false);
 
   const toggle = useCallback(() => setOpen((p) => !p), []);
@@ -115,11 +125,18 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     inFlight.current = true;
     setInboxLoading(true);
     try {
-      const data = await getActiveReminders();
-      setInboxItems(data);
-      const overdue = data.filter((r) => r.dueAt && new Date(r.dueAt).getTime() < Date.now()).length;
-      setInboxTotalCount(data.length);
-      setInboxBadgeCount(overdue);
+      const [reminders, replies] = await Promise.all([
+        getActiveReminders(),
+        getUnreadGarageRepliesSummary().catch(() => [] as GarageReplyItem[]),
+      ]);
+      setInboxItems(reminders);
+      setGarageReplies(replies);
+      const overdueReminders = reminders.filter(
+        (r) => r.dueAt && new Date(r.dueAt).getTime() < Date.now(),
+      ).length;
+      const garageUnread = replies.reduce((sum, r) => sum + (r.unreadCount ?? 0), 0);
+      setInboxTotalCount(reminders.length + garageUnread);
+      setInboxBadgeCount(overdueReminders + garageUnread);
     } catch {
       // silent
     } finally {
@@ -127,6 +144,18 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       inFlight.current = false;
     }
   }, []);
+
+  const acknowledgeGarageReplies = useCallback(
+    async (repairJobId: string) => {
+      setGarageReplies((prev) => prev.filter((r) => r.repairJobId !== repairJobId));
+      try {
+        await markGarageRepliesRead(repairJobId);
+      } finally {
+        void refreshBadge();
+      }
+    },
+    [refreshBadge],
+  );
 
   // Initial badge load + periodic refresh.
   useEffect(() => {
@@ -195,9 +224,11 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
         inboxLoading,
         inboxBadgeCount,
         inboxTotalCount,
+        garageReplies,
         refreshInbox,
         completeInboxItem,
         dismissInboxItem,
+        acknowledgeGarageReplies,
         dispatchAction,
         registerActionHandler,
       }}

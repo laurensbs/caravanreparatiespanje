@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   repairJobs,
   repairJobEvents,
+  repairMessages,
   partRequests,
   repairTasks,
   repairBlockers,
@@ -17,6 +18,7 @@ import {
   eq,
   and,
   desc,
+  asc,
   isNull,
   sql,
   count,
@@ -122,6 +124,15 @@ export async function sendMessageToGarage(repairJobId: string, message: string) 
     })
     .where(eq(repairJobs.id, repairJobId));
 
+  // Mirror into the conversation thread so the new bidirectional UI shows
+  // the same message the legacy composer produced.
+  await db.insert(repairMessages).values({
+    repairJobId,
+    direction: "admin_to_garage",
+    body: message,
+    userId: session.user.id,
+  });
+
   // Log the event for audit trail
   await db.insert(repairJobEvents).values({
     repairJobId,
@@ -163,6 +174,213 @@ export async function clearGarageMessage(repairJobId: string) {
     .where(eq(repairJobs.id, repairJobId));
 
   revalidatePath("/");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BIDIRECTIONAL THREAD (admin ↔ garage) — backed by repair_messages
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type RepairMessage = {
+  id: string;
+  direction: "admin_to_garage" | "garage_to_admin";
+  body: string;
+  authorName: string | null;
+  userName: string | null;
+  readAt: Date | null;
+  createdAt: Date;
+};
+
+/** Both sides — admin and garage portal — can read the thread. */
+export async function listRepairMessages(repairJobId: string): Promise<RepairMessage[]> {
+  await requireAnyAuth();
+
+  const rows = await db
+    .select({
+      id: repairMessages.id,
+      direction: repairMessages.direction,
+      body: repairMessages.body,
+      authorName: repairMessages.authorName,
+      userName: users.name,
+      readAt: repairMessages.readAt,
+      createdAt: repairMessages.createdAt,
+    })
+    .from(repairMessages)
+    .leftJoin(users, eq(repairMessages.userId, users.id))
+    .where(eq(repairMessages.repairJobId, repairJobId))
+    .orderBy(asc(repairMessages.createdAt))
+    .limit(200);
+
+  return rows.map((r) => ({
+    id: r.id,
+    direction: r.direction as "admin_to_garage" | "garage_to_admin",
+    body: r.body,
+    authorName: r.authorName,
+    userName: r.userName,
+    readAt: r.readAt ? new Date(r.readAt) : null,
+    createdAt: new Date(r.createdAt),
+  }));
+}
+
+/** Admin → garage. Also keeps the legacy banner field in sync so today-card
+ *  shows the latest single message. */
+export async function adminReplyToGarage(repairJobId: string, body: string) {
+  const session = await requireAuth();
+  const trimmed = body.trim();
+  if (!trimmed) return { success: false } as const;
+
+  await db.insert(repairMessages).values({
+    repairJobId,
+    direction: "admin_to_garage",
+    body: trimmed,
+    userId: session.user.id,
+  });
+
+  // Mirror to legacy banner for the today-card visibility
+  await db
+    .update(repairJobs)
+    .set({
+      garageAdminMessage: trimmed,
+      garageAdminMessageAt: new Date(),
+      garageAdminMessageReadAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: session.user.id,
+    eventType: "admin_message_sent",
+    comment: trimmed,
+  });
+
+  revalidatePath(`/garage/repairs/${repairJobId}`);
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { success: true } as const;
+}
+
+/** Garage → admin. The garage portal uses a shared session so we accept an
+ *  optional worker name typed by the technician. */
+export async function garageReplyToAdmin(
+  repairJobId: string,
+  body: string,
+  authorName?: string,
+) {
+  const ctx = await requireAnyAuth();
+  const trimmed = body.trim();
+  if (!trimmed) return { success: false } as const;
+
+  await db.insert(repairMessages).values({
+    repairJobId,
+    direction: "garage_to_admin",
+    body: trimmed,
+    userId: ctx.userId ?? null,
+    authorName: authorName?.trim() || ctx.userName || null,
+  });
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: ctx.userId ?? null,
+    eventType: "garage_message_sent",
+    comment: trimmed,
+  });
+
+  // Surface as admin attention so the inbox lights up.
+  await recordGarageUpdate(repairJobId, "garage_message", ctx.userId);
+
+  revalidatePath(`/garage/repairs/${repairJobId}`);
+  revalidatePath(`/repairs/${repairJobId}`);
+  return { success: true } as const;
+}
+
+/** Admin marks the unread garage replies on a repair as read. */
+export async function markGarageRepliesRead(repairJobId: string) {
+  await requireAuth();
+
+  await db
+    .update(repairMessages)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        eq(repairMessages.repairJobId, repairJobId),
+        eq(repairMessages.direction, "garage_to_admin"),
+        isNull(repairMessages.readAt),
+      ),
+    );
+
+  revalidatePath(`/repairs/${repairJobId}`);
+}
+
+/** Garage marks the unread admin messages in the thread as read.
+ *  (The legacy banner has its own marker — this one covers the new thread.) */
+export async function markAdminThreadMessagesRead(repairJobId: string) {
+  await requireAnyAuth();
+
+  await db
+    .update(repairMessages)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        eq(repairMessages.repairJobId, repairJobId),
+        eq(repairMessages.direction, "admin_to_garage"),
+        isNull(repairMessages.readAt),
+      ),
+    );
+}
+
+/** Compact summary across all repairs — used by the assistant inbox badge to
+ *  show how many garage replies still need an admin glance. */
+export async function getUnreadGarageRepliesSummary() {
+  await requireAuth();
+
+  const rows = await db
+    .select({
+      repairJobId: repairMessages.repairJobId,
+      lastBody: sql<string>`max(${repairMessages.body})`,
+      lastAt: sql<Date>`max(${repairMessages.createdAt})`,
+      unreadCount: sql<number>`count(*)::int`,
+    })
+    .from(repairMessages)
+    .where(
+      and(
+        eq(repairMessages.direction, "garage_to_admin"),
+        isNull(repairMessages.readAt),
+      ),
+    )
+    .groupBy(repairMessages.repairJobId)
+    .limit(50);
+
+  if (rows.length === 0) return [];
+
+  const jobIds = rows.map((r) => r.repairJobId);
+  const jobInfos = await db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      customerName: customers.name,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .where(inArray(repairJobs.id, jobIds));
+
+  const jobMap = new Map(jobInfos.map((j) => [j.id, j]));
+
+  return rows
+    .map((r) => {
+      const j = jobMap.get(r.repairJobId);
+      if (!j) return null;
+      return {
+        repairJobId: r.repairJobId,
+        publicCode: j.publicCode,
+        title: j.title,
+        customerName: j.customerName,
+        unreadCount: Number(r.unreadCount),
+        lastAt: r.lastAt ? new Date(r.lastAt) : null,
+        lastBody: r.lastBody,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => (b.lastAt?.getTime() ?? 0) - (a.lastAt?.getTime() ?? 0));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

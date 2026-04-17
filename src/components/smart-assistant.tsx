@@ -9,11 +9,11 @@ import {
   ExternalLink, Truck, ClipboardList, Search, Plus, AlertCircle,
   ArrowUpRight, BarChart3, Settings,
   Inbox, Bell, Clock, AlertTriangle, Check, FileText, Phone, Calendar,
-  DollarSign, MessageSquare, Pencil,
+  DollarSign, MessageSquare, MessageCircle, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useAssistantContext, type AssistantPage, type AssistantAction, type RepairContext, type InboxItem } from "@/components/assistant-context";
+import { useAssistantContext, type AssistantPage, type AssistantAction, type RepairContext, type InboxItem, type GarageReplyItem } from "@/components/assistant-context";
 import { useRouter } from "next/navigation";
 import { STATUS_LABELS, type RepairStatus } from "@/types";
 import { formatDistanceToNow } from "date-fns";
@@ -1190,6 +1190,8 @@ function InboxView({
   onSwitchToAssistant,
   onClose,
   router,
+  garageReplies,
+  onAcknowledgeGarageReply,
 }: {
   items: InboxItem[];
   loading: boolean;
@@ -1199,6 +1201,8 @@ function InboxView({
   onSwitchToAssistant: () => void;
   onClose: () => void;
   router: ReturnType<typeof useRouter>;
+  garageReplies: GarageReplyItem[];
+  onAcknowledgeGarageReply: (repairJobId: string) => Promise<void>;
 }) {
   const sorted = useMemo(() => {
     return [...items].sort((a, b) => {
@@ -1211,7 +1215,9 @@ function InboxView({
     });
   }, [items]);
 
-  if (loading && items.length === 0) {
+  const hasAnything = sorted.length > 0 || garageReplies.length > 0;
+
+  if (loading && !hasAnything) {
     return (
       <div className="flex items-center justify-center px-6 py-14">
         <div className="flex gap-1">
@@ -1223,7 +1229,7 @@ function InboxView({
     );
   }
 
-  if (sorted.length === 0) {
+  if (!hasAnything) {
     return (
       <div className="px-6 py-14 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
@@ -1246,7 +1252,80 @@ function InboxView({
   }
 
   return (
-    <ul className="py-1">
+    <>
+      {garageReplies.length > 0 ? (
+        <section className="border-b border-border/40">
+          <p className="px-4 pt-3 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+            Garage replies
+          </p>
+          <ul className="py-1">
+            {garageReplies.map((reply) => (
+              <li key={reply.repairJobId} className="border-b border-border/40 last:border-0">
+                <button
+                  type="button"
+                  className="group flex w-full touch-manipulation gap-3 px-4 py-3 text-left transition-colors hover:bg-emerald-500/[0.06]"
+                  onClick={() => {
+                    onClose();
+                    router.push(`/repairs/${reply.repairJobId}`);
+                  }}
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+                    <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                        Garage message
+                      </span>
+                      {reply.unreadCount > 1 ? (
+                        <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          {reply.unreadCount}
+                        </span>
+                      ) : null}
+                    </div>
+                    {reply.lastBody ? (
+                      <p className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
+                        {reply.lastBody}
+                      </p>
+                    ) : null}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      {reply.publicCode ? (
+                        <span className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400">
+                          {reply.publicCode}
+                          {reply.customerName ? ` · ${reply.customerName}` : ""}
+                        </span>
+                      ) : null}
+                      {reply.lastAt ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          {formatDistanceToNow(reply.lastAt, { addSuffix: true })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-start gap-0.5 pt-0.5 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void onAcknowledgeGarageReply(reply.repairJobId);
+                      }}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400"
+                      title="Mark read"
+                      aria-label="Mark garage reply read"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {sorted.length === 0 ? null : (
+      <ul className="py-1">
       {sorted.map((item) => {
         const config = inboxConfigFor(item);
         const label = inboxLabelFor(item);
@@ -1333,6 +1412,8 @@ function InboxView({
         );
       })}
     </ul>
+      )}
+    </>
   );
 }
 
@@ -1342,6 +1423,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
     tab, setTab,
     inboxItems, inboxLoading, inboxTotalCount,
     refreshInbox, completeInboxItem, dismissInboxItem,
+    garageReplies, acknowledgeGarageReplies,
   } = useAssistantContext();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
@@ -1721,6 +1803,8 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                 onSwitchToAssistant={() => setTab("assistant")}
                 onClose={() => setOpen(false)}
                 router={router}
+                garageReplies={garageReplies}
+                onAcknowledgeGarageReply={acknowledgeGarageReplies}
               />
             ) : selectedCategory ? (
               /* Category browse */

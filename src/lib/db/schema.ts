@@ -593,6 +593,47 @@ export const repairJobEvents = pgTable(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// REPAIR MESSAGES (Bidirectional admin ↔ garage thread)
+//
+// The legacy `repairJobs.garageAdminMessage` field still powers the single
+// "office message" banner on the Today card; this table backs the full
+// per-repair conversation that both sides can read and reply to.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const repairMessageDirectionEnum = pgEnum("repair_message_direction", [
+  "admin_to_garage",
+  "garage_to_admin",
+]);
+
+export const repairMessages = pgTable(
+  "repair_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    direction: repairMessageDirectionEnum("direction").notNull(),
+    body: text("body").notNull(),
+    // Author. For admin → garage we set userId. For garage → admin the
+    // garage portal does not have a per-user session, so we store a
+    // free-form workshop name (typed by the worker) in authorName.
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    authorName: varchar("author_name", { length: 120 }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("repair_messages_job_idx").on(table.repairJobId),
+    index("repair_messages_created_idx").on(table.createdAt),
+    index("repair_messages_unread_idx").on(table.repairJobId, table.direction, table.readAt),
+  ]
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // REPAIR JOB ASSIGNMENTS
 // ─────────────────────────────────────────────────────────────────────────────
 

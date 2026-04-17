@@ -14,6 +14,7 @@ import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { addGarageComment, suggestExtraTask, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
 import { markAdminMessageRead } from "@/actions/garage-sync";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
+import { GarageRepairThread } from "@/components/garage/repair-thread";
 import { stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
@@ -195,7 +196,7 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
 /* ─── Main ─── */
 
 export function GarageRepairDetailClient({ repair, currentUserId, currentUserName, partCategories, activeTimers, allUsers }: Props) {
-  const { t, setLang } = useLanguage();
+  const { t, setLang, lang } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("tasks");
   const [problemTaskId, setProblemTaskId] = useState<string | null>(null);
@@ -459,9 +460,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       <main className="flex-1 overflow-y-auto pb-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
 
-          {/* Admin message banner */}
+          {/* Admin message banner — keeps the latest single message glanceable */}
           {repair.garageAdminMessage && (
-            <div className="motion-safe:animate-slide-up mb-4 rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/[0.08] to-sky-400/[0.04] px-4 py-3.5 shadow-[0_0_0_1px_rgba(56,189,248,0.06)]">
+            <div className="motion-safe:animate-slide-up mb-3 rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/[0.08] to-sky-400/[0.04] px-4 py-3.5 shadow-[0_0_0_1px_rgba(56,189,248,0.06)]">
               <div className="mb-1 flex items-center gap-2">
                 <span className="relative flex h-5 w-5 items-center justify-center">
                   {!repair.garageAdminMessageReadAt ? (
@@ -486,6 +487,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               )}
             </div>
           )}
+
+          {/* Bidirectional admin ↔ garage thread */}
+          <GarageRepairThread repairJobId={repair.id} t={t} lang={lang} />
 
           {/* Active blockers banner */}
           {activeBlockers.length > 0 && (

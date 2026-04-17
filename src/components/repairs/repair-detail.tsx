@@ -59,6 +59,7 @@ import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
 import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-form";
 import { sendMessageToGarage, clearGarageMessage } from "@/actions/garage-sync";
+import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
 import type { RepairTask } from "@/types";
 
 /** Stored "next action" that still says to create an invoice while the panel already shows invoiced/paid — prefer auto suggestion. */
@@ -1641,13 +1642,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </>
               )}
 
-              {/* ── Send Direct Message to Garage ── */}
+              {/* ── Bidirectional thread (admin ↔ garage) ── */}
+              <AdminRepairThread repairJobId={job.id} onChange={() => router.refresh()} />
+
+              {/* ── Send Direct Message to Garage (legacy banner) ── */}
               <div className="rounded-xl bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold mb-2">
-                  Send Direct Message to Garage
+                  Pin a single banner message
                 </p>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
-                  Appears on the garage tablet for this job. The team can mark it read there; you can clear it below when it is handled.
+                  Appears at the top of the garage tablet for this job. Use this for short, must-see notes; the conversation above is the day-to-day thread.
                 </p>
                 {syncState?.garageAdminMessage && (
                   <div className="rounded-xl bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-gray-700 px-3 py-2.5 mb-3">

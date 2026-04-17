@@ -2,6 +2,7 @@ import { LanguageProvider } from "@/components/garage/language-toggle";
 import { Toaster } from "sonner";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageLoginForm } from "@/components/garage/login-form";
+import { GarageIdleLock } from "@/components/garage/idle-lock";
 
 export const metadata = {
   title: "Garage — Caravan Repairs",
@@ -31,6 +32,7 @@ export default async function GarageLayout({
   return (
     <LanguageProvider>
       <div className="flex min-h-screen flex-col bg-gray-950">
+        <GarageIdleLock />
         {children}
         <Toaster richColors position="top-center" toastOptions={{ className: "rounded-2xl" }} />
       </div>

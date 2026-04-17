@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLanguage } from "@/components/garage/language-toggle";
@@ -16,6 +16,7 @@ import { markAdminMessageRead } from "@/actions/garage-sync";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
+import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
 import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
@@ -163,6 +164,14 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
   }, [timer.startedAt]);
 
   const handleStop = async () => {
+    const confirmed = window.confirm(
+      t(
+        `Stop timer for ${timer.userName ?? "worker"}?`,
+        `¿Detener temporizador de ${timer.userName ?? "trabajador"}?`,
+        `Timer stoppen van ${timer.userName ?? "werker"}?`
+      )
+    );
+    if (!confirmed) return;
     hapticTap();
     await stopTimer(repairJobId, timer.userId);
     onStop();
@@ -202,6 +211,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const [showWorkerPicker, setShowWorkerPicker] = useState(false);
   const [workerPickerResolve, setWorkerPickerResolve] = useState<((ok: boolean) => void) | null>(null);
   const [lastPickedWorkerId, setLastPickedWorkerId] = useState<string | null>(null);
+  const selectableUsers = useMemo(() => getSelectableGarageUsers(allUsers), [allUsers]);
 
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
   const hasTasks = repair.tasks.length > 0;
@@ -209,6 +219,19 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
   const activeBlockers = repair.blockers.filter(b => b.active);
   const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
+  const activeWorker = selectableUsers.find((u) => u.id === (lastPickedWorkerId ?? repair.workers[0]?.userId));
+
+  async function ensureActiveWorkerSelected() {
+    if (activeWorker?.id) return true;
+    const ok = await new Promise<boolean>((resolve) => {
+      setWorkerPickerResolve(() => resolve);
+      setShowWorkerPicker(true);
+    });
+    if (!ok) {
+      toast.message(t("Select a worker first", "Selecciona primero un trabajador", "Kies eerst een werker"));
+    }
+    return ok;
+  }
 
   // Check if any worker is assigned before starting a task
   async function handleBeforeStart(): Promise<boolean> {
@@ -248,7 +271,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   function handleRefresh() { router.refresh(); }
 
-  function handleMarkDone() {
+  async function handleMarkDone() {
+    const ok = await ensureActiveWorkerSelected();
+    if (!ok) return;
     startTransition(async () => {
       await garageMarkDone(repair.id);
       toast.success(t("Sent for review", "Enviado para revisión", "Klaar gemeld voor controle"));
@@ -256,8 +281,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
     });
   }
 
-  function handleMarkNotDone() {
+  async function handleMarkNotDone() {
     if (!notDoneReason.trim()) return;
+    const ok = await ensureActiveWorkerSelected();
+    if (!ok) return;
     startTransition(async () => {
       await garageMarkNotDone(repair.id, notDoneReason);
       setNotDoneReason("");
@@ -267,8 +294,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
     });
   }
 
-  function handleAddComment() {
+  async function handleAddComment() {
     if (!commentText.trim()) return;
+    const ok = await ensureActiveWorkerSelected();
+    if (!ok) return;
     startTransition(async () => {
       await addGarageComment(repair.id, commentText);
       setCommentText("");
@@ -278,8 +307,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
     });
   }
 
-  function handleSuggest() {
+  async function handleSuggest() {
     if (!suggestTitle.trim()) return;
+    const ok = await ensureActiveWorkerSelected();
+    if (!ok) return;
     startTransition(async () => {
       await suggestExtraTask(repair.id, suggestTitle, suggestDesc || undefined);
       setSuggestTitle("");
@@ -440,9 +471,27 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           {/* ═══ TAB: TASKS ═══ */}
           {activeTab === "tasks" && (
             <div className="space-y-4">
+              {/* Active worker context for shared tablet */}
+              <div className="flex items-center justify-between rounded-xl bg-sky-400/[0.06] border border-sky-400/20 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wide text-sky-400/70 font-semibold">
+                    {t("Active worker", "Trabajador activo", "Actieve werker")}
+                  </p>
+                  <p className="text-sm text-sky-300 font-medium truncate">
+                    {activeWorker?.name ?? t("Not selected", "No seleccionado", "Niet geselecteerd")}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowWorkerPicker(true)}
+                  className="rounded-lg h-9 px-3 text-xs font-semibold text-sky-300 bg-sky-400/10 border border-sky-400/20 active:scale-[0.98]"
+                >
+                  {t("Switch", "Cambiar", "Wissel")}
+                </button>
+              </div>
+
               {/* Workers + Timer */}
               <div className="flex items-center gap-2 flex-wrap">
-                {allUsers.filter(u => u.name && u.role !== "admin").map((user) => {
+                {selectableUsers.map((user) => {
                   const isAssigned = repair.workers.some(w => w.userId === user.id);
                   return (
                     <button
@@ -636,10 +685,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 </div>
               )}
 
-              {isActive && <GaragePartsPicker repairJobId={repair.id} t={t} partCategories={partCategories} workerName={(() => {
-                const wid = lastPickedWorkerId ?? repair.workers[0]?.userId;
-                return allUsers.find(u => u.id === wid)?.name ?? undefined;
-              })()} />}
+              {isActive && (
+                <GaragePartsPicker
+                  repairJobId={repair.id}
+                  t={t}
+                  partCategories={partCategories}
+                  workerName={activeWorker?.name ?? undefined}
+                />
+              )}
             </div>
           )}
 
@@ -788,14 +841,24 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {isActive && (
               <>
                 <button
-                  onClick={() => { hapticTap(); setShowFinding(true); }}
+                  onClick={async () => {
+                    hapticTap();
+                    const ok = await ensureActiveWorkerSelected();
+                    if (!ok) return;
+                    setShowFinding(true);
+                  }}
                   className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
                 >
                   <Flag className="h-3.5 w-3.5" />
                   {t("Issue", "Problema", "Bevinding")}
                 </button>
                 <button
-                  onClick={() => { hapticTap(); setShowBlocker(true); }}
+                  onClick={async () => {
+                    hapticTap();
+                    const ok = await ensureActiveWorkerSelected();
+                    if (!ok) return;
+                    setShowBlocker(true);
+                  }}
                   className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
                 >
                   <OctagonX className="h-3.5 w-3.5" />
@@ -863,11 +926,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             <DialogTitle>{t("Who are you?", "¿Quién eres?", "Wie ben je?")}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {allUsers.filter(u => u.name && u.role !== "admin").map((user) => (
+            {selectableUsers.map((user) => (
               <button
                 key={user.id}
                 onClick={async () => {
-                  await toggleMyWorker(repair.id, user.id);
+                  const isAssigned = repair.workers.some((w) => w.userId === user.id);
+                  if (!isAssigned) {
+                    await toggleMyWorker(repair.id, user.id);
+                  }
                   setLastPickedWorkerId(user.id);
                   setShowWorkerPicker(false);
                   workerPickerResolve?.(true);

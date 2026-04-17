@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useTransition, useRef } from "react";
 import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
+import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
 import { garageLock } from "@/actions/garage-auth";
 import { toggleMyWorker } from "@/actions/garage";
@@ -24,6 +25,8 @@ import {
 import { toast } from "sonner";
 
 /* ─── Types ─── */
+const RECENT_WORKERS_KEY = "garage_recent_workers";
+const RECENT_WORKERS_LIMIT = 8;
 
 type RepairItem = {
   id: string;
@@ -96,6 +99,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   const [activeTab, setActiveTab] = useState<StatusCategory | "all">("all");
   const [search, setSearch] = useState("");
   const [workerPickerRepairId, setWorkerPickerRepairId] = useState<string | null>(null);
+  const [recentWorkerIds, setRecentWorkerIds] = useState<string[]>([]);
   const [isStarting, startStartTransition] = useTransition();
   const prevRepairIdsRef = useRef<Set<string> | null>(null);
 
@@ -117,6 +121,31 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
     const interval = setInterval(() => setTime(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(RECENT_WORKERS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setRecentWorkerIds(parsed.filter((v): v is string => typeof v === "string"));
+      }
+    } catch {
+      // Ignore malformed local storage and continue with defaults.
+    }
+  }, []);
+
+  function rememberWorker(workerId: string) {
+    setRecentWorkerIds((prev) => {
+      const next = [workerId, ...prev.filter((id) => id !== workerId)].slice(0, RECENT_WORKERS_LIMIT);
+      try {
+        window.localStorage.setItem(RECENT_WORKERS_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore local storage write issues.
+      }
+      return next;
+    });
+  }
 
   function handleRefresh() {
     hapticTap();
@@ -168,12 +197,17 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   ];
 
   const selectableUsers = useMemo(() => {
-    const excludedNames = new Set(["laurens", "jake", "johan"]);
-    return allUsers.filter((user) => {
-      const normalizedName = (user.name ?? "").trim().toLowerCase();
-      return normalizedName && !excludedNames.has(normalizedName);
+    const users = getSelectableGarageUsers(allUsers);
+    const order = new Map(recentWorkerIds.map((id, idx) => [id, idx]));
+    return [...users].sort((a, b) => {
+      const ai = order.get(a.id);
+      const bi = order.get(b.id);
+      if (ai != null && bi != null) return ai - bi;
+      if (ai != null) return -1;
+      if (bi != null) return 1;
+      return (a.name ?? "").localeCompare(b.name ?? "");
     });
-  }, [allUsers]);
+  }, [allUsers, recentWorkerIds]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-950 text-white">
@@ -262,7 +296,31 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                 repair={repair}
                 t={t}
                 activeTimers={activeTimers.filter((at) => at.repairJobId === repair.id)}
+                quickUsers={selectableUsers.slice(0, 3)}
                 onTap={() => { hapticTap(); setWorkerPickerRepairId(repair.id); }}
+                onQuickStart={(userId) => {
+                  hapticSuccess();
+                  startStartTransition(async () => {
+                    try {
+                      const user = selectableUsers.find((u) => u.id === userId);
+                      if (!user) return;
+                      const alreadyAssigned = repair.workers?.includes(user.name ?? "");
+                      if (!alreadyAssigned) {
+                        await toggleMyWorker(repair.id, user.id);
+                      }
+                      await startTimer(repair.id, user.id);
+                      rememberWorker(user.id);
+                      toast.success(
+                        `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${user.name}`
+                      );
+                    } catch {
+                      toast.message(
+                        t("Timer could not be started", "No se pudo iniciar el temporizador", "Timer kon niet gestart worden")
+                      );
+                    }
+                    router.refresh();
+                  });
+                }}
               />
             ))}
           </div>
@@ -296,6 +354,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                           await toggleMyWorker(repairId, user.id);
                         }
                         await startTimer(repairId, user.id);
+                        rememberWorker(user.id);
                         const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
                         toast.success(
                           `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${workerName}`
@@ -361,7 +420,21 @@ const STATUS_COLOR: Record<string, string> = {
   invoiced: "bg-emerald-400",
 };
 
-function JobCard({ repair, t, activeTimers, onTap }: { repair: RepairItem; t: (en: string, es?: string | null, nl?: string | null) => string; activeTimers: ActiveTimerItem[]; onTap: () => void }) {
+function JobCard({
+  repair,
+  t,
+  activeTimers,
+  quickUsers,
+  onTap,
+  onQuickStart,
+}: {
+  repair: RepairItem;
+  t: (en: string, es?: string | null, nl?: string | null) => string;
+  activeTimers: ActiveTimerItem[];
+  quickUsers: { id: string; name: string | null; role: string | null }[];
+  onTap: () => void;
+  onQuickStart: (userId: string) => void;
+}) {
   const hasTimer = activeTimers.length > 0;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
 
@@ -460,6 +533,27 @@ function JobCard({ repair, t, activeTimers, onTap }: { repair: RepairItem; t: (e
             </span>
           )}
         </div>
+
+        {quickUsers.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/[0.06]">
+            <span className="text-[10px] uppercase tracking-wide text-white/25 font-semibold">
+              {t("Start", "Iniciar", "Start")}
+            </span>
+            {quickUsers.map((user) => (
+              <button
+                key={user.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickStart(user.id);
+                }}
+                className="inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-semibold text-white/70 hover:bg-white/[0.12] active:scale-[0.97] transition-all"
+                title={`${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`}
+              >
+                {(user.name ?? "?").charAt(0).toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </button>
   );

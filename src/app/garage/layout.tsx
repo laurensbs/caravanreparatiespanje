@@ -27,7 +27,6 @@ export default async function GarageLayout({
         <GarageLoginForm />
         <Toaster
           theme="system"
-          richColors
           position="top-center"
           offset={{ top: "0.75rem" }}
           closeButton
@@ -47,7 +46,6 @@ export default async function GarageLayout({
         {children}
         <Toaster
           theme="system"
-          richColors
           position="top-center"
           offset={{ top: "0.75rem" }}
           closeButton

@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { HoldedHint } from "@/components/holded-hint";
 import { SmartSuggestions, getCustomerSuggestions } from "@/components/smart-suggestions";
 import { CompactProgressTracker } from "@/components/repair-progress";
-import { createUnit, updateUnit } from "@/actions/units";
+import { createUnit, updateUnit, deleteUnit } from "@/actions/units";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -37,6 +37,7 @@ interface CustomerDetailProps {
   allTags?: TagItem[];
   customerTags?: TagItem[];
   canSyncHoldedRepairLinks?: boolean;
+  canDeleteCustomerUnits?: boolean;
 }
 
 export function CustomerDetail({
@@ -46,10 +47,13 @@ export function CustomerDetail({
   allTags = [],
   customerTags = [],
   canSyncHoldedRepairLinks = false,
+  canDeleteCustomerUnits = false,
 }: CustomerDetailProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [holdedLinkSyncing, setHoldedLinkSyncing] = useState(false);
+  const [unitPendingDelete, setUnitPendingDelete] = useState<{ id: string; label: string } | null>(null);
+  const [unitDeleting, setUnitDeleting] = useState(false);
 
   const [name, setName] = useState(customer.name);
   const [phone, setPhone] = useState(customer.phone ?? "");
@@ -115,15 +119,18 @@ export function CustomerDetail({
       if (res.errors.length > 0) {
         toast.error(res.errors.join("; "));
       } else if (n === 0) {
-        toast.message("Geen nieuwe koppelingen — documenten staan mogelijk al op een werkorder of er is geen betrouwbare match.");
+        toast.info("No new links", {
+          description:
+            "Documents may already be on a work order, or no confident match was found.",
+        });
       } else {
         toast.success(
-          `${n} document${n === 1 ? "" : "en"} gekoppeld aan werkorders${seq > 0 ? ` (${seq} via datumvolgorde)` : ""}.`,
+          `Linked ${n} document${n === 1 ? "" : "s"} to work orders${seq > 0 ? ` (${seq} by date order)` : ""}.`,
         );
       }
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Koppelen mislukt");
+      toast.error(e instanceof Error ? e.message : "Could not link documents");
     } finally {
       setHoldedLinkSyncing(false);
     }
@@ -457,23 +464,40 @@ export function CustomerDetail({
                             <p className="font-mono text-[11px] text-gray-400">{unit.registration}</p>
                           )}
                         </Link>
-                        <button
-                          type="button"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-accent"
-                          title="Edit unit"
-                          onClick={() => {
-                            setEditingUnitId(unit.id);
-                            setAddingUnit(false);
-                            setUnitForm({
-                              registration: unit.registration ?? "",
-                              brand: unit.brand ?? "",
-                              model: unit.model ?? "",
-                              year: unit.year?.toString() ?? "",
-                            });
-                          }}
-                        >
-                          <Pencil className="h-3 w-3 text-gray-400" />
-                        </button>
+                        <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-accent"
+                            title="Edit unit"
+                            onClick={() => {
+                              setEditingUnitId(unit.id);
+                              setAddingUnit(false);
+                              setUnitForm({
+                                registration: unit.registration ?? "",
+                                brand: unit.brand ?? "",
+                                model: unit.model ?? "",
+                                year: unit.year?.toString() ?? "",
+                              });
+                            }}
+                          >
+                            <Pencil className="h-3 w-3 text-gray-400" />
+                          </button>
+                          {canDeleteCustomerUnits && (
+                            <button
+                              type="button"
+                              className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40"
+                              title="Remove unit"
+                              onClick={() =>
+                                setUnitPendingDelete({
+                                  id: unit.id,
+                                  label: [unit.brand, unit.model].filter(Boolean).join(" ") || unit.registration || "Unit",
+                                })
+                              }
+                            >
+                              <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )
                   ))}
@@ -498,14 +522,39 @@ export function CustomerDetail({
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {customer.repairJobs.map((job: any) => (
-                    <Link
+                    <div
                       key={job.id}
-                      href={`/repairs/${job.id}`}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-border px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-border px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                     >
-                      <div className="min-w-0 mr-2 flex-1">
+                      <Link href={`/repairs/${job.id}`} className="min-w-0 flex-1">
                         <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>
                         <p className="font-mono text-[11px] text-gray-400">{job.publicCode}</p>
+                      </Link>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {job.holdedQuoteId && (
+                          <a
+                            href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Quote PDF${job.holdedQuoteNum ? ` ${job.holdedQuoteNum}` : ""}`}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-[#0CC0DF] hover:bg-gray-100 dark:hover:bg-accent"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        {job.holdedInvoiceId && (
+                          <a
+                            href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Invoice PDF${job.holdedInvoiceNum ? ` ${job.holdedInvoiceNum}` : ""}`}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-[#0CC0DF] hover:bg-gray-100 dark:hover:bg-accent"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Receipt className="h-3.5 w-3.5" />
+                          </a>
+                        )}
                       </div>
                       <CompactProgressTracker
                         data={{
@@ -517,7 +566,7 @@ export function CustomerDetail({
                           holdedInvoiceNum: job.holdedInvoiceNum,
                         }}
                       />
-                    </Link>
+                    </div>
                   ))}
                 </div>
               )}
@@ -536,11 +585,11 @@ export function CustomerDetail({
                     ) : (
                       <Link2 className="h-3.5 w-3.5" />
                     )}
-                    Koppel Holded-facturen en -offertes aan werkorders
+                    Link Holded invoices & quotes to work orders
                   </Button>
                   <p className="text-[11px] text-gray-500 dark:text-muted-foreground mt-1.5 leading-snug">
-                    Gebruikt hetzelfde zoeken als de achtergrond-sync. Bij gelijk aantal open werkorders en facturen kan ook
-                    datumvolgorde helpen.
+                    Uses the same matching as background sync. When counts line up, remaining documents can pair by date
+                    order.
                   </p>
                 </div>
               )}
@@ -678,6 +727,51 @@ export function CustomerDetail({
           </div>
         </div>
       )}
+
+      <Dialog
+        open={!!unitPendingDelete}
+        onOpenChange={(open) => {
+          if (!open) setUnitPendingDelete(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove unit?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500 dark:text-muted-foreground">
+            Permanently delete <strong className="text-foreground">{unitPendingDelete?.label}</strong>? Repair jobs stay
+            on file but will no longer be linked to this caravan.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setUnitPendingDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1.5"
+              disabled={unitDeleting}
+              onClick={async () => {
+                if (!unitPendingDelete) return;
+                setUnitDeleting(true);
+                try {
+                  await deleteUnit(unitPendingDelete.id);
+                  toast.success("Unit removed");
+                  setUnitPendingDelete(null);
+                  router.refresh();
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Could not remove unit");
+                } finally {
+                  setUnitDeleting(false);
+                }
+              }}
+            >
+              {unitDeleting ? <Spinner className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Remove
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

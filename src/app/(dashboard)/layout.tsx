@@ -49,7 +49,6 @@ export default async function DashboardLayout({
               duration={4500}
               visibleToasts={4}
               gap={10}
-              richColors
               toastOptions={sonnerToastOptions}
             />
             <AssistantShell />

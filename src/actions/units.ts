@@ -163,3 +163,22 @@ export async function getAllUnits() {
     .from(units)
     .orderBy(asc(units.registration));
 }
+
+/** Permanently delete a unit. Repair jobs keep the work order but lose the caravan link (unit_id → null). */
+export async function deleteUnit(id: string) {
+  await requireRole("manager");
+
+  const [unit] = await db.select().from(units).where(eq(units.id, id)).limit(1);
+  if (!unit) throw new Error("Unit not found");
+
+  await db.delete(units).where(eq(units.id, id));
+
+  await createAuditLog("delete", "unit", id, { registration: unit.registration ?? undefined });
+  revalidatePath("/units");
+  revalidatePath("/customers");
+  revalidatePath("/repairs");
+  if (unit.customerId) {
+    revalidatePath(`/customers/${unit.customerId}`);
+  }
+  return { ok: true as const };
+}

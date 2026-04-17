@@ -24,6 +24,8 @@ export default async function CustomerDetailPage({ params }: Props) {
 
   const canSyncHoldedRepairLinks =
     !!session?.user?.role && hasMinRole(session.user.role, "manager");
+  const canDeleteCustomerUnits =
+    !!session?.user?.role && hasMinRole(session.user.role, "manager");
 
   return (
     <CustomerDetail
@@ -33,6 +35,7 @@ export default async function CustomerDetailPage({ params }: Props) {
       allTags={allTags}
       customerTags={customerTagsList}
       canSyncHoldedRepairLinks={canSyncHoldedRepairLinks}
+      canDeleteCustomerUnits={canDeleteCustomerUnits}
     />
   );
 }

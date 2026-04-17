@@ -43,7 +43,7 @@ const quickActions: QuickAction[] = [
   { label: "Units", href: "/units", icon: <Truck className="h-4 w-4" />, shortcut: "U" },
   { label: "Kanban Board", href: "/repairs/board", icon: <LayoutDashboard className="h-4 w-4" />, shortcut: "B" },
   { label: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> },
-  { label: "Audit Log", href: "/audit", icon: <Shield className="h-4 w-4" /> },
+  { label: "Audit Log", href: "/settings/audit", icon: <Shield className="h-4 w-4" /> },
 ];
 
 const TYPE_ICONS = {

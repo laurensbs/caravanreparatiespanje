@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, customers, repairJobEvents } from "@/lib/db/schema";
+import { repairJobs, customers, repairJobEvents, units } from "@/lib/db/schema";
 import { requireRole, requireAuth } from "@/lib/auth-utils";
 import { createAuditLog } from "./audit";
 import { eq } from "drizzle-orm";
@@ -26,6 +26,12 @@ import {
   type HoldedContact,
 } from "@/lib/holded/invoices";
 import { isHoldedConfigured } from "@/lib/holded/client";
+import { parseHoldedDocumentPaste } from "@/lib/holded/parse-document-paste";
+import {
+  buildHoldedDocumentSearchText,
+  normalizeForPlateSearch,
+  resolveUnitForHoldedManualLink,
+} from "@/lib/holded/resolve-unit-from-document";
 
 // ─── Invoice creation from repair ───
 
@@ -450,6 +456,84 @@ export async function getHoldedStatus() {
 
 const LINK_INVOICE_PAYMENT_TOLERANCE_EUR = 0.05;
 
+/** Overwrite panel customer fields from Holded contact when linking a document (Holded as source of truth for address etc.). */
+async function mergeCustomerFieldsFromHoldedContact(
+  customerId: string,
+  holdedContactId: string,
+): Promise<void> {
+  const hc = await getContact(holdedContactId);
+  const bill = hc.billAddress;
+  const updates: Record<string, unknown> = {
+    holdedContactId,
+    holdedSyncedAt: new Date(),
+    updatedAt: new Date(),
+  };
+  if (hc.name?.trim()) updates.name = hc.name.trim();
+  if (hc.email?.trim()) updates.email = hc.email.trim();
+  if (hc.phone?.trim()) updates.phone = hc.phone.trim();
+  if (hc.mobile?.trim()) updates.mobile = hc.mobile.trim();
+  if (hc.vatnumber?.trim()) updates.vatnumber = hc.vatnumber.trim();
+  if (bill?.address?.trim()) updates.address = bill.address.trim();
+  if (bill?.city?.trim()) updates.city = bill.city.trim();
+  if (bill?.postalCode?.trim()) updates.postalCode = bill.postalCode.trim();
+  if (bill?.province?.trim()) updates.province = bill.province.trim();
+  if (bill?.country?.trim()) updates.country = bill.country.trim();
+
+  await db.update(customers).set(updates).where(eq(customers.id, customerId));
+}
+
+/** Copy Holded contact custom fields onto a specific unit when Kenteken matches (multi-unit safe). */
+async function mergeUnitFieldsFromHoldedContact(
+  unitId: string,
+  holdedContactId: string,
+  options: { customerUnitCount: number },
+): Promise<boolean> {
+  const [unit] = await db.select().from(units).where(eq(units.id, unitId)).limit(1);
+  if (!unit) return false;
+
+  const hc = await getContact(holdedContactId);
+  const cf = hc.customFields;
+  if (!cf?.length) return false;
+
+  const getVal = (field: string) => cf.find((f) => f.field === field)?.value?.trim() ?? "";
+
+  const kentekenCf = getVal("Kenteken");
+  const kNorm = kentekenCf ? normalizeForPlateSearch(kentekenCf) : "";
+  const uNorm = unit.registration ? normalizeForPlateSearch(unit.registration) : "";
+
+  if (options.customerUnitCount > 1) {
+    if (!kentekenCf || !uNorm || kNorm !== uNorm) return false;
+  } else if (kentekenCf && uNorm && kNorm !== uNorm) {
+    return false;
+  }
+
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  const merk = getVal("Merk Caravan");
+  const type = getVal("Type Caravan");
+  const lengte = getVal("Lengte Caravan");
+  const stalling = getVal("Stalling");
+  const stallingType = getVal("Stalling Type");
+  const nfc = getVal("NFC Tag");
+  const checklist = getVal("Checklist");
+  const positie = getVal("Huidige Positie");
+
+  if (merk) updates.brand = merk;
+  if (type) updates.model = type;
+  if (lengte) updates.length = lengte;
+  if (stalling) updates.storageLocation = stalling;
+  if (stallingType) updates.storageType = stallingType;
+  if (nfc) updates.nfcTag = nfc;
+  if (checklist) updates.checklist = checklist;
+  if (positie) updates.currentPosition = positie;
+  if (kentekenCf && !unit.registration?.trim()) updates.registration = kentekenCf.trim();
+
+  const changedKeys = Object.keys(updates).filter((k) => k !== "updatedAt");
+  if (changedKeys.length === 0) return false;
+
+  await db.update(units).set(updates).where(eq(units.id, unitId));
+  return true;
+}
+
 function mapLinkedInvoiceStatusFromHolded(inv: HoldedInvoice): "draft" | "sent" | "paid" {
   if (inv.status === 1) return "paid";
   if (inv.status === 2) {
@@ -474,13 +558,19 @@ export async function linkHoldedDocumentToRepair(
   repairJobId: string,
   kind: "quote" | "invoice",
   rawDocumentId: string,
-): Promise<{ ok: true } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; customerSynced?: boolean; unitSynced?: boolean; unitIdChanged?: boolean }
+  | { ok: false; message: string }
+> {
   try {
     const session = await requireRole("manager");
     if (!isHoldedConfigured()) return { ok: false, message: "Holded not configured" };
 
-    const documentId = rawDocumentId.trim();
-    if (!documentId) return { ok: false, message: "Enter a Holded document ID" };
+    const parsed = parseHoldedDocumentPaste(rawDocumentId);
+    const documentId = parsed.documentId;
+    if (!documentId) return { ok: false, message: "Paste a Holded link or document ID" };
+
+    const effectiveKind: "quote" | "invoice" = parsed.detectedKind ?? kind;
 
     const [job] = await db.select().from(repairJobs).where(eq(repairJobs.id, repairJobId)).limit(1);
     if (!job) return { ok: false, message: "Repair not found" };
@@ -491,29 +581,66 @@ export async function linkHoldedDocumentToRepair(
       customer = c ?? null;
     }
 
-    if (kind === "quote") {
-      if (job.holdedQuoteId) {
-        return { ok: false, message: "This repair already has a linked quote. Remove or unlink it first." };
-      }
-      const q = await getQuote(documentId);
-      if (customer?.holdedContactId && q.contact !== customer.holdedContactId) {
-        return {
-          ok: false,
-          message: "That estimate belongs to a different Holded contact than the customer on this work order.",
-        };
-      }
-      if (customer && !customer.holdedContactId && job.customerId) {
-        await db
-          .update(customers)
-          .set({ holdedContactId: q.contact, updatedAt: new Date() })
-          .where(eq(customers.id, job.customerId));
-      }
+    if (effectiveKind === "quote" && job.holdedQuoteId) {
+      return { ok: false, message: "This repair already has a linked quote. Remove or unlink it first." };
+    }
+    if (effectiveKind === "invoice" && job.holdedInvoiceId) {
+      return { ok: false, message: "This repair already has a linked invoice." };
+    }
+
+    const doc = effectiveKind === "quote" ? await getQuote(documentId) : await getInvoice(documentId);
+
+    if (customer?.holdedContactId && doc.contact !== customer.holdedContactId) {
+      return {
+        ok: false,
+        message:
+          effectiveKind === "quote"
+            ? "That quote belongs to a different Holded contact than the customer on this work order."
+            : "That invoice belongs to a different Holded contact than the customer on this work order.",
+      };
+    }
+    if (customer && !customer.holdedContactId && job.customerId) {
+      await db
+        .update(customers)
+        .set({ holdedContactId: doc.contact, updatedAt: new Date() })
+        .where(eq(customers.id, job.customerId));
+    }
+
+    const docText = buildHoldedDocumentSearchText(doc);
+    const customerUnits = job.customerId
+      ? await db
+          .select({
+            id: units.id,
+            registration: units.registration,
+            internalNumber: units.internalNumber,
+          })
+          .from(units)
+          .where(eq(units.customerId, job.customerId))
+      : [];
+
+    const unitRes = resolveUnitForHoldedManualLink({
+      jobUnitId: job.unitId,
+      units: customerUnits,
+      documentText: docText,
+    });
+    if (!unitRes.ok) return { ok: false, message: unitRes.message };
+
+    const unitPatch: { unitId?: string } = {};
+    if ("updateUnitId" in unitRes) unitPatch.unitId = unitRes.updateUnitId;
+    const finalUnitId = "updateUnitId" in unitRes ? unitRes.updateUnitId : job.unitId;
+
+    let customerSynced = false;
+    let unitSynced = false;
+
+    if (effectiveKind === "quote") {
+      const q = doc;
       await db
         .update(repairJobs)
         .set({
           holdedQuoteId: q.id,
           holdedQuoteNum: q.docNumber || q.id,
           holdedQuoteDate: q.date ? new Date(q.date * 1000) : new Date(),
+          ...unitPatch,
           updatedAt: new Date(),
         })
         .where(eq(repairJobs.id, repairJobId));
@@ -525,25 +652,58 @@ export async function linkHoldedDocumentToRepair(
         fieldChanged: "holdedQuoteId",
         oldValue: "",
         newValue: q.docNumber ?? q.id,
-        comment: `Manually linked Holded estimate ${q.docNumber ?? q.id}`,
+        comment: `Manually linked Holded quote ${q.docNumber ?? q.id}`,
       });
+
+      if ("updateUnitId" in unitRes && unitRes.updateUnitId !== job.unitId) {
+        await db.insert(repairJobEvents).values({
+          repairJobId,
+          userId: session.user.id,
+          eventType: "unit_resolved_from_holded_doc",
+          fieldChanged: "unitId",
+          oldValue: job.unitId ?? "",
+          newValue: unitRes.updateUnitId,
+          comment: "Caravan matched from license plate text in the linked Holded document",
+        });
+      }
+
+      if (job.customerId) {
+        try {
+          await mergeCustomerFieldsFromHoldedContact(job.customerId, q.contact);
+          customerSynced = true;
+          await db.insert(repairJobEvents).values({
+            repairJobId,
+            userId: session.user.id,
+            eventType: "holded_customer_synced",
+            fieldChanged: "customer",
+            oldValue: "",
+            newValue: q.contact,
+            comment: "Customer fields refreshed from Holded contact after linking quote",
+          });
+        } catch {
+          /* non-fatal */
+        }
+      }
+      if (finalUnitId) {
+        try {
+          if (await mergeUnitFieldsFromHoldedContact(finalUnitId, q.contact, { customerUnitCount: customerUnits.length })) {
+            unitSynced = true;
+            await db.insert(repairJobEvents).values({
+              repairJobId,
+              userId: session.user.id,
+              eventType: "holded_unit_synced",
+              fieldChanged: "unit",
+              oldValue: "",
+              newValue: finalUnitId,
+              comment: "Unit fields refreshed from Holded contact custom fields after linking quote",
+            });
+          }
+        } catch {
+          /* non-fatal */
+        }
+      }
     } else {
-      if (job.holdedInvoiceId) {
-        return { ok: false, message: "This repair already has a linked invoice." };
-      }
-      const inv = await getInvoice(documentId);
-      if (customer?.holdedContactId && inv.contact !== customer.holdedContactId) {
-        return {
-          ok: false,
-          message: "That invoice belongs to a different Holded contact than the customer on this work order.",
-        };
-      }
-      if (customer && !customer.holdedContactId && job.customerId) {
-        await db
-          .update(customers)
-          .set({ holdedContactId: inv.contact, updatedAt: new Date() })
-          .where(eq(customers.id, job.customerId));
-      }
+      const inv = doc;
       const invoiceStatus = mapLinkedInvoiceStatusFromHolded(inv);
       await db
         .update(repairJobs)
@@ -552,6 +712,7 @@ export async function linkHoldedDocumentToRepair(
           holdedInvoiceNum: inv.docNumber || inv.id,
           holdedInvoiceDate: inv.date ? new Date(inv.date * 1000) : new Date(),
           invoiceStatus,
+          ...unitPatch,
           updatedAt: new Date(),
         })
         .where(eq(repairJobs.id, repairJobId));
@@ -565,11 +726,67 @@ export async function linkHoldedDocumentToRepair(
         newValue: inv.docNumber ?? inv.id,
         comment: `Manually linked Holded invoice ${inv.docNumber ?? inv.id} (${invoiceStatus})`,
       });
+
+      if ("updateUnitId" in unitRes && unitRes.updateUnitId !== job.unitId) {
+        await db.insert(repairJobEvents).values({
+          repairJobId,
+          userId: session.user.id,
+          eventType: "unit_resolved_from_holded_doc",
+          fieldChanged: "unitId",
+          oldValue: job.unitId ?? "",
+          newValue: unitRes.updateUnitId,
+          comment: "Caravan matched from license plate text in the linked Holded document",
+        });
+      }
+
+      if (job.customerId) {
+        try {
+          await mergeCustomerFieldsFromHoldedContact(job.customerId, inv.contact);
+          customerSynced = true;
+          await db.insert(repairJobEvents).values({
+            repairJobId,
+            userId: session.user.id,
+            eventType: "holded_customer_synced",
+            fieldChanged: "customer",
+            oldValue: "",
+            newValue: inv.contact,
+            comment: "Customer fields refreshed from Holded contact after linking invoice",
+          });
+        } catch {
+          /* non-fatal */
+        }
+      }
+      if (finalUnitId) {
+        try {
+          if (
+            await mergeUnitFieldsFromHoldedContact(finalUnitId, inv.contact, {
+              customerUnitCount: customerUnits.length,
+            })
+          ) {
+            unitSynced = true;
+            await db.insert(repairJobEvents).values({
+              repairJobId,
+              userId: session.user.id,
+              eventType: "holded_unit_synced",
+              fieldChanged: "unit",
+              oldValue: "",
+              newValue: finalUnitId,
+              comment: "Unit fields refreshed from Holded contact custom fields after linking invoice",
+            });
+          }
+        } catch {
+          /* non-fatal */
+        }
+      }
     }
 
     revalidatePath(`/repairs/${repairJobId}`);
     revalidatePath("/repairs");
-    return { ok: true };
+    revalidatePath("/customers");
+    if (finalUnitId) revalidatePath(`/units/${finalUnitId}`);
+    const unitIdChanged =
+      "updateUnitId" in unitRes ? unitRes.updateUnitId !== job.unitId : false;
+    return { ok: true, customerSynced, unitSynced, unitIdChanged };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Could not link document";
     return { ok: false, message };

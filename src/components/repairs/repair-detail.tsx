@@ -35,7 +35,6 @@ import {
   verifyHoldedDocuments,
   deleteHoldedQuote,
   deleteHoldedInvoice,
-  linkHoldedDocumentToRepair,
 } from "@/actions/holded";
 import { deleteRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
@@ -58,8 +57,26 @@ import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/act
 import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
+import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-form";
 import { sendMessageToGarage, clearGarageMessage } from "@/actions/garage-sync";
 import type { RepairTask } from "@/types";
+
+/** Stored "next action" that still says to create an invoice while the panel already shows invoiced/paid — prefer auto suggestion. */
+function manualNextActionIsStaleInvoiceCreate(
+  manual: string,
+  status: string,
+  invoiceStatus: string,
+  holdedInvoiceId: string | null | undefined,
+): boolean {
+  const t = manual.trim();
+  if (!t) return false;
+  const m = t.toLowerCase();
+  if (!/(create|make).{0,40}invoice|send.{0,20}invoice/.test(m)) return false;
+  if (holdedInvoiceId) return true;
+  if (["sent", "paid", "our_costs"].includes(invoiceStatus)) return true;
+  if (status === "invoiced") return true;
+  return false;
+}
 
 interface PartItem {
   id: string;
@@ -296,8 +313,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [discountPercent, setDiscountPercent] = useState(parseFloat(job.discountPercent ?? "0"));
   const [nextAction, setNextAction] = useState(job.nextAction ?? "");
   const [currentBlocker, setCurrentBlocker] = useState(job.currentBlocker ?? "");
-
-  // Garage messaging
   const [garageMessage, setGarageMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
 
@@ -338,8 +353,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const costLinesTotal = costLinesSubtotal - discountAmount;
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
 
+  const panelInvoiceStage = ["sent", "paid", "our_costs"].includes(invoiceStatus);
+
   // Auto-compute next action from status when no manual override
   const computedNextAction = (() => {
+    if (status === "completed") {
+      if (job.holdedInvoiceId) {
+        return invoiceStatus === "paid" ? "Payment confirmed" : "Confirm payment";
+      }
+      if (panelInvoiceStage) return "Link Holded invoice";
+      return "Create invoice";
+    }
     const map: Record<string, string> = {
       new: "Inspect and assess damage",
       todo: "Inspect and assess damage",
@@ -353,7 +377,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       in_progress: "Complete repair",
       blocked: "Resolve blocker",
       ready_for_check: "Review and approve completion",
-      completed: job.holdedInvoiceId ? "Confirm payment" : "Create invoice",
       invoiced: "Confirm payment",
       rejected: "Archive job",
     };
@@ -367,6 +390,25 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     const pendingPartReqs = partRequests.filter(p => !["received", "cancelled"].includes(p.status)).length;
 
     type ActionCtx = { icon: "search" | "clipboard" | "wrench" | "clock" | "package" | "check" | "receipt" | "flag"; subtext: string; cta?: string };
+    const completedCtx: ActionCtx = (() => {
+      if (job.holdedInvoiceId) {
+        return {
+          icon: "receipt",
+          subtext:
+            invoiceStatus === "paid"
+              ? "Holded invoice is linked and payment is recorded."
+              : "Invoice sent — confirm when paid",
+        };
+      }
+      if (panelInvoiceStage) {
+        return {
+          icon: "receipt",
+          subtext:
+            "Invoice status is set in the panel but no Holded document is linked. Open Financial → Link existing Holded document, or wait for the next sync.",
+        };
+      }
+      return { icon: "receipt", subtext: "Create and send the invoice" };
+    })();
     const ctx: Partial<Record<string, ActionCtx>> = {
       new: { icon: "search", subtext: "Review the work order and start inspection" },
       todo: { icon: "search", subtext: "Review the work order and start inspection" },
@@ -380,7 +422,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       in_progress: { icon: "wrench", subtext: totalTasks > 0 ? `${doneTasks} of ${totalTasks} tasks completed` : "Work in progress" },
       blocked: { icon: "flag", subtext: job.statusReason || "Resolve the blocker to continue" },
       ready_for_check: { icon: "check", subtext: "Workshop marked this as done", cta: "Review" },
-      completed: { icon: "receipt", subtext: job.holdedInvoiceId ? "Invoice sent — confirm when paid" : "Create and send the invoice" },
+      completed: completedCtx,
       invoiced: { icon: "receipt", subtext: "Waiting for payment confirmation" },
       rejected: { icon: "flag", subtext: "This job was rejected" },
     };
@@ -398,7 +440,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     return "";
   })();
 
-  const displayNextAction = nextAction || computedNextAction;
+  const displayNextAction = manualNextActionIsStaleInvoiceCreate(
+    nextAction,
+    status,
+    invoiceStatus,
+    job.holdedInvoiceId,
+  )
+    ? computedNextAction
+    : nextAction || computedNextAction;
+
+  const showingManualNext =
+    Boolean(nextAction.trim()) &&
+    !manualNextActionIsStaleInvoiceCreate(nextAction, status, invoiceStatus, job.holdedInvoiceId);
 
   /** Auto “blocker” hint that only repeats the next-action subtext (e.g. waiting on customer) */
   const autoBlockerRedundant =
@@ -413,6 +466,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     currentBlocker || (computedBlocker && !autoBlockerRedundant ? computedBlocker : null);
 
   const showStatusFocusCard = Boolean(displayNextAction) || Boolean(secondaryNotice);
+
+  useEffect(() => {
+    setInvoiceStatus(job.invoiceStatus);
+  }, [job.id, job.invoiceStatus]);
+
+  useEffect(() => {
+    setNextAction(job.nextAction ?? "");
+  }, [job.id, job.nextAction]);
 
   // Financial stage for summary bar
   // Keep local estimateLines in sync with prop
@@ -541,6 +602,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const communicationRef = useRef<HTMLDivElement>(null);
   const costRef = useRef<HTMLDivElement>(null);
 
+  function openFinancialForHoldedLink() {
+    const d = document.getElementById("repair-financial");
+    if (d instanceof HTMLDetailsElement) d.open = true;
+    costRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function handleSave() {
     setSaving(true);
     try {
@@ -566,7 +633,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
         partsRequiredFlag,
         followUpRequiredFlag,
         customFlags,
-        nextAction: nextAction || null,
+        nextAction:
+          (manualNextActionIsStaleInvoiceCreate(nextAction, status, invoiceStatus, job.holdedInvoiceId)
+            ? null
+            : nextAction) || null,
         currentBlocker: currentBlocker || null,
       });
       if (!res.ok) {
@@ -574,6 +644,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           res.zodIssues?.slice(0, 4).map((i) => `${i.path}: ${i.message}`).join(" · ") ?? "";
         toast.error(res.message, hint ? { description: hint } : undefined);
         return;
+      }
+      if (manualNextActionIsStaleInvoiceCreate(nextAction, status, invoiceStatus, job.holdedInvoiceId)) {
+        setNextAction("");
       }
       router.refresh();
       toast.success("Changes saved");
@@ -585,9 +658,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     }
   }
 
-  // Financial stage for badge display
+  // Financial stage for badge display (use local invoiceStatus so it matches pills + next action)
   const financialStage = (() => {
-    if (job.invoiceStatus === "paid") return { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" };
+    if (invoiceStatus === "paid") return { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" };
     if (job.holdedInvoiceId) return { label: "Invoiced", color: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800" };
     if (job.holdedQuoteId) return { label: "Quoted", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800" };
     return null;
@@ -1002,7 +1075,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold mb-0.5">
                       Next action
                     </p>
-                    {nextAction ? (
+                    {showingManualNext ? (
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{nextAction}</p>
                         <button
@@ -1017,15 +1090,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       <button
                         type="button"
                         onClick={() => {
-                          const val = prompt("Next action:", computedNextAction);
+                          const val = prompt("Next action:", displayNextAction);
                           if (val !== null) setNextAction(val);
                         }}
                         className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate block text-left"
                       >
-                        {computedNextAction}
+                        {displayNextAction}
                       </button>
                     )}
-                    {!nextAction && nextActionContext.subtext && (
+                    {!showingManualNext && nextActionContext.subtext && (
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">{nextActionContext.subtext}</p>
                     )}
                   </div>
@@ -1617,7 +1690,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
           {/* ━━━ FINANCIAL ━━━ */}
           <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden" ref={costRef}>
-            <details>
+            <details id="repair-financial">
               <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
                 Financial
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
@@ -1885,9 +1958,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 />
               </div>
           </div>
-          {(job.holdedQuoteId || job.holdedInvoiceId) && (
-            <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-3">
-              <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Documents</h3>
+          <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-3">
+            <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Documents</h3>
+            {(job.holdedQuoteId || job.holdedInvoiceId) ? (
               <div className="space-y-2.5">
                 {job.holdedQuoteId && (
                   <div className="flex items-center justify-between">
@@ -1928,7 +2001,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         Invoice
                         {job.holdedInvoiceNum && <span className="text-gray-500 dark:text-gray-400 ml-1">#{job.holdedInvoiceNum}</span>}
                       </span>
-                      {job.invoiceStatus === "paid" && (
+                      {invoiceStatus === "paid" && (
                         <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">Paid</span>
                       )}
                     </div>
@@ -1953,8 +2026,36 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20 px-3.5 py-3 space-y-2">
+                <p className="text-sm text-amber-950 dark:text-amber-100/90">
+                  No Holded quote or invoice is linked to this repair, so there are no PDF or Holded links here yet.
+                </p>
+                <p className="text-xs text-amber-900/80 dark:text-amber-200/70 leading-relaxed">
+                  If the document already exists in Holded, link it below (managers) or under Financial for the full workflow. The quote sync job runs about every 15 minutes when the customer and description match.
+                </p>
+                {canLinkHoldedDocuments ? (
+                  <button
+                    type="button"
+                    onClick={openFinancialForHoldedLink}
+                    className="text-xs font-semibold text-amber-900 dark:text-amber-200 hover:underline"
+                  >
+                    Open Financial section (estimate, send, verify)
+                  </button>
+                ) : (
+                  <p className="text-xs text-amber-900/70 dark:text-amber-300/60">Ask a manager to link the Holded document.</p>
+                )}
+              </div>
+            )}
+            {canLinkHoldedDocuments && (!job.holdedQuoteId || !job.holdedInvoiceId) && (
+              <HoldedManualLinkForm
+                repairJobId={job.id}
+                allowQuote={!job.holdedQuoteId}
+                allowInvoice={!job.holdedInvoiceId}
+                variant="compact"
+              />
+            )}
+          </div>
 
           {/* Source & Import */}
           {(job.sourceSheet || job.sourceCategory || job.spreadsheetInternalId) && (
@@ -2697,8 +2798,6 @@ function FinancialWorkflow({
   canLinkHoldedDocuments?: boolean;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
-  const [linkKind, setLinkKind] = useState<"quote" | "invoice">("invoice");
-  const [linkDocId, setLinkDocId] = useState("");
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState(false);
   const [dismissed, setDismissed] = useState<DismissedWorkshopItem[]>(initialDismissed);
@@ -2788,51 +2887,11 @@ function FinancialWorkflow({
       </div>
 
       {canLinkHoldedDocuments && (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-white/[0.03]">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-            Link existing Holded document
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            If a quote or invoice already exists in Holded, paste the Holded link or document ID below. The customer must match the Holded contact (or the customer has no Holded ID yet — we will set it from the document). With multiple caravans, include the license plate in the Holded lines or pick the unit on the work order first.
           </p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            If a quote or invoice already exists in Holded, paste its document ID here. Customer must match the Holded contact (or the customer has no Holded ID yet — we will set it from the document).
-          </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Select value={linkKind} onValueChange={(v) => setLinkKind(v as "quote" | "invoice")}>
-              <SelectTrigger className="h-9 w-full rounded-lg sm:w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="quote">Estimate</SelectItem>
-                <SelectItem value="invoice">Invoice</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Holded document ID"
-              value={linkDocId}
-              onChange={(e) => setLinkDocId(e.target.value)}
-              className="h-9 flex-1 rounded-lg font-mono text-sm"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-9 shrink-0 rounded-lg"
-              disabled={!!loading || !linkDocId.trim()}
-              onClick={() =>
-                handleAction("linkHolded", async () => {
-                  const res = await linkHoldedDocumentToRepair(job.id, linkKind, linkDocId);
-                  if (!res.ok) {
-                    toast.error(res.message);
-                    return;
-                  }
-                  toast.success(linkKind === "quote" ? "Quote linked" : "Invoice linked");
-                  setLinkDocId("");
-                  router.refresh();
-                })
-              }
-            >
-              {loading === "linkHolded" ? <Spinner className="h-3.5 w-3.5" /> : "Link"}
-            </Button>
-          </div>
+          <HoldedManualLinkForm repairJobId={job.id} allowQuote allowInvoice />
         </div>
       )}
 

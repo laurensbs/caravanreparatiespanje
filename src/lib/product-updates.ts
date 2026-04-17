@@ -25,10 +25,10 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [
   {
     id: "feedback-header-nav-2026-04",
     date: "2026-04-17",
-    title: "Feedback & Audit in the top bar",
+    title: "Feedback in the header, Audit under Settings",
     bullets: [
-      "Feedback and Audit moved to the header so the sidebar stays focused on day-to-day work.",
-      "On phones and tablets you still reach them from the icons next to search — no need to open the side menu for those two.",
+      "Feedback stays one tap away in the top bar; the audit log lives under Settings → Audit log (admins).",
+      "Old /audit links still redirect to the new location.",
     ],
   },
   {

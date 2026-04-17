@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { repairJobs, repairJobEvents, customers, units } from "@/lib/db/schema";
-import { eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllQuotes, type HoldedQuote } from "@/lib/holded/invoices";
 import { filterRepairQuotes } from "@/lib/holded/filter";
@@ -33,6 +33,7 @@ export async function GET(request: Request) {
 
   const stats = {
     discovered: 0,
+    quoteApprovalsSynced: 0,
     errors: 0,
     quotesTotal: 0,
     customersResolved: 0,
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
 
   try {
     const rawQuotes = await listAllQuotes();
+    const quoteById = new Map(rawQuotes.map((q) => [q.id, q] as const));
     const holdedQuotes = filterRepairQuotes(rawQuotes);
     stats.quotesTotal = holdedQuotes.length;
 
@@ -171,6 +173,60 @@ export async function GET(request: Request) {
         matched.holdedQuoteId = q.id;
         repairByQuoteId.set(q.id, matched);
         stats.discovered++;
+      } catch {
+        stats.errors++;
+      }
+    }
+
+    // ─── Sync quote approval from Holded → panel (customer response + status) ───
+    const linkedRepairs = await db
+      .select({
+        id: repairJobs.id,
+        holdedQuoteId: repairJobs.holdedQuoteId,
+        status: repairJobs.status,
+        customerResponseStatus: repairJobs.customerResponseStatus,
+      })
+      .from(repairJobs)
+      .where(and(isNull(repairJobs.deletedAt), isNotNull(repairJobs.holdedQuoteId)));
+
+    for (const repair of linkedRepairs) {
+      try {
+        const qid = repair.holdedQuoteId;
+        if (!qid) continue;
+        const q = quoteById.get(qid);
+        if (!q) continue;
+
+        const approved =
+          q.status === 1 || (typeof q.approvedAt === "number" && q.approvedAt > 0);
+        if (!approved) continue;
+        if (repair.customerResponseStatus === "declined") continue;
+
+        const updates: Record<string, unknown> = { updatedAt: new Date() };
+        if (repair.customerResponseStatus !== "approved") {
+          updates.customerResponseStatus = "approved";
+        }
+        if (repair.status === "waiting_approval") {
+          updates.status = "scheduled";
+        }
+
+        if (Object.keys(updates).length <= 1) continue;
+
+        await db.update(repairJobs).set(updates).where(eq(repairJobs.id, repair.id));
+
+        const detail: string[] = [];
+        if (updates.customerResponseStatus) detail.push("customer → approved");
+        if (updates.status) detail.push("status waiting_approval → scheduled");
+
+        await db.insert(repairJobEvents).values({
+          repairJobId: repair.id,
+          eventType: "quote_approval_synced",
+          fieldChanged: "holded_quote",
+          oldValue: `${repair.customerResponseStatus} / ${repair.status}`,
+          newValue: "approved / scheduled (where applicable)",
+          comment: `Holded quote ${q.docNumber ?? q.id} approved — ${detail.join(", ")}`,
+        });
+
+        stats.quoteApprovalsSynced++;
       } catch {
         stats.errors++;
       }

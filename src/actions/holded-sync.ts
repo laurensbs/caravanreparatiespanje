@@ -11,6 +11,7 @@ import {
   pushSupplierToHolded,
 } from "@/lib/holded/sync";
 import { isHoldedConfigured } from "@/lib/holded/client";
+import { executeHoldedPaymentSync } from "@/lib/holded/execute-payment-sync";
 
 // ─── Sync contacts from Holded → DB ───
 
@@ -59,6 +60,25 @@ export async function syncProductsFromHolded() {
 export async function getHoldedSyncStatus() {
   await requireRole("admin");
   return getSyncStatus();
+}
+
+/** Runs the same invoice discovery + status sync as the Vercel cron (one full pass). Admin-only. */
+export async function runHoldedInvoiceDiscoveryNow() {
+  await requireRole("admin");
+  if (!isHoldedConfigured()) throw new Error("Holded not configured");
+
+  const stats = await executeHoldedPaymentSync();
+
+  await createAuditLog("holded_invoice_discovery", "system", null, {
+    discovered: stats.discovered,
+    statusUpdated: stats.statusUpdated,
+    errors: stats.errors,
+    invoicesTotal: stats.invoicesTotal,
+  });
+
+  revalidatePath("/repairs");
+  revalidatePath("/settings/audit");
+  return stats;
 }
 
 // ─── Push single contact to Holded ───

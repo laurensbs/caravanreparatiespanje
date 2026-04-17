@@ -736,7 +736,7 @@ const NAV_PATTERNS: [RegExp, AssistantAction][] = [
   [/^(?:go to|open|show)\s+(?:settings?|config)$/i, { type: "navigate", href: "/settings" }],
   [/^(?:go to|open|show)\s+(?:garage|workshop)$/i, { type: "navigate", href: "/garage" }],
   [/^(?:go to|open|show)\s+(?:planning|calendar|schedule)$/i, { type: "navigate", href: "/planning" }],
-  [/^(?:go to|open|show)\s+(?:audit|log)$/i, { type: "navigate", href: "/audit" }],
+  [/^(?:go to|open|show)\s+(?:audit|log)$/i, { type: "navigate", href: "/settings/audit" }],
   [/^(?:go to|open|show)\s+(?:dashboard|home)$/i, { type: "navigate", href: "/" }],
   [/^(?:show|open|go to)\s+urgent\s+(?:jobs|repairs|work\s*orders)?$/i, { type: "navigate-filter", href: "/repairs", filters: { priority: "urgent" } }],
   [/^(?:show|open|go to)\s+(?:waiting|blocked)\s+(?:parts?|jobs|repairs)?$/i, { type: "navigate-filter", href: "/repairs", filters: { status: "waiting_parts" } }],

@@ -13,8 +13,10 @@ import {
   Building2,
   Loader2,
   ExternalLink,
+  FileText,
 } from "lucide-react";
-import { syncContactsFromHolded, syncProductsFromHolded } from "@/actions/holded-sync";
+import { syncContactsFromHolded, syncProductsFromHolded, runHoldedInvoiceDiscoveryNow } from "@/actions/holded-sync";
+import { toast } from "sonner";
 
 interface SyncStatus {
   contacts: { total: number; linked: number };
@@ -31,14 +33,25 @@ interface SyncResult {
   errors: string[];
 }
 
+type InvoiceDiscoveryStats = {
+  discovered: number;
+  statusUpdated: number;
+  statusAdvanced: number;
+  errors: number;
+  invoicesTotal: number;
+  customersResolved: number;
+  holdedContactBackfilled: number;
+};
+
 interface Props {
   configured: boolean;
   syncStatus: SyncStatus | null;
 }
 
 export function HoldedSyncClient({ configured, syncStatus }: Props) {
-  const [syncing, setSyncing] = useState<"contacts" | "products" | null>(null);
+  const [syncing, setSyncing] = useState<"contacts" | "products" | "invoiceDiscovery" | null>(null);
   const [lastResult, setLastResult] = useState<{ type: string; result: SyncResult } | null>(null);
+  const [invoiceDiscoveryStats, setInvoiceDiscoveryStats] = useState<InvoiceDiscoveryStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState(syncStatus);
 
@@ -80,6 +93,23 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
       setLastResult({ type: "Products", result });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setSyncing(null);
+    }
+  }
+
+  async function handleInvoiceDiscovery() {
+    setSyncing("invoiceDiscovery");
+    setError(null);
+    setInvoiceDiscoveryStats(null);
+    try {
+      const stats = await runHoldedInvoiceDiscoveryNow();
+      setInvoiceDiscoveryStats(stats);
+      toast.success("Invoice discovery finished", {
+        description: `${stats.discovered} new link(s), ${stats.statusUpdated} status update(s).`,
+      });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Discovery failed");
     } finally {
       setSyncing(null);
     }
@@ -190,6 +220,68 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
           </Card>
         </div>
       )}
+
+      <Card>
+        <CardContent>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium">Match invoices to repairs</h3>
+                <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                  Runs one full pass over Holded invoices: links PDFs to work orders (public code, plate, title, date),
+                  syncs payment status, and resolves customers without a Holded contact ID. Same logic as the automatic
+                  cron — use this after fixing contacts or when many jobs are still missing a document link.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              className="shrink-0 gap-2"
+              disabled={syncing !== null}
+              onClick={handleInvoiceDiscovery}
+            >
+              {syncing === "invoiceDiscovery" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Run now
+            </Button>
+          </div>
+          {invoiceDiscoveryStats && (
+            <div className="mt-4 grid gap-2 border-t border-border/60 pt-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
+              <div>
+                <p className="text-muted-foreground">Invoices scanned</p>
+                <p className="font-semibold tabular-nums">{invoiceDiscoveryStats.invoicesTotal}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">New links</p>
+                <p className="font-semibold tabular-nums text-emerald-600">{invoiceDiscoveryStats.discovered}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Status updates</p>
+                <p className="font-semibold tabular-nums">{invoiceDiscoveryStats.statusUpdated}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Customers resolved</p>
+                <p className="font-semibold tabular-nums">{invoiceDiscoveryStats.customersResolved}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Contact ID backfill</p>
+                <p className="font-semibold tabular-nums">{invoiceDiscoveryStats.holdedContactBackfilled}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Errors</p>
+                <p className="font-semibold tabular-nums text-destructive">{invoiceDiscoveryStats.errors}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Sync Actions */}
       <Card>

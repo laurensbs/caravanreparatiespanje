@@ -13,9 +13,9 @@ function getPageFromPathname(pathname: string): AssistantPage {
   if (pathname.startsWith("/units")) return "units";
   if (pathname.startsWith("/parts")) return "parts";
   if (pathname.startsWith("/invoices")) return "invoices";
+  if (pathname.startsWith("/settings/audit")) return "audit";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/planning")) return "planning";
-  if (pathname.startsWith("/audit")) return "audit";
   if (pathname.startsWith("/feedback")) return "feedback";
   return "dashboard";
 }

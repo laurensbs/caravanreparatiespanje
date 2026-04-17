@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useRef } from "react";
+import { useState, useEffect, useTransition, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { updateRepairJob, adminApproveRepair, adminSendBackRepair } from "@/actions/repairs";
@@ -601,6 +601,39 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const descriptionRef = useRef<HTMLDivElement>(null);
   const communicationRef = useRef<HTMLDivElement>(null);
   const costRef = useRef<HTMLDivElement>(null);
+
+  // Detect likely relatives in the address book (shared meaningful name tokens).
+  // Only used to decide whether to show the "Use a different client for this repair only"
+  // explainer + button — otherwise that block adds noise on every repair.
+  const likelyRelatedCustomers = useMemo(() => {
+    if (!job.customer) return [] as { id: string; name: string }[];
+    const stop = new Set([
+      "de", "van", "der", "den", "het", "ter", "ten", "la", "le", "el", "di", "da", "do",
+      "du", "mr", "mrs", "the", "and", "en", "jr", "sr", "ii", "iii",
+    ]);
+    const tokenize = (s: string) =>
+      s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .split(/[\s,\-_/]+/)
+        .map((t) => t.replace(/[^a-z0-9]/g, ""))
+        .filter((t) => t.length >= 3 && !stop.has(t));
+    const selfTokens = new Set(tokenize(job.customer.name));
+    if (selfTokens.size === 0) return [] as { id: string; name: string }[];
+    const selfId = job.customer.id;
+    const matches: { id: string; name: string }[] = [];
+    for (const c of allCustomers) {
+      if (c.id === selfId) continue;
+      const tokens = tokenize(c.name);
+      if (tokens.some((t) => selfTokens.has(t))) {
+        matches.push(c);
+        if (matches.length >= 5) break;
+      }
+    }
+    return matches;
+  }, [job.customer, allCustomers]);
+  const hasLikelyRelatives = likelyRelatedCustomers.length > 0;
 
   async function handleSave() {
     setSaving(true);
@@ -1876,29 +1909,41 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <div id="customer-section" className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Customer</h3>
 
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Each repair points at <span className="font-medium text-foreground/85">one client record</span> in the address book. If two family members each have their own client card, use the button below so{" "}
-              <span className="font-medium text-foreground/85">only this repair</span> moves — editing the name with the pencil changes that shared card for{" "}
-              <span className="font-medium text-foreground/85">every repair</span> (and Holded) that still uses it.
-              {job.unit ? (
-                <> If this job has a linked caravan/unit, its owner in the address book is updated to match the client you pick.</>
-              ) : null}
-            </p>
+            {(!job.customer || hasLikelyRelatives) && (
+              <>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  {job.customer ? (
+                    <>
+                      Found {likelyRelatedCustomers.length === 1 ? "another client record" : `${likelyRelatedCustomers.length} other client records`} with a similar name
+                      {likelyRelatedCustomers.length > 0 && (
+                        <> (<span className="font-medium text-foreground/85">{likelyRelatedCustomers.map((c) => c.name).join(", ")}</span>)</>
+                      )}
+                      . If this repair actually belongs to one of them, use the button below so{" "}
+                      <span className="font-medium text-foreground/85">only this repair</span> moves — editing the name with the pencil instead changes the shared card for{" "}
+                      <span className="font-medium text-foreground/85">every repair</span> (and Holded) that still uses it.
+                      {job.unit ? <> The linked caravan/unit&apos;s owner is updated to match the client you pick.</> : null}
+                    </>
+                  ) : (
+                    <>This repair has no client yet. Link one from the address book so quotes, invoices and communication can be tracked.</>
+                  )}
+                </p>
 
-            <Button
-              type="button"
-              variant={job.customer ? "outline" : "default"}
-              size="sm"
-              className={
-                job.customer
-                  ? "w-full h-9 text-xs rounded-xl border-sky-200/80 text-sky-800 hover:bg-sky-50 dark:border-sky-800/60 dark:text-sky-200 dark:hover:bg-sky-950/40"
-                  : "w-full h-9 text-xs rounded-xl"
-              }
-              onClick={() => setShowCustomerLinker(true)}
-            >
-              <UserPlus className="h-3.5 w-3.5 mr-2 shrink-0" aria-hidden />
-              {job.customer ? "Use a different client for this repair only" : "Link a client to this repair"}
-            </Button>
+                <Button
+                  type="button"
+                  variant={job.customer ? "outline" : "default"}
+                  size="sm"
+                  className={
+                    job.customer
+                      ? "w-full h-9 text-xs rounded-xl border-sky-200/80 text-sky-800 hover:bg-sky-50 dark:border-sky-800/60 dark:text-sky-200 dark:hover:bg-sky-950/40"
+                      : "w-full h-9 text-xs rounded-xl"
+                  }
+                  onClick={() => setShowCustomerLinker(true)}
+                >
+                  <UserPlus className="h-3.5 w-3.5 mr-2 shrink-0" aria-hidden />
+                  {job.customer ? "Use a different client for this repair only" : "Link a client to this repair"}
+                </Button>
+              </>
+            )}
 
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Contact</span>

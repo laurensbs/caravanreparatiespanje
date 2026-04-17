@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useMemo } from "react";
+import { useState, useEffect, useTransition, useMemo, useRef } from "react";
 import { Bell, Clock, AlertTriangle, Check, X, FileText, Phone, Package, Truck, Calendar, DollarSign, MessageSquare, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -59,27 +59,42 @@ export function ReminderPanel() {
   const [open, setOpen] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [count, setCount] = useState(0);
+  /** After opening the panel, treat this many as "seen" until count rises again or count drops (completed/dismissed). */
+  const [ackBaseline, setAckBaseline] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
+  const openRef = useRef(false);
+  openRef.current = open;
 
-  async function loadReminders() {
+  async function loadReminders(opts?: { acknowledge?: boolean }) {
     try {
       const [data, c] = await Promise.all([getActiveReminders(), getActiveReminderCount()]);
       setReminders(data);
       setCount(c);
+      // Only mark "seen" if the panel is still open when the request finishes (avoids races on fast close).
+      if (opts?.acknowledge && openRef.current) setAckBaseline(c);
     } catch {
       // silent
     }
   }
 
   useEffect(() => {
-    loadReminders();
-    const interval = setInterval(loadReminders, 30000);
+    void loadReminders();
+    const interval = setInterval(() => void loadReminders(), 30000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (open) loadReminders();
+    if (open) void loadReminders({ acknowledge: true });
   }, [open]);
+
+  // If reminders are resolved elsewhere, keep baseline in sync so we don't show a stale "new" count.
+  useEffect(() => {
+    setAckBaseline((prev) => {
+      if (prev === null) return null;
+      if (count < prev) return count;
+      return prev;
+    });
+  }, [count]);
 
   function isOverdue(dueAt: Date | null) {
     if (!dueAt) return false;
@@ -131,6 +146,8 @@ export function ReminderPanel() {
 
   const overdueCount = reminders.filter((r) => isOverdue(r.dueAt)).length;
 
+  const badgeCount = ackBaseline === null ? count : Math.max(0, count - ackBaseline);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -140,17 +157,17 @@ export function ReminderPanel() {
           size="icon"
           className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg"
           title="Reminders"
-          aria-label={count > 0 ? `Reminders, ${count} open` : "Reminders"}
+          aria-label={badgeCount > 0 ? `Reminders, ${badgeCount} new` : count > 0 ? "Reminders (open list for details)" : "Reminders"}
         >
           <Bell className="h-4 w-4 text-muted-foreground" />
-          {count > 0 && (
+          {badgeCount > 0 && (
             <span
               className={cn(
                 "absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white tabular-nums",
                 overdueCount > 0 ? "bg-red-500" : "bg-cyan-600 dark:bg-cyan-500"
               )}
             >
-              {count > 99 ? "99+" : count}
+              {badgeCount > 99 ? "99+" : badgeCount}
             </span>
           )}
         </Button>

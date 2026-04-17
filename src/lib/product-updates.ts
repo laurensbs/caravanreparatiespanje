@@ -13,6 +13,16 @@ export type ProductUpdate = {
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [
   {
+    id: "repair-client-vs-profile-2026-04",
+    date: "2026-04-17",
+    title: "Repairs: one job vs the whole client card",
+    bullets: [
+      "What went wrong in plain words: the small pencil under Customer edits the shared client in your address book. Every repair that still points at that client gets the new name or phone — it is not limited to the repair you had open.",
+      "That is why changing “Carlos” to “Naomi” there looked like it moved every job: you were updating one client record that several repairs shared.",
+      "Fix: on the repair page there is now a clear button, “Use a different client for this repair only”, which only switches this repair to another existing client (for example Naomi’s own card). The pencil is labelled as editing the shared card, with a short reminder in the panel.",
+    ],
+  },
+  {
     id: "holded-customer-resolve-2026-04",
     date: "2026-04-17",
     title: "Holded invoices & quotes link more reliably",

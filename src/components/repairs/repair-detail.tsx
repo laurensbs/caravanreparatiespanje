@@ -20,7 +20,7 @@ import {
   JOB_TYPE_LABELS, JOB_TYPE_COLORS,
 } from "@/types";
 import type { RepairStatus, Priority, CustomerResponseStatus, InvoiceStatus, FindingCategory, FindingSeverity, BlockerReason, EstimateLineItem, DismissedWorkshopItem, JobType } from "@/types";
-import { ArrowLeft, Save, Clock, User, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check, Play, Send } from "lucide-react";
+import { ArrowLeft, Save, Clock, User, UserPlus, FileText, Pencil, X as XIcon, MessageSquare, StickyNote, Wrench, Hash, CalendarDays, DollarSign, Flag, Receipt, Plus, Trash2, Package, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Camera, Download, Search, Sparkles, Settings, ClipboardCheck, Check, Play, Send } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -45,7 +45,7 @@ import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, 
 import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CustomerSearch } from "@/components/customers/customer-search";
 import { useAssistantContext } from "@/components/assistant-context";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
@@ -1886,6 +1886,27 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <div id="customer-section" className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Customer</h3>
 
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Each repair points at <span className="font-medium text-foreground/85">one client record</span> in the address book. If two family members each have their own client card, use the button below so{" "}
+              <span className="font-medium text-foreground/85">only this repair</span> moves — editing the name with the pencil changes that shared card for{" "}
+              <span className="font-medium text-foreground/85">every repair</span> (and Holded) that still uses it.
+            </p>
+
+            <Button
+              type="button"
+              variant={job.customer ? "outline" : "default"}
+              size="sm"
+              className={
+                job.customer
+                  ? "w-full h-9 text-xs rounded-xl border-sky-200/80 text-sky-800 hover:bg-sky-50 dark:border-sky-800/60 dark:text-sky-200 dark:hover:bg-sky-950/40"
+                  : "w-full h-9 text-xs rounded-xl"
+              }
+              onClick={() => setShowCustomerLinker(true)}
+            >
+              <UserPlus className="h-3.5 w-3.5 mr-2 shrink-0" aria-hidden />
+              {job.customer ? "Use a different client for this repair only" : "Link a client to this repair"}
+            </Button>
+
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Contact</span>
                 {job.customer ? (
@@ -1893,12 +1914,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <Link href={`/customers/${job.customer.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right transition-all duration-150">
                       {job.customer.name}
                     </Link>
-                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150" title="Edit customer">
+                    <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-150" title="Edit shared client details (name, phone…)" aria-label="Edit shared client details">
                       <Pencil className="h-2.5 w-2.5 text-gray-400 dark:text-gray-500" />
                     </button>
                   </span>
                 ) : (
-                  <button onClick={() => setExpandCustomer((v) => !v)} className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomerLinker(true)}
+                    className="text-gray-400 dark:text-gray-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic"
+                  >
+                    No client linked
+                  </button>
                 )}
               </div>
               {expandCustomer && job.customer && (
@@ -2099,7 +2126,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       <Dialog open={showCustomerLinker} onOpenChange={setShowCustomerLinker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Link a customer</DialogTitle>
+            <DialogTitle>Client for this repair</DialogTitle>
+            <DialogDescription>
+              Pick the client record this job should belong to. Other repairs stay on their current client — only this repair is updated.
+            </DialogDescription>
           </DialogHeader>
           <CustomerSearch
             customers={allCustomers}
@@ -2110,7 +2140,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 toast.error(res.message);
                 return;
               }
-              toast.success("Customer linked");
+              toast.success("This repair is now linked to the client you chose");
               setShowCustomerLinker(false);
               router.refresh();
             }}
@@ -2596,7 +2626,7 @@ function InlineCustomerEdit({ customer, onDone }: { customer: any; onDone: () =>
           country: country || undefined, notes: notes || undefined,
           contactType: customer.contactType ?? "person",
         });
-        toast.success("Customer updated");
+        toast.success("Client profile updated — every repair that uses this client sees the new details");
         router.refresh();
         onDone();
       } catch {
@@ -2614,6 +2644,11 @@ function InlineCustomerEdit({ customer, onDone }: { customer: any; onDone: () =>
 
   return (
     <div className="rounded-lg border bg-muted/30 p-2.5 space-y-2 animate-slide-up">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Shared client card</p>
+      <p className="text-[10px] leading-snug text-amber-900/90 dark:text-amber-100/90 rounded-md border border-amber-200/70 bg-amber-50/90 px-2 py-1.5 dark:border-amber-800/50 dark:bg-amber-950/35">
+        Saving here updates the <strong>same</strong> client for <strong>all</strong> their repairs. To move only this job to another person’s client record, close this panel and use{" "}
+        <strong>Use a different client for this repair only</strong>.
+      </p>
       <div className="grid grid-cols-2 gap-2">
         {fields.map(([label, value, setter]) => (
           <div key={label}>

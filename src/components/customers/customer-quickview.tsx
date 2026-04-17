@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   ExternalLink, Phone, Mail, Wrench, Pencil, Save, Truck,
-  MapPin, User, Receipt, FileText, RefreshCw, Loader2,
+  MapPin, User, Receipt, FileText, RefreshCw, Loader2, Trash2, AlertTriangle,
 } from "lucide-react";
+import { deleteUnit } from "@/actions/units";
 import Link from "next/link";
 import { SmartDate } from "@/components/ui/smart-date";
 import { toast } from "sonner";
@@ -239,6 +240,12 @@ function CustomerQuickView({
     }
     onOpenChange(v);
   }, [onOpenChange]);
+
+  const reloadFullData = useCallback(async () => {
+    const data = await getCustomerById(customer.id);
+    if (data) setFullData(data);
+    router.refresh();
+  }, [customer.id, router]);
 
   function handleSave() {
     setError("");
@@ -472,20 +479,13 @@ function CustomerQuickView({
                     ) : (
                       <div className="space-y-1">
                         {fullData.units.map((unit: any) => (
-                          <Link
+                          <UnitRow
                             key={unit.id}
-                            href={`/units/${unit.id}`}
-                            className="flex items-center gap-2 rounded-lg border p-2 text-xs hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium truncate">
-                                {[unit.brand, unit.model].filter(Boolean).join(" ") || "No details"}
-                              </p>
-                              {unit.registration && (
-                                <p className="font-mono text-[10px] text-muted-foreground">{unit.registration}</p>
-                              )}
-                            </div>
-                          </Link>
+                            unit={unit}
+                            onDeleted={() => {
+                              reloadFullData();
+                            }}
+                          />
                         ))}
                       </div>
                     )}
@@ -641,5 +641,57 @@ function CustomerQuickView({
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function UnitRow({ unit, onDeleted }: { unit: any; onDeleted: () => void | Promise<void> }) {
+  const [confirming, setConfirming] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="group/unit relative flex items-center gap-2 rounded-lg border p-2 text-xs transition-colors hover:bg-muted/50">
+      <Link href={`/units/${unit.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium truncate">
+            {[unit.brand, unit.model].filter(Boolean).join(" ") || "No details"}
+          </p>
+          <p className="font-mono text-[10px] text-muted-foreground">
+            {unit.registration || "no plate"}
+            {unit.storageLocation ? <span className="not-italic font-sans text-muted-foreground/80"> · {unit.storageLocation}</span> : null}
+          </p>
+        </div>
+      </Link>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!confirming) {
+            setConfirming(true);
+            return;
+          }
+          startTransition(async () => {
+            try {
+              await deleteUnit(unit.id);
+              toast.success("Unit deleted");
+              await onDeleted();
+            } catch (err: any) {
+              toast.error(err?.message ?? "Failed to delete unit");
+              setConfirming(false);
+            }
+          });
+        }}
+        onMouseLeave={() => setConfirming(false)}
+        className={`shrink-0 rounded-md px-1.5 py-1 text-[10px] font-medium transition-all ${
+          confirming
+            ? "bg-red-50 text-red-700 opacity-100 dark:bg-red-500/10 dark:text-red-400"
+            : "text-gray-400 opacity-0 hover:text-red-600 hover:bg-red-50/60 group-hover/unit:opacity-100 dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-red-500/10"
+        }`}
+        title={confirming ? "Click again to confirm" : "Delete unit"}
+      >
+        {confirming ? <AlertTriangle className="h-3 w-3" /> : <Trash2 className="h-3 w-3" />}
+      </button>
+    </div>
   );
 }

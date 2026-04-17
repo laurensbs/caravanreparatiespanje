@@ -10,6 +10,7 @@ import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
+import { DashboardPageCanvas, DashboardPageHeader } from "@/components/layout/dashboard-surface";
 
 const MAIN_LOCATIONS = ["cruïllas", "peratallada", "sant climent"];
 
@@ -64,27 +65,47 @@ export default async function RepairsPage({ searchParams }: Props) {
   ];
 
   return (
-    <div className="space-y-5 sm:space-y-7">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <h1 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white sm:text-xl">Work Orders</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {total} work order{total !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-auto">
-          <Button variant="ghost" size="sm" asChild className="min-h-10 flex-1 touch-manipulation rounded-lg text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 sm:h-8 sm:min-h-0 sm:flex-initial">
-            <Link href="/repairs/bin">
-              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              Bin
-            </Link>
-          </Button>
-          <div className="min-w-0 flex-1 sm:flex-initial sm:shrink-0">
-            <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
+    <DashboardPageCanvas>
+    <div className="space-y-6 sm:space-y-8">
+      <DashboardPageHeader
+        eyebrow="Operations"
+        title="Work Orders"
+        metadata={
+          <>
+            <span>
+              <span className="tabular-nums text-gray-700 dark:text-gray-200">{total}</span> work orders
+            </span>
+            {urgent > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                {urgent} urgent
+              </span>
+            )}
+          </>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="h-9 touch-manipulation rounded-lg text-[12px] text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              <Link href="/repairs/bin">
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                Bin
+              </Link>
+            </Button>
+            <NewRepairDialog
+              locations={filteredLocations}
+              customers={customersList}
+              partsCatalog={partsCatalog}
+              partCategories={partCategories}
+              units={unitsList}
+            />
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Quick filters — horizontal scroll on narrow screens */}
       <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 pt-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
@@ -137,5 +158,6 @@ export default async function RepairsPage({ searchParams }: Props) {
 
       <RepairTable jobs={jobs} total={total} filters={filters} />
     </div>
+    </DashboardPageCanvas>
   );
 }

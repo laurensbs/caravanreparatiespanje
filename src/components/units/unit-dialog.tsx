@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { updateUnit } from "@/actions/units";
+import { updateUnit, deleteUnit } from "@/actions/units";
+import { toast } from "sonner";
 import { getUnitTags, addTagToUnit, removeTagFromUnit } from "@/actions/tags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, ExternalLink } from "lucide-react";
+import { Pencil, ExternalLink, Trash2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { TagPicker, type TagItem } from "@/components/tag-picker";
 import { UnitTypeIconBadge } from "./unit-type-icon";
@@ -54,6 +55,7 @@ interface UnitDialogProps {
 export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialogProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [unitTags, setUnitTags] = useState<TagItem[]>([]);
@@ -101,9 +103,32 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
   }, [unit.id, router, editUnitType]);
 
   const handleClose = useCallback((v: boolean) => {
-    if (!v) setEditing(false);
+    if (!v) {
+      setEditing(false);
+      setConfirmDelete(false);
+    }
     onOpenChange(v);
   }, [onOpenChange]);
+
+  const handleDelete = useCallback(() => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await deleteUnit(unit.id);
+        toast.success("Unit deleted", {
+          description: "You can undo from Settings › Audit if needed.",
+        });
+        onOpenChange(false);
+        router.refresh();
+      } catch (err: any) {
+        toast.error(err?.message ?? "Failed to delete unit");
+        setConfirmDelete(false);
+      }
+    });
+  }, [confirmDelete, unit.id, router, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -123,11 +148,11 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {!editing && (
-                <Button type="button" size="sm" variant="outline" className="h-9 touch-manipulation text-xs" onClick={() => setEditing(true)}>
+                <Button type="button" size="sm" variant="outline" className="h-9 touch-manipulation rounded-lg text-xs" onClick={() => setEditing(true)}>
                   <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                 </Button>
               )}
-              <Button type="button" size="sm" variant="default" className="h-9 touch-manipulation text-xs" asChild>
+              <Button type="button" size="sm" variant="default" className="h-9 touch-manipulation rounded-lg text-xs" asChild>
                 <Link href={`/units/${unit.id}`}>
                   <ExternalLink className="mr-1 h-3.5 w-3.5" /> Full page
                 </Link>
@@ -269,8 +294,35 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
                   />
                 </div>
               )}
-              <div className="text-xs text-muted-foreground pt-2 border-t">
-                Updated {new Date(unit.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+              <div className="flex items-center justify-between gap-3 pt-3 border-t">
+                <p className="text-xs text-muted-foreground">
+                  Updated {new Date(unit.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={handleDelete}
+                  onMouseLeave={() => setConfirmDelete(false)}
+                  className={`h-8 gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition-all ${
+                    confirmDelete
+                      ? "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+                      : "text-gray-400 hover:text-red-600 hover:bg-red-50/60 dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-red-500/10"
+                  }`}
+                >
+                  {confirmDelete ? (
+                    <>
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Click again to confirm
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete unit
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           )}

@@ -197,103 +197,99 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
       <div className="space-y-6 print:space-y-2 sm:space-y-8">
         {/* Title + subtitle + controls (mobile-first) */}
         <div className="space-y-4 print:hidden sm:space-y-5">
-          <DashboardPageHeader title={t.planning} description={t.pageSubtitle} />
-
-          <div className={cn(dashboardPanelClass, "p-3 sm:p-4")}>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 shrink-0 rounded-xl border-gray-200 bg-white touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]"
-                      onClick={() => navigateWeek(-1)}
-                      aria-label={ariaPrevWeek}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-10 rounded-xl border-gray-200 bg-white px-3 text-sm touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]"
-                      onClick={goToThisWeek}
-                    >
-                      {t.thisWeek}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 shrink-0 rounded-xl border-gray-200 bg-white touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]"
-                      onClick={() => navigateWeek(1)}
-                      aria-label={ariaNextWeek}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <span className="text-sm font-medium tabular-nums text-gray-600 dark:text-gray-300">
-                    {formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}
+          <DashboardPageHeader
+            eyebrow="Schedule"
+            title={t.planning}
+            metadata={
+              <>
+                <span className="tabular-nums">{formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}</span>
+                {totalCount > 0 ? (
+                  <span>
+                    <span className="tabular-nums text-gray-700 dark:text-gray-200">{totalCount}</span> scheduled
                   </span>
-                  {isPending ? (
-                    <span className="text-xs text-gray-400 animate-pulse dark:text-gray-500">{t.searching}</span>
-                  ) : null}
-                </div>
+                ) : (
+                  <span className="text-gray-400 dark:text-gray-500">empty week</span>
+                )}
+                {isPending ? (
+                  <span className="animate-pulse text-gray-400 dark:text-gray-500">{t.searching}</span>
+                ) : null}
+              </>
+            }
+            description={t.pageSubtitle}
+          />
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                  <Select value={filterUser} onValueChange={setFilterUser}>
-                    <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-gray-200 bg-white text-sm touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]">
-                      <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t.allStaff}</SelectItem>
-                      {staff.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex items-center gap-0 rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-l-xl rounded-r-none text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                onClick={() => navigateWeek(-1)}
+                aria-label={ariaPrevWeek}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="border-x border-gray-100 dark:border-gray-800 px-3 h-10 inline-flex items-center text-[13px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 cursor-pointer" onClick={goToThisWeek}>
+                {t.thisWeek}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-r-xl rounded-l-none text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                onClick={() => navigateWeek(1)}
+                aria-label={ariaNextWeek}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
 
-                  <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
-                    <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-gray-200 bg-white text-sm touch-manipulation dark:border-gray-700 dark:bg-white/[0.04]">
-                      <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">EN</SelectItem>
-                      <SelectItem value="nl">NL</SelectItem>
-                      <SelectItem value="es">ES</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+              <Select value={filterUser} onValueChange={setFilterUser}>
+                <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-gray-100 bg-white text-sm shadow-sm touch-manipulation dark:border-gray-800 dark:bg-white/[0.03]">
+                  <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.allStaff}</SelectItem>
+                  {staff.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-10 w-full gap-2 rounded-xl border-gray-200 bg-white text-sm touch-manipulation min-[400px]:w-auto dark:border-gray-700 dark:bg-white/[0.04]"
-                    onClick={() => window.print()}
-                  >
-                    <Printer className="h-4 w-4 shrink-0" />
-                    {t.print}
-                  </Button>
-                </div>
-              </div>
+              <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
+                <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-gray-100 bg-white text-sm shadow-sm touch-manipulation dark:border-gray-800 dark:bg-white/[0.03]">
+                  <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">EN</SelectItem>
+                  <SelectItem value="nl">NL</SelectItem>
+                  <SelectItem value="es">ES</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <div className="flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {totalCount === 0 ? t.weekRepairsNone : t.weekRepairsSome.replace("{n}", String(totalCount))}
-                </p>
-                <Link
-                  href="/repairs"
-                  className="shrink-0 touch-manipulation text-sm font-medium text-gray-900 underline-offset-4 transition-colors hover:underline dark:text-gray-100"
-                >
-                  {t.browseWorkOrders} →
-                </Link>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full gap-2 rounded-xl border-gray-100 bg-white text-sm shadow-sm touch-manipulation min-[400px]:w-auto dark:border-gray-800 dark:bg-white/[0.03]"
+                onClick={() => window.print()}
+              >
+                <Printer className="h-4 w-4 shrink-0" />
+                {t.print}
+              </Button>
+
+              <Link
+                href="/repairs"
+                className="hidden sm:inline-flex h-10 items-center rounded-xl px-3 text-[13px] font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                {t.browseWorkOrders} →
+              </Link>
             </div>
           </div>
 
@@ -338,34 +334,44 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
               key={dayIdx}
               className={cn(
                 dashboardPanelClass,
-                "animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
+                "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
                 isToday &&
-                  "ring-2 ring-gray-900/[0.07] dark:ring-white/[0.12] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06)]",
+                  "ring-2 ring-sky-500/20 dark:ring-sky-400/25",
                 dragRepairId && "hover:border-gray-300 dark:hover:border-gray-600",
+                isEmpty && "print:hidden",
               )}
-              style={{ animationDelay: `${Math.min(dayIdx * 40, 200)}ms`, animationFillMode: "backwards" }}
+              style={{ animationDelay: `${Math.min(dayIdx * 30, 180)}ms`, animationFillMode: "backwards" }}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, dayIdx)}
             >
               {/* Day header */}
               <div
                 className={cn(
-                  "flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 print:border-gray-300 dark:border-gray-800",
-                  isToday ? "bg-gray-50/90 dark:bg-white/[0.05]" : "bg-gray-50/50 dark:bg-white/[0.02]",
+                  "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-gray-300",
+                  !isEmpty && "border-b border-gray-100 dark:border-gray-800",
+                  isToday
+                    ? "bg-sky-50/40 dark:bg-sky-500/[0.06]"
+                    : isEmpty
+                      ? "bg-transparent"
+                      : "bg-gray-50/50 dark:bg-white/[0.02]",
                 )}
               >
-                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                     {t.days[dayIdx]}
                   </span>
                   <span
                     className={cn(
                       "text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100",
-                      isToday && "text-gray-900 dark:text-white",
                     )}
                   >
                     {day.getDate()} {t.months[day.getMonth()]}
                   </span>
+                  {isToday ? (
+                    <span className="inline-flex items-center rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                      Today
+                    </span>
+                  ) : null}
                   {dayRepairs.length > 0 ? (
                     <Badge
                       variant="secondary"
@@ -373,31 +379,29 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                     >
                       {dayRepairs.length}
                     </Badge>
-                  ) : null}
+                  ) : (
+                    <span className="text-[12px] text-gray-400 dark:text-gray-500">
+                      {t.noRepairsScheduled}
+                    </span>
+                  )}
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="h-9 shrink-0 rounded-xl border-gray-200 bg-white px-3 text-xs font-medium touch-manipulation print:hidden dark:border-gray-700 dark:bg-white/[0.06]"
+                  className={cn(
+                    "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 touch-manipulation print:hidden dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100",
+                    isEmpty && "opacity-60 group-hover/day:opacity-100",
+                  )}
                   onClick={() => openAddDialog(dayIdx)}
                 >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  <Plus className="mr-1 h-3.5 w-3.5" />
                   {t.addRepair}
                 </Button>
               </div>
 
               {/* Repairs */}
-              {isEmpty ? (
-                <div className="flex min-h-[5rem] flex-col justify-center px-5 py-5 print:min-h-0 print:py-2">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 print:text-gray-700">
-                    {t.noRepairsScheduled}
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-gray-500 print:hidden dark:text-gray-400">
-                    {t.emptyDayHint}
-                  </p>
-                </div>
-              ) : (
+              {!isEmpty && (
                 <div className="divide-y divide-gray-100 print:divide-gray-200 dark:divide-gray-800">
                   {dayRepairs.map((r) => (
                     <RepairRow

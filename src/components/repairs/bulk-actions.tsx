@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { bulkUpdateRepairJobs, bulkDeleteRepairJobs } from "@/actions/repairs";
+import { bulkUpdateRepairJobs, bulkDeleteRepairJobs, bulkRestoreRepairJobs } from "@/actions/repairs";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/types";
 import { X, Check, Trash2 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { toastWithUndo } from "@/lib/undo-toast";
 
 interface BulkActionsProps {
   selectedIds: string[];
@@ -57,8 +58,15 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
     if (!ok) return;
     setLoading(true);
     try {
-      await bulkDeleteRepairJobs(selectedIds);
-      toast.success(`Moved ${selectedIds.length} repair job${selectedIds.length > 1 ? "s" : ""} to bin`);
+      const ids = [...selectedIds];
+      await bulkDeleteRepairJobs(ids);
+      toastWithUndo(
+        `Moved ${ids.length} repair job${ids.length > 1 ? "s" : ""} to bin`,
+        async () => {
+          await bulkRestoreRepairJobs(ids);
+          router.refresh();
+        },
+      );
       onClear();
       router.refresh();
     } catch {

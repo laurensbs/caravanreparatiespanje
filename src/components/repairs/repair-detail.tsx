@@ -36,7 +36,7 @@ import {
   deleteHoldedQuote,
   deleteHoldedInvoice,
 } from "@/actions/holded";
-import { deleteRepairJob } from "@/actions/repairs";
+import { deleteRepairJob, restoreRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
 import { updatePartRequestStatus } from "@/actions/parts";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
@@ -55,6 +55,7 @@ import { cn } from "@/lib/utils";
 
 import { addTagToRepair, removeTagFromRepair, createTag, deleteTag } from "@/actions/tags";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { toastWithUndo } from "@/lib/undo-toast";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
@@ -604,7 +605,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     setDeleting(true);
     try {
       await deleteRepairJob(job.id);
-      toast.success("Moved to bin");
+      const jobId = job.id;
+      toastWithUndo("Moved to bin", async () => {
+        await restoreRepairJob(jobId);
+        router.push(`/repairs/${jobId}`);
+      });
       router.push("/repairs");
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to delete");

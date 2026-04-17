@@ -782,6 +782,25 @@ export async function restoreRepairJob(id: string) {
   return { restored: true };
 }
 
+export async function bulkRestoreRepairJobs(ids: string[]) {
+  await requireRole("admin");
+  if (ids.length === 0) return { restored: 0 };
+
+  await db
+    .update(repairJobs)
+    .set({ deletedAt: null, updatedAt: new Date() })
+    .where(inArray(repairJobs.id, ids));
+
+  for (const id of ids) {
+    await createAuditLog("restore", "repair_job", id, {});
+  }
+
+  revalidatePath("/repairs");
+  revalidatePath("/repairs/bin");
+  revalidatePath("/");
+  return { restored: ids.length };
+}
+
 export async function permanentDeleteRepairJob(id: string) {
   await requireRole("admin");
 

@@ -602,16 +602,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const communicationRef = useRef<HTMLDivElement>(null);
   const costRef = useRef<HTMLDivElement>(null);
 
-  function openFinancialForHoldedLink() {
-    const d = document.getElementById("repair-financial");
-    if (d instanceof HTMLDetailsElement) d.open = true;
-    requestAnimationFrame(() => {
-      const anchor = document.getElementById("holded-manual-link");
-      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "center" });
-      else costRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
-
   async function handleSave() {
     setSaving(true);
     try {
@@ -1992,9 +1982,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 />
               </div>
           </div>
+          {(job.holdedQuoteId || job.holdedInvoiceId) && (
           <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-3">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Documents</h3>
-            {(job.holdedQuoteId || job.holdedInvoiceId) ? (
               <div className="space-y-2.5">
                 {job.holdedQuoteId && (
                   <div className="flex items-center justify-between">
@@ -2060,28 +2050,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20 px-3.5 py-3 space-y-2">
-                <p className="text-sm text-amber-950 dark:text-amber-100/90">
-                  No Holded quote or invoice is linked to this repair, so there are no PDF or Holded links here yet.
-                </p>
-                <p className="text-xs text-amber-900/80 dark:text-amber-200/70 leading-relaxed">
-                  If the document already exists in Holded, managers link it in the Financial section (estimate, quote, invoice). The quote sync job runs about every 15 minutes when the customer and description match.
-                </p>
-                {canLinkHoldedDocuments ? (
-                  <button
-                    type="button"
-                    onClick={openFinancialForHoldedLink}
-                    className="text-xs font-semibold text-amber-900 dark:text-amber-200 hover:underline"
-                  >
-                    Open Financial — link Holded document
-                  </button>
-                ) : (
-                  <p className="text-xs text-amber-900/70 dark:text-amber-300/60">Ask a manager to link the Holded document.</p>
-                )}
-              </div>
-            )}
           </div>
+          )}
 
           {/* Source & Import */}
           {(job.sourceSheet || job.sourceCategory || job.spreadsheetInternalId) && (

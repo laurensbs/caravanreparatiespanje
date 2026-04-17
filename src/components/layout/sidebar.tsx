@@ -153,14 +153,16 @@ export function Sidebar({ userRole }: SidebarProps) {
           "group relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
           effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
           isActive
-            ? "bg-white text-gray-900 shadow-sm shadow-black/5"
-            : "text-gray-500 hover:bg-white/60 hover:text-gray-900 active:scale-[0.98]",
+            ? "bg-white text-gray-900 shadow-sm shadow-black/5 dark:bg-white/[0.08] dark:text-gray-50 dark:shadow-none dark:ring-1 dark:ring-white/[0.06]"
+            : "text-gray-500 hover:bg-white/60 hover:text-gray-900 active:scale-[0.98] dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-100",
         )}
       >
         <span
           className={cn(
             "shrink-0 transition-colors",
-            isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-700",
+            isActive
+              ? "text-gray-900 dark:text-gray-50"
+              : "text-gray-400 group-hover:text-gray-700 dark:text-gray-500 dark:group-hover:text-gray-200",
           )}
         >
           {item.icon}
@@ -172,7 +174,7 @@ export function Sidebar({ userRole }: SidebarProps) {
           </span>
         )}
         {effectiveCollapsed && isLg && (
-          <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-lg transition-all duration-150 delay-75 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100">
+          <span className="pointer-events-none absolute left-full z-50 ml-3 -translate-x-1 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all delay-75 duration-150 group-hover:translate-x-0 group-hover:opacity-100 dark:bg-gray-100 dark:text-gray-900">
             {item.label}
           </span>
         )}
@@ -197,25 +199,32 @@ export function Sidebar({ userRole }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[#EDEEF0] transition-[transform,width,box-shadow] duration-300 ease-in-out",
+          "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[#EDEEF0] transition-[transform,width,box-shadow,background-color] duration-300 ease-in-out dark:bg-gray-950",
           mobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full",
           "lg:translate-x-0",
           effectiveCollapsed ? "w-60 lg:w-[60px]" : "w-60 lg:w-60",
-          effectiveCollapsed ? "lg:shadow-none" : "lg:shadow-xl lg:shadow-black/8",
+          effectiveCollapsed ? "lg:shadow-none" : "lg:shadow-xl lg:shadow-black/8 dark:lg:shadow-black/40",
         )}
       >
         <div
           className={cn(
-            "flex items-center justify-center border-b border-gray-200 transition-all duration-300",
+            "flex items-center justify-center border-b border-gray-200 transition-all duration-300 dark:border-white/[0.06]",
             effectiveCollapsed ? "h-16 px-2 lg:h-16" : "h-28 px-4 sm:h-32 lg:h-36",
           )}
         >
+          {/*
+            The logo source is a pure-black silhouette on a transparent background.
+            For dark mode we invert it via CSS so it renders as a clean white mark
+            without needing a separate asset (and without a hard-coded recolor that
+            could miss future logo updates).
+          */}
           <Image
             src="/favicon.png"
             alt="Logo"
             width={effectiveCollapsed ? 44 : 220}
             height={effectiveCollapsed ? 30 : 160}
-            className="object-contain transition-all duration-300"
+            className="object-contain transition-all duration-300 dark:invert"
+            priority
           />
         </div>
 
@@ -235,7 +244,7 @@ export function Sidebar({ userRole }: SidebarProps) {
                   {showGroup && (
                     <p
                       className={cn(
-                        "mb-1.5 mt-4 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400",
+                        "mb-1.5 mt-4 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500",
                         effectiveCollapsed ? "hidden" : "",
                       )}
                     >
@@ -251,7 +260,7 @@ export function Sidebar({ userRole }: SidebarProps) {
 
         <div
           className={cn(
-            "space-y-0.5 border-t border-gray-200 py-2",
+            "space-y-0.5 border-t border-gray-200 py-2 dark:border-white/[0.06]",
             effectiveCollapsed ? "px-1.5 lg:px-1.5" : "px-3",
           )}
         >
@@ -263,7 +272,7 @@ export function Sidebar({ userRole }: SidebarProps) {
               type="button"
               onClick={() => setCollapsed(!collapsed)}
               className={cn(
-                "flex w-full items-center rounded-lg text-gray-400 transition-all hover:bg-white/60 hover:text-gray-700",
+                "flex w-full items-center rounded-lg text-gray-400 transition-all hover:bg-white/60 hover:text-gray-700 dark:text-gray-500 dark:hover:bg-white/[0.04] dark:hover:text-gray-200",
                 effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
               )}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -281,7 +290,7 @@ export function Sidebar({ userRole }: SidebarProps) {
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-gray-500 transition-all hover:bg-white/60 hover:text-gray-900"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-gray-500 transition-all hover:bg-white/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-100"
             >
               <ChevronsLeft className="h-4 w-4" />
               Close menu

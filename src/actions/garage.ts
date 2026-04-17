@@ -259,6 +259,63 @@ export async function getGarageRepairsToday() {
     ])
   );
 
+  // Pull the actionable "next" task per job so the Today screen can offer a
+  // one-tap "mark this done" affordance directly on the card. We pick the first
+  // in-progress task; otherwise the first pending one. Sort order falls back
+  // to insertion order via createdAt to keep behaviour stable.
+  const candidateTasks = await db
+    .select({
+      id: repairTasks.id,
+      repairJobId: repairTasks.repairJobId,
+      title: repairTasks.title,
+      titleEs: repairTasks.titleEs,
+      titleNl: repairTasks.titleNl,
+      status: repairTasks.status,
+      createdAt: repairTasks.createdAt,
+    })
+    .from(repairTasks)
+    .where(
+      and(
+        inArray(repairTasks.repairJobId, jobIds),
+        inArray(repairTasks.status, ["in_progress", "pending"]),
+      ),
+    )
+    .orderBy(asc(repairTasks.createdAt));
+
+  const nextTaskMap = new Map<
+    string,
+    {
+      id: string;
+      title: string;
+      titleEs: string | null;
+      titleNl: string | null;
+      status: "pending" | "in_progress";
+    }
+  >();
+  for (const t of candidateTasks) {
+    const existing = nextTaskMap.get(t.repairJobId);
+    if (!existing) {
+      nextTaskMap.set(t.repairJobId, {
+        id: t.id,
+        title: t.title,
+        titleEs: t.titleEs,
+        titleNl: t.titleNl,
+        status: t.status as "pending" | "in_progress",
+      });
+      continue;
+    }
+    // Prefer in-progress over pending if we encounter one later.
+    if (existing.status !== "in_progress" && t.status === "in_progress") {
+      nextTaskMap.set(t.repairJobId, {
+        id: t.id,
+        title: t.title,
+        titleEs: t.titleEs,
+        titleNl: t.titleNl,
+        status: "in_progress",
+      });
+    }
+  }
+
   // Get part request counts per job
   const partCounts = await db
     .select({
@@ -312,6 +369,7 @@ export async function getGarageRepairsToday() {
     parts: partsMap.get(job.id) ?? { total: 0, received: 0, pending: 0 },
     workers: workersMap.get(job.id) ?? [],
     totalMinutes: timeMap.get(job.id) ?? 0,
+    nextTask: nextTaskMap.get(job.id) ?? null,
   }));
 }
 

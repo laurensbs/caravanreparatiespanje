@@ -7,7 +7,7 @@ import { useGaragePoll } from "@/lib/use-garage-poll";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
 import { garageLock } from "@/actions/garage-auth";
-import { toggleMyWorker } from "@/actions/garage";
+import { toggleMyWorker, updateTaskStatus } from "@/actions/garage";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import {
   canStartGarageTimerOnRepair,
@@ -28,6 +28,8 @@ import {
   X,
   MessageSquare,
   Sparkles,
+  Check,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,6 +62,13 @@ type RepairItem = {
   garageAdminMessage: string | null;
   garageAdminMessageAt: Date | string | null;
   garageAdminMessageReadAt: Date | string | null;
+  nextTask: {
+    id: string;
+    title: string;
+    titleEs: string | null;
+    titleNl: string | null;
+    status: "pending" | "in_progress";
+  } | null;
 };
 
 interface QuickStats {
@@ -127,6 +136,8 @@ export function GarageTodayClient({
   const [recentWorkerIds, setRecentWorkerIds] = useState<string[]>([]);
   const [isStarting, startStartTransition] = useTransition();
   const [isPausing, startPauseTransition] = useTransition();
+  const [isTicking, startTickTransition] = useTransition();
+  const [tickedTaskId, setTickedTaskId] = useState<string | null>(null);
   const prevRepairIdsRef = useRef<Set<string> | null>(null);
 
   useGaragePoll();
@@ -439,6 +450,28 @@ export function GarageTodayClient({
                   quickUsers={selectableUsers}
                   timerStartAllowed={timerStartAllowed}
                   pauseDisabled={isPausing}
+                  tickDisabled={isTicking}
+                  tickedTaskId={tickedTaskId}
+                  onTickNextTask={(taskId) => {
+                    if (!repair.nextTask || repair.nextTask.id !== taskId) return;
+                    hapticSuccess();
+                    setTickedTaskId(taskId);
+                    startTickTransition(async () => {
+                      try {
+                        await updateTaskStatus(taskId, "done");
+                        toast.success(
+                          t("Task done — nice work!", "Tarea hecha — ¡buen trabajo!", "Taak klaar — top!"),
+                        );
+                      } catch {
+                        setTickedTaskId(null);
+                        toast.error(
+                          t("Could not mark done", "No se pudo marcar como hecho", "Kon niet als klaar markeren"),
+                        );
+                      }
+                      router.refresh();
+                      setTimeout(() => setTickedTaskId(null), 800);
+                    });
+                  }}
                   onMainTap={() => {
                     hapticTap();
                     if (repairTimers.length > 0) {
@@ -701,9 +734,12 @@ function JobCard({
   quickUsers,
   timerStartAllowed,
   pauseDisabled,
+  tickDisabled,
+  tickedTaskId,
   onMainTap,
   onPauseUser,
   onQuickStart,
+  onTickNextTask,
 }: {
   repair: RepairItem;
   index: number;
@@ -712,15 +748,26 @@ function JobCard({
   quickUsers: { id: string; name: string | null; role: string | null }[];
   timerStartAllowed: boolean;
   pauseDisabled: boolean;
+  tickDisabled: boolean;
+  tickedTaskId: string | null;
   onMainTap: () => void;
   onPauseUser: (userId: string) => void;
   onQuickStart: (userId: string) => void;
+  onTickNextTask: (taskId: string) => void;
 }) {
   const hasTimer = activeTimers.length > 0;
   const showQuickStart = timerStartAllowed && quickUsers.length > 0;
-  const hasFooter = activeTimers.length > 0 || showQuickStart;
+  const showNextTask =
+    repair.status === "in_progress" &&
+    !!repair.nextTask &&
+    repair.tasks.total > 0;
+  const hasFooter = activeTimers.length > 0 || showQuickStart || showNextTask;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
   const hasUnreadMessage = !!(repair.garageAdminMessage && !repair.garageAdminMessageReadAt);
+  const isThisTaskTicking = !!(repair.nextTask && tickedTaskId === repair.nextTask.id);
+  const nextTaskTitle = repair.nextTask
+    ? t(repair.nextTask.title, repair.nextTask.titleEs, repair.nextTask.titleNl)
+    : "";
 
   return (
     <div
@@ -808,6 +855,8 @@ function JobCard({
           )}
 
           {/* Footer chips */}
+          {/* (Next-task pill is rendered just below the main button so the tap
+              target can stop click propagation without breaking card open.) */}
           <div className="flex flex-wrap items-center gap-3">
             {repair.tasks.total > 0 ? (
               <div className="flex min-w-[140px] flex-1 items-center gap-2">
@@ -864,6 +913,44 @@ function JobCard({
           </div>
         </div>
       </button>
+
+      {showNextTask && repair.nextTask ? (
+        <div className="border-t border-white/[0.06] px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              disabled={tickDisabled}
+              onClick={() => onTickNextTask(repair.nextTask!.id)}
+              aria-label={t("Mark task done", "Marcar tarea como hecha", "Markeer taak als klaar")}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 disabled:cursor-progress ${
+                isThisTaskTicking
+                  ? "border-emerald-400/60 bg-emerald-400/20 text-emerald-200"
+                  : "border-white/[0.12] bg-white/[0.04] text-white/60 hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-200"
+              }`}
+            >
+              {isThisTaskTicking ? (
+                <CheckCircle2 className="h-4.5 w-4.5 motion-safe:animate-pop-in" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[10.5px] font-bold uppercase tracking-wider text-white/35">
+                {repair.nextTask.status === "in_progress"
+                  ? t("In progress", "En curso", "Bezig")
+                  : t("Up next", "Siguiente", "Volgende")}
+              </p>
+              <p
+                className={`truncate text-[13px] font-medium leading-tight ${
+                  isThisTaskTicking ? "text-emerald-200 line-through opacity-70" : "text-white/85"
+                }`}
+              >
+                {nextTaskTitle}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {activeTimers.length > 0 ? (
         <div className="flex flex-col gap-2 px-4 pb-3">

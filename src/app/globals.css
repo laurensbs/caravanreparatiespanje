@@ -223,15 +223,33 @@
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
-/* Sonner: force readable light toasts (dark OS theme was yielding near-black panels). */
-[data-sonner-toast] {
+/* Sonner: force readable light toasts when the app is in light mode. We previously
+   forced this globally because Sonner picked up the OS dark theme and produced
+   near-black panels on a light dashboard. Now that the dashboard has its own
+   dark-mode toggle we only override in light mode and let Sonner's `theme="system"`
+   render its own dark variant when `.dark` is on `<html>`. */
+html:not(.dark) [data-sonner-toast] {
   background-color: #fff !important;
   color: #18181b !important;
   border-color: #e4e4e7 !important;
 }
-[data-sonner-toast] [data-title] {
+html:not(.dark) [data-sonner-toast] [data-title] {
   color: #18181b !important;
 }
-[data-sonner-toast] [data-description] {
+html:not(.dark) [data-sonner-toast] [data-description] {
   color: #52525b !important;
+}
+
+/* Dark-mode toast contrast: Sonner already styles these but we ensure minimum
+   contrast for our shadcn-style toast classes. */
+html.dark [data-sonner-toast] {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+  border-color: rgb(31 41 55) !important; /* gray-800 */
+}
+html.dark [data-sonner-toast] [data-title] {
+  color: rgb(243 244 246) !important;
+}
+html.dark [data-sonner-toast] [data-description] {
+  color: rgb(156 163 175) !important; /* gray-400 */
 }

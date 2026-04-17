@@ -12,7 +12,7 @@ import {
   type HoldedProduct,
 } from "@/lib/holded/invoices";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { eq, isNull, isNotNull, asc } from "drizzle-orm";
+import { eq, isNull, isNotNull, asc, sql } from "drizzle-orm";
 
 // ─── Name normalization (for matching) ───
 
@@ -582,26 +582,38 @@ export async function pullProducts(): Promise<SyncResult & { holdedTotal: number
 
 // ─── Get sync status overview ───
 
+/**
+ * Counts how many rows in each Holded-linked table are linked vs total.
+ *
+ * Uses SQL aggregation (COUNT + FILTER) so we only run three lightweight
+ * queries instead of pulling every row id into Node — was the slowest part of
+ * loading the Settings page on Neon serverless.
+ */
 export async function getSyncStatus() {
-  const [
-    totalContacts,
-    linkedContacts,
-    totalSuppliers,
-    linkedSuppliers,
-    totalParts,
-    linkedParts,
-  ] = await Promise.all([
-    db.select({ id: customers.id }).from(customers).then((r) => r.length),
-    db.select({ id: customers.id }).from(customers).where(isNotNull(customers.holdedContactId)).then((r) => r.length),
-    db.select({ id: suppliers.id }).from(suppliers).then((r) => r.length),
-    db.select({ id: suppliers.id }).from(suppliers).where(isNotNull(suppliers.holdedContactId)).then((r) => r.length),
-    db.select({ id: parts.id }).from(parts).then((r) => r.length),
-    db.select({ id: parts.id }).from(parts).where(isNotNull(parts.holdedProductId)).then((r) => r.length),
+  const [contactsRow, suppliersRow, partsRow] = await Promise.all([
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        linked: sql<number>`count(*) filter (where ${customers.holdedContactId} is not null)::int`,
+      })
+      .from(customers),
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        linked: sql<number>`count(*) filter (where ${suppliers.holdedContactId} is not null)::int`,
+      })
+      .from(suppliers),
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        linked: sql<number>`count(*) filter (where ${parts.holdedProductId} is not null)::int`,
+      })
+      .from(parts),
   ]);
 
   return {
-    contacts: { total: totalContacts, linked: linkedContacts },
-    suppliers: { total: totalSuppliers, linked: linkedSuppliers },
-    parts: { total: totalParts, linked: linkedParts },
+    contacts: { total: contactsRow[0]?.total ?? 0, linked: contactsRow[0]?.linked ?? 0 },
+    suppliers: { total: suppliersRow[0]?.total ?? 0, linked: suppliersRow[0]?.linked ?? 0 },
+    parts: { total: partsRow[0]?.total ?? 0, linked: partsRow[0]?.linked ?? 0 },
   };
 }

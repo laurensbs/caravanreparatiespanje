@@ -6,20 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, MapPin } from "lucide-react";
+import { Plus, MapPin, Pencil } from "lucide-react";
 import { createLocation, updateLocation } from "@/actions/locations";
+import { SegmentedTabs } from "@/components/layout/dashboard-surface";
+import {
+  SettingsPanel,
+  SettingsSectionHeader,
+  SettingsEmptyState,
+  SettingsTile,
+} from "@/components/settings/settings-primitives";
 
 interface Location {
   id: string;
@@ -28,6 +28,8 @@ interface Location {
   description: string | null;
   active: boolean;
 }
+
+const MAIN_NAMES = ["cruïllas", "peratallada", "sant climent"];
 
 export function LocationsClient({ locations }: { locations: Location[] }) {
   const router = useRouter();
@@ -38,9 +40,12 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
   const [isPending, setIsPending] = useState(false);
   const [tab, setTab] = useState<"main" | "misc">("main");
 
-  const MAIN_NAMES = ["cruïllas", "peratallada", "sant climent"];
-  const mainLocations = locations.filter((l) => MAIN_NAMES.includes(l.name.toLowerCase()));
-  const miscLocations = locations.filter((l) => !MAIN_NAMES.includes(l.name.toLowerCase()));
+  const mainLocations = locations.filter((l) =>
+    MAIN_NAMES.includes(l.name.toLowerCase()),
+  );
+  const miscLocations = locations.filter(
+    (l) => !MAIN_NAMES.includes(l.name.toLowerCase()),
+  );
   const visibleLocations = tab === "main" ? mainLocations : miscLocations;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,9 +53,17 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
     setIsPending(true);
     try {
       if (editId) {
-        await updateLocation(editId, { name, description: description || undefined, active: true });
+        await updateLocation(editId, {
+          name,
+          description: description || undefined,
+          active: true,
+        });
       } else {
-        await createLocation({ name, description: description || undefined, active: true });
+        await createLocation({
+          name,
+          description: description || undefined,
+          active: true,
+        });
       }
       setOpen(false);
       setEditId(null);
@@ -77,115 +90,129 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Locations</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="h-9 rounded-lg text-xs" onClick={openNew}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add Location
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editId ? "Edit Location" : "New Location"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="loc-name">Name</Label>
-                <Input
-                  id="loc-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Peratallada Workshop"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="loc-description">Description (optional)</Label>
-                <Input
-                  id="loc-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Workshop description or address"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isPending || !name.trim()}>
-                  {editId ? "Save" : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+    <SettingsPanel className="space-y-5">
+      <SettingsSectionHeader
+        icon={MapPin}
+        title="Locations"
+        description="Workshops, storage yards and any other spaces work orders can sit at."
+        action={
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 rounded-full px-4 text-[12.5px] font-medium shadow-sm"
+            onClick={openNew}
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Add location
+          </Button>
+        }
+      />
 
-      <div className="flex gap-2 border-b">
-        <button
-          className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === "main"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setTab("main")}
-        >
-          Locations ({mainLocations.length})
-        </button>
-        <button
-          className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === "misc"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setTab("misc")}
-        >
-          Misc ({miscLocations.length})
-        </button>
-      </div>
+      <SegmentedTabs<"main" | "misc">
+        tabs={[
+          { value: "main", label: "Main", count: mainLocations.length },
+          { value: "misc", label: "Other", count: miscLocations.length },
+        ]}
+        value={tab}
+        onValueChange={setTab}
+        size="sm"
+      />
 
       {visibleLocations.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <MapPin className="mb-2 h-8 w-8 opacity-20" />
-            <p className="font-medium text-sm text-muted-foreground">
-              {tab === "main" ? "No main locations yet." : "No misc locations."}
-            </p>
-          </CardContent>
-        </Card>
+        <SettingsEmptyState
+          icon={MapPin}
+          title={tab === "main" ? "No main locations yet" : "No other locations"}
+          description={
+            tab === "main"
+              ? "Add your workshops here so jobs can be scheduled per site."
+              : "Misc locations show up here. Add one above when needed."
+          }
+          action={
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-9 rounded-full px-4 text-[12.5px]"
+              onClick={openNew}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add location
+            </Button>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {visibleLocations.map((loc, idx) => (
-            <Card
-              key={loc.id}
-              className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] ring-1 ring-border/50 animate-slide-up"
-              style={{ animationDelay: `${idx * 40}ms`, animationFillMode: "backwards" }}
-              onClick={() => openEdit(loc)}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">{loc.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">
-                  {loc.description || "No description"}
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Slug: {loc.slug}
-                </p>
-              </CardContent>
-            </Card>
+            <SettingsTile key={loc.id} index={idx} onClick={() => openEdit(loc)}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
+                    <MapPin className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-[14px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                    {loc.name}
+                  </span>
+                </div>
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-500">
+                  <Pencil className="h-3.5 w-3.5" />
+                </span>
+              </div>
+              <p className="mt-1 line-clamp-2 text-[12.5px] text-gray-500 dark:text-gray-400">
+                {loc.description || "No description"}
+              </p>
+              <p className="mt-2 text-[10.5px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Slug · {loc.slug}
+              </p>
+            </SettingsTile>
           ))}
         </div>
       )}
-    </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editId ? "Edit location" : "New location"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="loc-name">Name</Label>
+              <Input
+                id="loc-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Peratallada Workshop"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="loc-description">Description (optional)</Label>
+              <Input
+                id="loc-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Workshop description or address"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-full px-4"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="h-9 rounded-full px-4"
+                disabled={isPending || !name.trim()}
+              >
+                {editId ? "Save" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </SettingsPanel>
   );
 }

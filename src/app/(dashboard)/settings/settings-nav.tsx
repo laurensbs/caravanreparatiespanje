@@ -1,58 +1,67 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { SegmentedTabs } from "@/components/layout/dashboard-surface";
+import {
+  User,
+  MapPin,
+  Users,
+  Tag,
+  Plug,
+  Receipt,
+  Shield,
+  type LucideIcon,
+} from "lucide-react";
 
-const BASE_ITEMS: { href: string; label: string }[] = [
-  { href: "/settings/account", label: "Account" },
-  { href: "/settings/locations", label: "Locations" },
-  { href: "/settings/users", label: "Users" },
-  { href: "/settings/tags", label: "Tags" },
-  { href: "/settings/holded", label: "Holded" },
-  { href: "/settings/pricing", label: "Pricing" },
+type Item = { href: string; label: string; icon: LucideIcon };
+
+const BASE: Item[] = [
+  { href: "/settings/account", label: "Account", icon: User },
+  { href: "/settings/locations", label: "Locations", icon: MapPin },
+  { href: "/settings/users", label: "Users", icon: Users },
+  { href: "/settings/tags", label: "Tags", icon: Tag },
+  { href: "/settings/holded", label: "Holded", icon: Plug },
+  { href: "/settings/pricing", label: "Pricing", icon: Receipt },
 ];
 
-/** Inserted after Holded — only for admins (see layout). */
-const AUDIT_ITEM = { href: "/settings/audit", label: "Audit log" } as const;
+const AUDIT: Item = { href: "/settings/audit", label: "Audit log", icon: Shield };
 
-function isActive(pathname: string, href: string) {
-  if (href === "/settings") return pathname === "/settings";
-  return pathname === href || pathname.startsWith(`${href}/`);
+function activeFor(pathname: string, items: Item[]): string {
+  // Most specific match wins.
+  let best = items[0]!.href;
+  let bestLen = -1;
+  for (const item of items) {
+    if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
+      if (item.href.length > bestLen) {
+        best = item.href;
+        bestLen = item.href.length;
+      }
+    }
+  }
+  return best;
 }
 
 export function SettingsNav({ showAudit }: { showAudit: boolean }) {
   const pathname = usePathname();
   const items = showAudit
-    ? [
-        ...BASE_ITEMS.slice(0, 5),
-        AUDIT_ITEM,
-        ...BASE_ITEMS.slice(5),
-      ]
-    : BASE_ITEMS;
+    ? [...BASE.slice(0, 5), AUDIT, ...BASE.slice(5)]
+    : BASE;
+  const active = activeFor(pathname, items);
 
   return (
-    <nav
-      className="-mx-1 flex gap-1 overflow-x-auto border-b border-border/70"
-      aria-label="Settings sections"
-    >
-      {items.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "relative mb-[-1px] shrink-0 rounded-t-md border-b-2 px-3.5 pt-2 pb-2.5 text-sm font-medium whitespace-nowrap transition-[color,border-color,background-color,transform] duration-200 motion-safe:active:scale-[0.98]",
-              active
-                ? "border-primary bg-muted/30 text-foreground"
-                : "border-transparent text-muted-foreground hover:bg-muted/25 hover:text-foreground",
-            )}
-          >
-            {item.label}
-          </Link>
-        );
+    <SegmentedTabs
+      tabs={items.map((item) => {
+        const Icon = item.icon;
+        return {
+          value: item.href,
+          label: item.label,
+          icon: <Icon className="h-3.5 w-3.5" />,
+        };
       })}
-    </nav>
+      value={active}
+      hrefFor={(href) => href}
+      size="md"
+      className="w-full overflow-x-auto"
+    />
   );
 }

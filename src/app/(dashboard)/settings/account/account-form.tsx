@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { updateOwnProfile, changeOwnPassword } from "@/actions/account";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Lock, User } from "lucide-react";
+import {
+  SettingsPanel,
+  SettingsSectionHeader,
+} from "@/components/settings/settings-primitives";
 
 interface AccountFormProps {
   userName: string;
@@ -36,8 +39,8 @@ export function AccountForm({ userName, userEmail }: AccountFormProps) {
       await updateOwnProfile({ name });
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 3000);
-    } catch (err: any) {
-      setProfileError(err?.message ?? "Failed to update profile");
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Failed to update profile");
     }
     setSavingProfile(false);
   }
@@ -58,92 +61,123 @@ export function AccountForm({ userName, userEmail }: AccountFormProps) {
       setNewPassword("");
       setConfirmPassword("");
       setTimeout(() => setPasswordSaved(false), 3000);
-    } catch (err: any) {
-      setPasswordError(err?.message ?? "Failed to change password");
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : "Failed to change password");
     }
     setSavingPassword(false);
   }
 
   return (
-    <div className="space-y-4 max-w-2xl animate-fade-in">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Profile</CardTitle>
-          <CardDescription>Update your display name</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleProfileSave} className="space-y-4">
-            {profileError && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{profileError}</div>
+    <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
+      <SettingsPanel className="space-y-5">
+        <SettingsSectionHeader
+          icon={User}
+          title="Profile"
+          description="Your display name appears in the top bar, audit log and feedback."
+        />
+        <form onSubmit={handleProfileSave} className="space-y-4">
+          {profileError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-300">
+              {profileError}
+            </div>
+          ) : null}
+          <div className="space-y-1.5">
+            <Label htmlFor="acc-name">Display name</Label>
+            <Input
+              id="acc-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-10 rounded-xl"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Username</Label>
+            <Input value={userEmail} disabled className="h-10 rounded-xl bg-gray-50 dark:bg-white/[0.03]" />
+            <p className="text-[11.5px] text-gray-500">Username cannot be changed</p>
+          </div>
+          <Button
+            type="submit"
+            disabled={savingProfile}
+            className="h-10 rounded-full px-5 text-[13px] font-medium shadow-sm"
+          >
+            {savingProfile ? <Spinner className="mr-2" /> : null}
+            {profileSaved ? (
+              <>
+                <CheckCircle className="mr-1.5 h-3.5 w-3.5 text-emerald-300" />
+                Saved
+              </>
+            ) : (
+              "Save changes"
             )}
-            <div>
-              <Label htmlFor="acc-name">Display Name</Label>
-              <Input id="acc-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 max-w-sm" />
-            </div>
-            <div>
-              <Label>Username</Label>
-              <Input value={userEmail} disabled className="mt-1 max-w-sm bg-muted" />
-              <p className="text-xs text-muted-foreground mt-1">Username cannot be changed</p>
-            </div>
-            <Button type="submit" disabled={savingProfile} size="sm">
-              {savingProfile ? <Spinner className="mr-2" /> : null}
-              {profileSaved ? <><CheckCircle className="mr-2 h-4 w-4 text-emerald-500" /> Saved</> : "Save Changes"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </Button>
+        </form>
+      </SettingsPanel>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Change Password</CardTitle>
-          <CardDescription>Update your password</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePasswordChange} className="space-y-4">
-            {passwordError && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{passwordError}</div>
-            )}
-            <div>
-              <Label htmlFor="acc-current">Current Password</Label>
-              <Input
-                id="acc-current"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 max-w-sm"
-                required
-              />
+      <SettingsPanel className="space-y-5">
+        <SettingsSectionHeader
+          icon={Lock}
+          title="Change password"
+          description="Pick something you don't reuse anywhere else."
+        />
+        <form onSubmit={handlePasswordChange} className="space-y-4">
+          {passwordError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-300">
+              {passwordError}
             </div>
-            <div>
-              <Label htmlFor="acc-new">New Password</Label>
+          ) : null}
+          <div className="space-y-1.5">
+            <Label htmlFor="acc-current">Current password</Label>
+            <Input
+              id="acc-current"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="h-10 rounded-xl"
+              required
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="acc-new">New password</Label>
               <Input
                 id="acc-new"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 max-w-sm"
+                className="h-10 rounded-xl"
                 required
                 minLength={6}
               />
             </div>
-            <div>
-              <Label htmlFor="acc-confirm">Confirm New Password</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="acc-confirm">Confirm</Label>
               <Input
                 id="acc-confirm"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 max-w-sm"
+                className="h-10 rounded-xl"
                 required
               />
             </div>
-            <Button type="submit" disabled={savingPassword} size="sm">
-              {savingPassword ? <Spinner className="mr-2" /> : null}
-              {passwordSaved ? <><CheckCircle className="mr-2 h-4 w-4 text-emerald-500" /> Password Changed</> : "Change Password"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+          <Button
+            type="submit"
+            disabled={savingPassword}
+            className="h-10 rounded-full px-5 text-[13px] font-medium shadow-sm"
+          >
+            {savingPassword ? <Spinner className="mr-2" /> : null}
+            {passwordSaved ? (
+              <>
+                <CheckCircle className="mr-1.5 h-3.5 w-3.5 text-emerald-300" />
+                Password changed
+              </>
+            ) : (
+              "Change password"
+            )}
+          </Button>
+        </form>
+      </SettingsPanel>
     </div>
   );
 }

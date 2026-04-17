@@ -4,9 +4,10 @@ import { requireRole } from "@/lib/auth-utils";
 import { desc, eq, like, and, sql, gte, lte, or, isNull, inArray, notInArray } from "drizzle-orm";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Shield } from "lucide-react";
+import { Shield, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { AuditFilters } from "./audit-filters";
+import { SettingsPanel, SettingsSectionHeader } from "@/components/settings/settings-primitives";
 
 const AUDIT_BASE = "/settings/audit";
 
@@ -34,7 +35,7 @@ export default async function AuditLogPage({
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [logs, countResult] = await Promise.all([
+  const [logs, countResult, holdedDataGaps] = await Promise.all([
     db
       .select({
         id: auditLogs.id,
@@ -53,16 +54,11 @@ export default async function AuditLogPage({
       .limit(perPage)
       .offset((page - 1) * perPage),
     db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<number>`count(*)::int` })
       .from(auditLogs)
       .where(where),
-  ]);
-
-  const totalCount = Number(countResult[0]?.count ?? 0);
-  const totalPages = Math.ceil(totalCount / perPage);
-
-  const holdedDataGaps = await db
-    .select({
+    db
+      .select({
       id: repairJobs.id,
       publicCode: repairJobs.publicCode,
       title: repairJobs.title,
@@ -90,7 +86,11 @@ export default async function AuditLogPage({
       ),
     )
     .orderBy(desc(repairJobs.updatedAt))
-    .limit(50);
+    .limit(50),
+  ]);
+
+  const totalCount = Number(countResult[0]?.count ?? 0);
+  const totalPages = Math.ceil(totalCount / perPage);
 
   const ACTION_COLORS: Record<string, string> = {
     create: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
@@ -120,38 +120,51 @@ export default async function AuditLogPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold tracking-tight">Audit log</h2>
-        <p className="text-xs text-muted-foreground">
-          {totalCount} entr{totalCount !== 1 ? "ies" : "y"} recorded — who changed what in this app
-        </p>
-      </div>
+    <div className="space-y-5">
+      <SettingsPanel className="space-y-3">
+        <SettingsSectionHeader
+          icon={Shield}
+          title="Audit log"
+          description={`${totalCount} entr${totalCount !== 1 ? "ies" : "y"} recorded — who changed what in this app.`}
+        />
+      </SettingsPanel>
 
       {holdedDataGaps.length > 0 && (
-        <div className="motion-safe:animate-slide-up rounded-xl border border-amber-200/90 bg-amber-50/90 p-4 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/30">
-          <h3 className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-            Holded link gaps ({holdedDataGaps.length})
-          </h3>
-          <p className="mt-1 text-xs text-amber-900/85 dark:text-amber-200/80">
-            Completed or invoiced jobs without a linked Holded invoice (excluding warranty / no-charge), or quote-needed without a linked estimate. Use{" "}
-            <strong>Financial → Link existing Holded document</strong> on the work order (managers).
-          </p>
-          <ul className="mt-3 max-h-48 space-y-1.5 overflow-y-auto text-xs">
-            {holdedDataGaps.map((r) => (
-              <li key={r.id}>
-                <Link href={`/repairs/${r.id}`} className="font-medium text-amber-950 underline-offset-2 hover:underline dark:text-amber-100">
-                  {r.publicCode ?? r.title ?? r.id.slice(0, 8)}
-                </Link>
-                <span className="text-amber-800/80 dark:text-amber-300/80">
-                  {" "}
-                  · {r.status}
-                  {r.customerName ? ` · ${r.customerName}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <SettingsPanel
+          className="motion-safe:animate-slide-up border-amber-200/80 bg-amber-50/80 dark:border-amber-900/50 dark:bg-amber-950/30"
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+              <AlertTriangle className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[14px] font-semibold tracking-tight text-amber-950 dark:text-amber-100">
+                Holded link gaps ({holdedDataGaps.length})
+              </h3>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-amber-900/85 dark:text-amber-200/80">
+                Completed / invoiced jobs without a linked Holded invoice (excluding warranty / no-charge),
+                or quote-needed without a linked estimate. Open the work order and use{" "}
+                <strong>Financial → Link existing Holded document</strong>.
+              </p>
+              <ul className="mt-3 max-h-52 space-y-1.5 overflow-y-auto pr-1 text-[12.5px]">
+                {holdedDataGaps.map((r) => (
+                  <li key={r.id} className="flex items-baseline gap-1.5">
+                    <Link
+                      href={`/repairs/${r.id}`}
+                      className="font-medium text-amber-950 underline-offset-2 hover:underline dark:text-amber-100"
+                    >
+                      {r.publicCode ?? r.title ?? r.id.slice(0, 8)}
+                    </Link>
+                    <span className="text-amber-800/80 dark:text-amber-300/80">
+                      · {r.status}
+                      {r.customerName ? ` · ${r.customerName}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </SettingsPanel>
       )}
 
       <div className="flex flex-wrap gap-2">
@@ -205,7 +218,7 @@ export default async function AuditLogPage({
         dateTo={params.dateTo}
       />
 
-      <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+      <SettingsPanel padded={false} className="overflow-hidden">
         <div className="max-h-[calc(100vh-20rem)] overflow-x-auto overflow-y-auto">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
@@ -260,7 +273,7 @@ export default async function AuditLogPage({
             </TableBody>
           </Table>
         </div>
-      </div>
+      </SettingsPanel>
 
       {totalPages > 1 && (
         <p className="py-2 text-center text-xs text-muted-foreground">

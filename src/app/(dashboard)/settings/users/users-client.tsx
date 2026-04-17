@@ -1,21 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -24,16 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Search } from "lucide-react";
 import { createUser, updateUser } from "@/actions/users";
+import {
+  SettingsPanel,
+  SettingsSectionHeader,
+  SettingsEmptyState,
+} from "@/components/settings/settings-primitives";
+import { cn } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -44,17 +36,18 @@ interface User {
   createdAt: Date;
 }
 
-  const ROLE_COLORS: Record<string, string> = {
-    admin: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-    manager: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-    technician: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
-    staff: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-    viewer: "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
-  };
+const ROLE_PILL: Record<User["role"], string> = {
+  admin: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  manager: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  technician: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
+  staff: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+  viewer: "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400",
+};
 
 export function UsersClient({ users }: { users: User[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -62,6 +55,17 @@ export function UsersClient({ users }: { users: User[] }) {
     role: "staff" as User["role"],
   });
   const [isPending, setIsPending] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q),
+    );
+  }, [users, query]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,147 +85,217 @@ export function UsersClient({ users }: { users: User[] }) {
     router.refresh();
   };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Users</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="h-9 rounded-lg text-xs">
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>New User</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="user-name">Name</Label>
-                <Input
-                  id="user-name"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, name: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="user-email">Email</Label>
-                <Input
-                  id="user-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, email: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="user-password">Password</Label>
-                <Input
-                  id="user-password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, password: e.target.value }))
-                  }
-                  required
-                  minLength={8}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select
-                  value={form.role}
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...f, role: v as User["role"] }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="technician">Technician</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                  Create User
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+  const activeCount = users.filter((u) => u.active).length;
 
-      {users.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Users className="mb-2 h-8 w-8 opacity-20" />
-            <p className="font-medium text-sm text-muted-foreground">No users yet</p>
-          </CardContent>
-        </Card>
+  return (
+    <SettingsPanel className="space-y-5">
+      <SettingsSectionHeader
+        icon={Users}
+        title="Team"
+        description={`${users.length} member${users.length === 1 ? "" : "s"} · ${activeCount} active`}
+        action={
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 rounded-full px-4 text-[12.5px] font-medium shadow-sm"
+            onClick={() => setOpen(true)}
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Add user
+          </Button>
+        }
+      />
+
+      {users.length > 0 ? (
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, email or role…"
+            className="h-10 rounded-xl pl-9 text-[13px]"
+          />
+        </div>
+      ) : null}
+
+      {filtered.length === 0 ? (
+        users.length === 0 ? (
+          <SettingsEmptyState
+            icon={Users}
+            title="No users yet"
+            description="Invite teammates so they can manage repairs and Holded sync with their own access level."
+            action={
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-9 rounded-full px-4 text-[12.5px]"
+                onClick={() => setOpen(true)}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add user
+              </Button>
+            }
+          />
+        ) : (
+          <SettingsEmptyState
+            icon={Search}
+            title="No matches"
+            description="Try a different name, email or role."
+          />
+        )
       ) : (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Name</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Email</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Role</TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
-                <TableHead className="w-24 text-[11px] font-semibold uppercase tracking-wider">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-                {users.map((user, idx) => (
-                  <TableRow key={user.id} className="table-row-animate" style={{ animationDelay: `${idx * 20}ms` }}>
-                    <TableCell className="font-medium text-xs">{user.name}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{user.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[11px] ${ROLE_COLORS[user.role]}`}
+        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+          <table className="w-full text-left text-[13px]">
+            <thead className="bg-gray-50/60 text-[10.5px] font-semibold uppercase tracking-wider text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
+              <tr>
+                <th className="px-4 py-2.5">Name</th>
+                <th className="hidden px-4 py-2.5 sm:table-cell">Email</th>
+                <th className="px-4 py-2.5">Role</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="w-12 px-4 py-2.5" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {filtered.map((user, idx) => (
+                <tr
+                  key={user.id}
+                  className="motion-safe:animate-slide-up transition-colors hover:bg-gray-50/60 dark:hover:bg-white/[0.03]"
+                  style={{ animationDelay: `${idx * 18}ms`, animationFillMode: "backwards" }}
+                >
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-[11px] font-semibold text-white shadow-sm">
+                        {user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-gray-900 dark:text-gray-100">
+                          {user.name}
+                        </p>
+                        <p className="truncate text-[11.5px] text-gray-500 sm:hidden dark:text-gray-400">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="hidden px-4 py-2.5 text-[12.5px] text-gray-500 sm:table-cell dark:text-gray-400">
+                    {user.email}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-wider",
+                        ROLE_PILL[user.role],
+                      )}
                     >
                       {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.active ? "default" : "outline"}>
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        user.active
+                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                          : "bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full",
+                          user.active ? "bg-emerald-500" : "bg-gray-400",
+                        )}
+                      />
                       {user.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="h-8 rounded-full px-3 text-[11.5px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
                       onClick={() => toggleActive(user)}
                     >
                       {user.active ? "Deactivate" : "Activate"}
                     </Button>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
       )}
-    </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New user</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Name</Label>
+              <Input
+                id="user-name"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-email">Email</Label>
+              <Input
+                id="user-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-password">Password</Label>
+              <Input
+                id="user-password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={form.role}
+                onValueChange={(v) => setForm((f) => ({ ...f, role: v as User["role"] }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="technician">Technician</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-full px-4"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="h-9 rounded-full px-4" disabled={isPending}>
+                Create user
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </SettingsPanel>
   );
 }

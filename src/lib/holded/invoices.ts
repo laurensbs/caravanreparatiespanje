@@ -218,6 +218,22 @@ export async function getInvoice(invoiceId: string): Promise<HoldedInvoice> {
   return holdedFetch<HoldedInvoice>(`/documents/invoice/${invoiceId}`);
 }
 
+/** Move an invoice to another Holded client (e.g. draft still showing wrong contact). */
+export async function updateInvoiceContact(invoiceId: string, contactId: string): Promise<void> {
+  await holdedFetch(`/documents/invoice/${invoiceId}`, {
+    method: "PUT",
+    body: JSON.stringify({ contactId }),
+  });
+}
+
+/** Move an estimate/quote to another Holded client. */
+export async function updateEstimateContact(estimateId: string, contactId: string): Promise<void> {
+  await holdedFetch(`/documents/estimate/${estimateId}`, {
+    method: "PUT",
+    body: JSON.stringify({ contactId }),
+  });
+}
+
 interface CreateInvoiceParams {
   contactId: string;
   description: string;

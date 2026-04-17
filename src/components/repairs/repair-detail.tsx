@@ -1890,6 +1890,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               Each repair points at <span className="font-medium text-foreground/85">one client record</span> in the address book. If two family members each have their own client card, use the button below so{" "}
               <span className="font-medium text-foreground/85">only this repair</span> moves — editing the name with the pencil changes that shared card for{" "}
               <span className="font-medium text-foreground/85">every repair</span> (and Holded) that still uses it.
+              {job.unit ? (
+                <> If this job has a linked caravan/unit, its owner in the address book is updated to match the client you pick.</>
+              ) : null}
             </p>
 
             <Button
@@ -2128,7 +2131,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <DialogHeader>
             <DialogTitle>Client for this repair</DialogTitle>
             <DialogDescription>
-              Pick the client record this job should belong to. Other repairs stay on their current client — only this repair is updated.
+              Pick the client record this job should belong to. Other repairs stay on their current client. This job is updated; if a caravan/unit is linked, its owner is set to the same client.
             </DialogDescription>
           </DialogHeader>
           <CustomerSearch
@@ -2140,7 +2143,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 toast.error(res.message);
                 return;
               }
-              toast.success("This repair is now linked to the client you chose");
+              toast.success(
+                job.unit
+                  ? "This repair and its linked caravan now use the client you chose"
+                  : "This repair is now linked to the client you chose"
+              );
               setShowCustomerLinker(false);
               router.refresh();
             }}

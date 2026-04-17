@@ -8,6 +8,7 @@ import { repairJobSchema, bulkUpdateSchema } from "@/lib/validators";
 import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
 import { clearGarageAttention } from "./garage-sync";
+import { syncCustomerToHolded } from "./holded";
 import { generatePublicCode } from "@/lib/utils";
 import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -465,7 +466,15 @@ export async function updateRepairJob(id: string, data: unknown): Promise<Update
     }
 
     const changes: Record<string, { from: unknown; to: unknown }> = {};
-    const trackFields = ["status", "priority", "locationId", "assignedUserId", "invoiceStatus", "customerResponseStatus"] as const;
+    const trackFields = [
+      "status",
+      "priority",
+      "locationId",
+      "assignedUserId",
+      "invoiceStatus",
+      "customerResponseStatus",
+      "customerId",
+    ] as const;
     const eventValues: { repairJobId: string; userId: string; eventType: string; fieldChanged: string; oldValue: string; newValue: string }[] = [];
 
     for (const field of trackFields) {
@@ -508,6 +517,30 @@ export async function updateRepairJob(id: string, data: unknown): Promise<Update
         parsed.status ?? existing.status,
         parsed.customerResponseStatus ?? existing.customerResponseStatus
       );
+    }
+
+    // When this job’s client changes and a unit is linked, keep the unit’s owner in sync
+    // (same rule as data-fix scripts — avoids repair on Carlos + caravan still on Naomi).
+    if (
+      parsed.customerId !== undefined &&
+      String(existing.customerId ?? "") !== String(updated.customerId ?? "") &&
+      updated.unitId &&
+      updated.customerId
+    ) {
+      await db
+        .update(units)
+        .set({ customerId: updated.customerId, updatedAt: new Date() })
+        .where(eq(units.id, updated.unitId));
+      await createAuditLog("update", "unit", updated.unitId, {
+        customerIdAlignedFromRepairJob: id,
+      });
+      revalidatePath(`/units/${updated.unitId}`);
+      revalidatePath("/units");
+      syncCustomerToHolded(updated.customerId).catch(() => {});
+      // Refresh the previous client’s Holded contact (kenteken/custom fields) now that the unit moved away
+      if (existing.customerId) {
+        syncCustomerToHolded(existing.customerId).catch(() => {});
+      }
     }
 
     revalidatePath("/repairs");

@@ -12,7 +12,7 @@ import {
   type HoldedProduct,
 } from "@/lib/holded/invoices";
 import { isHoldedConfigured } from "@/lib/holded/client";
-import { eq, isNull, isNotNull } from "drizzle-orm";
+import { eq, isNull, isNotNull, asc } from "drizzle-orm";
 
 // ─── Name normalization (for matching) ───
 
@@ -312,8 +312,21 @@ export async function pullContacts(): Promise<SyncResult & { holdedTotal: number
 // Used when editing a contact in the app.
 // Only pushes if there's meaningful data beyond just a name.
 
-function hasRealContactData(customer: { name: string; email?: string | null; phone?: string | null; notes?: string | null }): boolean {
-  return !!(customer.email || customer.phone || customer.notes);
+function hasRealContactData(customer: {
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  notes?: string | null;
+}): boolean {
+  return !!(customer.email?.trim() || customer.phone?.trim() || customer.mobile?.trim() || customer.notes?.trim());
+}
+
+/** Holded has a single phone field — prefer landline, else mobile. */
+function holdedPhoneFromCustomer(customer: { phone?: string | null; mobile?: string | null }): string | undefined {
+  const p = customer.phone?.trim();
+  const m = customer.mobile?.trim();
+  const combined = p || m;
+  return combined || undefined;
 }
 
 export async function pushContactToHolded(customerId: string): Promise<void> {
@@ -329,11 +342,14 @@ export async function pushContactToHolded(customerId: string): Promise<void> {
   // Don't push contacts that only have a name — no useful data for Holded
   if (!customer.holdedContactId && !hasRealContactData(customer)) return;
 
-  // Get the customer's units to sync custom fields to Holded
+  const holdedPhone = holdedPhoneFromCustomer(customer);
+
+  // Get the customer's units to sync custom fields to Holded (stable order: kenteken)
   const customerUnits = await db
     .select()
     .from(units)
-    .where(eq(units.customerId, customerId));
+    .where(eq(units.customerId, customerId))
+    .orderBy(asc(units.registration));
   const primaryUnit = customerUnits[0]; // Use first unit for custom fields
 
   // Build custom fields from unit data
@@ -355,7 +371,7 @@ export async function pushContactToHolded(customerId: string): Promise<void> {
     await updateHoldedContact(customer.holdedContactId, {
       name: customer.name,
       email: customer.email,
-      phone: customer.phone,
+      phone: holdedPhone,
       isperson: customer.contactType === "person",
       vatnumber: customer.vatnumber,
       billAddress: (customer.address || customer.city || customer.postalCode) ? {
@@ -376,7 +392,7 @@ export async function pushContactToHolded(customerId: string): Promise<void> {
     const result = await createContact({
       name: customer.name,
       email: customer.email,
-      phone: customer.phone,
+      phone: holdedPhone,
       isperson: customer.contactType === "person",
       type: "client",
       vatnumber: customer.vatnumber,

@@ -49,6 +49,11 @@ export function isNonRepairInvoice(inv: HoldedInvoice): boolean {
     return false;
   }
 
+  // "Fridge rental" etc. — workshop line, not generic stalling/rental
+  if (textToCheck.includes("fridge")) {
+    return false;
+  }
+
   const keywordHits = NON_REPAIR_KEYWORDS.filter((kw) => textToCheck.includes(kw));
   const lineCount = (inv.items?.length ?? 0) + (inv.products?.length ?? 0);
   // Multi-line repair invoices sometimes mention "transport" on one line — require 2 hits or a short doc

@@ -68,7 +68,7 @@ export function GarageLoginForm() {
     "h-[72px] min-h-[72px] w-full sm:h-[84px] sm:min-h-[84px] sm:text-3xl md:h-[92px] md:min-h-[92px] md:text-[2rem]";
 
   return (
-    <div className="fixed inset-0 z-[100] flex min-h-dvh flex-col bg-gray-950 text-white select-none landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-6 landscape:px-4 landscape:py-4 md:landscape:gap-16 md:landscape:px-10 lg:landscape:gap-24">
+    <div className="fixed inset-0 z-[100] flex min-h-dvh flex-col overflow-hidden bg-gray-950 text-white select-none landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-4 landscape:px-3 landscape:py-3 md:landscape:gap-10 md:landscape:px-6 lg:landscape:gap-16 lg:landscape:px-8">
       {/* Language toggle */}
       <div className="absolute right-0 top-0 z-10 flex gap-2 pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))]">
         {langs.map((l) => (
@@ -88,7 +88,7 @@ export function GarageLoginForm() {
       </div>
 
       {/* Branding + PIN (left / top) */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 pb-4 pt-[max(5rem,env(safe-area-inset-top)+3rem)] landscape:min-w-0 landscape:flex-1 landscape:max-w-[min(100%,20rem)] landscape:justify-center landscape:px-4 landscape:pt-6 landscape:pb-6 md:landscape:max-w-md sm:pt-24">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 pb-4 pt-[max(5rem,env(safe-area-inset-top)+3rem)] landscape:max-w-[min(100%,22rem)] landscape:flex-1 landscape:justify-center landscape:px-3 landscape:pt-6 landscape:pb-6 md:landscape:max-w-md sm:pt-24">
         <div className="h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-5 sm:h-20 sm:w-20 sm:rounded-3xl landscape:mb-4">
           <Wrench className="h-8 w-8 text-white/80 sm:h-10 sm:w-10" />
         </div>
@@ -126,9 +126,9 @@ export function GarageLoginForm() {
 
       {/* Numpad */}
       <div
-        className="w-full shrink-0 flex justify-center px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 landscape:flex landscape:items-center landscape:pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pt-0 sm:pb-8"
+        className="flex w-full shrink-0 justify-center px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 landscape:w-auto landscape:max-w-[min(100vw-2rem,24rem)] landscape:flex-none landscape:items-center landscape:pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pt-0 landscape:shrink-0 sm:pb-8"
       >
-        <div className="w-full max-w-[320px] landscape:max-w-[min(100%,20rem)] sm:max-w-[400px] md:max-w-[440px] md:landscape:max-w-[440px]">
+        <div className="mx-auto w-full max-w-[320px] sm:max-w-[400px] md:max-w-[440px] landscape:max-w-[min(24rem,calc(100vw-3rem))]">
           <div className="grid grid-cols-3 gap-3 sm:gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
               <button

@@ -69,11 +69,11 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
         : [];
 
   return (
-    <div className="mb-3 flex items-center gap-3 rounded-lg border bg-primary/5 p-3">
+    <div className="mb-3 flex flex-col gap-2 rounded-lg border bg-primary/5 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
       <span className="text-sm font-medium">{selectedIds.length} selected</span>
 
       <Select value={action} onValueChange={(val) => { setAction(val); setValue(""); }}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="h-10 w-full touch-manipulation sm:h-9 sm:w-40">
           <SelectValue placeholder="Action..." />
         </SelectTrigger>
         <SelectContent>
@@ -85,7 +85,7 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
 
       {action && (
         <Select value={value} onValueChange={setValue}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="h-10 w-full touch-manipulation sm:h-9 sm:w-44">
             <SelectValue placeholder="Select value..." />
           </SelectTrigger>
           <SelectContent>
@@ -97,19 +97,25 @@ export function BulkActions({ selectedIds, onClear }: BulkActionsProps) {
       )}
 
       {action && value && (
-        <Button size="sm" onClick={handleApply} disabled={loading}>
+        <Button size="sm" className="min-h-10 w-full touch-manipulation sm:min-h-9 sm:w-auto" onClick={handleApply} disabled={loading}>
           {loading ? <Spinner className="mr-1" /> : <Check className="mr-1 h-4 w-4" />}
           Apply
         </Button>
       )}
 
-      <Button variant="ghost" size="sm" onClick={onClear}>
-        <X className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-2 sm:contents">
+        <Button variant="ghost" size="sm" className="min-h-10 flex-1 touch-manipulation sm:min-h-9 sm:flex-initial" onClick={onClear}>
+          <X className="h-4 w-4" />
+        </Button>
 
-      <div className="ml-auto">
-        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleBulkDelete} disabled={loading}>
-          <Trash2 className="h-3.5 w-3.5 mr-1" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-10 flex-1 touch-manipulation text-destructive hover:bg-destructive/10 hover:text-destructive sm:ml-auto sm:min-h-9 sm:flex-initial"
+          onClick={handleBulkDelete}
+          disabled={loading}
+        >
+          <Trash2 className="mr-1 h-3.5 w-3.5" />
           Delete
         </Button>
       </div>

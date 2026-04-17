@@ -10,7 +10,7 @@ import type { RepairStatus, JobType } from "@/types";
 import { ExternalLink } from "lucide-react";
 import { SmartDate } from "@/components/ui/smart-date";
 import { GarageSyncChip } from "@/components/garage-sync-ui";
-import { useState, useEffect, useRef, useCallback, useTransition } from "react";
+import { useState, useEffect, useRef, useCallback, useTransition, Fragment } from "react";
 import { BulkActions } from "./bulk-actions";
 import { ArrowUp, ArrowDown, ArrowUpDown, Loader2 } from "lucide-react";
 import { updateRepairJob, getRepairJobs, type RepairFilters } from "@/actions/repairs";
@@ -296,8 +296,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
         </div>
       </div>
 
-      {/* Repair rows */}
-      <div className="space-y-0">
+      {/* Repair rows — cards on small screens, table-style row from md */}
+      <div className="space-y-2 md:space-y-0">
         {allJobs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-20 text-gray-400 dark:text-slate-500">
             <ArrowUpDown className="h-8 w-8 opacity-20" />
@@ -309,153 +309,232 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
             const isUrgent = job.priority === "urgent";
             const isHigh = job.priority === "high";
 
-            return (
-              <div
-                key={job.id}
-                className={`group relative flex items-center gap-5 rounded-xl px-5 py-5 transition-all duration-150 cursor-pointer
-                  hover:bg-gray-50 dark:hover:bg-white/[0.03] active:scale-[0.998] border-b border-gray-100/60 dark:border-white/[0.05] last:border-b-0
-                  ${selected.has(job.id) ? "bg-sky-50/40 dark:bg-sky-500/[0.06] ring-1 ring-sky-100 dark:ring-sky-500/20" : ""}
-                  ${isUrgent ? "" : ""}
-                  animate-slide-up`}
-                style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
-                onClick={() => {
-                  const backTo = `/repairs?${searchParams.toString()}`;
-                  router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
-                }}
-              >
-                {/* Left status accent bar */}
-                <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-90 ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+            const goToJob = () => {
+              const backTo = `/repairs?${searchParams.toString()}`;
+              router.push(`/repairs/${job.id}?backTo=${encodeURIComponent(backTo)}`);
+            };
 
-                {/* Checkbox */}
-                <div className="w-6 shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    checked={selected.has(job.id)}
-                    onCheckedChange={() => toggleOne(job.id)}
-                    className="opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 transition-opacity"
-                  />
+            const titleBlock = (
+              <>
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-[15px] font-medium text-gray-900 transition-colors group-hover:text-[#0CC0DF] dark:text-slate-100">
+                    {job.title || "Unnamed repair"}
+                  </p>
+                  {job.jobType && job.jobType !== "repair" && (
+                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300"}`}>
+                      {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
+                    </span>
+                  )}
+                  {isUrgent && <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-500" />}
+                  {isHigh && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />}
                 </div>
-
-                {/* Title + description */}
-                <div className="flex-[2] min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-[15px] font-medium text-gray-900 dark:text-slate-100 group-hover:text-[#0CC0DF] transition-colors">
-                      {job.title || "Unnamed repair"}
-                    </p>
-                    {job.jobType && job.jobType !== "repair" && (
-                      <span className={`shrink-0 inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300"}`}>
-                        {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
-                      </span>
-                    )}
-                    {isUrgent && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
-                    {isHigh && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-orange-400" />}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {job.publicCode && (
-                      <span className="text-[11px] text-gray-400 dark:text-slate-500 font-mono">{job.publicCode}</span>
-                    )}
-                    {job.publicCode && job.descriptionRaw && <span className="text-gray-300 dark:text-slate-600">·</span>}
-                    {job.descriptionRaw && (
-                      <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{job.descriptionRaw.slice(0, 60)}</span>
-                    )}
-                  </div>
-                  {/* Tags inline */}
-                  {job.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {job.tags.map((tag) => (
-                        <span
-                          key={tag.id}
-                          className="inline-block rounded-md px-1.5 py-0 text-[10px] font-medium leading-4 opacity-70"
-                          style={{ backgroundColor: tag.color + "22", color: tag.color }}
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  {job.publicCode && (
+                    <span className="font-mono text-[11px] text-gray-400 dark:text-slate-500">{job.publicCode}</span>
+                  )}
+                  {job.publicCode && job.descriptionRaw && <span className="text-gray-300 dark:text-slate-600">·</span>}
+                  {job.descriptionRaw && (
+                    <span className="truncate text-[11px] text-gray-400 dark:text-slate-500">{job.descriptionRaw.slice(0, 60)}</span>
                   )}
                 </div>
+                {job.tags.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {job.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="inline-block rounded-md px-1.5 py-0 text-[10px] font-medium leading-4 opacity-70"
+                        style={{ backgroundColor: tag.color + "22", color: tag.color }}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
 
-                {/* Status + Garage chip */}
-                <div className="w-32 shrink-0 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                  <TableStatusPicker
-                    value={job.status}
-                    onChange={(val) => quickStatusChange(job.id, val)}
-                    pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-slate-700/60 text-gray-600 dark:text-slate-200"}
-                    accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}
-                  />
-                  {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
-                    <div className="hidden sm:block">
+            const documentCell = (
+              <>
+                {(() => {
+                  const doc = getDocumentInfo(job);
+                  if (!doc) return <span className="block truncate text-[11px] text-gray-300 dark:text-slate-600">—</span>;
+                  if (!doc.pdfUrl) {
+                    return <span className={`block truncate text-[11px] font-medium ${doc.color}`}>{doc.label}</span>;
+                  }
+                  return (
+                    <a
+                      href={doc.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`group/doc inline-flex max-w-full items-center gap-1 truncate text-[11px] font-medium ${doc.color} hover:underline`}
+                      title={doc.title}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span className="truncate">{doc.label}</span>
+                      {doc.holdedUrl && (
+                        <a
+                          href={doc.holdedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-gray-400 opacity-100 transition-opacity hover:text-gray-600 group-hover/doc:opacity-100 dark:hover:text-gray-300 md:opacity-0 md:group-hover/doc:opacity-100"
+                          title="Open in Holded"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </a>
+                  );
+                })()}
+              </>
+            );
+
+            const statusPicker = (
+              <TableStatusPicker
+                value={job.status}
+                onChange={(val) => quickStatusChange(job.id, val)}
+                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-slate-700/60 text-gray-600 dark:text-slate-200"}
+                accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}
+              />
+            );
+
+            return (
+              <Fragment key={job.id}>
+                {/* Phone / small tablet: card */}
+                <div
+                  className={`group relative touch-manipulation rounded-xl border border-gray-100/90 bg-white/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-white/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-sky-200 dark:ring-sky-500/25" : ""} animate-slide-up`}
+                  style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
+                  role="button"
+                  tabIndex={0}
+                  onClick={goToJob}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      goToJob();
+                    }
+                  }}
+                >
+                  <div className={`absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-full ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                  <div className="relative flex gap-3 pl-2.5">
+                    <div className="shrink-0 pt-1" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selected.has(job.id)}
+                        onCheckedChange={() => toggleOne(job.id)}
+                        className="opacity-100 transition-opacity data-[state=checked]:opacity-100"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">{titleBlock}</div>
+                        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {statusPicker}
+                        </div>
+                      </div>
+                      {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
+                        <GarageSyncChip
+                          needsAttention={job.garageNeedsAdminAttention}
+                          unreadCount={job.garageUnreadUpdatesCount}
+                          updateType={job.garageLastUpdateType}
+                          status={job.status}
+                        />
+                      )}
+                      <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 dark:border-white/[0.06]">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Contact</p>
+                          <p className="mt-1 truncate text-sm font-medium text-gray-800 dark:text-slate-200">
+                            {job.customerName ?? <span className="text-gray-400">—</span>}
+                          </p>
+                          {job.locationName && (
+                            <div className="mt-0.5 flex items-center gap-1.5">
+                              <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                              <span className="truncate text-[11px] text-gray-500 dark:text-slate-400">{job.locationName}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Document</p>
+                          <div className="mt-1">{documentCell}</div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Planned</p>
+                          <div className="mt-1">
+                            {job.dueDate ? (
+                              <SmartDate date={job.dueDate} className="text-xs text-gray-600 dark:text-slate-300" />
+                            ) : (
+                              <span className="text-[11px] text-gray-400 dark:text-slate-600">—</span>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Updated</p>
+                          <div className="mt-1">
+                            <SmartDate date={job.updatedAt} className="text-[11px] text-gray-500 dark:text-slate-400" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop: wide row */}
+                <div
+                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-gray-100/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-gray-50 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-white/[0.03] md:flex ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100 dark:bg-sky-500/[0.06] dark:ring-sky-500/20" : ""} animate-slide-up`}
+                  style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
+                  onClick={goToJob}
+                >
+                  <div className={`absolute bottom-3 left-0 top-3 w-[3px] rounded-full opacity-90 ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+
+                  <div className="ml-1 w-6 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selected.has(job.id)}
+                      onCheckedChange={() => toggleOne(job.id)}
+                      className="opacity-0 transition-opacity group-hover:opacity-100 data-[state=checked]:opacity-100"
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-[2]">{titleBlock}</div>
+
+                  <div className="flex w-32 shrink-0 flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                    {statusPicker}
+                    {(job.garageNeedsAdminAttention || job.garageUnreadUpdatesCount > 0 || job.status === "ready_for_check") && (
                       <GarageSyncChip
                         needsAttention={job.garageNeedsAdminAttention}
                         unreadCount={job.garageUnreadUpdatesCount}
                         updateType={job.garageLastUpdateType}
                         status={job.status}
                       />
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* Contact */}
-                <div className="flex-1 min-w-0 hidden md:block">
-                  <span className="text-sm text-gray-800 dark:text-slate-200 truncate block">
-                    {job.customerName ?? <span className="text-gray-300 dark:text-slate-600">—</span>}
-                  </span>
-                  {job.locationName && (
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
-                      <span className="text-[11px] text-gray-400 dark:text-slate-400 truncate">{job.locationName}</span>
-                    </div>
-                  )}
-                </div>
+                  <div className="hidden min-w-0 flex-1 md:block">
+                    <span className="block truncate text-sm text-gray-800 dark:text-slate-200">
+                      {job.customerName ?? <span className="text-gray-300 dark:text-slate-600">—</span>}
+                    </span>
+                    {job.locationName && (
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                        <span className="truncate text-[11px] text-gray-400 dark:text-slate-400">{job.locationName}</span>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Document */}
-                <div className="w-28 shrink-0 hidden md:block" onClick={(e) => e.stopPropagation()}>
-                  {(() => {
-                    // Document priority logic
-                    const doc = getDocumentInfo(job);
-                    if (!doc) return <span className="text-[11px] text-gray-300 dark:text-slate-600">—</span>;
-                    if (!doc.pdfUrl) {
-                      return <span className={`text-[11px] font-medium truncate block ${doc.color}`}>{doc.label}</span>;
-                    }
-                    return (
-                      <a
-                        href={doc.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`group/doc inline-flex items-center gap-1 text-[11px] font-medium truncate ${doc.color} hover:underline`}
-                        title={doc.title}
-                      >
-                        <span className="truncate">{doc.label}</span>
-                        {doc.holdedUrl && (
-                          <a
-                            href={doc.holdedUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="opacity-0 group-hover/doc:opacity-100 shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
-                            title="Open in Holded"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </a>
-                    );
-                  })()}
-                </div>
+                  <div className="hidden w-28 shrink-0 md:block" onClick={(e) => e.stopPropagation()}>
+                    {documentCell}
+                  </div>
 
-                {/* Planned */}
-                <div className="w-24 shrink-0 hidden md:block">
-                  {job.dueDate ? (
-                    <SmartDate date={job.dueDate} className="text-xs text-gray-500 dark:text-slate-300" />
-                  ) : (
-                    <span className="text-gray-300 dark:text-slate-600 text-[11px]">—</span>
-                  )}
-                </div>
+                  <div className="hidden w-24 shrink-0 md:block">
+                    {job.dueDate ? (
+                      <SmartDate date={job.dueDate} className="text-xs text-gray-500 dark:text-slate-300" />
+                    ) : (
+                      <span className="text-[11px] text-gray-300 dark:text-slate-600">—</span>
+                    )}
+                  </div>
 
-                {/* Updated */}
-                <div className="w-20 shrink-0 text-right hidden md:block">
-                  <SmartDate date={job.updatedAt} className="text-[11px] text-gray-400 dark:text-slate-400" />
+                  <div className="hidden w-20 shrink-0 text-right md:block">
+                    <SmartDate date={job.updatedAt} className="text-[11px] text-gray-400 dark:text-slate-400" />
+                  </div>
                 </div>
-              </div>
+              </Fragment>
             );
           })
         )}
@@ -511,7 +590,7 @@ function TableStatusPicker({ value, onChange, pillClass, accentClass }: { value:
         </span>
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">
+        <div className="absolute right-0 top-full z-50 mt-1 max-h-[min(360px,70dvh)] min-w-[180px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900 md:left-0 md:right-auto">
           {TABLE_STATUS_GROUPS.map((group) => (
             <div key={group.label} className="mb-0.5 last:mb-0">
               <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-3 pt-2 pb-0.5">{group.label}</p>

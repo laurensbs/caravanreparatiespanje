@@ -609,19 +609,21 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] dark:bg-background animate-fade-in">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-3 py-4 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           HEADER
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="space-y-5">
-        <div className="flex items-start justify-between gap-8">
+      <div className="space-y-4 sm:space-y-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
           {/* Left side */}
-          <div className="flex items-start gap-4 min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
-              className="mt-2 p-2 rounded-xl hover:bg-white dark:hover:bg-white/10 transition-all duration-150 shrink-0"
+              className="mt-1 shrink-0 touch-manipulation rounded-xl p-2.5 hover:bg-white dark:hover:bg-white/10 sm:mt-2 sm:p-2"
+              aria-label="Back and save"
             >
               <ArrowLeft className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </button>
@@ -645,7 +647,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   onClick={() => setEditingTitle(true)}
                   className="group text-left w-full"
                 >
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
+                  <h1 className="text-xl font-semibold leading-snug text-gray-900 line-clamp-2 dark:text-gray-100 sm:text-2xl">
                     {title || job.publicCode || "Untitled repair"}
                   </h1>
                 </button>
@@ -855,17 +857,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             </div>
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2 shrink-0 mt-2">
+          {/* Right side — full-width actions on small screens */}
+          <div className="flex w-full shrink-0 items-center gap-2 self-stretch sm:w-auto sm:self-auto lg:mt-2">
             <button
+              type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="p-2.5 rounded-xl text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150"
+              className="touch-manipulation rounded-xl p-2.5 text-gray-400 transition-all duration-150 hover:bg-red-50 hover:text-red-600 dark:text-gray-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
               title="Delete"
             >
               {deleting ? <Spinner /> : <Trash2 className="h-4 w-4" />}
             </button>
-            <Button onClick={handleSave} disabled={saving} className="rounded-xl h-10 px-6 font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 shadow-sm transition-all duration-150">
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-11 min-h-11 flex-1 touch-manipulation rounded-xl bg-gray-900 px-6 font-medium text-white shadow-sm transition-all duration-150 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 sm:h-10 sm:min-h-0 sm:flex-initial"
+            >
               {saving ? <Spinner className="mr-2" /> : null}
               Save
             </Button>
@@ -874,7 +881,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
         {/* Inline edit panels */}
         {expandUnit && job.unit && (
-          <div className="ml-14">
+          <div className="ml-0 sm:ml-14">
             <InlineUnitEdit unit={job.unit} onDone={() => setExpandUnit(false)} />
           </div>
         )}
@@ -889,16 +896,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           ADMIN REVIEW BAR (Ready for Check)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {status === "ready_for_check" && (
-        <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 px-6 py-5">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <ClipboardCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 dark:border-amber-800/60 dark:bg-amber-950/30 sm:px-6 sm:py-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex items-start gap-3 sm:items-center">
+              <ClipboardCheck className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="min-w-0">
                 <p className="font-medium text-amber-900 dark:text-amber-200">Ready for check</p>
                 <p className="text-sm text-amber-700 dark:text-amber-400/80">Garage marked this job as done. Review and approve or send back.</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <Button
                 variant="outline"
                 size="sm"
@@ -912,9 +919,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     router.refresh();
                   });
                 }}
-                className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/40"
+                className="min-h-11 w-full touch-manipulation border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/40 sm:min-h-9 sm:w-auto"
               >
-                <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                <ArrowLeft className="mr-1 h-3.5 w-3.5" />
                 Send back
               </Button>
               <Button
@@ -927,9 +934,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     router.refresh();
                   });
                 }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="min-h-11 w-full touch-manipulation bg-emerald-600 text-white hover:bg-emerald-700 sm:min-h-9 sm:w-auto"
               >
-                <Check className="h-3.5 w-3.5 mr-1" />
+                <Check className="mr-1 h-3.5 w-3.5" />
                 Approve &amp; complete
               </Button>
             </div>
@@ -1105,7 +1112,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MAIN GRID — 8 / 4
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
 
         {/* ─── LEFT COLUMN ─── */}
         <div className="space-y-6 lg:col-span-8">
@@ -1705,7 +1712,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           {/* Job Status */}
           <div className="bg-white dark:bg-white/[0.03] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 space-y-4">
             <h3 className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">Job Status</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Status</Label>
                 <div className="mt-1.5">

@@ -18,7 +18,7 @@ export default async function NewRepairPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 animate-fade-in">
+    <div className="mx-auto max-w-3xl space-y-6 px-0.5 animate-fade-in sm:px-0">
       <div>
         <h1 className="text-lg font-bold tracking-tight">New Repair Job</h1>
         <p className="text-xs text-muted-foreground">Create a new repair job entry</p>

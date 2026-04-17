@@ -152,7 +152,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
       {/* Layer 1: Quick filter bar */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
         {/* Search — visually dominant */}
-        <div className="relative flex-1 min-w-0 sm:max-w-80">
+        <div className="relative min-w-0 flex-1 sm:max-w-80">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none" />
           <Input
             placeholder="Search work orders..."
@@ -167,7 +167,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="w-[140px] h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-gray-200 bg-white text-sm text-gray-700 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-slate-200 sm:w-[140px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -183,7 +183,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           value={currentFilters.jobType ?? "all"}
           onValueChange={(val) => updateFilter("jobType", val)}
         >
-          <SelectTrigger className="w-[130px] h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-gray-200 bg-white text-sm text-gray-700 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-slate-200 sm:w-[130px]">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -198,7 +198,8 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
         <Popover open={panelOpen} onOpenChange={setPanelOpen}>
           <PopoverTrigger asChild>
             <button
-              className={`inline-flex items-center gap-2 h-11 px-4 text-sm font-medium rounded-xl border transition-all duration-150 whitespace-nowrap ${
+              type="button"
+              className={`inline-flex h-11 min-h-11 w-full touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium transition-all duration-150 sm:w-auto ${
                 advancedCount > 0
                   ? "border-[#0CC0DF]/30 bg-[#0CC0DF]/5 text-gray-900 dark:text-slate-100 dark:border-[#0CC0DF]/20 dark:bg-[#0CC0DF]/10"
                   : "border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
@@ -216,7 +217,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           <PopoverContent
             align="end"
             sideOffset={10}
-            className="w-[720px] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0F172A] shadow-xl dark:shadow-black/50 p-0 z-40"
+            className="z-40 max-h-[min(85dvh,640px)] w-[min(calc(100vw-1.5rem),720px)] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-gray-100 bg-white p-0 shadow-xl dark:border-white/10 dark:bg-[#0F172A] dark:shadow-black/50 sm:max-w-none"
           >
             {/* Panel header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/[0.06]">

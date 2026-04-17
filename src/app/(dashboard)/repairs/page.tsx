@@ -64,28 +64,30 @@ export default async function RepairsPage({ searchParams }: Props) {
   ];
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5 sm:space-y-7">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Work Orders</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white sm:text-xl">Work Orders</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {total} work order{total !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild className="h-8 rounded-lg text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
+        <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-auto">
+          <Button variant="ghost" size="sm" asChild className="min-h-10 flex-1 touch-manipulation rounded-lg text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 sm:h-8 sm:min-h-0 sm:flex-initial">
             <Link href="/repairs/bin">
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Bin
             </Link>
           </Button>
-          <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
+          <div className="min-w-0 flex-1 sm:flex-initial sm:shrink-0">
+            <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
+          </div>
         </div>
       </div>
 
-      {/* Quick filters — subtle chips with semantic color dots */}
-      <div className="flex flex-wrap gap-1.5">
+      {/* Quick filters — horizontal scroll on narrow screens */}
+      <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 pt-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {quickButtons.map((btn) => {
           const href = btn.priority
             ? `/repairs?priority=${btn.priority}`
@@ -104,8 +106,8 @@ export default async function RepairsPage({ searchParams }: Props) {
           };
 
           return (
-            <Link key={btn.label} href={isActive ? "/repairs" : href}>
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all duration-150 cursor-pointer ${
+            <Link key={btn.label} href={isActive ? "/repairs" : href} className="shrink-0 snap-start touch-manipulation">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs transition-all duration-150 cursor-pointer sm:py-1.5 ${
                 isActive
                   ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium shadow-sm"
                   : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/[0.06]"

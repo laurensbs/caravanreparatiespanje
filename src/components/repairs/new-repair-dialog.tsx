@@ -223,7 +223,11 @@ export function NewRepairDialog({ locations, customers, partsCatalog = [], partC
 
   return (
     <>
-      <Button onClick={() => handleOpenChange(true)} size="sm" className="h-8 rounded-lg gap-1.5 text-xs font-medium">
+      <Button
+        onClick={() => handleOpenChange(true)}
+        size="sm"
+        className="h-10 w-full touch-manipulation gap-1.5 rounded-lg text-xs font-medium sm:h-8 sm:w-auto"
+      >
         <Plus className="h-3.5 w-3.5" />
         New Work Order
       </Button>

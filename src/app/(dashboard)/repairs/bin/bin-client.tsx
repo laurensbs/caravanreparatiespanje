@@ -129,33 +129,33 @@ export function BinClient({ jobs }: BinClientProps) {
       </div>
 
       {selected.size > 0 && (
-        <div className="mb-3 flex items-center gap-3 rounded-lg border bg-primary/5 p-3">
+        <div className="mb-3 flex flex-col gap-2 rounded-lg border bg-primary/5 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
           <span className="text-sm font-medium">{selected.size} selected</span>
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs"
+            className="h-10 w-full touch-manipulation text-xs sm:h-8 sm:w-auto"
             onClick={handleBulkRestore}
             disabled={loading === "bulk"}
           >
-            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+            <RotateCcw className="mr-1 h-3.5 w-3.5" />
             Restore
           </Button>
           <Button
             variant="destructive"
             size="sm"
-            className="h-8 text-xs"
+            className="h-10 w-full touch-manipulation text-xs sm:h-8 sm:w-auto"
             onClick={handleBulkPermanentDelete}
             disabled={loading === "bulk"}
           >
-            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            <Trash2 className="mr-1 h-3.5 w-3.5" />
             Delete Forever
           </Button>
         </div>
       )}
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <Table>
+      <div className="rounded-lg border bg-card">
+        <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
               <TableHead className="w-10">

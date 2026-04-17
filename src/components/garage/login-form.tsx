@@ -24,9 +24,7 @@ export function GarageLoginForm() {
         if (result.success) {
           router.refresh();
         } else {
-          setError(
-            t("Incorrect PIN", "PIN incorrecto", "Onjuiste pincode")
-          );
+          setError(t("Incorrect PIN", "PIN incorrecto", "Onjuiste pincode"));
           setShake(true);
           if (typeof navigator !== "undefined" && navigator.vibrate) {
             navigator.vibrate([12, 80, 12, 80, 24]);
@@ -57,108 +55,142 @@ export function GarageLoginForm() {
     setError("");
   }
 
-  const langs: { code: string; flag: string }[] = [
+  const langs: { code: "en" | "es" | "nl"; flag: string }[] = [
     { code: "en", flag: "🇬🇧" },
     { code: "es", flag: "🇪🇸" },
     { code: "nl", flag: "🇳🇱" },
   ];
 
   const padBtn =
-    "rounded-2xl bg-white/[0.08] text-2xl font-medium text-white transition-all active:scale-95 active:bg-white/[0.15] hover:bg-white/[0.12] disabled:opacity-40 " +
-    "h-[72px] min-h-[72px] w-full sm:h-[84px] sm:min-h-[84px] sm:text-3xl md:h-[92px] md:min-h-[92px] md:text-[2rem]";
+    "relative flex items-center justify-center aspect-square rounded-2xl bg-white/[0.08] text-2xl font-medium text-white transition-all active:scale-95 active:bg-white/[0.2] hover:bg-white/[0.12] disabled:opacity-40 sm:text-3xl md:text-[2rem]";
 
   return (
-    <div className="fixed inset-0 z-[100] flex min-h-dvh flex-col overflow-hidden bg-gray-950 text-white select-none landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-4 landscape:px-3 landscape:py-3 md:landscape:gap-10 md:landscape:px-6 lg:landscape:gap-16 lg:landscape:px-8">
-      {/* Language toggle */}
-      <div className="absolute right-0 top-0 z-10 flex gap-2 pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))]">
+    <div
+      className="fixed inset-0 z-[100] flex min-h-dvh items-center justify-center overflow-hidden bg-gradient-to-b from-gray-950 via-gray-950 to-black text-white select-none"
+      style={{
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      {/* Ambient gradient blobs */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-sky-500/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -right-24 h-[28rem] w-[28rem] rounded-full bg-violet-500/10 blur-3xl"
+      />
+
+      {/* Language toggle (top-right, overlaid) */}
+      <div className="absolute right-4 top-4 z-10 flex gap-2">
         {langs.map((l) => (
           <button
             key={l.code}
             type="button"
-            onClick={() => setGarageLangByUser(l.code as "en" | "es" | "nl", null)}
-            className={`h-11 w-11 rounded-full text-lg flex items-center justify-center transition-all sm:h-12 sm:w-12 ${
+            onClick={() => setGarageLangByUser(l.code, null)}
+            className={`h-10 w-10 rounded-full text-base flex items-center justify-center transition-all ${
               lang === l.code
                 ? "bg-white/20 ring-1 ring-white/40"
                 : "bg-white/5 hover:bg-white/10"
             }`}
+            aria-label={`Language ${l.code}`}
           >
             {l.flag}
           </button>
         ))}
       </div>
 
-      {/* Branding + PIN (left / top) */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 pb-4 pt-[max(5rem,env(safe-area-inset-top)+3rem)] landscape:max-w-[min(100%,22rem)] landscape:flex-1 landscape:justify-center landscape:px-3 landscape:pt-6 landscape:pb-6 md:landscape:max-w-md sm:pt-24">
-        <div className="h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-5 sm:h-20 sm:w-20 sm:rounded-3xl landscape:mb-4">
-          <Wrench className="h-8 w-8 text-white/80 sm:h-10 sm:w-10" />
-        </div>
-        <h1 className="text-xl font-semibold tracking-tight text-white/90 sm:text-2xl">
-          {t("Garage Portal", "Portal del Taller", "Garage Portaal")}
-        </h1>
-        <p className="text-sm text-white/40 mt-1.5 sm:text-base">
-          {t("Enter PIN to continue", "Introduce el PIN", "Voer pincode in")}
-        </p>
-
+      {/* App "frame" — tablet-sized on desktop, flexible on phones. */}
+      <div className="relative w-full h-full max-h-[calc(100dvh-2rem)] flex items-center justify-center px-4 py-6 sm:py-10">
         <div
-          className={`mt-8 flex gap-4 sm:gap-5 sm:mt-10 transition-transform ${
-            shake ? "animate-[shake_0.4s_ease-in-out]" : ""
-          }`}
+          className={[
+            "w-full h-full max-h-full flex flex-col",
+            // Portrait-ish / narrow screens — stack vertically, centered.
+            "items-center justify-center gap-8",
+            // Tablet/desktop landscape — side-by-side inside a bounded card.
+            "sm:landscape:flex-row sm:landscape:items-stretch sm:landscape:justify-center sm:landscape:gap-10 sm:landscape:p-8",
+            "sm:landscape:max-w-3xl sm:landscape:max-h-[640px] sm:landscape:rounded-[2rem] sm:landscape:border sm:landscape:border-white/[0.06] sm:landscape:bg-white/[0.02] sm:landscape:backdrop-blur-xl sm:landscape:shadow-[0_40px_120px_-40px_rgba(0,0,0,0.8)]",
+            // Vertical layout on narrow screens also benefits from a capped width on desktop portrait.
+            "sm:max-w-sm sm:mx-auto",
+          ].join(" ")}
         >
-          {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-4 w-4 rounded-full transition-all duration-200 sm:h-5 sm:w-5 ${
-                i < digits.length
-                  ? error
-                    ? "bg-red-400 scale-110"
-                    : "bg-white scale-110"
-                  : "bg-white/20"
-              }`}
-            />
-          ))}
-        </div>
-        {error && (
-          <p className="mt-4 text-center text-sm text-red-400 font-medium animate-in fade-in-0 duration-200 sm:text-base max-w-xs">
-            {error}
-          </p>
-        )}
-      </div>
+          {/* ── Branding + PIN dots ─────────────────────────────────────── */}
+          <div className="flex flex-col items-center justify-center text-center sm:landscape:flex-1 sm:landscape:justify-center">
+            <div className="h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-5 sm:h-20 sm:w-20 sm:rounded-3xl">
+              <Wrench className="h-8 w-8 text-white/80 sm:h-10 sm:w-10" />
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight text-white/90 sm:text-2xl">
+              {t("Garage Portal", "Portal del Taller", "Garage Portaal")}
+            </h1>
+            <p className="text-sm text-white/40 mt-1.5 sm:text-base">
+              {t("Enter PIN to continue", "Introduce el PIN", "Voer pincode in")}
+            </p>
 
-      {/* Numpad */}
-      <div
-        className="flex w-full shrink-0 justify-center px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 landscape:w-auto landscape:max-w-[min(100vw-2rem,24rem)] landscape:flex-none landscape:items-center landscape:pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pt-0 landscape:shrink-0 sm:pb-8"
-      >
-        <div className="mx-auto w-full max-w-[320px] sm:max-w-[400px] md:max-w-[440px] landscape:max-w-[min(24rem,calc(100vw-3rem))]">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+            <div
+              className={`mt-8 flex gap-4 sm:mt-10 sm:gap-5 transition-transform ${
+                shake ? "animate-[shake_0.4s_ease-in-out]" : ""
+              }`}
+            >
+              {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-4 w-4 rounded-full transition-all duration-200 sm:h-5 sm:w-5 ${
+                    i < digits.length
+                      ? error
+                        ? "bg-red-400 scale-110"
+                        : "bg-white scale-110"
+                      : "bg-white/20"
+                  }`}
+                />
+              ))}
+            </div>
+            <p
+              className={`mt-4 text-center text-sm text-red-400 font-medium sm:text-base max-w-xs transition-opacity duration-200 ${
+                error ? "opacity-100" : "opacity-0"
+              }`}
+              aria-live="polite"
+            >
+              {error || "\u00A0"}
+            </p>
+          </div>
+
+          {/* ── Numpad ──────────────────────────────────────────────────── */}
+          <div className="w-full max-w-[360px] sm:max-w-[400px] sm:landscape:flex-1 sm:landscape:max-w-[320px] sm:landscape:self-center">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handleDigit(String(n))}
+                  disabled={isPending}
+                  className={padBtn}
+                >
+                  {n}
+                </button>
+              ))}
+              {/* Empty slot to mirror Apple-style keypad (left of the 0). */}
+              <div aria-hidden className="aspect-square" />
               <button
-                key={n}
                 type="button"
-                onClick={() => handleDigit(String(n))}
+                onClick={() => handleDigit("0")}
                 disabled={isPending}
                 className={padBtn}
               >
-                {n}
+                0
               </button>
-            ))}
-            <div className="min-h-[72px] sm:min-h-[84px] md:min-h-[92px]" aria-hidden />
-            <button
-              type="button"
-              onClick={() => handleDigit("0")}
-              disabled={isPending}
-              className={padBtn}
-            >
-              0
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isPending || digits.length === 0}
-              className={`${padBtn} flex items-center justify-center text-white/70 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-white/[0.08]`}
-              aria-label={t("Delete digit", "Borrar", "Wissen")}
-            >
-              <Delete className="h-7 w-7 sm:h-8 sm:w-8" />
-            </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isPending || digits.length === 0}
+                className={`${padBtn} text-white/70 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-white/[0.08]`}
+                aria-label={t("Delete digit", "Borrar", "Wissen")}
+              >
+                <Delete className="h-7 w-7 sm:h-8 sm:w-8" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

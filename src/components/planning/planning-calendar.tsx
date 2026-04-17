@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Printer, Globe, Filter, Plus, MapPin, User, Wrench, GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Globe, Filter, Plus, MapPin, User, Wrench, GripVertical, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,6 +18,19 @@ import {
   DashboardPageHeader,
   dashboardPanelClass,
 } from "@/components/layout/dashboard-surface";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 
 // Location → dot color mapping
 const LOCATION_COLORS: Record<string, string> = {};
@@ -50,7 +62,6 @@ interface Props {
 }
 
 export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeekEnd, staff, locations }: Props) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [repairs, setRepairs] = useState(initialRepairs);
   const [weekStart, setWeekStart] = useState(initialWeekStart);
@@ -137,28 +148,57 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }
 
-  function handleDragStart(e: React.DragEvent, repairId: string) {
-    e.dataTransfer.setData("text/plain", repairId);
-    e.dataTransfer.effectAllowed = "move";
-    setDragRepairId(repairId);
+  // ── dnd-kit: touch + pointer + keyboard sensors ──
+  // Pointer requires 6px activation distance so quick taps (links) don't
+  // start a drag. Touch uses a 200ms long-press to keep page scroll
+  // natural on mobile. Keyboard enables WCAG-compliant reordering.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  function handleDndStart(event: DragStartEvent) {
+    setDragRepairId(String(event.active.id));
   }
 
-  function handleDragEnd() { setDragRepairId(null); }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }
-
-  const handleDrop = useCallback((e: React.DragEvent, dayIndex: number) => {
-    e.preventDefault();
-    const repairId = e.dataTransfer.getData("text/plain");
-    if (!repairId) return;
+  function handleDndEnd(event: DragEndEvent) {
     setDragRepairId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const repairId = String(active.id);
+    const overId = String(over.id);
+    if (!overId.startsWith("day-")) return;
+    const dayIndex = Number(overId.slice(4));
+    if (!Number.isFinite(dayIndex) || dayIndex < 0 || dayIndex > 6) return;
+
+    const currentRepair = repairs.find((r) => r.id === repairId);
+    if (!currentRepair) return;
+    const currentTime = new Date(currentRepair.dueDate);
+
     const targetDate = new Date(days[dayIndex]);
-    targetDate.setHours(8, 0, 0, 0);
+    // Preserve the time portion of the original dueDate; only the day moves.
+    targetDate.setHours(
+      currentTime.getHours() || 8,
+      currentTime.getMinutes(),
+      0,
+      0,
+    );
+
+    // If the repair already sits on that day, no-op.
+    if (
+      targetDate.getFullYear() === currentTime.getFullYear() &&
+      targetDate.getMonth() === currentTime.getMonth() &&
+      targetDate.getDate() === currentTime.getDate()
+    ) {
+      return;
+    }
+
     const iso = targetDate.toISOString();
-    setRepairs((prev) => prev.map((r) => (r.id === repairId ? { ...r, dueDate: targetDate } : r)));
+    // Optimistic update.
+    setRepairs((prev) =>
+      prev.map((r) => (r.id === repairId ? { ...r, dueDate: targetDate } : r)),
+    );
     startTransition(async () => {
       try {
         await scheduleRepair(repairId, iso);
@@ -168,7 +208,11 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
         setRepairs(data);
       }
     });
-  }, [days, weekStart, weekEnd]);
+  }
+
+  const draggingRepair = dragRepairId
+    ? repairs.find((r) => r.id === dragRepairId) ?? null
+    : null;
 
   const usedLocationIds = [...new Set(filteredRepairs.map((r) => r.locationId).filter(Boolean))] as string[];
   const locationLegend = usedLocationIds.map((id) => ({
@@ -230,9 +274,14 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="border-x border-gray-100 dark:border-gray-800 px-3 h-10 inline-flex items-center text-[13px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 cursor-pointer" onClick={goToThisWeek}>
+              <button
+                type="button"
+                onClick={goToThisWeek}
+                className="group/today inline-flex h-10 items-center gap-1.5 border-x border-gray-100 dark:border-gray-800 px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.04] dark:hover:text-gray-100 touch-manipulation"
+              >
+                <CalendarDays className="h-3.5 w-3.5 text-gray-400 transition-transform group-hover/today:scale-110 dark:text-gray-500" aria-hidden />
                 {t.thisWeek}
-              </span>
+              </button>
               <Button
                 type="button"
                 variant="ghost"
@@ -323,102 +372,110 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
       )}
 
       {/* Day list */}
-      <div className="space-y-3 print:space-y-4 sm:space-y-4">
-        {days.map((day, dayIdx) => {
-          const dayRepairs = repairsForDay(dayIdx);
-          const isToday = day.toDateString() === todayStr;
-          const isEmpty = dayRepairs.length === 0;
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDndStart}
+        onDragEnd={handleDndEnd}
+        onDragCancel={() => setDragRepairId(null)}
+      >
+        <div className="space-y-3 print:space-y-4 sm:space-y-4">
+          {days.map((day, dayIdx) => {
+            const dayRepairs = repairsForDay(dayIdx);
+            const isToday = day.toDateString() === todayStr;
+            const isEmpty = dayRepairs.length === 0;
 
-          return (
-            <div
-              key={dayIdx}
-              className={cn(
-                dashboardPanelClass,
-                "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
-                isToday &&
-                  "ring-2 ring-sky-500/20 dark:ring-sky-400/25",
-                dragRepairId && "hover:border-gray-300 dark:hover:border-gray-600",
-                isEmpty && "print:hidden",
-              )}
-              style={{ animationDelay: `${Math.min(dayIdx * 30, 180)}ms`, animationFillMode: "backwards" }}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, dayIdx)}
-            >
-              {/* Day header */}
-              <div
+            return (
+              <DayDropZone
+                key={dayIdx}
+                dayIndex={dayIdx}
                 className={cn(
-                  "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-gray-300",
-                  !isEmpty && "border-b border-gray-100 dark:border-gray-800",
-                  isToday
-                    ? "bg-sky-50/40 dark:bg-sky-500/[0.06]"
-                    : isEmpty
-                      ? "bg-transparent"
-                      : "bg-gray-50/50 dark:bg-white/[0.02]",
+                  dashboardPanelClass,
+                  "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
+                  isToday && "ring-2 ring-sky-500/20 dark:ring-sky-400/25",
+                  isEmpty && "print:hidden",
                 )}
+                style={{ animationDelay: `${Math.min(dayIdx * 30, 180)}ms`, animationFillMode: "backwards" }}
               >
-                <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    {t.days[dayIdx]}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100",
-                    )}
-                  >
-                    {day.getDate()} {t.months[day.getMonth()]}
-                  </span>
-                  {isToday ? (
-                    <span className="inline-flex items-center rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400">
-                      Today
-                    </span>
-                  ) : null}
-                  {dayRepairs.length > 0 ? (
-                    <Badge
-                      variant="secondary"
-                      className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-gray-800 dark:text-gray-200"
-                    >
-                      {dayRepairs.length}
-                    </Badge>
-                  ) : (
-                    <span className="text-[12px] text-gray-400 dark:text-gray-500">
-                      {t.noRepairsScheduled}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                {/* Day header */}
+                <div
                   className={cn(
-                    "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 touch-manipulation print:hidden dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100",
-                    isEmpty && "opacity-60 group-hover/day:opacity-100",
+                    "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-gray-300",
+                    !isEmpty && "border-b border-gray-100 dark:border-gray-800",
+                    isToday
+                      ? "bg-sky-50/40 dark:bg-sky-500/[0.06]"
+                      : isEmpty
+                        ? "bg-transparent"
+                        : "bg-gray-50/50 dark:bg-white/[0.02]",
                   )}
-                  onClick={() => openAddDialog(dayIdx)}
                 >
-                  <Plus className="mr-1 h-3.5 w-3.5" />
-                  {t.addRepair}
-                </Button>
-              </div>
-
-              {/* Repairs */}
-              {!isEmpty && (
-                <div className="divide-y divide-gray-100 print:divide-gray-200 dark:divide-gray-800">
-                  {dayRepairs.map((r) => (
-                    <RepairRow
-                      key={r.id}
-                      repair={r}
-                      lang={lang}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}
-                      isDragging={dragRepairId === r.id}
-                    />
-                  ))}
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      {t.days[dayIdx]}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100",
+                      )}
+                    >
+                      {day.getDate()} {t.months[day.getMonth()]}
+                    </span>
+                    {isToday ? (
+                      <span className="inline-flex items-center rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                        Today
+                      </span>
+                    ) : null}
+                    {dayRepairs.length > 0 ? (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-gray-800 dark:text-gray-200"
+                      >
+                        {dayRepairs.length}
+                      </Badge>
+                    ) : (
+                      <span className="text-[12px] text-gray-400 dark:text-gray-500">
+                        {t.noRepairsScheduled}
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 touch-manipulation print:hidden dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100",
+                      isEmpty && "opacity-60 group-hover/day:opacity-100",
+                    )}
+                    onClick={() => openAddDialog(dayIdx)}
+                  >
+                    <Plus className="mr-1 h-3.5 w-3.5" />
+                    {t.addRepair}
+                  </Button>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+
+                {/* Repairs */}
+                {!isEmpty && (
+                  <div className="divide-y divide-gray-100 print:divide-gray-200 dark:divide-gray-800">
+                    {dayRepairs.map((r) => (
+                      <RepairRow
+                        key={r.id}
+                        repair={r}
+                        lang={lang}
+                        isDragging={dragRepairId === r.id}
+                      />
+                    ))}
+                  </div>
+                )}
+              </DayDropZone>
+            );
+          })}
+        </div>
+
+        <DragOverlay dropAnimation={null}>
+          {draggingRepair ? (
+            <RepairDragPreview repair={draggingRepair} lang={lang} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       <AddRepairDialog
         open={addDialogOpen}
@@ -432,19 +489,44 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
   );
 }
 
-// ─── Compact Repair Row ───
+// ─── Day droppable wrapper ───
+
+function DayDropZone({
+  dayIndex,
+  className,
+  style,
+  children,
+}: {
+  dayIndex: number;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `day-${dayIndex}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        className,
+        isOver &&
+          "outline outline-2 outline-offset-[-2px] outline-sky-500/50 dark:outline-sky-400/60",
+      )}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── Compact Repair Row (draggable) ───
 
 function RepairRow({
   repair,
   lang,
-  onDragStart,
-  onDragEnd,
   isDragging,
 }: {
   repair: PlannedRepair;
   lang: PlanningLang;
-  onDragStart: (e: React.DragEvent, id: string) => void;
-  onDragEnd: () => void;
   isDragging: boolean;
 }) {
   const t = getLocaleStrings(lang);
@@ -453,21 +535,37 @@ function RepairRow({
   const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
   const priorityDot = PRIORITY_COLORS[repair.priority as Priority]?.split(" ")[0] ?? "bg-gray-300";
 
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
+    useDraggable({ id: repair.id });
+
   return (
-    <Link
-      href={`/repairs/${repair.id}`}
-      draggable
-      onDragStart={(e) => { e.stopPropagation(); onDragStart(e, repair.id); }}
-      onDragEnd={onDragEnd}
+    <div
+      ref={setNodeRef}
       className={cn(
-        "group flex min-h-[3.25rem] cursor-grab touch-manipulation items-start gap-3 px-4 py-3.5 transition-all duration-150 active:cursor-grabbing print:min-h-0 print:cursor-default print:py-2",
-        "hover:bg-gray-50/90 active:bg-gray-100/80 dark:hover:bg-white/[0.04] dark:active:bg-white/[0.06]",
+        "group relative flex min-h-[3.25rem] items-start gap-3 px-4 py-3.5 transition-all duration-150 print:min-h-0 print:py-2",
+        "hover:bg-gray-50/90 dark:hover:bg-white/[0.04]",
         isDragging && "opacity-40",
       )}
     >
-      {/* Drag handle + time */}
+      {/* Drag handle (explicit so the Link stays clickable) */}
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        aria-label={t.dragHint ?? "Drag to reschedule"}
+        {...listeners}
+        {...attributes}
+        className="shrink-0 cursor-grab rounded p-1 text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing touch-none print:hidden"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Link wrapping the content area so taps still navigate */}
+      <Link
+        href={`/repairs/${repair.id}`}
+        className="flex flex-1 items-start gap-3 min-w-0"
+      >
+      {/* time */}
       <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-        <GripVertical className="h-3 w-3 text-muted-foreground/30 group-hover:text-muted-foreground/60 print:hidden" />
         <span className="text-xs font-mono text-muted-foreground w-10 print:font-bold print:text-black">{timeStr}</span>
       </div>
 
@@ -537,6 +635,32 @@ function RepairRow({
           {repair.estimatedHours && <span>⏱ {repair.estimatedHours}h</span>}
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
+  );
+}
+
+// Compact snapshot that trails the cursor/finger during drag.
+function RepairDragPreview({
+  repair,
+  lang,
+}: {
+  repair: PlannedRepair;
+  lang: PlanningLang;
+}) {
+  void lang;
+  const locDot = getLocationDot(repair.locationId);
+  const time = new Date(repair.dueDate);
+  const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(
+    time.getMinutes(),
+  ).padStart(2, "0")}`;
+  return (
+    <div className="pointer-events-none inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] shadow-xl dark:border-gray-700 dark:bg-gray-900">
+      <span className={`h-2 w-2 rounded-full ${locDot}`} />
+      <span className="font-mono text-xs text-muted-foreground">{timeStr}</span>
+      <span className="max-w-[12rem] truncate font-semibold">
+        {repair.title ?? repair.publicCode ?? "—"}
+      </span>
+    </div>
   );
 }

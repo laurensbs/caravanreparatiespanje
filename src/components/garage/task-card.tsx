@@ -4,6 +4,8 @@ import { useTransition } from "react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
 import { startTimer } from "@/actions/time-entries";
+import { GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
+import { garageTimerBlockedReason } from "@/lib/garage-timer-policy";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import type { RepairTask, RepairTaskStatus } from "@/types";
@@ -20,6 +22,8 @@ const STATUS_ICONS: Record<RepairTaskStatus, string> = {
 interface TaskCardProps {
   task: RepairTask;
   repairJobId: string;
+  /** For user-facing messages when the server refuses to start a timer. */
+  repairJobStatus: string;
   onUpdate: () => void;
   onProblem: (taskId: string) => void;
   onBeforeStart?: () => Promise<boolean>;
@@ -27,7 +31,7 @@ interface TaskCardProps {
   workerId?: string;
 }
 
-export function TaskCard({ task, repairJobId, onUpdate, onProblem, onBeforeStart, photos = [], workerId }: TaskCardProps) {
+export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProblem, onBeforeStart, photos = [], workerId }: TaskCardProps) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
@@ -49,7 +53,15 @@ export function TaskCard({ task, repairJobId, onUpdate, onProblem, onBeforeStart
       }
       await updateTaskStatus(task.id, newStatus);
       if (newStatus === "in_progress" && workerId) {
-        await startTimer(repairJobId, workerId);
+        try {
+          await startTimer(repairJobId, workerId);
+        } catch (e) {
+          if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
+            toast.message(garageTimerBlockedReason(repairJobStatus, t));
+          } else {
+            throw e;
+          }
+        }
       }
       onUpdate();
     });

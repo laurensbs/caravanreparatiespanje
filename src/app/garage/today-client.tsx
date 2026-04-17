@@ -8,7 +8,8 @@ import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
 import { garageLock } from "@/actions/garage-auth";
 import { toggleMyWorker } from "@/actions/garage";
-import { startTimer } from "@/actions/time-entries";
+import { startTimer, stopTimer } from "@/actions/time-entries";
+import { canStartGarageTimerOnRepair, garageTimerBlockedReason, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import {
   RefreshCw,
   ChevronRight,
@@ -19,6 +20,7 @@ import {
   Lock,
   Search,
   Timer,
+  Pause,
   X,
   MessageSquare,
 } from "lucide-react";
@@ -101,6 +103,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   const [workerPickerRepairId, setWorkerPickerRepairId] = useState<string | null>(null);
   const [recentWorkerIds, setRecentWorkerIds] = useState<string[]>([]);
   const [isStarting, startStartTransition] = useTransition();
+  const [isPausing, startPauseTransition] = useTransition();
   const prevRepairIdsRef = useRef<Set<string> | null>(null);
 
   useGaragePoll();
@@ -259,9 +262,10 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
               const active = activeTab === tab.key;
               return (
                 <button
+                  type="button"
                   key={tab.key}
                   onClick={() => { hapticTap(); setActiveTab(tab.key); }}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${
+                  className={`flex items-center gap-2 min-h-12 px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-all ${
                     active ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/50"
                   }`}
                 >
@@ -290,15 +294,43 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {displayRepairs.map((repair) => (
+            {displayRepairs.map((repair) => {
+              const timerStartAllowed = canStartGarageTimerOnRepair(repair.status);
+              const repairTimers = activeTimers.filter((at) => at.repairJobId === repair.id);
+              return (
               <JobCard
                 key={repair.id}
                 repair={repair}
                 t={t}
-                activeTimers={activeTimers.filter((at) => at.repairJobId === repair.id)}
-                quickUsers={selectableUsers.slice(0, 3)}
-                onTap={() => { hapticTap(); setWorkerPickerRepairId(repair.id); }}
+                activeTimers={repairTimers}
+                quickUsers={selectableUsers}
+                timerStartAllowed={timerStartAllowed}
+                pauseDisabled={isPausing}
+                onMainTap={() => {
+                  hapticTap();
+                  if (repairTimers.length > 0) {
+                    router.push(`/garage/repairs/${repair.id}`);
+                    return;
+                  }
+                  if (timerStartAllowed) setWorkerPickerRepairId(repair.id);
+                  else router.push(`/garage/repairs/${repair.id}`);
+                }}
+                onPauseUser={(userId) => {
+                  hapticTap();
+                  startPauseTransition(async () => {
+                    await stopTimer(repair.id, userId);
+                    toast.success(
+                      t("Timer paused — time saved on this job", "Temporizador en pausa — tiempo guardado", "Timer gepauzeerd — tijd opgeslagen op deze klus")
+                    );
+                    router.refresh();
+                  });
+                }}
                 onQuickStart={(userId) => {
+                  if (!timerStartAllowed) {
+                    hapticTap();
+                    toast.message(garageTimerBlockedReason(repair.status, t));
+                    return;
+                  }
                   hapticSuccess();
                   startStartTransition(async () => {
                     try {
@@ -313,16 +345,21 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                       toast.success(
                         `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${user.name}`
                       );
-                    } catch {
-                      toast.message(
-                        t("Timer could not be started", "No se pudo iniciar el temporizador", "Timer kon niet gestart worden")
-                      );
+                    } catch (e) {
+                      if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
+                        toast.message(garageTimerBlockedReason(repair.status, t));
+                      } else {
+                        toast.message(
+                          t("Timer could not be started", "No se pudo iniciar el temporizador", "Timer kon niet gestart worden")
+                        );
+                      }
                     }
                     router.refresh();
                   });
                 }}
               />
-            ))}
+            );
+            })}
           </div>
         )}
       </main>
@@ -345,11 +382,16 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                   onClick={() => {
                     hapticSuccess();
                     const repairId = workerPickerRepairId;
+                    const pickedRepair = repairs.find((r) => r.id === repairId);
+                    if (!pickedRepair || !canStartGarageTimerOnRepair(pickedRepair.status)) {
+                      toast.message(garageTimerBlockedReason(pickedRepair?.status ?? "todo", t));
+                      setWorkerPickerRepairId(null);
+                      if (pickedRepair) router.push(`/garage/repairs/${pickedRepair.id}`);
+                      return;
+                    }
                     startStartTransition(async () => {
                       try {
-                        // Check if already assigned — toggle will add if not
-                        const repair = repairs.find(r => r.id === repairId);
-                        const alreadyAssigned = repair?.workers?.includes(user.name ?? "");
+                        const alreadyAssigned = pickedRepair.workers?.includes(user.name ?? "");
                         if (!alreadyAssigned) {
                           await toggleMyWorker(repairId, user.id);
                         }
@@ -359,12 +401,15 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                         toast.success(
                           `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${workerName}`
                         );
-                      } catch {
-                        // Timer may already be running — continue and refresh state
+                      } catch (e) {
                         const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
-                        toast.message(
-                          `${t("Timer already running for", "Temporizador ya activo para", "Timer loopt al voor")} ${workerName}`
-                        );
+                        if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
+                          toast.message(garageTimerBlockedReason(pickedRepair.status, t));
+                        } else {
+                          toast.message(
+                            `${t("Timer already running for", "Temporizador ya activo para", "Timer loopt al voor")} ${workerName}`
+                          );
+                        }
                       }
                       setWorkerPickerRepairId(null);
                       router.refresh();
@@ -425,138 +470,212 @@ function JobCard({
   t,
   activeTimers,
   quickUsers,
-  onTap,
+  timerStartAllowed,
+  pauseDisabled,
+  onMainTap,
+  onPauseUser,
   onQuickStart,
 }: {
   repair: RepairItem;
   t: (en: string, es?: string | null, nl?: string | null) => string;
   activeTimers: ActiveTimerItem[];
   quickUsers: { id: string; name: string | null; role: string | null }[];
-  onTap: () => void;
+  timerStartAllowed: boolean;
+  pauseDisabled: boolean;
+  onMainTap: () => void;
+  onPauseUser: (userId: string) => void;
   onQuickStart: (userId: string) => void;
 }) {
   const hasTimer = activeTimers.length > 0;
+  const hasFooter = activeTimers.length > 0 || quickUsers.length > 0;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
 
   return (
-    <button
-      onClick={onTap}
-      className={`group block w-full text-left rounded-2xl border transition-all active:scale-[0.98] ${
+    <div
+      className={`rounded-2xl border transition-all ${
         hasTimer
           ? "bg-sky-400/[0.06] border-sky-400/20"
-          : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
+          : "bg-white/[0.03] border-white/[0.06]"
       }`}
     >
-      <div className="p-4">
-        <div className="flex items-center gap-3 mb-2">
-          <div className={`h-2 w-2 rounded-full shrink-0 ${STATUS_COLOR[repair.status] || "bg-white/20"}`} />
-          <span className="text-base font-bold text-white tracking-tight font-mono">
-            {repair.unitRegistration || repair.publicCode || "—"}
-          </span>
-          {repair.priority === "urgent" && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
-              {t("Urgent", "Urgente", "Spoed")}
+      <button
+        type="button"
+        onClick={onMainTap}
+        className={`group block w-full text-left active:scale-[0.99] transition-transform ${
+          hasFooter ? "rounded-t-2xl" : "rounded-2xl"
+        }`}
+      >
+        <div className="p-4 pb-3">
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${STATUS_COLOR[repair.status] || "bg-white/20"}`} />
+            <span className="text-lg font-bold text-white tracking-tight font-mono">
+              {repair.unitRegistration || repair.publicCode || "—"}
             </span>
-          )}
-          {repair.priority === "high" && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
-              {t("High", "Alta", "Hoog")}
-            </span>
-          )}
-          {hasTimer && (
-            <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-sky-400">
-              <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-              <Timer className="h-3 w-3" />
-            </span>
-          )}
-          {repair.garageAdminMessage && !repair.garageAdminMessageReadAt && (
-            <span className="flex items-center text-sky-400">
-              <MessageSquare className="h-3.5 w-3.5" />
-            </span>
-          )}
-          <ChevronRight className="h-4 w-4 text-white/10 ml-auto shrink-0 group-hover:text-white/25 transition-colors" />
-        </div>
+            {repair.priority === "urgent" && (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-red-400 bg-red-400/10 px-2 py-0.5 rounded-md">
+                {t("Urgent", "Urgente", "Spoed")}
+              </span>
+            )}
+            {repair.priority === "high" && (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md">
+                {t("High", "Alta", "Hoog")}
+              </span>
+            )}
+            {hasTimer && (
+              <span className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-sky-400">
+                <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+                <Timer className="h-4 w-4" />
+              </span>
+            )}
+            {repair.garageAdminMessage && !repair.garageAdminMessageReadAt && (
+              <span className="flex items-center text-sky-400">
+                <MessageSquare className="h-4 w-4" />
+              </span>
+            )}
+            <ChevronRight className="h-5 w-5 text-white/15 ml-auto shrink-0 group-hover:text-white/30 transition-colors" />
+          </div>
 
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-sm text-white/50 truncate">
-            {repair.customerName || t("No customer", "Sin cliente", "Geen klant")}
-          </span>
-          {repair.unitBrand && (
-            <span className="text-xs text-white/20">· {repair.unitBrand} {repair.unitModel}</span>
+          {!timerStartAllowed && (
+            <p className="text-xs text-amber-400/90 font-medium mb-2">
+              {t("Open job to set active before starting a timer", "Abre el trabajo para activarlo antes del temporizador", "Open de klus om op Actief te zetten voor een timer")}
+            </p>
           )}
-        </div>
 
-        {(repair.unitStorageLocation || repair.unitCurrentPosition) && (
-          <p className="text-[12px] text-white/35 truncate mb-2">
-            📍 {repair.unitStorageLocation || t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
-            {repair.unitCurrentPosition ? ` · ${repair.unitCurrentPosition}` : ""}
-          </p>
-        )}
-
-        {repair.title && <p className="text-[13px] text-white/25 truncate mb-2.5">{repair.title}</p>}
-        {!repair.title && <div className="mb-1.5" />}
-
-        <div className="flex items-center gap-3">
-          {repair.tasks.total > 0 && (
-            <div className="flex-1 flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-              </div>
-              <span className="text-[11px] text-white/30 tabular-nums font-medium shrink-0">{repair.tasks.done}/{repair.tasks.total}</span>
-            </div>
-          )}
-          {repair.parts.pending > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-amber-400 font-medium">
-              <Package className="h-3 w-3" />{repair.parts.pending}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-sm text-white/50 truncate">
+              {repair.customerName || t("No customer", "Sin cliente", "Geen klant")}
             </span>
+            {repair.unitBrand && (
+              <span className="text-xs text-white/20">· {repair.unitBrand} {repair.unitModel}</span>
+            )}
+          </div>
+
+          {(repair.unitStorageLocation || repair.unitCurrentPosition) && (
+            <p className="text-sm text-white/35 truncate mb-2">
+              📍 {repair.unitStorageLocation || t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
+              {repair.unitCurrentPosition ? ` · ${repair.unitCurrentPosition}` : ""}
+            </p>
           )}
-          {repair.tasks.problem > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-red-400 font-medium">
-              <AlertTriangle className="h-3 w-3" />{repair.tasks.problem}
-            </span>
-          )}
-          {repair.workers.length > 0 && (
-            <div className="flex -space-x-1.5">
-              {repair.workers.slice(0, 3).map((w, i) => (
-                <div key={i} className="h-6 w-6 rounded-full bg-white/10 border-2 border-gray-950 flex items-center justify-center text-[9px] font-bold text-white/50">
-                  {w.charAt(0).toUpperCase()}
+
+          {repair.title && <p className="text-sm text-white/25 truncate mb-2.5">{repair.title}</p>}
+          {!repair.title && <div className="mb-1.5" />}
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {repair.tasks.total > 0 && (
+              <div className="flex-1 min-w-[120px] flex items-center gap-2">
+                <div className="flex-1 h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
-              ))}
-            </div>
-          )}
-          {repair.totalMinutes > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-white/30 font-medium tabular-nums">
-              <Clock className="h-3 w-3" />
-              {Math.floor(repair.totalMinutes / 60) > 0
-                ? `${Math.floor(repair.totalMinutes / 60)}h ${repair.totalMinutes % 60}m`
-                : `${repair.totalMinutes}m`}
-            </span>
-          )}
+                <span className="text-xs text-white/30 tabular-nums font-medium shrink-0">{repair.tasks.done}/{repair.tasks.total}</span>
+              </div>
+            )}
+            {repair.parts.pending > 0 && (
+              <span className="flex items-center gap-1 text-xs text-amber-400 font-semibold">
+                <Package className="h-4 w-4" />{repair.parts.pending}
+              </span>
+            )}
+            {repair.tasks.problem > 0 && (
+              <span className="flex items-center gap-1 text-xs text-red-400 font-semibold">
+                <AlertTriangle className="h-4 w-4" />{repair.tasks.problem}
+              </span>
+            )}
+            {repair.workers.length > 0 && (
+              <div className="flex -space-x-2">
+                {repair.workers.slice(0, 3).map((w, i) => (
+                  <div key={i} className="h-8 w-8 rounded-full bg-white/10 border-2 border-gray-950 flex items-center justify-center text-xs font-bold text-white/50">
+                    {w.charAt(0).toUpperCase()}
+                  </div>
+                ))}
+              </div>
+            )}
+            {repair.totalMinutes > 0 && (
+              <span className="flex items-center gap-1 text-xs text-white/30 font-semibold tabular-nums">
+                <Clock className="h-4 w-4" />
+                {Math.floor(repair.totalMinutes / 60) > 0
+                  ? `${Math.floor(repair.totalMinutes / 60)}h ${repair.totalMinutes % 60}m`
+                  : `${repair.totalMinutes}m`}
+              </span>
+            )}
+          </div>
         </div>
+      </button>
 
-        {quickUsers.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/[0.06]">
-            <span className="text-[10px] uppercase tracking-wide text-white/25 font-semibold">
-              {t("Start", "Iniciar", "Start")}
-            </span>
-            {quickUsers.map((user) => (
+      {activeTimers.length > 0 && (
+        <div className="px-4 pb-3 flex flex-col gap-2">
+          <span className="text-[11px] uppercase tracking-wide text-white/35 font-bold">
+            {t("Pause timer (saved on this repair)", "Pausar (guardado en esta reparación)", "Timer pauzeren (opgeslagen op klus)")}
+          </span>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {activeTimers.map((at) => (
               <button
-                key={user.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickStart(user.id);
-                }}
-                className="inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-semibold text-white/70 hover:bg-white/[0.12] active:scale-[0.97] transition-all"
-                title={`${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`}
+                key={at.id}
+                type="button"
+                disabled={pauseDisabled}
+                onClick={() => onPauseUser(at.userId)}
+                className="flex-1 min-h-[52px] flex items-center justify-center gap-3 rounded-xl bg-red-500/15 border border-red-500/25 px-4 text-base font-semibold text-red-300 active:bg-red-500/25 disabled:opacity-50"
               >
-                {(user.name ?? "?").charAt(0).toUpperCase()}
+                <Pause className="h-5 w-5 shrink-0" />
+                <span className="truncate">{at.userName?.split(" ")[0] ?? "?"}</span>
+                <OverviewTimerElapsed startedAt={at.startedAt} />
               </button>
             ))}
           </div>
-        )}
-      </div>
-    </button>
+        </div>
+      )}
+
+      {quickUsers.length > 0 && (
+        <div className="px-4 pb-4 flex flex-col gap-2 border-t border-white/[0.06] pt-3">
+          <span className="text-[11px] uppercase tracking-wide text-white/35 font-bold">
+            {t("Start timer", "Iniciar temporizador", "Timer starten")}
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {quickUsers.map((user) => (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => onQuickStart(user.id)}
+                className={`w-full inline-flex items-center justify-center gap-2 min-h-[52px] px-3 rounded-xl border text-base font-bold transition-all active:scale-[0.97] ${
+                  timerStartAllowed
+                    ? "bg-sky-500/15 border-sky-400/30 text-sky-200 hover:bg-sky-500/25"
+                    : "bg-white/[0.04] border-white/[0.08] text-white/25"
+                }`}
+                title={
+                  timerStartAllowed
+                    ? `${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`
+                    : garageTimerBlockedReason(repair.status, t)
+                }
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm">
+                  {(user.name ?? "?").charAt(0).toUpperCase()}
+                </span>
+                <span className="max-w-[100px] truncate text-sm font-semibold">{user.name?.split(" ")[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
+}
+
+function OverviewTimerElapsed({ startedAt }: { startedAt: Date | string }) {
+  const [label, setLabel] = useState("");
+
+  useEffect(() => {
+    const start = new Date(startedAt).getTime();
+    const tick = () => {
+      const diff = Date.now() - start;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setLabel(h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+
+  return <span className="tabular-nums font-mono text-white/80 text-base">{label}</span>;
 }
 
 /* ═════════════════════════════════════ */

@@ -166,9 +166,9 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
   const handleStop = async () => {
     const confirmed = window.confirm(
       t(
-        `Stop timer for ${timer.userName ?? "worker"}?`,
-        `¿Detener temporizador de ${timer.userName ?? "trabajador"}?`,
-        `Timer stoppen van ${timer.userName ?? "werker"}?`
+        `Pause timer for ${timer.userName ?? "worker"}? Time is saved on this repair for billing.`,
+        `¿Pausar temporizador de ${timer.userName ?? "trabajador"}? El tiempo queda registrado en esta reparación.`,
+        `Timer pauzeren voor ${timer.userName ?? "werker"}? Tijd wordt opgeslagen op deze klus voor facturatie.`
       )
     );
     if (!confirmed) return;
@@ -179,12 +179,13 @@ function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
 
   return (
     <button
+      type="button"
       onClick={handleStop}
-      className="flex items-center gap-1.5 rounded-lg bg-red-500/15 border border-red-500/25 px-2.5 py-1.5 text-xs font-medium text-red-400 active:bg-red-500/25 transition-all"
+      className="flex items-center gap-2 rounded-xl bg-red-500/15 border border-red-500/25 min-h-11 px-3 py-2 text-sm font-semibold text-red-400 active:bg-red-500/25 transition-all"
     >
-      <Square className="h-3 w-3 fill-current" />
-      <span className="text-white/60 text-[10px]">{timer.userName?.split(" ")[0]}</span>
-      <span className="tabular-nums font-mono">{elapsed}</span>
+      <Square className="h-4 w-4 shrink-0 fill-current" />
+      <span className="text-white/70 text-xs font-medium truncate max-w-[5rem]">{timer.userName?.split(" ")[0]}</span>
+      <span className="tabular-nums font-mono text-sm">{elapsed}</span>
     </button>
   );
 }
@@ -482,8 +483,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowWorkerPicker(true)}
-                  className="rounded-lg h-9 px-3 text-xs font-semibold text-sky-300 bg-sky-400/10 border border-sky-400/20 active:scale-[0.98]"
+                  className="rounded-xl min-h-11 px-4 text-sm font-semibold text-sky-300 bg-sky-400/10 border border-sky-400/20 active:scale-[0.98]"
                 >
                   {t("Switch", "Cambiar", "Wissel")}
                 </button>
@@ -495,6 +497,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                   const isAssigned = repair.workers.some(w => w.userId === user.id);
                   return (
                     <button
+                      type="button"
                       key={user.id}
                       onClick={() => {
                         hapticTap();
@@ -504,7 +507,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                         });
                       }}
                       disabled={isPending}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all active:scale-[0.97] ${
+                      className={`inline-flex items-center gap-2 rounded-full min-h-11 px-4 py-2.5 text-base font-medium transition-all active:scale-[0.97] ${
                         isAssigned
                           ? "bg-emerald-400/10 border border-emerald-400/20 text-emerald-400"
                           : "bg-white/[0.03] border border-white/[0.06] text-white/50"
@@ -566,6 +569,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                         key={task.id}
                         task={task}
                         repairJobId={repair.id}
+                        repairJobStatus={repair.status}
                         onUpdate={handleRefresh}
                         onProblem={(id) => setProblemTaskId(id)}
                         onBeforeStart={handleBeforeStart}

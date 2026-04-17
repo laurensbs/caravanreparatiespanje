@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { timeEntries, users, repairJobs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
+import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -38,6 +39,19 @@ export async function startTimer(repairJobId: string, forUserId?: string) {
   if (existing.length > 0) {
     // Auto-stop the previous timer before starting new one
     await stopTimerById(existing[0].id);
+  }
+
+  const [job] = await db
+    .select({ status: repairJobs.status })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job) {
+    throw new Error("Repair job not found");
+  }
+  if (!canStartGarageTimerOnRepair(job.status)) {
+    throw new Error(GARAGE_TIMER_NOT_ALLOWED);
   }
 
   const [entry] = await db

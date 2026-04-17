@@ -73,20 +73,22 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
     <div className="flex items-center gap-2 flex-wrap">
       {isRunning ? (
         <button
+          type="button"
           onClick={handleStop}
           disabled={isPending}
-          className="inline-flex items-center gap-2 rounded-full bg-emerald-400/10 border border-emerald-400/20 pl-3 pr-3.5 py-1.5 text-sm font-medium text-emerald-400 transition-all active:scale-[0.97] disabled:opacity-50"
+          className="inline-flex items-center gap-2.5 rounded-xl bg-emerald-400/10 border border-emerald-400/20 min-h-12 px-4 py-2.5 text-base font-semibold text-emerald-400 transition-all active:scale-[0.97] disabled:opacity-50"
         >
-          <Square className="h-3 w-3 fill-current" />
+          <Square className="h-5 w-5 fill-current shrink-0" />
           <span className="tabular-nums font-semibold">{formatElapsed(elapsed)}</span>
         </button>
       ) : (
         <button
+          type="button"
           onClick={handleStart}
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-full bg-sky-400/10 border border-sky-400/20 pl-3 pr-3.5 py-1.5 text-sm font-medium text-sky-400 transition-all active:scale-[0.97] disabled:opacity-50"
+          className="inline-flex items-center gap-2.5 rounded-xl bg-sky-400/10 border border-sky-400/20 min-h-12 px-4 py-2.5 text-base font-semibold text-sky-400 transition-all active:scale-[0.97] disabled:opacity-50"
         >
-          <Play className="h-3 w-3 fill-current" />
+          <Play className="h-5 w-5 fill-current shrink-0" />
           {t("Start", "Iniciar", "Start")}
         </button>
       )}
@@ -94,12 +96,12 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
       {otherTimers.map((timer) => (
         <span
           key={timer.id}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] px-2.5 py-1 text-xs text-white/40"
+          className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] min-h-12 px-3 py-2 text-sm text-white/50"
         >
-          <span className="flex items-center justify-center h-4 w-4 rounded-full bg-sky-400 text-[9px] font-bold text-gray-950">
+          <span className="flex items-center justify-center h-8 w-8 rounded-full bg-sky-400 text-xs font-bold text-gray-950 shrink-0">
             {(timer.userName ?? "?").charAt(0).toUpperCase()}
           </span>
-          {timer.userName}
+          <span className="truncate max-w-[7rem]">{timer.userName}</span>
           <LiveElapsed startedAt={timer.startedAt} />
         </span>
       ))}

@@ -36,7 +36,15 @@ export function HoldedManualLinkForm({
   const [linkKind, setLinkKind] = useState<"quote" | "invoice">(defaultKind);
   const [linkInput, setLinkInput] = useState("");
 
-  const showKindSelect = allowQuote && allowInvoice;
+  // We auto-detect invoice vs quote from Holded URLs. The manual Select is
+  // only useful when the user pastes a raw document ID (no URL scheme), and
+  // even then only when both kinds are allowed for this repair.
+  const parsedInput = parseHoldedDocumentPaste(linkInput);
+  const detectedKind = parsedInput.detectedKind;
+  const trimmedInput = linkInput.trim();
+  const needsManualKind =
+    allowQuote && allowInvoice && trimmedInput.length > 0 && !detectedKind;
+  const effectiveKind: "quote" | "invoice" = detectedKind ?? linkKind;
 
   function applyDetectedKindFromInput(value: string) {
     const parsed = parseHoldedDocumentPaste(value);
@@ -103,7 +111,22 @@ export function HoldedManualLinkForm({
         className,
       )}
     >
-      <p className={titleClass}>Link existing Holded document</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className={titleClass}>Link existing Holded document</p>
+        {detectedKind ? (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+              detectedKind === "invoice"
+                ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800/60 dark:bg-sky-500/10 dark:text-sky-300"
+                : "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800/60 dark:bg-violet-500/10 dark:text-violet-300",
+            )}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+            Detected {detectedKind}
+          </span>
+        ) : null}
+      </div>
       <p
         className={cn(
           "mt-1 text-gray-500 dark:text-gray-400",
@@ -111,16 +134,18 @@ export function HoldedManualLinkForm({
         )}
       >
         Paste the <strong className="font-medium text-foreground/80">Holded browser link</strong> (from the address bar)
-        or the raw document ID. We detect <strong className="font-medium text-foreground/80">invoice</strong> vs{" "}
-        <strong className="font-medium text-foreground/80">quote</strong> from the URL. If a customer has several
+        or the raw document ID — we detect whether it&apos;s an invoice or quote from the URL. If a customer has several
         caravans, the <strong className="font-medium text-foreground/80">license plate must appear</strong> in the
         document text (or set the unit on the work order first). After linking, customer and matching caravan details
         sync from Holded when possible.
       </p>
       <div className={cn("mt-3 flex flex-col gap-2 sm:flex-row sm:items-center", variant === "compact" && "mt-2")}>
-        {showKindSelect ? (
+        {needsManualKind ? (
           <Select value={linkKind} onValueChange={(v) => setLinkKind(v as "quote" | "invoice")}>
-            <SelectTrigger className={cn("h-9 w-full rounded-lg sm:w-[8.5rem]", variant === "compact" && "h-8 text-xs")}>
+            <SelectTrigger
+              className={cn("h-9 w-full rounded-lg sm:w-[8.5rem]", variant === "compact" && "h-8 text-xs")}
+              title="No URL detected — tell us which kind of document this is."
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -144,8 +169,15 @@ export function HoldedManualLinkForm({
           variant="secondary"
           size="sm"
           className={cn("h-9 shrink-0 rounded-lg", variant === "compact" && "h-8 text-xs")}
-          disabled={loading || !linkInput.trim()}
+          disabled={loading || !trimmedInput}
           onClick={onLink}
+          title={
+            effectiveKind === "invoice"
+              ? "Link as invoice"
+              : effectiveKind === "quote"
+                ? "Link as quote"
+                : undefined
+          }
         >
           {loading ? <Spinner className="h-3.5 w-3.5" /> : "Link"}
         </Button>

@@ -5,6 +5,7 @@ import { eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, getInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
 import { isNonRepairInvoice } from "@/lib/holded/filter";
+import { resolveCustomerIdFromHoldedContact } from "@/lib/holded/resolve-customer-from-contact";
 
 // Vercel cron: runs every minute
 // Fetches ALL invoices from Holded, matches to repairs, syncs invoice status
@@ -59,7 +60,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "Holded not configured" });
   }
 
-  const stats = { discovered: 0, statusUpdated: 0, statusAdvanced: 0, errors: 0, invoicesTotal: 0 };
+  const stats = {
+    discovered: 0,
+    statusUpdated: 0,
+    statusAdvanced: 0,
+    errors: 0,
+    invoicesTotal: 0,
+    /** Invoices matched after resolving Holded contact → customer without holded_contact_id */
+    customersResolved: 0,
+    /** Customers got holded_contact_id set from invoice contact */
+    holdedContactBackfilled: 0,
+  };
 
   // Statuses that should auto-advance when invoice is paid
   const earlyStatuses = ["new", "todo", "in_inspection", "quote_needed", "waiting_approval",
@@ -115,6 +126,8 @@ export async function GET(request: Request) {
     for (const r of allRepairs) {
       if (r.holdedInvoiceId) repairByInvoiceId.set(r.holdedInvoiceId, r);
     }
+
+    const contactResolveCache = new Map<string, string | false>();
 
     // ─── Step 3: Process each Holded invoice ───
     // For partially paid invoices (status 2) where we can't determine remaining
@@ -200,7 +213,22 @@ export async function GET(request: Request) {
         }
 
         // Case B: Invoice not linked — try to discover and link to a repair
-        const customerId = customerByHoldedId.get(inv.contact);
+        let customerId = customerByHoldedId.get(inv.contact);
+        if (!customerId) {
+          const resolved = await resolveCustomerIdFromHoldedContact(inv.contact, contactResolveCache);
+          if (resolved) {
+            customerId = resolved.customerId;
+            stats.customersResolved++;
+            if (resolved.shouldBackfillHoldedContactId) {
+              await db
+                .update(customers)
+                .set({ holdedContactId: inv.contact, updatedAt: new Date() })
+                .where(eq(customers.id, resolved.customerId));
+              customerByHoldedId.set(inv.contact, resolved.customerId);
+              stats.holdedContactBackfilled++;
+            }
+          }
+        }
         if (!customerId) continue;
 
         const customerRepairs = repairsByCustomer.get(customerId);
@@ -217,6 +245,7 @@ export async function GET(request: Request) {
         const invText = [
           inv.desc ?? "",
           inv.docNumber ?? "",
+          inv.contactName ?? "",
           ...(inv.items ?? []).map(i => `${i.name ?? ""} ${i.desc ?? ""}`),
         ].join(" ").toLowerCase();
 

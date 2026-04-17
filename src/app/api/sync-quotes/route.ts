@@ -5,6 +5,7 @@ import { eq, isNotNull, isNull } from "drizzle-orm";
 import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllQuotes, type HoldedQuote } from "@/lib/holded/invoices";
 import { filterRepairQuotes } from "@/lib/holded/filter";
+import { resolveCustomerIdFromHoldedContact } from "@/lib/holded/resolve-customer-from-contact";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ function quoteSearchText(q: HoldedQuote): string {
   return [
     q.desc ?? "",
     q.docNumber ?? "",
+    q.contactName ?? "",
     ...(q.products ?? []).map((p) => `${p.name ?? ""} ${p.desc ?? ""}`),
   ]
     .join(" ")
@@ -29,7 +31,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "Holded not configured" });
   }
 
-  const stats = { discovered: 0, errors: 0, quotesTotal: 0 };
+  const stats = {
+    discovered: 0,
+    errors: 0,
+    quotesTotal: 0,
+    customersResolved: 0,
+    holdedContactBackfilled: 0,
+  };
 
   try {
     const rawQuotes = await listAllQuotes();
@@ -74,11 +82,28 @@ export async function GET(request: Request) {
       if (r.holdedQuoteId) repairByQuoteId.set(r.holdedQuoteId, r);
     }
 
+    const contactResolveCache = new Map<string, string | false>();
+
     for (const q of holdedQuotes) {
       try {
         if (repairByQuoteId.has(q.id)) continue;
 
-        const customerId = customerByHoldedId.get(q.contact);
+        let customerId = customerByHoldedId.get(q.contact);
+        if (!customerId) {
+          const resolved = await resolveCustomerIdFromHoldedContact(q.contact, contactResolveCache);
+          if (resolved) {
+            customerId = resolved.customerId;
+            stats.customersResolved++;
+            if (resolved.shouldBackfillHoldedContactId) {
+              await db
+                .update(customers)
+                .set({ holdedContactId: q.contact, updatedAt: new Date() })
+                .where(eq(customers.id, resolved.customerId));
+              customerByHoldedId.set(q.contact, resolved.customerId);
+              stats.holdedContactBackfilled++;
+            }
+          }
+        }
         if (!customerId) continue;
 
         const customerRepairs = repairsByCustomer.get(customerId);

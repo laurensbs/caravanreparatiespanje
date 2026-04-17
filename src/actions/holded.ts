@@ -32,6 +32,7 @@ import {
   normalizeForPlateSearch,
   resolveUnitForHoldedManualLink,
 } from "@/lib/holded/resolve-unit-from-document";
+import { matchesSpreadsheetRefInText, repairPublicCodeAppearsInText } from "@/lib/holded/repair-ref-match";
 
 // ─── Invoice creation from repair ───
 
@@ -855,12 +856,15 @@ export async function verifyHoldedDocuments(repairJobId: string) {
       if (customer?.holdedContactId) {
         try {
           const contactInvoices = await listInvoicesByContact(customer.holdedContactId);
-          // Match by description containing publicCode
-          const match = contactInvoices.find(
-            (inv) =>
-              inv.desc?.includes(job.publicCode ?? "") ||
+          const match = contactInvoices.find((inv) => {
+            const hay = `${inv.desc ?? ""} ${inv.docNumber ?? ""}`.toLowerCase();
+            return (
+              repairPublicCodeAppearsInText(job.publicCode, hay) ||
+              (!!job.spreadsheetInternalId?.trim() &&
+                matchesSpreadsheetRefInText(job.spreadsheetInternalId, hay)) ||
               inv.docNumber === job.holdedInvoiceNum
-          );
+            );
+          });
           if (match) {
             updates.holdedInvoiceId = match.id;
             updates.holdedInvoiceNum = match.docNumber;
@@ -900,11 +904,15 @@ export async function verifyHoldedDocuments(repairJobId: string) {
       if (customer?.holdedContactId) {
         try {
           const contactQuotes = await listQuotesByContact(customer.holdedContactId);
-          const match = contactQuotes.find(
-            (q) =>
-              q.desc?.includes(job.publicCode ?? "") ||
+          const match = contactQuotes.find((q) => {
+            const hay = `${q.desc ?? ""} ${q.docNumber ?? ""}`.toLowerCase();
+            return (
+              repairPublicCodeAppearsInText(job.publicCode, hay) ||
+              (!!job.spreadsheetInternalId?.trim() &&
+                matchesSpreadsheetRefInText(job.spreadsheetInternalId, hay)) ||
               q.docNumber === job.holdedQuoteNum
-          );
+            );
+          });
           if (match) {
             updates.holdedQuoteId = match.id;
             updates.holdedQuoteNum = match.docNumber;

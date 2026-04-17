@@ -605,7 +605,11 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   function openFinancialForHoldedLink() {
     const d = document.getElementById("repair-financial");
     if (d instanceof HTMLDetailsElement) d.open = true;
-    costRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    requestAnimationFrame(() => {
+      const anchor = document.getElementById("holded-manual-link");
+      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "center" });
+      else costRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   async function handleSave() {
@@ -2032,7 +2036,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   No Holded quote or invoice is linked to this repair, so there are no PDF or Holded links here yet.
                 </p>
                 <p className="text-xs text-amber-900/80 dark:text-amber-200/70 leading-relaxed">
-                  If the document already exists in Holded, link it below (managers) or under Financial for the full workflow. The quote sync job runs about every 15 minutes when the customer and description match.
+                  If the document already exists in Holded, managers link it in the Financial section (estimate, quote, invoice). The quote sync job runs about every 15 minutes when the customer and description match.
                 </p>
                 {canLinkHoldedDocuments ? (
                   <button
@@ -2040,20 +2044,12 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     onClick={openFinancialForHoldedLink}
                     className="text-xs font-semibold text-amber-900 dark:text-amber-200 hover:underline"
                   >
-                    Open Financial section (estimate, send, verify)
+                    Open Financial — link Holded document
                   </button>
                 ) : (
                   <p className="text-xs text-amber-900/70 dark:text-amber-300/60">Ask a manager to link the Holded document.</p>
                 )}
               </div>
-            )}
-            {canLinkHoldedDocuments && (!job.holdedQuoteId || !job.holdedInvoiceId) && (
-              <HoldedManualLinkForm
-                repairJobId={job.id}
-                allowQuote={!job.holdedQuoteId}
-                allowInvoice={!job.holdedInvoiceId}
-                variant="compact"
-              />
             )}
           </div>
 
@@ -2886,13 +2882,13 @@ function FinancialWorkflow({
         ))}
       </div>
 
-      {canLinkHoldedDocuments && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            If a quote or invoice already exists in Holded, paste the Holded link or document ID below. The customer must match the Holded contact (or the customer has no Holded ID yet — we will set it from the document). With multiple caravans, include the license plate in the Holded lines or pick the unit on the work order first.
-          </p>
-          <HoldedManualLinkForm repairJobId={job.id} allowQuote allowInvoice />
-        </div>
+      {canLinkHoldedDocuments && (!job.holdedQuoteId || !job.holdedInvoiceId) && (
+        <HoldedManualLinkForm
+          id="holded-manual-link"
+          repairJobId={job.id}
+          allowQuote={!job.holdedQuoteId}
+          allowInvoice={!job.holdedInvoiceId}
+        />
       )}
 
       {/* ─── Workshop sync banner ─── */}

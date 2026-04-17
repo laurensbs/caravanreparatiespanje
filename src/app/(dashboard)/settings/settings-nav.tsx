@@ -13,6 +13,9 @@ const BASE_ITEMS: { href: string; label: string }[] = [
   { href: "/settings/pricing", label: "Pricing" },
 ];
 
+/** Inserted after Holded — only for admins (see layout). */
+const AUDIT_ITEM = { href: "/settings/audit", label: "Audit log" } as const;
+
 function isActive(pathname: string, href: string) {
   if (href === "/settings") return pathname === "/settings";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -20,7 +23,13 @@ function isActive(pathname: string, href: string) {
 
 export function SettingsNav({ showAudit }: { showAudit: boolean }) {
   const pathname = usePathname();
-  const items = showAudit ? [...BASE_ITEMS, { href: "/settings/audit", label: "Audit log" }] : BASE_ITEMS;
+  const items = showAudit
+    ? [
+        ...BASE_ITEMS.slice(0, 5),
+        AUDIT_ITEM,
+        ...BASE_ITEMS.slice(5),
+      ]
+    : BASE_ITEMS;
 
   return (
     <nav

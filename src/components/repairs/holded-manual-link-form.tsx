@@ -17,6 +17,8 @@ type Props = {
   allowInvoice: boolean;
   variant?: "default" | "compact";
   className?: string;
+  /** For deep-link scroll from elsewhere on the page (e.g. Documents card). */
+  id?: string;
 };
 
 export function HoldedManualLinkForm({
@@ -25,6 +27,7 @@ export function HoldedManualLinkForm({
   allowInvoice,
   variant = "default",
   className,
+  id,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -93,6 +96,7 @@ export function HoldedManualLinkForm({
 
   return (
     <div
+      id={id}
       className={cn(
         "rounded-xl border border-dashed border-gray-200 bg-gray-50/80 dark:border-gray-700 dark:bg-white/[0.03]",
         pad,

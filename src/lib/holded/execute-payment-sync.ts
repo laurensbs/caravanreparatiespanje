@@ -5,6 +5,11 @@ import { isHoldedConfigured } from "@/lib/holded/client";
 import { listAllInvoices, getInvoice, type HoldedInvoice } from "@/lib/holded/invoices";
 import { isNonRepairInvoice } from "@/lib/holded/filter";
 import { resolveCustomerIdFromHoldedContact } from "@/lib/holded/resolve-customer-from-contact";
+import {
+  buildHoldedInvoiceHaystackLower,
+  pickRepairForHoldedDocument,
+  type RepairHoldedMatchFields,
+} from "@/lib/holded/repair-ref-match";
 
 const PAYMENT_TOLERANCE_EUR = 0.05;
 
@@ -56,18 +61,6 @@ const earlyStatuses = [
   "completed",
 ];
 
-function invoiceSearchText(inv: HoldedInvoice): string {
-  return [
-    inv.desc ?? "",
-    inv.docNumber ?? "",
-    inv.contactName ?? "",
-    ...(inv.items ?? []).map((i) => `${i.name ?? ""} ${i.desc ?? ""}`),
-    ...(inv.products ?? []).map((p) => `${p.name ?? ""} ${p.desc ?? ""}`),
-  ]
-    .join(" ")
-    .toLowerCase();
-}
-
 /** Same logic as the cron job: list Holded invoices, sync status, discover links. */
 export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats> {
   if (!isHoldedConfigured()) {
@@ -95,6 +88,7 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
       holdedInvoiceDate: repairJobs.holdedInvoiceDate,
       invoiceStatus: repairJobs.invoiceStatus,
       publicCode: repairJobs.publicCode,
+      spreadsheetInternalId: repairJobs.spreadsheetInternalId,
       title: repairJobs.title,
       status: repairJobs.status,
       dueDate: repairJobs.dueDate,
@@ -230,39 +224,20 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
       );
       if (unlinkedRepairs.length === 0) continue;
 
-      const invText = invoiceSearchText(inv);
+      const invText = buildHoldedInvoiceHaystackLower(inv);
 
-      let matched = unlinkedRepairs.find((r) => r.publicCode && invText.includes(r.publicCode.toLowerCase()));
+      const matchFields: RepairHoldedMatchFields[] = unlinkedRepairs.map((r) => ({
+        id: r.id,
+        publicCode: r.publicCode,
+        spreadsheetInternalId: r.spreadsheetInternalId,
+        title: r.title,
+        registration: r.registration,
+        createdAt: r.createdAt,
+        completedAt: r.completedAt,
+      }));
 
-      if (!matched) {
-        matched = unlinkedRepairs.find((r) => {
-          const reg = r.registration?.trim().toLowerCase();
-          return reg && reg.length >= 3 && invText.includes(reg);
-        });
-      }
-
-      if (!matched) {
-        matched = unlinkedRepairs.find(
-          (r) => r.title && r.title.length > 3 && invText.includes(r.title.toLowerCase()),
-        );
-      }
-
-      if (!matched) {
-        const invDate = inv.date * 1000;
-        let bestMatch: (typeof unlinkedRepairs)[0] | null = null;
-        let bestDist = Infinity;
-        for (const r of unlinkedRepairs) {
-          const repairDate = (r.completedAt ?? r.createdAt).getTime();
-          const dist = Math.abs(invDate - repairDate);
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestMatch = r;
-          }
-        }
-        if (bestMatch && bestDist < 90 * 24 * 60 * 60 * 1000) {
-          matched = bestMatch;
-        }
-      }
+      const chosen = pickRepairForHoldedDocument(invText, matchFields, inv.date * 1000);
+      const matched = chosen ? unlinkedRepairs.find((r) => r.id === chosen.id) ?? null : null;
 
       if (matched) {
         const advanceStatus =

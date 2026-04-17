@@ -362,27 +362,34 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
     <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
 
       {/* ─── HEADER ─── */}
-      <header className="shrink-0 bg-gray-950 border-b border-white/[0.06] safe-area-pt">
-        <div className="max-w-4xl mx-auto px-4">
+      <header className="safe-area-pt shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
+        <div className="mx-auto max-w-4xl px-4">
           {/* Nav row */}
-          <div className="h-12 flex items-center justify-between">
+          <div className="flex h-12 items-center justify-between">
             <button
+              type="button"
               onClick={() => router.push("/garage")}
-              className="flex items-center gap-0.5 text-sm font-medium text-white/40 active:text-white/60 transition-colors -ml-1"
+              className="-ml-2 inline-flex h-10 items-center gap-0.5 rounded-xl px-2 text-sm font-medium text-white/55 transition-all active:scale-95 active:bg-white/[0.06] active:text-white/80"
             >
               <ChevronLeft className="h-5 w-5" />
               {t("Back", "Atrás", "Terug")}
             </button>
             <div className="flex items-center gap-0.5">
-              {/* Active timers in header */}
               {activeTimers.map((timer) => (
-                <HeaderTimerDisplay key={timer.id} timer={timer} repairJobId={repair.id} t={t} onStop={() => router.refresh()} />
+                <HeaderTimerDisplay
+                  key={timer.id}
+                  timer={timer}
+                  repairJobId={repair.id}
+                  t={t}
+                  onStop={() => router.refresh()}
+                />
               ))}
               <LanguageToggle />
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="h-9 w-9 flex items-center justify-center rounded-lg text-white/40 active:bg-white/[0.06]"
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-white/40 transition-all active:scale-95 active:bg-white/[0.06]"
+                aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -391,40 +398,57 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Vehicle identity */}
           <div className="pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-lg font-bold text-white tracking-tight font-mono">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <h1 className="font-mono text-[19px] font-bold tracking-tight text-white">
                 {repair.unitRegistration || repair.publicCode || "—"}
               </h1>
               {(repair.priority === "urgent" || repair.priority === "high") && (
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                  repair.priority === "urgent" ? "bg-red-400/10 text-red-400" : "bg-amber-400/10 text-amber-400"
-                }`}>
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    repair.priority === "urgent"
+                      ? "bg-red-400/10 text-red-300"
+                      : "bg-amber-400/10 text-amber-300"
+                  }`}
+                >
                   {PRIORITY_LABELS[repair.priority as Priority]}
                 </span>
               )}
-              <span className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                repair.status === "in_progress" ? "bg-sky-400/10 text-sky-400" :
-                repair.status === "ready_for_check" ? "bg-violet-400/10 text-violet-400" :
-                repair.status === "completed" ? "bg-emerald-400/10 text-emerald-400" :
-                repair.status === "blocked" ? "bg-red-400/10 text-red-400" :
-                "bg-white/[0.06] text-white/50"
-              }`}>
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+                  repair.status === "in_progress"
+                    ? "bg-sky-400/10 text-sky-300"
+                    : repair.status === "ready_for_check"
+                      ? "bg-violet-400/10 text-violet-300"
+                      : repair.status === "completed"
+                        ? "bg-emerald-400/10 text-emerald-300"
+                        : repair.status === "blocked"
+                          ? "bg-red-400/10 text-red-300"
+                          : "bg-white/[0.06] text-white/50"
+                }`}
+              >
                 {STATUS_LABELS[repair.status as RepairStatus]}
               </span>
             </div>
-            <p className="text-sm text-white/40">
-              {[repair.customerName, repair.unitBrand, repair.unitModel].filter(Boolean).join(" · ")}
+            <p className="text-[12.5px] text-white/45">
+              {[repair.customerName, repair.unitBrand, repair.unitModel]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
-            {/* Progress bar */}
             {hasTasks && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className="mt-2 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? "bg-emerald-500" : "bg-sky-500"}`}
+                    className={`h-full rounded-full transition-all duration-700 ease-out ${
+                      progress === 100
+                        ? "bg-emerald-400"
+                        : "bg-gradient-to-r from-sky-400 to-cyan-400"
+                    }`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-xs text-white/30 tabular-nums font-medium">{doneCount}/{repair.tasks.length}</span>
+                <span className="text-[11.5px] font-medium tabular-nums text-white/35">
+                  {doneCount}/{repair.tasks.length}
+                </span>
               </div>
             )}
           </div>
@@ -437,17 +461,27 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Admin message banner */}
           {repair.garageAdminMessage && (
-            <div className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.06] px-4 py-3.5 mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <MessageSquare className="h-4 w-4 text-sky-400" />
-                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-sky-400">
+            <div className="motion-safe:animate-slide-up mb-4 rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/[0.08] to-sky-400/[0.04] px-4 py-3.5 shadow-[0_0_0_1px_rgba(56,189,248,0.06)]">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="relative flex h-5 w-5 items-center justify-center">
+                  {!repair.garageAdminMessageReadAt ? (
+                    <span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-sky-400/70" />
+                  ) : null}
+                  <MessageSquare className="relative h-4 w-4 text-sky-300" />
+                </span>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-sky-300">
                   {t("Office Message", "Mensaje de Oficina", "Kantoor Bericht")}
                 </h3>
               </div>
-              <p className="text-sm text-white/80 font-medium whitespace-pre-wrap">{repair.garageAdminMessage}</p>
+              <p className="whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-white/85">
+                {repair.garageAdminMessage}
+              </p>
               {repair.garageAdminMessageAt && (
-                <p className="text-[11px] text-sky-400/50 mt-1">
-                  {new Date(repair.garageAdminMessageAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                <p className="mt-1.5 text-[11px] text-sky-400/55">
+                  {new Date(repair.garageAdminMessageAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               )}
             </div>
@@ -853,22 +887,31 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </main>
 
       {/* ─── BOTTOM: Action bar + Tab nav ─── */}
-      <div className="shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl safe-area-pb z-30">
+      <div className="safe-area-pb z-30 shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
         {/* Action buttons */}
         {isActive && (
-          <div className="max-w-4xl mx-auto px-4 pt-2 pb-1">
+          <div className="mx-auto max-w-4xl px-4 pb-1 pt-2">
             <div className="flex gap-2">
               <button
-                onClick={() => { hapticSuccess(); handleMarkDone(); }}
+                type="button"
+                onClick={() => {
+                  hapticSuccess();
+                  handleMarkDone();
+                }}
                 disabled={isPending}
-                className="flex-1 rounded-xl bg-emerald-500 text-white h-11 text-sm font-semibold active:bg-emerald-600 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-emerald-500 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all active:scale-[0.98] active:bg-emerald-600 disabled:opacity-50"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 {t("Ready for Check", "Listo para Revisión", "Klaar voor Controle")}
               </button>
               <button
-                onClick={() => { hapticTap(); setShowNotDone(true); }}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.03] text-white/50 h-11 px-4 text-sm font-medium active:bg-white/[0.06] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                type="button"
+                onClick={() => {
+                  hapticTap();
+                  setShowNotDone(true);
+                }}
+                aria-label={t("Mark not done", "Marcar como no hecho", "Markeer als niet klaar")}
+                className="flex h-11 items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 text-sm font-medium text-white/55 transition-all active:scale-[0.98] active:bg-white/[0.06]"
               >
                 <XCircle className="h-4 w-4" />
               </button>
@@ -877,11 +920,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         )}
 
         {/* Quick actions row */}
-        <div className="max-w-4xl mx-auto px-4 py-1.5">
-          <div className="flex gap-2">
+        <div className="mx-auto max-w-4xl px-4 py-1.5">
+          <div className="flex gap-1.5">
             <button
-              onClick={() => { hapticTap(); setShowComment(true); }}
-              className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
+              type="button"
+              onClick={() => {
+                hapticTap();
+                setShowComment(true);
+              }}
+              className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-white/[0.04] text-[12px] font-medium text-white/45 transition-all active:scale-[0.98] active:bg-white/[0.08]"
             >
               <MessageSquare className="h-3.5 w-3.5" />
               {t("Comment", "Nota", "Opmerking")}
@@ -889,25 +936,27 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             {isActive && (
               <>
                 <button
+                  type="button"
                   onClick={async () => {
                     hapticTap();
                     const ok = await ensureActiveWorkerSelected();
                     if (!ok) return;
                     setShowFinding(true);
                   }}
-                  className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
+                  className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-white/[0.04] text-[12px] font-medium text-white/45 transition-all active:scale-[0.98] active:bg-white/[0.08]"
                 >
                   <Flag className="h-3.5 w-3.5" />
                   {t("Issue", "Problema", "Bevinding")}
                 </button>
                 <button
+                  type="button"
                   onClick={async () => {
                     hapticTap();
                     const ok = await ensureActiveWorkerSelected();
                     if (!ok) return;
                     setShowBlocker(true);
                   }}
-                  className="flex-1 rounded-lg bg-white/[0.04] h-9 text-xs font-medium text-white/40 active:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
+                  className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-white/[0.04] text-[12px] font-medium text-white/45 transition-all active:scale-[0.98] active:bg-white/[0.08]"
                 >
                   <OctagonX className="h-3.5 w-3.5" />
                   {t("Block", "Bloqueo", "Blokkade")}
@@ -916,8 +965,9 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
             )}
             {allDone && repair.finalCheckStatus !== "passed" && (
               <button
+                type="button"
                 onClick={() => setShowFinalCheck(true)}
-                className="flex-1 rounded-lg bg-amber-400/10 h-9 text-xs font-medium text-amber-400 active:bg-amber-400/20 transition-all flex items-center justify-center gap-1"
+                className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-amber-400/10 text-[12px] font-semibold text-amber-300 transition-all active:scale-[0.98] active:bg-amber-400/20"
               >
                 {t("Final Check", "Control", "Natest")}
               </button>
@@ -926,28 +976,34 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
         </div>
 
         {/* Tab navigation */}
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto max-w-4xl">
           <div className="flex">
             {tabs.map((tab) => {
               const active = activeTab === tab.key;
               return (
                 <button
+                  type="button"
                   key={tab.key}
-                  onClick={() => { hapticTap(); setActiveTab(tab.key); }}
-                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors relative ${
-                    active ? "text-white" : "text-white/30"
+                  onClick={() => {
+                    hapticTap();
+                    setActiveTab(tab.key);
+                  }}
+                  className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 transition-colors ${
+                    active ? "text-white" : "text-white/35"
                   }`}
                 >
                   <div className="relative">
                     {tab.icon}
-                    {tab.badge && tab.badge > 0 && (
-                      <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-red-500 text-white text-[8px] font-bold px-0.5">
+                    {tab.badge && tab.badge > 0 ? (
+                      <span className="absolute -right-1.5 -top-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white">
                         {tab.badge}
                       </span>
-                    )}
+                    ) : null}
                   </div>
-                  <span className="text-[10px] font-medium">{tab.label}</span>
-                  {active && <span className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-white rounded-full" />}
+                  <span className="text-[10px] font-semibold">{tab.label}</span>
+                  {active ? (
+                    <span className="absolute left-1/4 right-1/4 top-0 h-0.5 rounded-full bg-white" />
+                  ) : null}
                 </button>
               );
             })}

@@ -9,7 +9,11 @@ import { hapticTap, hapticSuccess, hapticNotify } from "@/lib/haptic";
 import { garageLock } from "@/actions/garage-auth";
 import { toggleMyWorker } from "@/actions/garage";
 import { startTimer, stopTimer } from "@/actions/time-entries";
-import { canStartGarageTimerOnRepair, garageTimerBlockedReason, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
+import {
+  canStartGarageTimerOnRepair,
+  garageTimerBlockedReason,
+  GARAGE_TIMER_NOT_ALLOWED,
+} from "@/lib/garage-timer-policy";
 import {
   RefreshCw,
   ChevronRight,
@@ -23,12 +27,15 @@ import {
   Pause,
   X,
   MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
-/* ─── Types ─── */
+/* ─── Constants ─── */
 const RECENT_WORKERS_KEY = "garage_recent_workers";
 const RECENT_WORKERS_LIMIT = 8;
+
+/* ─── Types ─── */
 
 type RepairItem = {
   id: string;
@@ -91,9 +98,25 @@ function categorize(r: RepairItem): StatusCategory {
   return "todo";
 }
 
+/* ─── Greeting ─── */
+
+function greetingFor(d: Date, t: (en: string, es: string, nl: string) => string): string {
+  const h = d.getHours();
+  if (h < 5) return t("Good night", "Buenas noches", "Goedenacht");
+  if (h < 12) return t("Good morning", "Buenos días", "Goedemorgen");
+  if (h < 18) return t("Good afternoon", "Buenas tardes", "Goedemiddag");
+  return t("Good evening", "Buenas noches", "Goedenavond");
+}
+
 /* ─── Main ─── */
 
-export function GarageTodayClient({ repairs, userName, stats, activeTimers = [], allUsers }: Props) {
+export function GarageTodayClient({
+  repairs,
+  userName,
+  stats,
+  activeTimers = [],
+  allUsers,
+}: Props) {
   const { t, lang } = useLanguage();
   const router = useRouter();
   const [time, setTime] = useState(() => new Date());
@@ -108,14 +131,12 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
 
   useGaragePoll();
 
-  // Detect new repairs and play notification sound
+  // Detect new repairs and play notification sound.
   useEffect(() => {
     const currentIds = new Set(repairs.map((r) => r.id));
     if (prevRepairIdsRef.current !== null) {
       const newIds = [...currentIds].filter((id) => !prevRepairIdsRef.current!.has(id));
-      if (newIds.length > 0) {
-        hapticNotify();
-      }
+      if (newIds.length > 0) hapticNotify();
     }
     prevRepairIdsRef.current = currentIds;
   }, [repairs]);
@@ -158,11 +179,23 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   }
 
   const dateLocale = lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-GB";
-  const formattedDate = time.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" });
+  const formattedDate = time.toLocaleDateString(dateLocale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
   const clock = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const greeting = greetingFor(time, t);
+  const firstName = userName.split(" ")[0] ?? userName;
 
   const grouped = useMemo(() => {
-    const map: Record<StatusCategory, RepairItem[]> = { todo: [], in_progress: [], waiting: [], check: [], done: [] };
+    const map: Record<StatusCategory, RepairItem[]> = {
+      todo: [],
+      in_progress: [],
+      waiting: [],
+      check: [],
+      done: [],
+    };
     for (const r of repairs) map[categorize(r)].push(r);
     return map;
   }, [repairs]);
@@ -176,16 +209,24 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   };
 
   const displayRepairs = useMemo(() => {
-    let items = activeTab === "all"
-      ? [...grouped.in_progress, ...grouped.todo, ...grouped.check, ...grouped.waiting, ...grouped.done]
-      : grouped[activeTab];
+    let items =
+      activeTab === "all"
+        ? [
+            ...grouped.in_progress,
+            ...grouped.todo,
+            ...grouped.check,
+            ...grouped.waiting,
+            ...grouped.done,
+          ]
+        : grouped[activeTab];
     if (search.trim()) {
       const q = search.toLowerCase();
-      items = items.filter(r =>
-        (r.unitRegistration || "").toLowerCase().includes(q) ||
-        (r.customerName || "").toLowerCase().includes(q) ||
-        (r.publicCode || "").toLowerCase().includes(q) ||
-        (r.title || "").toLowerCase().includes(q)
+      items = items.filter(
+        (r) =>
+          (r.unitRegistration || "").toLowerCase().includes(q) ||
+          (r.customerName || "").toLowerCase().includes(q) ||
+          (r.publicCode || "").toLowerCase().includes(q) ||
+          (r.title || "").toLowerCase().includes(q),
       );
     }
     return items;
@@ -198,6 +239,11 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
     { key: "check", label: t("Check", "Control", "Check"), count: counts.check },
     { key: "done", label: t("Done", "Hecho", "Klaar"), count: counts.done },
   ];
+
+  // Office messages waiting for a read.
+  const unreadMessages = repairs.filter(
+    (r) => r.garageAdminMessage && !r.garageAdminMessageReadAt,
+  ).length;
 
   const selectableUsers = useMemo(() => {
     const users = getSelectableGarageUsers(allUsers);
@@ -213,70 +259,154 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
   }, [allUsers, recentWorkerIds]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950 text-white">
+    <div className="flex min-h-screen flex-col bg-gray-950 text-white">
       {/* ─── Top bar ─── */}
-      <header className="sticky top-0 z-30 bg-gray-950/90 backdrop-blur-xl border-b border-white/[0.06] safe-area-pt">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center">
-              <Wrench className="h-4 w-4 text-white/80" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white/90 leading-tight">{formattedDate}</p>
-              <p className="text-[11px] text-white/30 tabular-nums">{clock}</p>
-            </div>
-          </div>
-          <div className="flex-1 max-w-xs mx-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20 pointer-events-none" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("Search...", "Buscar...", "Zoeken...")}
-                className="w-full h-9 pl-8 pr-8 rounded-xl bg-white/[0.06] border border-white/[0.06] text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/[0.08] transition-all"
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
+      <header className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-gray-950/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 ring-1 ring-cyan-400/20">
+              <Wrench className="h-4 w-4 text-cyan-300" />
+            </span>
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-[13px] font-semibold text-white/85">
+                {greeting}
+                {firstName ? `, ${firstName}` : ""}
+              </p>
+              <p className="truncate text-[11px] text-white/30 capitalize">
+                {formattedDate} · <span className="tabular-nums">{clock}</span>
+              </p>
             </div>
           </div>
+
+          <div className="hidden flex-1 max-w-sm sm:block">
+            <SearchField search={search} setSearch={setSearch} t={t} />
+          </div>
+
           <div className="flex items-center gap-1">
             <LanguageToggle />
-            <button onClick={handleRefresh} className="h-10 w-10 flex items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:scale-95 transition-all">
-              <RefreshCw className={`h-4.5 w-4.5 ${refreshing ? "animate-spin" : ""}`} />
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-white/40 transition-all hover:bg-white/[0.06] active:scale-95"
+              aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
+            >
+              <RefreshCw className={`h-[18px] w-[18px] ${refreshing ? "animate-spin" : ""}`} />
             </button>
-            <button onClick={async () => { hapticTap(); await garageLock(); router.refresh(); }} className="h-10 w-10 flex items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:scale-95 transition-all">
-              <Lock className="h-4.5 w-4.5" />
+            <button
+              type="button"
+              onClick={async () => {
+                hapticTap();
+                await garageLock();
+                router.refresh();
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-white/40 transition-all hover:bg-white/[0.06] active:scale-95"
+              aria-label={t("Lock", "Bloquear", "Vergrendelen")}
+            >
+              <Lock className="h-[18px] w-[18px]" />
             </button>
+          </div>
+        </div>
+
+        {/* Search row for mobile. */}
+        <div className="px-4 pb-3 sm:hidden">
+          <SearchField search={search} setSearch={setSearch} t={t} />
+        </div>
+
+        {/* Stat strip (one row, scrollable on mobile). */}
+        <div className="mx-auto max-w-5xl px-4 pb-3">
+          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+            <StatPill
+              tone="emerald"
+              icon={<Wrench className="h-3.5 w-3.5" />}
+              label={t("Active now", "Activos ahora", "Nu actief")}
+              value={counts.in_progress}
+              onClick={() => {
+                hapticTap();
+                setActiveTab("in_progress");
+              }}
+            />
+            {stats.urgentCount > 0 ? (
+              <StatPill
+                tone="red"
+                icon={<AlertTriangle className="h-3.5 w-3.5" />}
+                label={t("Urgent", "Urgente", "Spoed")}
+                value={stats.urgentCount}
+              />
+            ) : null}
+            {stats.waitingPartsCount > 0 ? (
+              <StatPill
+                tone="amber"
+                icon={<Package className="h-3.5 w-3.5" />}
+                label={t("Need parts", "Faltan piezas", "Onderdelen")}
+                value={stats.waitingPartsCount}
+                onClick={() => {
+                  hapticTap();
+                  setActiveTab("waiting");
+                }}
+              />
+            ) : null}
+            {counts.check > 0 ? (
+              <StatPill
+                tone="violet"
+                icon={<Sparkles className="h-3.5 w-3.5" />}
+                label={t("Final check", "Control final", "Eindcheck")}
+                value={counts.check}
+                onClick={() => {
+                  hapticTap();
+                  setActiveTab("check");
+                }}
+              />
+            ) : null}
+            {unreadMessages > 0 ? (
+              <StatPill
+                tone="sky"
+                icon={<MessageSquare className="h-3.5 w-3.5" />}
+                label={t("Office", "Oficina", "Kantoor")}
+                value={unreadMessages}
+              />
+            ) : null}
+            {stats.tomorrowCount > 0 ? (
+              <StatPill
+                tone="muted"
+                icon={<Clock className="h-3.5 w-3.5" />}
+                label={t("Tomorrow", "Mañana", "Morgen")}
+                value={stats.tomorrowCount}
+              />
+            ) : null}
           </div>
         </div>
       </header>
 
-      {/* ─── Tab bar ─── */}
-      <div className="sticky top-14 z-20 bg-gray-950/90 backdrop-blur-xl border-b border-white/[0.06]">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-0 overflow-x-auto no-scrollbar">
+      {/* ─── Pill tab bar ─── */}
+      <div className="sticky top-[164px] z-20 border-b border-white/[0.06] bg-gray-950/85 backdrop-blur-xl sm:top-[136px]">
+        <div className="mx-auto max-w-5xl px-4 py-2.5">
+          <div className="no-scrollbar inline-flex w-full gap-1 overflow-x-auto rounded-2xl bg-white/[0.04] p-1">
             {tabs.map((tab) => {
               const active = activeTab === tab.key;
               return (
                 <button
                   type="button"
                   key={tab.key}
-                  onClick={() => { hapticTap(); setActiveTab(tab.key); }}
-                  className={`flex items-center gap-2 min-h-12 px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-all ${
-                    active ? "border-white text-white" : "border-transparent text-white/30 hover:text-white/50"
+                  onClick={() => {
+                    hapticTap();
+                    setActiveTab(tab.key);
+                  }}
+                  className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-all ${
+                    active
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-white/55 hover:text-white"
                   }`}
                 >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className={`text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${
-                      active ? "bg-white text-gray-950" : "bg-white/10 text-white/40"
-                    }`}>
+                  <span>{tab.label}</span>
+                  {tab.count > 0 ? (
+                    <span
+                      className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ${
+                        active ? "bg-gray-900 text-white" : "bg-white/10 text-white/50"
+                      }`}
+                    >
                       {tab.count}
                     </span>
-                  )}
+                  ) : null}
                 </button>
               );
             })}
@@ -285,80 +415,91 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
       </div>
 
       {/* ─── Content ─── */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-4 pb-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 pb-12">
         {repairs.length === 0 ? (
           <EmptyState t={t} stats={stats} onRefresh={handleRefresh} refreshing={refreshing} />
         ) : displayRepairs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <p className="text-sm text-white/30">{t("No jobs in this category", "Sin trabajos", "Geen klussen")}</p>
+            <p className="text-sm text-white/30">
+              {t("No jobs in this category", "Sin trabajos", "Geen klussen")}
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {displayRepairs.map((repair) => {
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {displayRepairs.map((repair, idx) => {
               const timerStartAllowed = canStartGarageTimerOnRepair(repair.status);
               const repairTimers = activeTimers.filter((at) => at.repairJobId === repair.id);
               return (
-              <JobCard
-                key={repair.id}
-                repair={repair}
-                t={t}
-                activeTimers={repairTimers}
-                quickUsers={selectableUsers}
-                timerStartAllowed={timerStartAllowed}
-                pauseDisabled={isPausing}
-                onMainTap={() => {
-                  hapticTap();
-                  if (repairTimers.length > 0) {
-                    router.push(`/garage/repairs/${repair.id}`);
-                    return;
-                  }
-                  if (timerStartAllowed) setWorkerPickerRepairId(repair.id);
-                  else router.push(`/garage/repairs/${repair.id}`);
-                }}
-                onPauseUser={(userId) => {
-                  hapticTap();
-                  startPauseTransition(async () => {
-                    await stopTimer(repair.id, userId);
-                    toast.success(
-                      t("Timer paused — time saved on this job", "Temporizador en pausa — tiempo guardado", "Timer gepauzeerd — tijd opgeslagen op deze klus")
-                    );
-                    router.refresh();
-                  });
-                }}
-                onQuickStart={(userId) => {
-                  if (!timerStartAllowed) {
+                <JobCard
+                  key={repair.id}
+                  repair={repair}
+                  index={idx}
+                  t={t}
+                  activeTimers={repairTimers}
+                  quickUsers={selectableUsers}
+                  timerStartAllowed={timerStartAllowed}
+                  pauseDisabled={isPausing}
+                  onMainTap={() => {
                     hapticTap();
-                    toast.message(garageTimerBlockedReason(repair.status, t));
-                    return;
-                  }
-                  hapticSuccess();
-                  startStartTransition(async () => {
-                    try {
-                      const user = selectableUsers.find((u) => u.id === userId);
-                      if (!user) return;
-                      const alreadyAssigned = repair.workers?.includes(user.name ?? "");
-                      if (!alreadyAssigned) {
-                        await toggleMyWorker(repair.id, user.id);
-                      }
-                      await startTimer(repair.id, user.id);
-                      rememberWorker(user.id);
-                      toast.success(
-                        `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${user.name}`
-                      );
-                    } catch (e) {
-                      if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
-                        toast.message(garageTimerBlockedReason(repair.status, t));
-                      } else {
-                        toast.message(
-                          t("Timer could not be started", "No se pudo iniciar el temporizador", "Timer kon niet gestart worden")
-                        );
-                      }
+                    if (repairTimers.length > 0) {
+                      router.push(`/garage/repairs/${repair.id}`);
+                      return;
                     }
-                    router.refresh();
-                  });
-                }}
-              />
-            );
+                    if (timerStartAllowed) setWorkerPickerRepairId(repair.id);
+                    else router.push(`/garage/repairs/${repair.id}`);
+                  }}
+                  onPauseUser={(userId) => {
+                    hapticTap();
+                    startPauseTransition(async () => {
+                      await stopTimer(repair.id, userId);
+                      toast.success(
+                        t(
+                          "Timer paused — time saved on this job",
+                          "Temporizador en pausa — tiempo guardado",
+                          "Timer gepauzeerd — tijd opgeslagen op deze klus",
+                        ),
+                      );
+                      router.refresh();
+                    });
+                  }}
+                  onQuickStart={(userId) => {
+                    if (!timerStartAllowed) {
+                      hapticTap();
+                      toast.message(garageTimerBlockedReason(repair.status, t));
+                      return;
+                    }
+                    hapticSuccess();
+                    startStartTransition(async () => {
+                      try {
+                        const user = selectableUsers.find((u) => u.id === userId);
+                        if (!user) return;
+                        const alreadyAssigned = repair.workers?.includes(user.name ?? "");
+                        if (!alreadyAssigned) {
+                          await toggleMyWorker(repair.id, user.id);
+                        }
+                        await startTimer(repair.id, user.id);
+                        rememberWorker(user.id);
+                        toast.success(
+                          `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${user.name}`,
+                        );
+                      } catch (e) {
+                        if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
+                          toast.message(garageTimerBlockedReason(repair.status, t));
+                        } else {
+                          toast.message(
+                            t(
+                              "Timer could not be started",
+                              "No se pudo iniciar el temporizador",
+                              "Timer kon niet gestart worden",
+                            ),
+                          );
+                        }
+                      }
+                      router.refresh();
+                    });
+                  }}
+                />
+              );
             })}
           </div>
         )}
@@ -366,18 +507,30 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
 
       {/* ─── Worker picker overlay ─── */}
       {workerPickerRepairId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setWorkerPickerRepairId(null)}>
-          <div className="w-full max-w-sm mx-4 rounded-2xl bg-gray-900 border border-white/10 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white mb-1">
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+          onClick={() => setWorkerPickerRepairId(null)}
+        >
+          <div
+            className="motion-safe:animate-pop-in mx-0 w-full max-w-md rounded-t-3xl border border-white/10 bg-gray-900 p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:mx-4 sm:rounded-2xl sm:pb-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/10 sm:hidden" />
+            <h3 className="text-base font-semibold text-white">
               {t("Who is working?", "¿Quién trabaja?", "Wie gaat werken?")}
             </h3>
-            <p className="text-sm text-white/40 mb-5">
-              {t("Select a person to start", "Selecciona una persona", "Selecteer een persoon om te starten")}
+            <p className="mb-4 mt-0.5 text-[12.5px] text-white/40">
+              {t(
+                "Tap a name to clock in and start the timer.",
+                "Toca un nombre para fichar e iniciar el temporizador.",
+                "Tik een naam om in te klokken en de timer te starten.",
+              )}
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {selectableUsers.map((user) => (
                 <button
                   key={user.id}
+                  type="button"
                   disabled={isStarting}
                   onClick={() => {
                     hapticSuccess();
@@ -399,7 +552,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                         rememberWorker(user.id);
                         const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
                         toast.success(
-                          `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${workerName}`
+                          `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${workerName}`,
                         );
                       } catch (e) {
                         const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
@@ -407,7 +560,7 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                           toast.message(garageTimerBlockedReason(pickedRepair.status, t));
                         } else {
                           toast.message(
-                            `${t("Timer already running for", "Temporizador ya activo para", "Timer loopt al voor")} ${workerName}`
+                            `${t("Timer already running for", "Temporizador ya activo para", "Timer loopt al voor")} ${workerName}`,
                           );
                         }
                       }
@@ -415,30 +568,32 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
                       router.refresh();
                     });
                   }}
-                  className="flex items-center gap-3 h-14 px-4 rounded-xl bg-white/[0.06] border border-white/[0.06] hover:bg-white/[0.12] active:scale-[0.97] transition-all disabled:opacity-50"
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-4 text-white transition-all active:scale-[0.97] hover:bg-white/[0.08] disabled:opacity-50"
                 >
-                  <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold text-white/60">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 text-base font-bold text-white">
                     {(user.name ?? "?").charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-base font-medium text-white">{user.name ?? "Unknown"}</span>
+                  </span>
+                  <span className="max-w-full truncate text-[13px] font-semibold">
+                    {user.name?.split(" ")[0] ?? "?"}
+                  </span>
                 </button>
               ))}
             </div>
             <button
+              type="button"
               onClick={() => {
                 const repairId = workerPickerRepairId;
                 setWorkerPickerRepairId(null);
                 router.push(`/garage/repairs/${repairId}`);
               }}
-              className="w-full mt-3 h-11 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition-all"
+              className="mt-4 w-full rounded-2xl bg-white/[0.04] py-3 text-[13px] font-medium text-white/70 transition-colors hover:bg-white/[0.07]"
             >
               {t("Open job details", "Abrir detalles", "Open klusdetails")}
             </button>
             <button
-              onClick={() => {
-                setWorkerPickerRepairId(null);
-              }}
-              className="w-full mt-4 h-11 rounded-xl text-sm font-medium text-white/40 hover:text-white/60 hover:bg-white/[0.04] transition-all"
+              type="button"
+              onClick={() => setWorkerPickerRepairId(null)}
+              className="mt-2 w-full rounded-2xl py-2.5 text-[12.5px] font-medium text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white/60"
             >
               {t("Close", "Cerrar", "Sluiten")}
             </button>
@@ -450,11 +605,84 @@ export function GarageTodayClient({ repairs, userName, stats, activeTimers = [],
 }
 
 /* ═════════════════════════════════════ */
+/* Reusable bits                          */
+/* ═════════════════════════════════════ */
 
-const STATUS_COLOR: Record<string, string> = {
-  todo: "bg-white/20",
-  new: "bg-white/20",
-  scheduled: "bg-white/20",
+function SearchField({
+  search,
+  setSearch,
+  t,
+}: {
+  search: string;
+  setSearch: (v: string) => void;
+  t: (en: string, es: string, nl: string) => string;
+}) {
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder={t("Search registration, customer…", "Buscar matrícula, cliente…", "Zoek kenteken, klant…")}
+        className="h-10 w-full rounded-xl border border-white/[0.06] bg-white/[0.05] pl-9 pr-9 text-sm text-white placeholder:text-white/25 transition-all focus:border-white/15 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-white/10"
+      />
+      {search ? (
+        <button
+          type="button"
+          onClick={() => setSearch("")}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+          aria-label="Clear"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function StatPill({
+  icon,
+  label,
+  value,
+  tone,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  tone: "emerald" | "red" | "amber" | "sky" | "violet" | "muted";
+  onClick?: () => void;
+}) {
+  const toneClass: Record<typeof tone, string> = {
+    emerald: "text-emerald-300 ring-emerald-400/20 bg-emerald-500/[0.07]",
+    red: "text-red-300 ring-red-400/25 bg-red-500/[0.08]",
+    amber: "text-amber-300 ring-amber-400/25 bg-amber-500/[0.07]",
+    sky: "text-sky-300 ring-sky-400/25 bg-sky-500/[0.07]",
+    violet: "text-violet-300 ring-violet-400/25 bg-violet-500/[0.07]",
+    muted: "text-white/55 ring-white/10 bg-white/[0.04]",
+  };
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold ring-1 transition-all ${toneClass[tone]} ${
+        onClick ? "active:scale-[0.97] hover:brightness-110" : ""
+      }`}
+    >
+      {icon}
+      <span className="opacity-80">{label}</span>
+      <span className="tabular-nums">{value}</span>
+    </Tag>
+  );
+}
+
+/* ═════════════════════════════════════ */
+
+const STATUS_DOT: Record<string, string> = {
+  todo: "bg-white/25",
+  new: "bg-white/25",
+  scheduled: "bg-white/25",
   in_progress: "bg-sky-400",
   in_inspection: "bg-sky-400",
   waiting_parts: "bg-amber-400",
@@ -467,6 +695,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 function JobCard({
   repair,
+  index,
   t,
   activeTimers,
   quickUsers,
@@ -477,6 +706,7 @@ function JobCard({
   onQuickStart,
 }: {
   repair: RepairItem;
+  index: number;
   t: (en: string, es?: string | null, nl?: string | null) => string;
   activeTimers: ActiveTimerItem[];
   quickUsers: { id: string; name: string | null; role: string | null }[];
@@ -490,124 +720,164 @@ function JobCard({
   const showQuickStart = timerStartAllowed && quickUsers.length > 0;
   const hasFooter = activeTimers.length > 0 || showQuickStart;
   const progress = repair.tasks.total > 0 ? (repair.tasks.done / repair.tasks.total) * 100 : 0;
+  const hasUnreadMessage = !!(repair.garageAdminMessage && !repair.garageAdminMessageReadAt);
 
   return (
     <div
-      className={`rounded-2xl border transition-all ${
+      style={{ animationDelay: `${index * 35}ms`, animationFillMode: "backwards" }}
+      className={`motion-safe:animate-slide-up rounded-2xl border transition-all ${
         hasTimer
-          ? "bg-sky-400/[0.06] border-sky-400/20"
-          : "bg-white/[0.03] border-white/[0.06]"
+          ? "border-sky-400/25 bg-sky-400/[0.06] shadow-[0_0_0_1px_rgba(56,189,248,0.08)]"
+          : hasUnreadMessage
+            ? "border-sky-400/15 bg-white/[0.03]"
+            : "border-white/[0.06] bg-white/[0.03] hover:border-white/[0.1] hover:bg-white/[0.04]"
       }`}
     >
       <button
         type="button"
         onClick={onMainTap}
-        className={`group block w-full text-left active:scale-[0.99] transition-transform ${
+        className={`group block w-full text-left transition-transform active:scale-[0.99] ${
           hasFooter ? "rounded-t-2xl" : "rounded-2xl"
         }`}
       >
-        <div className="p-4 pb-3">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${STATUS_COLOR[repair.status] || "bg-white/20"}`} />
-            <span className="text-lg font-bold text-white tracking-tight font-mono">
+        <div className="px-4 py-3.5">
+          {/* Top row: registration / status / timer / message */}
+          <div className="mb-2 flex items-center gap-2.5">
+            <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOT[repair.status] || "bg-white/25"}`} />
+            <span className="font-mono text-[17px] font-bold tracking-tight text-white">
               {repair.unitRegistration || repair.publicCode || "—"}
             </span>
-            {repair.priority === "urgent" && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-red-400 bg-red-400/10 px-2 py-0.5 rounded-md">
+            {repair.priority === "urgent" ? (
+              <span className="rounded-md bg-red-400/10 px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-red-300">
                 {t("Urgent", "Urgente", "Spoed")}
               </span>
-            )}
-            {repair.priority === "high" && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md">
+            ) : null}
+            {repair.priority === "high" ? (
+              <span className="rounded-md bg-amber-400/10 px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-amber-300">
                 {t("High", "Alta", "Hoog")}
               </span>
-            )}
-            {hasTimer && (
-              <span className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-sky-400">
-                <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-                <Timer className="h-4 w-4" />
-              </span>
-            )}
-            {repair.garageAdminMessage && !repair.garageAdminMessageReadAt && (
-              <span className="flex items-center text-sky-400">
-                <MessageSquare className="h-4 w-4" />
-              </span>
-            )}
-            <ChevronRight className="h-5 w-5 text-white/15 ml-auto shrink-0 group-hover:text-white/30 transition-colors" />
+            ) : null}
+
+            <div className="ml-auto flex items-center gap-1.5">
+              {hasTimer ? (
+                <span className="flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-sky-300 ring-1 ring-sky-400/30">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400/60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-400" />
+                  </span>
+                  <Timer className="h-3 w-3" />
+                </span>
+              ) : null}
+              {hasUnreadMessage ? (
+                <span
+                  className="flex items-center text-sky-300"
+                  title={t("Office message", "Mensaje de oficina", "Bericht van kantoor")}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </span>
+              ) : null}
+              <ChevronRight className="h-4.5 w-4.5 shrink-0 text-white/15 transition-colors group-hover:text-white/35" />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-sm text-white/50 truncate">
+          {/* Customer + brand */}
+          <div className="mb-1 flex items-center gap-2">
+            <span className="truncate text-[13px] text-white/55">
               {repair.customerName || t("No customer", "Sin cliente", "Geen klant")}
             </span>
-            {repair.unitBrand && (
-              <span className="text-xs text-white/20">· {repair.unitBrand} {repair.unitModel}</span>
-            )}
+            {repair.unitBrand ? (
+              <span className="truncate text-[12px] text-white/25">
+                · {repair.unitBrand} {repair.unitModel}
+              </span>
+            ) : null}
           </div>
 
-          {(repair.unitStorageLocation || repair.unitCurrentPosition) && (
-            <p className="text-sm text-white/35 truncate mb-2">
+          {/* Location */}
+          {repair.unitStorageLocation || repair.unitCurrentPosition ? (
+            <p className="mb-2 truncate text-[12.5px] text-white/35">
               📍 {repair.unitStorageLocation || t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
               {repair.unitCurrentPosition ? ` · ${repair.unitCurrentPosition}` : ""}
             </p>
+          ) : null}
+
+          {/* Title (1-line) */}
+          {repair.title ? (
+            <p className="mb-2.5 truncate text-[12.5px] text-white/30">{repair.title}</p>
+          ) : (
+            <div className="mb-1.5" />
           )}
 
-          {repair.title && <p className="text-sm text-white/25 truncate mb-2.5">{repair.title}</p>}
-          {!repair.title && <div className="mb-1.5" />}
-
-          <div className="flex items-center gap-3 flex-wrap">
-            {repair.tasks.total > 0 && (
-              <div className="flex-1 min-w-[120px] flex items-center gap-2">
-                <div className="flex-1 h-2 bg-white/[0.06] rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+          {/* Footer chips */}
+          <div className="flex flex-wrap items-center gap-3">
+            {repair.tasks.total > 0 ? (
+              <div className="flex min-w-[140px] flex-1 items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ease-out ${
+                      progress === 100 ? "bg-emerald-400" : "bg-gradient-to-r from-sky-400 to-cyan-400"
+                    }`}
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
-                <span className="text-xs text-white/30 tabular-nums font-medium shrink-0">{repair.tasks.done}/{repair.tasks.total}</span>
+                <span className="shrink-0 text-[11.5px] font-medium tabular-nums text-white/35">
+                  {repair.tasks.done}/{repair.tasks.total}
+                </span>
               </div>
-            )}
-            {repair.parts.pending > 0 && (
-              <span className="flex items-center gap-1 text-xs text-amber-400 font-semibold">
-                <Package className="h-4 w-4" />{repair.parts.pending}
+            ) : null}
+            {repair.parts.pending > 0 ? (
+              <span className="flex items-center gap-1 text-[12px] font-semibold text-amber-300">
+                <Package className="h-3.5 w-3.5" />
+                {repair.parts.pending}
               </span>
-            )}
-            {repair.tasks.problem > 0 && (
-              <span className="flex items-center gap-1 text-xs text-red-400 font-semibold">
-                <AlertTriangle className="h-4 w-4" />{repair.tasks.problem}
+            ) : null}
+            {repair.tasks.problem > 0 ? (
+              <span className="flex items-center gap-1 text-[12px] font-semibold text-red-300">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {repair.tasks.problem}
               </span>
-            )}
-            {repair.workers.length > 0 && (
-              <div className="flex -space-x-2">
+            ) : null}
+            {repair.workers.length > 0 ? (
+              <div className="flex -space-x-1.5">
                 {repair.workers.slice(0, 3).map((w, i) => (
-                  <div key={i} className="h-8 w-8 rounded-full bg-white/10 border-2 border-gray-950 flex items-center justify-center text-xs font-bold text-white/50">
+                  <div
+                    key={i}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-950 bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 text-[10.5px] font-bold text-white"
+                  >
                     {w.charAt(0).toUpperCase()}
                   </div>
                 ))}
+                {repair.workers.length > 3 ? (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-950 bg-white/[0.08] text-[10.5px] font-bold text-white/55">
+                    +{repair.workers.length - 3}
+                  </div>
+                ) : null}
               </div>
-            )}
-            {repair.totalMinutes > 0 && (
-              <span className="flex items-center gap-1 text-xs text-white/30 font-semibold tabular-nums">
-                <Clock className="h-4 w-4" />
+            ) : null}
+            {repair.totalMinutes > 0 ? (
+              <span className="flex items-center gap-1 text-[12px] font-medium tabular-nums text-white/30">
+                <Clock className="h-3.5 w-3.5" />
                 {Math.floor(repair.totalMinutes / 60) > 0
                   ? `${Math.floor(repair.totalMinutes / 60)}h ${repair.totalMinutes % 60}m`
                   : `${repair.totalMinutes}m`}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </button>
 
-      {activeTimers.length > 0 && (
-        <div className="px-4 pb-3 flex flex-col gap-2">
-          <span className="text-[11px] uppercase tracking-wide text-white/35 font-bold">
+      {activeTimers.length > 0 ? (
+        <div className="flex flex-col gap-2 px-4 pb-3">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-white/35">
             {t("Pause timer (saved on this repair)", "Pausar (guardado en esta reparación)", "Timer pauzeren (opgeslagen op klus)")}
           </span>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             {activeTimers.map((at) => (
               <button
                 key={at.id}
                 type="button"
                 disabled={pauseDisabled}
                 onClick={() => onPauseUser(at.userId)}
-                className="flex-1 min-h-[52px] flex items-center justify-center gap-3 rounded-xl bg-red-500/15 border border-red-500/25 px-4 text-base font-semibold text-red-300 active:bg-red-500/25 disabled:opacity-50"
+                className="flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-xl border border-red-500/25 bg-red-500/15 px-4 text-base font-semibold text-red-200 transition-all active:scale-[0.98] active:bg-red-500/25 disabled:opacity-50"
               >
                 <Pause className="h-5 w-5 shrink-0" />
                 <span className="truncate">{at.userName?.split(" ")[0] ?? "?"}</span>
@@ -616,31 +886,33 @@ function JobCard({
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {showQuickStart && (
-        <div className="px-4 pb-4 flex flex-col gap-2 border-t border-white/[0.06] pt-3">
-          <span className="text-[11px] uppercase tracking-wide text-white/35 font-bold">
+      {showQuickStart ? (
+        <div className="flex flex-col gap-2 border-t border-white/[0.06] px-4 pb-4 pt-3">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-white/35">
             {t("Start timer", "Iniciar temporizador", "Timer starten")}
           </span>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {quickUsers.map((user) => (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {quickUsers.slice(0, 6).map((user) => (
               <button
                 key={user.id}
                 type="button"
                 onClick={() => onQuickStart(user.id)}
-                className="w-full inline-flex items-center justify-center gap-2 min-h-[52px] px-3 rounded-xl border text-base font-bold transition-all active:scale-[0.97] bg-sky-500/15 border-sky-400/30 text-sky-200 hover:bg-sky-500/25"
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-sky-400/25 bg-sky-500/[0.08] px-3 text-base font-bold text-sky-200 transition-all active:scale-[0.97] hover:bg-sky-500/[0.15]"
                 title={`${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`}
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 text-sm">
                   {(user.name ?? "?").charAt(0).toUpperCase()}
                 </span>
-                <span className="max-w-[100px] truncate text-sm font-semibold">{user.name?.split(" ")[0]}</span>
+                <span className="max-w-[100px] truncate text-[13px] font-semibold">
+                  {user.name?.split(" ")[0]}
+                </span>
               </button>
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -655,59 +927,74 @@ function OverviewTimerElapsed({ startedAt }: { startedAt: Date | string }) {
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setLabel(h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`);
+      setLabel(
+        h > 0
+          ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+          : `${m}:${String(s).padStart(2, "0")}`,
+      );
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [startedAt]);
 
-  return <span className="tabular-nums font-mono text-white/80 text-base">{label}</span>;
+  return <span className="font-mono text-base tabular-nums text-white/85">{label}</span>;
 }
 
 /* ═════════════════════════════════════ */
 
-function EmptyState({ t, stats, onRefresh, refreshing }: { t: (en: string, es?: string | null, nl?: string | null) => string; stats: QuickStats; onRefresh: () => void; refreshing: boolean }) {
+function EmptyState({
+  t,
+  stats,
+  onRefresh,
+  refreshing,
+}: {
+  t: (en: string, es?: string | null, nl?: string | null) => string;
+  stats: QuickStats;
+  onRefresh: () => void;
+  refreshing: boolean;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="h-16 w-16 rounded-2xl bg-white/[0.06] border border-white/[0.06] flex items-center justify-center mb-4">
-        <Wrench className="h-7 w-7 text-white/20" />
+    <div className="motion-safe:animate-fade-in flex flex-col items-center justify-center px-6 py-20 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-cyan-500/15 to-cyan-400/5">
+        <Wrench className="h-7 w-7 text-cyan-300/60" />
       </div>
-      <h2 className="text-lg font-semibold text-white/90 mb-1">
+      <h2 className="mb-1 text-lg font-semibold text-white/90">
         {t("No work scheduled", "Sin trabajos programados", "Geen werk gepland")}
       </h2>
-      <p className="text-sm text-white/30 mb-6 max-w-xs">
+      <p className="mb-6 max-w-xs text-sm text-white/30">
         {stats.tomorrowCount > 0
           ? t(
               `${stats.tomorrowCount} job${stats.tomorrowCount > 1 ? "s" : ""} scheduled for tomorrow`,
               `${stats.tomorrowCount} trabajo${stats.tomorrowCount > 1 ? "s" : ""} programado${stats.tomorrowCount > 1 ? "s" : ""} para mañana`,
-              `${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland voor morgen`
+              `${stats.tomorrowCount} klus${stats.tomorrowCount > 1 ? "sen" : ""} gepland voor morgen`,
             )
           : t("Check back later", "Vuelve más tarde", "Kom later terug")}
       </p>
       <button
+        type="button"
         onClick={onRefresh}
-        className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-medium active:scale-95 transition-all"
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-white/10 px-5 text-sm font-medium text-white transition-all hover:bg-white/15 active:scale-95"
       >
         <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
         {t("Refresh", "Actualizar", "Vernieuwen")}
       </button>
-      {(stats.waitingPartsCount > 0 || stats.urgentCount > 0) && (
-        <div className="flex gap-4 mt-8">
-          {stats.urgentCount > 0 && (
+      {stats.waitingPartsCount > 0 || stats.urgentCount > 0 ? (
+        <div className="mt-8 flex gap-4">
+          {stats.urgentCount > 0 ? (
             <div className="flex items-center gap-1.5 text-xs text-red-400">
               <AlertTriangle className="h-3.5 w-3.5" />
               {stats.urgentCount} {t("urgent", "urgente", "spoed")}
             </div>
-          )}
-          {stats.waitingPartsCount > 0 && (
+          ) : null}
+          {stats.waitingPartsCount > 0 ? (
             <div className="flex items-center gap-1.5 text-xs text-amber-400">
               <Package className="h-3.5 w-3.5" />
               {stats.waitingPartsCount} {t("waiting parts", "esperando piezas", "wachten op onderdelen")}
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

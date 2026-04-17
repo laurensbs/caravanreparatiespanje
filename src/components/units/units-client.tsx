@@ -18,6 +18,7 @@ import { NewUnitDialog } from "./new-unit-dialog";
 import { UnitTypeIconBadge } from "./unit-type-icon";
 import { UNIT_TYPE_LABELS } from "@/types";
 import type { UnitType } from "@/types";
+import { DashboardPageCanvas, DashboardPageHeader } from "@/components/layout/dashboard-surface";
 
 interface TagItem {
   id: string;
@@ -133,21 +134,22 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Units</h1>
-          <p className="text-sm text-muted-foreground">
-            {total} unit{total !== 1 ? "s" : ""} registered
-          </p>
-          <p className="max-w-2xl pt-1 text-sm leading-relaxed text-muted-foreground">
-            Icons show vehicle type (caravan, trailer, camper). The same unit is linked from work orders, planning, and the garage.
-          </p>
-        </div>
-        <div className="shrink-0">
-          <NewUnitDialog customers={customers} />
-        </div>
-      </div>
+    <DashboardPageCanvas>
+    <div className="space-y-5 sm:space-y-8">
+      <DashboardPageHeader
+        eyebrow="Fleet"
+        title="Units"
+        metadata={
+          <>
+            <span className="tabular-nums">{total}</span>
+            <span>unit{total !== 1 ? "s" : ""} registered</span>
+          </>
+        }
+        description={
+          <>Icons show vehicle type (caravan, trailer, camper). The same unit is linked from work orders, planning, and the garage.</>
+        }
+        actions={<NewUnitDialog customers={customers} />}
+      />
 
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-4 shadow-sm lg:flex-row lg:flex-wrap lg:items-end">
@@ -296,5 +298,6 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
         />
       )}
     </div>
+    </DashboardPageCanvas>
   );
 }

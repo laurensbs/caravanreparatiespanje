@@ -13,6 +13,7 @@ import { BusinessesTableClient } from "@/components/customers/businesses-table";
 import {
   DashboardPageCanvas,
   DashboardPageHeader,
+  SegmentedTabs,
   dashboardPanelClass,
 } from "@/components/layout/dashboard-surface";
 import { cn } from "@/lib/utils";
@@ -97,49 +98,37 @@ export default async function CustomersPage({ searchParams }: Props) {
   return (
     <DashboardPageCanvas>
     <div className="space-y-6 sm:space-y-8">
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-3">
-          <DashboardPageHeader title="Contacts" />
-          <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-            {displayTotal} {isBusiness ? "business" : "contact"}
-            {displayTotal !== 1 ? (isBusiness ? "es" : "s") : ""}
-            {!isBusiness && " · tap a row for a quick view, or open the full record for edits and history"}
-          </p>
-          {!isBusiness && (
-            <p className="max-w-3xl text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-              The same contact record is used on <strong className="font-medium text-gray-900 dark:text-gray-100">work orders</strong>,{" "}
-              <strong className="font-medium text-gray-900 dark:text-gray-100">planning</strong>, and the{" "}
-              <strong className="font-medium text-gray-900 dark:text-gray-100">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
-            </p>
-          )}
-        </div>
-        <div className="shrink-0 sm:pt-0.5">
-          <NewCustomerDialog />
-        </div>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Address book"
+        title="Contacts"
+        metadata={
+          <>
+            <span className="tabular-nums">{displayTotal}</span>
+            <span>{isBusiness ? "businesses" : "contacts"}</span>
+            {!isBusiness && (
+              <span className="text-gray-400 dark:text-gray-500">· tap a row for a quick view</span>
+            )}
+          </>
+        }
+        description={
+          !isBusiness
+            ? (
+                <>
+                  The same record is used on <strong className="font-medium text-gray-900 dark:text-gray-100">work orders</strong>,{" "}
+                  <strong className="font-medium text-gray-900 dark:text-gray-100">planning</strong>, and the{" "}
+                  <strong className="font-medium text-gray-900 dark:text-gray-100">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
+                </>
+              )
+            : undefined
+        }
+        actions={<NewCustomerDialog />}
+      />
 
-      {/* ── Tabs (scroll on narrow screens, touch-friendly) ─ */}
-      <div className="border-b border-gray-200 dark:border-gray-800">
-        <div className="-mb-px flex gap-1 overflow-x-auto pb-px sm:gap-8">
-          {CONTACT_TYPE_TABS.map((tab) => {
-            const isActive = activeTab === tab.value;
-            return (
-              <Link
-                key={tab.value}
-                href={customersListHref(params, tab.value)}
-                className={`shrink-0 touch-manipulation border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:px-0 sm:py-2.5 ${
-                  isActive
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+      <SegmentedTabs
+        value={activeTab as (typeof CONTACT_TYPE_TABS)[number]["value"]}
+        hrefFor={(v) => customersListHref(params, v)}
+        tabs={CONTACT_TYPE_TABS.map((t) => ({ value: t.value, label: t.label }))}
+      />
 
       {/* ── Filters ────────────────────────────────────── */}
       {!isBusiness && (

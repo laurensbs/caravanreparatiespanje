@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { HoldedHint } from "@/components/holded-hint";
+import { SegmentedTabs, StatStrip } from "@/components/layout/dashboard-surface";
 
 interface Invoice {
   id: string;
@@ -258,14 +259,16 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
   const estimatesTotal = filteredOverdueEstimates.reduce((sum, q) => sum + (q.total ?? 0), 0);
   const totalOverdueCount = filteredOverdue.length + filteredOverdueEstimates.length;
 
-  const tabBtn =
-    "flex min-h-12 min-w-[calc(50%-6px)] shrink-0 snap-center touch-manipulation items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:min-h-11 sm:min-w-0 sm:flex-1 sm:py-2 sm:text-sm";
-
   return (
     <div className="animate-fade-in">
-      <header className="border-b border-border/60 bg-muted/15 px-4 py-4 sm:px-6 sm:py-5">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Invoices &amp; quotes</h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+      <header className="border-b border-border/60 bg-white px-4 py-5 dark:bg-transparent sm:px-6 sm:py-6">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+          Billing
+        </p>
+        <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl">
+          Invoices &amp; quotes
+        </h1>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
           {tab === "invoices"
             ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
             : tab === "quotes"
@@ -279,48 +282,31 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
       </header>
 
       <div className="space-y-5 border-b border-border/40 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-5">
-        {/* Tab selector */}
-        <div
-          className={cn(
-            "flex w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-border/50 bg-muted/40 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden snap-x snap-mandatory sm:snap-none"
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => goTab("invoices")}
-            className={cn(tabBtn, tab === "invoices" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-          >
-            <Receipt className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-            <span className="truncate">
-              Invoices <span className="tabular-nums text-muted-foreground">({invoices.length})</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => goTab("quotes")}
-            className={cn(tabBtn, tab === "quotes" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-          >
-            <FileText className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-            <span className="truncate">
-              Quotes <span className="tabular-nums text-muted-foreground">({quotes.length})</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => goTab("overdue")}
-            className={cn(tabBtn, tab === "overdue" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-          >
-            <AlertTriangle className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-            <span className="truncate">
-              Overdue <span className="tabular-nums text-muted-foreground">({totalOverdueCount})</span>
-            </span>
-            {totalOverdueCount > 0 && (
-              <span className="ml-0.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white sm:hidden">
-                {totalOverdueCount}
-              </span>
-            )}
-          </button>
-        </div>
+        <SegmentedTabs
+          value={tab}
+          onValueChange={(v) => goTab(v)}
+          className="w-full"
+          tabs={[
+            {
+              value: "invoices",
+              label: "Invoices",
+              count: invoices.length,
+              icon: <Receipt className="h-3.5 w-3.5" aria-hidden />,
+            },
+            {
+              value: "quotes",
+              label: "Quotes",
+              count: quotes.length,
+              icon: <FileText className="h-3.5 w-3.5" aria-hidden />,
+            },
+            {
+              value: "overdue",
+              label: "Overdue",
+              count: totalOverdueCount,
+              icon: <AlertTriangle className="h-3.5 w-3.5" aria-hidden />,
+            },
+          ]}
+        />
 
         {/* Shared filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -370,36 +356,19 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
 
       {tab === "invoices" && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Card className="rounded-xl">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
-                <p className="text-xl font-bold tabular-nums">{filtered.length}</p>
-                <p className="text-[11px] text-muted-foreground">invoices</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-xl">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-emerald-600 uppercase tracking-wider">Paid</p>
-                <p className="text-xl font-bold text-emerald-600 tabular-nums">{paidCount}</p>
-                <p className="text-[11px] text-muted-foreground">invoices</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-xl">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-red-600 uppercase tracking-wider">Unpaid</p>
-                <p className="text-xl font-bold text-red-600 tabular-nums">{unpaidCount}</p>
-                <p className="text-[11px] text-muted-foreground">invoices</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-xl">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-amber-600 uppercase tracking-wider">Partial</p>
-                <p className="text-xl font-bold text-amber-600 tabular-nums">{filtered.filter(i => i.status === 2).length}</p>
-                <p className="text-[11px] text-muted-foreground">invoices</p>
-              </CardContent>
-            </Card>
-          </div>
+          <StatStrip
+            items={[
+              { label: "Total", value: filtered.length, hint: "invoices" },
+              { label: "Paid", value: paidCount, hint: "invoices", tone: "emerald" },
+              { label: "Unpaid", value: unpaidCount, hint: "invoices", tone: "red" },
+              {
+                label: "Partial",
+                value: filtered.filter((i) => i.status === 2).length,
+                hint: "invoices",
+                tone: "amber",
+              },
+            ]}
+          />
 
           {filtered.length === 0 ? (
             <div className="rounded-xl border bg-card py-14 text-center">
@@ -600,29 +569,24 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
       )}
       {tab === "quotes" && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Card className="rounded-xl sm:col-span-1">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total</p>
-                <p className="text-xl font-bold tabular-nums">{quotes.length}</p>
-                <p className="text-[11px] text-muted-foreground">quotes</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-xl">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-emerald-600 uppercase tracking-wider">Approved</p>
-                <p className="text-xl font-bold text-emerald-600 tabular-nums">{quotes.filter(q => q.approvedAt).length}</p>
-                <p className="text-[11px] text-muted-foreground">quotes</p>
-              </CardContent>
-            </Card>
-            <Card className="col-span-2 rounded-xl sm:col-span-1">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-[11px] text-blue-600 uppercase tracking-wider">Linked</p>
-                <p className="text-xl font-bold text-blue-600 tabular-nums">{quotes.filter(q => q.repairJobId).length}</p>
-                <p className="text-[11px] text-muted-foreground">to repairs</p>
-              </CardContent>
-            </Card>
-          </div>
+          <StatStrip
+            className="sm:grid-cols-3"
+            items={[
+              { label: "Total", value: quotes.length, hint: "quotes" },
+              {
+                label: "Approved",
+                value: quotes.filter((q) => q.approvedAt).length,
+                hint: "quotes",
+                tone: "emerald",
+              },
+              {
+                label: "Linked",
+                value: quotes.filter((q) => q.repairJobId).length,
+                hint: "to repairs",
+                tone: "sky",
+              },
+            ]}
+          />
 
           {filteredQuotes.length === 0 ? (
             <div className="rounded-xl border bg-card py-14 text-center text-muted-foreground">

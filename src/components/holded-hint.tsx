@@ -7,10 +7,13 @@ interface HoldedHintProps {
   className?: string;
 }
 
-const VARIANT_STYLES = {
-  info: "bg-emerald-50/60 border-emerald-100 text-emerald-800",
-  sync: "bg-sky-50/60 border-sky-100 text-sky-800",
-  readonly: "bg-amber-50/60 border-amber-100 text-amber-800",
+// Neutral, Mollie-flavoured hint: subtle grey surface with a small coloured dot
+// indicating the kind of relationship (sync / readonly / info). Keeps the page
+// calm instead of flashing amber banners across every list.
+const DOT_STYLES = {
+  info: "bg-emerald-400",
+  sync: "bg-sky-500",
+  readonly: "bg-amber-400",
 };
 
 const ICON_STYLES = {
@@ -21,8 +24,13 @@ const ICON_STYLES = {
 
 export function HoldedHint({ children, variant = "info", className }: HoldedHintProps) {
   return (
-    <div className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed ${VARIANT_STYLES[variant]} ${className ?? ""}`}>
-      <ExternalLink className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${ICON_STYLES[variant]}`} />
+    <div
+      className={`flex items-start gap-2.5 rounded-xl border border-gray-100 bg-gray-50/70 px-3.5 py-2.5 text-[12.5px] leading-relaxed text-gray-600 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 ${className ?? ""}`}
+    >
+      <span className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+        <span className={`absolute inset-0 rounded-full opacity-20 ${DOT_STYLES[variant]}`} />
+        <ExternalLink className={`h-3 w-3 ${ICON_STYLES[variant]}`} />
+      </span>
       <div>{children}</div>
     </div>
   );

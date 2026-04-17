@@ -56,16 +56,20 @@ export default async function DashboardPage() {
   return (
     <DashboardPageCanvas>
     <div className="space-y-6 sm:space-y-8">
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-        <DashboardPageHeader
-          title="Dashboard"
-          description="Overview of repair operations"
-        />
-        <div className="shrink-0 sm:pt-0.5">
-          <NewRepairDialog locations={filteredLocations} customers={customersList} partsCatalog={partsCatalog} partCategories={partCategories} units={unitsList} />
-        </div>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Operations"
+        title="Dashboard"
+        description="Overview of repair operations across locations."
+        actions={
+          <NewRepairDialog
+            locations={filteredLocations}
+            customers={customersList}
+            partsCatalog={partsCatalog}
+            partCategories={partCategories}
+            units={unitsList}
+          />
+        }
+      />
 
       {/* ── Quick Filter Pills ─────────────────────────────── */}
       <div className="-mx-1 flex gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">

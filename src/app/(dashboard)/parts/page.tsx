@@ -8,6 +8,11 @@ import { EquipmentClient } from "@/components/parts/equipment-client";
 import { HoldedHint } from "@/components/holded-hint";
 import { Package, ClipboardList, Wrench, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DashboardPageCanvas,
+  DashboardPageHeader,
+  dashboardPanelClass,
+} from "@/components/layout/dashboard-surface";
 
 export default async function PartsPage() {
   const [parts, suppliers, requests, settings, categories] = await Promise.all([
@@ -23,60 +28,78 @@ export default async function PartsPage() {
   const equipmentCount = requests.filter((r) => r.requestType === "equipment").length;
 
   const tabTriggerClass =
-    "min-h-12 min-w-[calc(50%-4px)] shrink-0 snap-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium touch-manipulation sm:min-h-11 sm:min-w-0 sm:flex-1 sm:px-3 sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground";
+    "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] font-medium text-gray-500 transition-colors hover:text-gray-800 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-black/[0.04] dark:text-gray-400 dark:hover:text-gray-100 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-gray-100";
 
   return (
-    <div className="mx-auto w-full max-w-7xl animate-fade-in px-0 sm:px-0">
-      <div
-        className={cn(
-          "overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-sm",
-          "max-sm:rounded-none max-sm:border-x-0 max-sm:border-b-0 max-sm:shadow-none"
-        )}
-      >
-        <header className="border-b border-border/60 bg-muted/20 px-4 py-4 sm:px-6 sm:py-5">
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Parts &amp; Suppliers</h1>
-          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Catalog, workshop part requests, equipment asks, and supplier directory — each in its own tab so you can
-            focus on one list at a time.
-          </p>
-        </header>
+    <DashboardPageCanvas>
+      <div className="space-y-6 sm:space-y-8">
+        <DashboardPageHeader
+          eyebrow="Workshop"
+          title="Parts & Suppliers"
+          metadata={
+            <>
+              <span>
+                <span className="tabular-nums text-gray-700 dark:text-gray-200">{parts.length}</span> parts
+              </span>
+              <span>
+                <span className="tabular-nums text-gray-700 dark:text-gray-200">{partRequestCount}</span> requests
+              </span>
+              <span>
+                <span className="tabular-nums text-gray-700 dark:text-gray-200">{suppliers.length}</span> suppliers
+              </span>
+            </>
+          }
+          description={
+            <>Catalog, workshop part requests, equipment asks, and supplier directory — each in its own tab so you can focus on one list at a time.</>
+          }
+        />
 
         <Tabs defaultValue="catalog" className="w-full">
-          <div className="px-3 pb-2 pt-3 sm:px-6 sm:pt-4">
-            <TabsList
-              className={cn(
-                "flex h-auto w-full flex-nowrap snap-x snap-mandatory gap-1 overflow-x-auto p-1.5 sm:flex-wrap sm:overflow-visible sm:snap-none",
-                "rounded-xl border border-border/50 bg-muted/40 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              )}
-            >
-              <TabsTrigger value="catalog" className={tabTriggerClass}>
-                <Package className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-                <span className="truncate">
-                  Catalog <span className="tabular-nums text-muted-foreground">({parts.length})</span>
+          <TabsList
+            className={cn(
+              "inline-flex h-auto w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-gray-50/80 p-1 sm:w-auto",
+              "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-gray-800 dark:bg-white/[0.04]"
+            )}
+          >
+            <TabsTrigger value="catalog" className={tabTriggerClass}>
+              <Package className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+              <span className="truncate">
+                Catalog
+                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                  {parts.length}
                 </span>
-              </TabsTrigger>
-              <TabsTrigger value="requests" className={tabTriggerClass}>
-                <ClipboardList className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-                <span className="truncate">
-                  Part requests <span className="tabular-nums text-muted-foreground">({partRequestCount})</span>
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="requests" className={tabTriggerClass}>
+              <ClipboardList className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+              <span className="truncate">
+                Part requests
+                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                  {partRequestCount}
                 </span>
-              </TabsTrigger>
-              <TabsTrigger value="equipment" className={tabTriggerClass}>
-                <Wrench className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-                <span className="truncate">
-                  Equipment <span className="tabular-nums text-muted-foreground">({equipmentCount})</span>
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="equipment" className={tabTriggerClass}>
+              <Wrench className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+              <span className="truncate">
+                Equipment
+                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                  {equipmentCount}
                 </span>
-              </TabsTrigger>
-              <TabsTrigger value="suppliers" className={tabTriggerClass}>
-                <Truck className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-                <span className="truncate">
-                  Suppliers <span className="tabular-nums text-muted-foreground">({suppliers.length})</span>
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="suppliers" className={tabTriggerClass}>
+              <Truck className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+              <span className="truncate">
+                Suppliers
+                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                  {suppliers.length}
                 </span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+              </span>
+            </TabsTrigger>
+          </TabsList>
 
-          <TabsContent value="catalog" className="mt-0 border-t border-border/40 px-3 pb-6 pt-3 focus-visible:outline-none sm:px-6 sm:pt-2">
+          <TabsContent value="catalog" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
             <HoldedHint variant="sync" className="mb-4">
               Parts catalog is synced from <strong>Holded products</strong>. Prices set here are used for cost estimates.
               Adding parts to a repair doesn&apos;t change anything in Holded.
@@ -84,15 +107,15 @@ export default async function PartsPage() {
             <PartsClient parts={parts} suppliers={suppliers} categories={categories} defaultMarkup={defaultMarkup} />
           </TabsContent>
 
-          <TabsContent value="requests" className="mt-0 border-t border-border/40 px-3 pb-6 pt-3 focus-visible:outline-none sm:px-6 sm:pt-2">
+          <TabsContent value="requests" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
             <PartRequestsClient requests={requests} />
           </TabsContent>
 
-          <TabsContent value="equipment" className="mt-0 border-t border-border/40 px-3 pb-6 pt-3 focus-visible:outline-none sm:px-6 sm:pt-2">
+          <TabsContent value="equipment" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
             <EquipmentClient requests={requests.filter((r) => r.requestType === "equipment")} />
           </TabsContent>
 
-          <TabsContent value="suppliers" className="mt-0 border-t border-border/40 px-3 pb-6 pt-3 focus-visible:outline-none sm:px-6 sm:pt-2">
+          <TabsContent value="suppliers" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
             <HoldedHint variant="readonly" className="mb-4">
               Suppliers are synced from <strong>Holded contacts</strong> (type: supplier). To add or edit suppliers,
               update them in Holded and run a sync.
@@ -101,6 +124,6 @@ export default async function PartsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DashboardPageCanvas>
   );
 }

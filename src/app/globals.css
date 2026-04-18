@@ -118,6 +118,53 @@
     }
   }
 
+  /* Print: clean monochrome export. Hide chrome, reset shadows, drop
+     dark mode entirely so invoices and quotes look right on paper.
+     Components can opt out with `.print-keep`, opt back in with
+     `.print-hide`. */
+  @media print {
+    @page {
+      margin: 14mm 12mm;
+    }
+    html, body {
+      background: white !important;
+      color: black !important;
+    }
+    /* Hide app shell */
+    aside, header.sticky, nav[aria-label="Breadcrumb"],
+    .print-hide,
+    [data-sonner-toaster],
+    [role="dialog"][aria-label="Close menu"] {
+      display: none !important;
+    }
+    /* Don't waste ink on shadows or rounded card chrome */
+    * {
+      box-shadow: none !important;
+      text-shadow: none !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    a {
+      color: black !important;
+      text-decoration: underline !important;
+    }
+    /* Avoid breaking inside semantic blocks */
+    article, section, table, tr, .avoid-break {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    /* Make backgrounds light enough to not flood the printer */
+    .bg-card, .bg-muted, .bg-background, .bg-foreground {
+      background: white !important;
+    }
+    .text-foreground, .text-muted-foreground {
+      color: black !important;
+    }
+    .border-border, .border-border\/60, .border-border\/70 {
+      border-color: #d6d3d1 !important;
+    }
+  }
+
   .dark {
     --color-background: oklch(0.14 0.004 75);
     --color-foreground: oklch(0.96 0.003 75);

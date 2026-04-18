@@ -27,6 +27,40 @@ interface SearchResult {
   priority?: string;
 }
 
+interface RecentEntry {
+  type: "repair" | "customer" | "unit";
+  id: string;
+  title: string;
+  subtitle?: string;
+  ts: number;
+}
+
+const RECENTS_KEY = "command-palette.recents";
+const RECENTS_MAX = 6;
+
+function loadRecents(): RecentEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, RECENTS_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(entry: Omit<RecentEntry, "ts">) {
+  if (typeof window === "undefined") return;
+  try {
+    const current = loadRecents().filter((r) => !(r.type === entry.type && r.id === entry.id));
+    current.unshift({ ...entry, ts: Date.now() });
+    window.localStorage.setItem(RECENTS_KEY, JSON.stringify(current.slice(0, RECENTS_MAX)));
+  } catch {
+    // ignore
+  }
+}
+
 interface QuickAction {
   label: string;
   href: string;
@@ -55,6 +89,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [recents, setRecents] = useState<RecentEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,12 +107,13 @@ export function CommandPalette() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Reset on open
+  // Reset on open + load recents from localStorage
   useEffect(() => {
     if (open) {
       setQuery("");
       setResults([]);
       setActiveIndex(0);
+      setRecents(loadRecents());
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -116,8 +152,9 @@ export function CommandPalette() {
     debounceRef.current = setTimeout(() => doSearch(value), 200);
   }
 
-  function navigate(href: string) {
+  function navigate(href: string, recent?: Omit<RecentEntry, "ts">) {
     setOpen(false);
+    if (recent) pushRecent(recent);
     router.push(href);
   }
 
@@ -174,6 +211,40 @@ export function CommandPalette() {
         </div>
 
         <div className="max-h-[360px] overflow-y-auto">
+          {/* Recent — only when no query typed */}
+          {!query.trim() && recents.length > 0 && (
+            <div className="p-2">
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+                Recent
+              </p>
+              {recents.map((entry) => (
+                <button
+                  key={`recent-${entry.type}-${entry.id}`}
+                  className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] text-foreground/90 transition-colors hover:bg-muted"
+                  onClick={() =>
+                    navigate(
+                      entry.type === "repair"
+                        ? `/repairs/${entry.id}`
+                        : entry.type === "customer"
+                          ? `/customers/${entry.id}`
+                          : `/units/${entry.id}`,
+                      { type: entry.type, id: entry.id, title: entry.title, subtitle: entry.subtitle },
+                    )
+                  }
+                >
+                  <span className="text-muted-foreground/70">{TYPE_ICONS[entry.type]}</span>
+                  <span className="min-w-0 flex-1 truncate font-medium">{entry.title}</span>
+                  {entry.subtitle ? (
+                    <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">
+                      {entry.subtitle}
+                    </span>
+                  ) : null}
+                  <ArrowRight className="h-3 w-3 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Search results */}
           {results.length > 0 && (
             <div className="p-2">
@@ -196,7 +267,8 @@ export function CommandPalette() {
                           ? `/repairs/${result.id}`
                           : result.type === "customer"
                             ? `/customers/${result.id}`
-                            : `/units/${result.id}`
+                            : `/units/${result.id}`,
+                        { type: result.type, id: result.id, title: result.title, subtitle: result.subtitle },
                       )
                     }
                     onMouseEnter={() => setActiveIndex(itemIdx)}
@@ -273,18 +345,27 @@ export function CommandPalette() {
             )}
         </div>
 
-        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
+        <div className="flex items-center justify-between border-t border-border/60 bg-muted/30 px-4 py-2">
           <div className="flex gap-2 text-[10px] text-muted-foreground">
-            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">↑↓</kbd>
-            <span>navigate</span>
-            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">↵</kbd>
+            <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">↑↓</kbd>
+            <span>navigeer</span>
+            <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">↵</kbd>
             <span>open</span>
-            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">esc</kbd>
-            <span>close</span>
+            <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">esc</kbd>
+            <span>sluit</span>
           </div>
-          <div className="text-[10px] text-muted-foreground">
-            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">⌘K</kbd>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setTimeout(() => {
+                window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", shiftKey: true }));
+              }, 100);
+            }}
+            className="text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Sneltoetsen <kbd className="ml-1 rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">?</kbd>
+          </button>
         </div>
       </DialogContent>
     </Dialog>

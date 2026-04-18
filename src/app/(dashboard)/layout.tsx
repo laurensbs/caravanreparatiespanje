@@ -10,6 +10,7 @@ import { AssistantProvider } from "@/components/assistant-context";
 import { AssistantShell } from "@/components/assistant-shell";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import type { UserRole } from "@/types";
@@ -77,6 +78,7 @@ export default async function DashboardLayout({
           </DashboardContent>
         </div>
         <ConfirmDialogHost />
+        <KeyboardShortcuts />
       </AssistantProvider>
     </SidebarProvider>
   );

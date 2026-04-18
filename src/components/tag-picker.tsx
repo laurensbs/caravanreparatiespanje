@@ -17,9 +17,12 @@ export interface TagItem {
   color: string | null;
 }
 
+// Warm-leaning palette — drops cyan/blue for stone/teal so the picker
+// matches the rest of the new identity. Order is rainbow-ish so the
+// swatches still look like a colour picker.
 const TAG_COLORS = [
-  "#6b7280", "#ef4444", "#f97316", "#eab308", "#22c55e",
-  "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
+  "#78716c", "#ef4444", "#f97316", "#eab308", "#22c55e",
+  "#14b8a6", "#6366f1", "#8b5cf6", "#ec4899", "#a16207",
 ];
 
 interface TagPickerProps {
@@ -191,8 +194,8 @@ export function TagPicker({ allTags, activeTags, onAdd, onRemove, onCreate, onDe
                       <input
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        placeholder="Tag name..."
-                        className="w-full h-7 rounded-md border px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                        placeholder="Tag naam…"
+                        className="h-8 w-full rounded-lg border border-input bg-card px-2.5 text-xs tracking-[-0.005em] shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] transition-all duration-150 placeholder:text-muted-foreground/70 hover:border-foreground/20 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleCreate();

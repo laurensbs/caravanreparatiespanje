@@ -44,11 +44,13 @@ const navItems: NavItem[] = [
   { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations", countKey: "planning" },
   { label: "Garage", href: "/api/garage-reset", icon: <Warehouse className="h-[18px] w-[18px]" />, group: "Operations" },
   // DATA
-  { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data", countKey: "contacts" },
-  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data", countKey: "units" },
+  { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data" },
+  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data" },
+  // Parts keeps its count: it represents pending part requests, an
+  // actionable signal (not just 'how many records exist').
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data", countKey: "parts" },
   // FINANCE
-  { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance", countKey: "invoices" },
+  { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
 ];
 
 export type SidebarCounts = {

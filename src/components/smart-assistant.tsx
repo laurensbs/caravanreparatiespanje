@@ -1123,13 +1123,17 @@ interface SmartAssistantProps {
 
 // ─── Inbox view (smart notifications) ─────────────────────────
 
+// Inbox category accents — kept neutral (foreground tint) by default,
+// with amber/emerald reserved for the few categories that genuinely
+// signal "money in" or "on track". No blue/cyan/violet brand tints
+// any more — the palette is monochrome warm with one accent.
 const INBOX_TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  create_invoice: { icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
-  follow_up_customer: { icon: Phone, color: "text-teal-600 dark:text-teal-400", bg: "bg-teal-500/10" },
-  order_parts: { icon: Package, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
-  check_delivery: { icon: Truck, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500/10" },
+  create_invoice: { icon: FileText, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/10" },
+  follow_up_customer: { icon: Phone, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
+  order_parts: { icon: Package, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
+  check_delivery: { icon: Truck, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   schedule_repair: { icon: Calendar, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
-  send_quote: { icon: DollarSign, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
+  send_quote: { icon: DollarSign, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/10" },
   contact_customer: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   custom: { icon: Pencil, color: "text-muted-foreground", bg: "bg-muted" },
 };
@@ -1137,8 +1141,8 @@ const INBOX_TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: 
 const GARAGE_TRIGGER_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
   garage_comment: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   garage_not_done: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500/10" },
-  garage_task_suggestion: { icon: Calendar, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
-  garage_done: { icon: Check, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
+  garage_task_suggestion: { icon: Calendar, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
+  garage_done: { icon: Check, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-500/10" },
   garage_feedback: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
 };
 
@@ -1337,8 +1341,8 @@ function InboxView({
             <button
               type="button"
               className={cn(
-                "group flex w-full touch-manipulation gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50",
-                overdue && "bg-red-500/[0.06] hover:bg-red-500/10",
+                "group relative flex w-full touch-manipulation gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50",
+                overdue && "before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-red-500/70 before:content-['']",
               )}
               onClick={() => {
                 onClose();

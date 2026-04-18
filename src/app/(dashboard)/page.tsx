@@ -50,34 +50,6 @@ export default async function DashboardPage() {
     { label: "Follow-up", value: followUps.length, href: "/repairs?customerResponseStatus=no_response", dot: "bg-orange-400" },
   ];
 
-  // Today briefing — extracts the 'what should you actually look at'
-  // signal from the same stats object the pills already use. No extra
-  // server roundtrips. Each highlight links into the relevant filter.
-  const briefingItems = [
-    stats?.urgent
-      ? { label: "Urgent", value: stats.urgent, tone: "red" as const, href: "/repairs?priority=urgent" }
-      : null,
-    stats?.waitingCustomer
-      ? { label: "Waiting on customer", value: stats.waitingCustomer, tone: "orange" as const, href: "/repairs?status=waiting_customer" }
-      : null,
-    stats?.waitingParts
-      ? { label: "Waiting on parts", value: stats.waitingParts, tone: "amber" as const, href: "/repairs?status=waiting_parts" }
-      : null,
-    followUps.length > 0
-      ? { label: "Follow-up needed", value: followUps.length, tone: "amber" as const, href: "/repairs?customerResponseStatus=no_response" }
-      : null,
-    stats?.readyForCheck
-      ? { label: "Ready for check", value: stats.readyForCheck, tone: "emerald" as const, href: "/repairs?status=ready_for_check" }
-      : null,
-  ].filter((x): x is { label: string; value: number; tone: "red" | "orange" | "amber" | "emerald"; href: string } => !!x);
-
-  const briefingTotal = briefingItems.reduce((acc, x) => acc + x.value, 0);
-  const briefingHeadline = briefingTotal === 0
-    ? "All clear — nothing needs you today."
-    : briefingItems.length === 1
-      ? `${briefingItems[0].value} ${briefingItems[0].label.toLowerCase()} today.`
-      : `${briefingTotal} item${briefingTotal !== 1 ? "s" : ""} need attention.`;
-
   return (
     <DashboardPageCanvas>
     <div className="space-y-6 sm:space-y-8">
@@ -87,68 +59,6 @@ export default async function DashboardPage() {
         description="Overview of repair operations across locations."
         actions={<NewRepairDialog locations={filteredLocations} />}
       />
-
-      {/* ── Today briefing ─────────────────────────────────────
-          The first thing you see on the dashboard. Consolidates the
-          handful of "actionable now" signals into one card so the user
-          doesn't have to translate a strip of pills into a to-do list. */}
-      <div
-        className={cn(
-          dashboardPanelClass,
-          "relative overflow-hidden p-5 sm:p-6",
-          briefingTotal === 0 && "bg-emerald-50/40 dark:bg-emerald-500/[0.04]",
-        )}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <div className="min-w-0 space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-              {briefingTotal === 0 ? "Inbox zero" : "Today"}
-            </p>
-            <h2 className="text-lg font-semibold tracking-[-0.015em] text-foreground sm:text-xl">
-              {briefingHeadline}
-            </h2>
-          </div>
-          {briefingItems.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 sm:justify-end">
-              {briefingItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    "group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium tracking-[-0.005em] shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.12)]",
-                    item.tone === "red" && "border-red-200/70 bg-red-50 text-red-700 hover:border-red-300 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
-                    item.tone === "orange" && "border-orange-200/70 bg-orange-50 text-orange-700 hover:border-orange-300 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300",
-                    item.tone === "amber" && "border-amber-200/70 bg-amber-50 text-amber-700 hover:border-amber-300 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
-                    item.tone === "emerald" && "border-emerald-200/70 bg-emerald-50 text-emerald-700 hover:border-emerald-300 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
-                  )}
-                >
-                  <span className="font-mono tabular-nums text-sm font-semibold">{item.value}</span>
-                  <span>{item.label}</span>
-                  <ArrowRight className="h-3 w-3 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:opacity-90" />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/70 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              All clear
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ── Quick Filter Pills ─────────────────────────────── */}
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-        {quickPills.map((pill) => (
-          <Link key={pill.label} href={pill.href} className="shrink-0">
-            <span className="group inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] transition-all duration-150 hover:-translate-y-px hover:border-foreground/15 hover:text-foreground hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.10)]">
-              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot} transition-transform group-hover:scale-125`} />
-              {pill.label}
-              <span className="font-medium tabular-nums text-foreground">{pill.value}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
 
       {/* ── Pipeline Progress ──────────────────────────────── */}
       <div className={cn(dashboardPanelClass, "px-4 py-3 sm:px-5")}>

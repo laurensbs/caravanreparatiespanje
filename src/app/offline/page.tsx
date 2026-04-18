@@ -23,7 +23,7 @@ export default function OfflinePage() {
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Je werk wordt lokaal bewaard en gesynchroniseerd zodra je weer online
-          bent. Probeer de pagina te verversen of check je netwerk.
+          bent. Try refreshing the page or check your network.
         </p>
       </div>
     </div>

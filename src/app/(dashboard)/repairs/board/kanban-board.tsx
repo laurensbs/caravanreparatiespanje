@@ -231,7 +231,7 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
             ))}
             {(jobsByStatus[status] ?? []).length === 0 && (
               <p className="py-8 text-center text-xs text-muted-foreground/60">
-                Geen jobs
+                No jobs
               </p>
             )}
           </div>

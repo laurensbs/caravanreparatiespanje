@@ -58,16 +58,16 @@ export default async function DashboardPage() {
       ? { label: "Urgent", value: stats.urgent, tone: "red" as const, href: "/repairs?priority=urgent" }
       : null,
     stats?.waitingCustomer
-      ? { label: "Wachten op klant", value: stats.waitingCustomer, tone: "orange" as const, href: "/repairs?status=waiting_customer" }
+      ? { label: "Waiting on customer", value: stats.waitingCustomer, tone: "orange" as const, href: "/repairs?status=waiting_customer" }
       : null,
     stats?.waitingParts
-      ? { label: "Wachten op onderdelen", value: stats.waitingParts, tone: "amber" as const, href: "/repairs?status=waiting_parts" }
+      ? { label: "Waiting on parts", value: stats.waitingParts, tone: "amber" as const, href: "/repairs?status=waiting_parts" }
       : null,
     followUps.length > 0
-      ? { label: "Follow-up nodig", value: followUps.length, tone: "amber" as const, href: "/repairs?customerResponseStatus=no_response" }
+      ? { label: "Follow-up needed", value: followUps.length, tone: "amber" as const, href: "/repairs?customerResponseStatus=no_response" }
       : null,
     stats?.readyForCheck
-      ? { label: "Klaar voor controle", value: stats.readyForCheck, tone: "emerald" as const, href: "/repairs?status=ready_for_check" }
+      ? { label: "Ready for check", value: stats.readyForCheck, tone: "emerald" as const, href: "/repairs?status=ready_for_check" }
       : null,
   ].filter((x): x is { label: string; value: number; tone: "red" | "orange" | "amber" | "emerald"; href: string } => !!x);
 
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
     ? "All clear — nothing needs you today."
     : briefingItems.length === 1
       ? `${briefingItems[0].value} ${briefingItems[0].label.toLowerCase()} today.`
-      : `${briefingTotal} item${briefingTotal !== 1 ? "s" : ""} vragen je aandacht.`;
+      : `${briefingTotal} item${briefingTotal !== 1 ? "s" : ""} need attention.`;
 
   return (
     <DashboardPageCanvas>

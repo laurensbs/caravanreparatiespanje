@@ -143,7 +143,7 @@ export default async function ActivityPage() {
         {usersWithLogins.length === 0 ? (
           <EmptyState
             icon={Activity}
-            title="Geen users"
+            title="No users"
             description="Voeg eerst users toe in Settings → Users."
           />
         ) : (

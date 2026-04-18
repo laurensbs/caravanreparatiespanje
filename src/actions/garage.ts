@@ -114,8 +114,8 @@ export async function garageMarkDone(repairJobId: string) {
     .where(eq(repairJobs.id, repairJobId));
   await notifyOffice(
     repairJobId,
-    `🔍 Klaar voor controle — ${jobInfo?.publicCode ?? ""}`,
-    "Reparatie is door de garage als klaar gemeld en wacht op controle",
+    `🔍 Ready for check — ${jobInfo?.publicCode ?? ""}`,
+    "Repair has been marked done by the garage and is waiting for inspection",
     "garage_done"
   );
 

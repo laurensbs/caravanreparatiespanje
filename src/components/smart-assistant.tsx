@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
-  X, ChevronRight, ArrowLeft,
+  X, ChevronRight, ChevronDown, ArrowLeft,
   Wrench, Receipt, Users, Package, Lightbulb, HelpCircle,
   Zap, RotateCcw, Sparkles, Bot, Send,
   ExternalLink, Truck, ClipboardList, Search, Plus, AlertCircle,
@@ -1964,14 +1964,17 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                   </div>
                 )}
 
-                <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground/70 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1 flex flex-wrap items-center gap-x-1.5 gap-y-0">
-                    <span>Browse by topic</span>
-                    {relevantCategories.length > 0 && (
-                      <span className="normal-case font-medium text-primary/80">· suggested first</span>
-                    )}
-                  </p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                <details className="group/topics">
+                  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-1 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+                    <span className="flex flex-wrap items-center gap-x-1.5">
+                      <span>Browse by topic</span>
+                      {relevantCategories.length > 0 && (
+                        <span className="normal-case font-medium text-foreground/60">· suggested first</span>
+                      )}
+                    </span>
+                    <ChevronDown className="h-3 w-3 transition-transform group-open/topics:rotate-180" />
+                  </summary>
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {sortedCategoryEntries.map(([key, config]) => {
                       const count = FAQ_ITEMS.filter((f) => f.category === key).length;
                       const suggested = relevantCategories.includes(key);
@@ -1981,10 +1984,10 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                           type="button"
                           onClick={() => setSelectedCategory(key)}
                           className={cn(
-                            "flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all hover:bg-muted/50 active:scale-[0.98]",
+                            "flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all duration-150 hover:bg-muted/50 active:scale-[0.98]",
                             suggested
-                              ? "border-primary/25 bg-primary/[0.06]"
-                              : "border-border/80 opacity-[0.92] hover:opacity-100",
+                              ? "border-foreground/15 bg-foreground/[0.04]"
+                              : "border-border/60 opacity-[0.92] hover:border-foreground/15 hover:opacity-100",
                           )}
                         >
                           <span className={config.color}>{config.icon}</span>
@@ -1996,7 +1999,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                       );
                     })}
                   </div>
-                </div>
+                </details>
               </div>
             ) : (
               /* Chat messages */

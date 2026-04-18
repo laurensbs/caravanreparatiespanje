@@ -35,7 +35,7 @@ const LEVEL_ICON: Record<SuggestionLevel, ReactNode> = {
 const LEVEL_ICON_TONE: Record<SuggestionLevel, string> = {
   action: "text-sky-500 dark:text-sky-400",
   warning: "text-amber-500 dark:text-amber-400",
-  info: "text-gray-400 dark:text-gray-500",
+  info: "text-muted-foreground/70 dark:text-muted-foreground",
   success: "text-emerald-500 dark:text-emerald-400",
 };
 
@@ -43,17 +43,17 @@ function SuggestionRow({ suggestion }: { suggestion: Suggestion }) {
   const content = (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-full border border-gray-100 bg-white px-3 py-1.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-all shrink-0 dark:border-gray-800 dark:bg-white/[0.04]",
+        "flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-all shrink-0 dark:border-border dark:bg-card/[0.04]",
         (suggestion.href || suggestion.onClick) &&
-          "cursor-pointer hover:border-gray-200 hover:-translate-y-px active:translate-y-0 dark:hover:border-gray-700"
+          "cursor-pointer hover:border-border hover:-translate-y-px active:translate-y-0 dark:hover:border-border"
       )}
     >
       <span className={cn("shrink-0", LEVEL_ICON_TONE[suggestion.level])}>
         {LEVEL_ICON[suggestion.level]}
       </span>
-      <p className="text-[12px] font-medium text-gray-700 dark:text-gray-200 leading-tight whitespace-nowrap">{suggestion.title}</p>
+      <p className="text-[12px] font-medium text-foreground/90 dark:text-foreground/90 leading-tight whitespace-nowrap">{suggestion.title}</p>
       {(suggestion.href || suggestion.onClick) && (
-        <ArrowRight className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-500" />
+        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/50 dark:text-muted-foreground" />
       )}
     </div>
   );
@@ -105,7 +105,7 @@ export function SmartSuggestions({
           try { localStorage.removeItem(SUGGESTIONS_HIDDEN_KEY); } catch {}
         }}
         className={cn(
-          "flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors",
+          "flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors",
           className,
         )}
       >
@@ -130,8 +130,8 @@ export function SmartSuggestions({
       )}
     >
       <div className="flex items-center gap-1.5 pr-1 shrink-0">
-        <Lightbulb className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+        <Lightbulb className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">
           Insights
         </span>
       </div>
@@ -141,7 +141,7 @@ export function SmartSuggestions({
       <button
         type="button"
         aria-label="Hide suggestions"
-        className="ml-auto shrink-0 text-gray-300 transition-colors hover:text-gray-500"
+        className="ml-auto shrink-0 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
         onClick={() => {
           setHidden(true);
           try { localStorage.setItem(SUGGESTIONS_HIDDEN_KEY, "true"); } catch {}

@@ -153,10 +153,10 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
         {/* Search — visually dominant */}
         <div className="relative min-w-0 flex-1 sm:max-w-80">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70 dark:text-slate-500 pointer-events-none" />
           <Input
             placeholder="Search work orders..."
-            className="w-full pl-10 pr-4 h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-[#0CC0DF]/40 focus:border-[#0CC0DF]/40 shadow-none"
+            className="w-full pl-10 pr-4 h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-[currentColor]/40 focus:border-[currentColor]/40 shadow-none"
             value={searchInput}
             onChange={handleSearchChange}
           />
@@ -167,7 +167,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-gray-200 bg-white text-sm text-gray-700 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-slate-200 sm:w-[140px]">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-slate-200 sm:w-[140px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -183,7 +183,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           value={currentFilters.jobType ?? "all"}
           onValueChange={(val) => updateFilter("jobType", val)}
         >
-          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-gray-200 bg-white text-sm text-gray-700 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-slate-200 sm:w-[130px]">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-slate-200 sm:w-[130px]">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -201,14 +201,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
               type="button"
               className={`inline-flex h-11 min-h-11 w-full touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium transition-all duration-150 sm:w-auto ${
                 advancedCount > 0
-                  ? "border-[#0CC0DF]/30 bg-[#0CC0DF]/5 text-gray-900 dark:text-slate-100 dark:border-[#0CC0DF]/20 dark:bg-[#0CC0DF]/10"
-                  : "border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                  ? "border-[currentColor]/30 bg-[currentColor]/5 text-foreground dark:text-slate-100 dark:border-[currentColor]/20 dark:bg-[currentColor]/10"
+                  : "border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-300 hover:bg-muted/40 dark:hover:bg-card/[0.04]"
               }`}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filters
               {advancedCount > 0 && (
-                <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-[11px] font-semibold rounded-full bg-[#0CC0DF] text-white">
+                <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-[11px] font-semibold rounded-full bg-[currentColor] text-white">
                   {advancedCount}
                 </span>
               )}
@@ -217,11 +217,11 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           <PopoverContent
             align="end"
             sideOffset={10}
-            className="z-40 max-h-[min(85dvh,640px)] w-[min(calc(100vw-1.5rem),720px)] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-gray-100 bg-white p-0 shadow-xl dark:border-white/10 dark:bg-[#0F172A] dark:shadow-black/50 sm:max-w-none"
+            className="z-40 max-h-[min(85dvh,640px)] w-[min(calc(100vw-1.5rem),720px)] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-border/60 bg-card p-0 shadow-xl dark:border-white/10 dark:bg-[#0F172A] dark:shadow-black/50 sm:max-w-none"
           >
             {/* Panel header */}
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/[0.06]">
-              <h3 className="text-[13px] font-semibold text-gray-900 dark:text-slate-100 tracking-tight">Advanced Filters</h3>
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/60 dark:border-white/[0.06]">
+              <h3 className="text-[13px] font-semibold text-foreground dark:text-slate-100 tracking-tight">Advanced Filters</h3>
               {advancedCount > 0 && (
                 <button
                   onClick={() => {
@@ -230,7 +230,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                     params.delete("page");
                     router.push(`${pathname}?${params.toString()}`);
                   }}
-                  className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
+                  className="text-xs text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-slate-200 transition-colors"
                 >
                   Reset filters
                 </button>
@@ -244,12 +244,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filterRelevance.priority && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Priority</Label>
+                  <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Priority</Label>
                   <Select
                     value={currentFilters.priority ?? "all"}
                     onValueChange={(val) => updateFilter("priority", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none">
                       <SelectValue placeholder="All priorities" />
                     </SelectTrigger>
                     <SelectContent>
@@ -263,12 +263,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                 )}
                 {filterRelevance.location && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Location</Label>
+                  <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Location</Label>
                   <Select
                     value={currentFilters.locationId ?? "all"}
                     onValueChange={(val) => updateFilter("locationId", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none">
                       <SelectValue placeholder="All locations" />
                     </SelectTrigger>
                     <SelectContent>
@@ -288,12 +288,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filterRelevance.invoice && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Invoice</Label>
+                  <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Invoice</Label>
                   <Select
                     value={currentFilters.invoiceStatus ?? "all"}
                     onValueChange={(val) => updateFilter("invoiceStatus", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none">
                       <SelectValue placeholder="All invoices" />
                     </SelectTrigger>
                     <SelectContent>
@@ -308,12 +308,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                 )}
                 {filterRelevance.response && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Response</Label>
+                  <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Response</Label>
                   <Select
                     value={currentFilters.customerResponseStatus ?? "all"}
                     onValueChange={(val) => updateFilter("customerResponseStatus", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none">
                       <SelectValue placeholder="All responses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -333,12 +333,12 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filterRelevance.tags && allTags.length > 0 && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Tag</Label>
+                    <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Tag</Label>
                     <Select
                       value={currentFilters.tagId ?? "all"}
                       onValueChange={(val) => updateFilter("tagId", val)}
                     >
-                      <SelectTrigger className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none">
+                      <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none">
                         <SelectValue placeholder="All tags" />
                       </SelectTrigger>
                       <SelectContent>
@@ -357,23 +357,23 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                 )}
                 {filterRelevance.date && (
                 <div className={(filterRelevance.tags && allTags.length > 0) ? "space-y-1.5" : "sm:col-span-2 space-y-1.5"}>
-                  <Label className="text-xs font-medium text-gray-500 dark:text-slate-400">Date range</Label>
+                  <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Date range</Label>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <div className="flex-1 space-y-1">
-                      <span className="text-[11px] text-gray-400 dark:text-slate-500">From</span>
+                      <span className="text-[11px] text-muted-foreground/70 dark:text-slate-500">From</span>
                       <Input
                         type="date"
-                        className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
+                        className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none"
                         value={currentFilters.dateFrom ?? ""}
                         onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
                       />
                     </div>
-                    <span className="hidden sm:block text-gray-300 dark:text-slate-600 text-xs mt-5">–</span>
+                    <span className="hidden sm:block text-muted-foreground/50 dark:text-slate-600 text-xs mt-5">–</span>
                     <div className="flex-1 space-y-1">
-                      <span className="text-[11px] text-gray-400 dark:text-slate-500">To</span>
+                      <span className="text-[11px] text-muted-foreground/70 dark:text-slate-500">To</span>
                       <Input
                         type="date"
-                        className="w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-700 dark:text-slate-200 shadow-none"
+                        className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-slate-200 shadow-none"
                         value={currentFilters.dateTo ?? ""}
                         onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
                       />
@@ -386,7 +386,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
 
               {/* All filters hidden hint */}
               {!filterRelevance.priority && !filterRelevance.location && !filterRelevance.invoice && !filterRelevance.response && !filterRelevance.tags && !filterRelevance.date && (
-                <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">No additional filters available for this selection.</p>
+                <p className="text-sm text-muted-foreground/70 dark:text-slate-500 text-center py-4">No additional filters available for this selection.</p>
               )}
             </div>
           </PopoverContent>
@@ -400,16 +400,16 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
             <button
               key={pill.key}
               onClick={() => removePill(pill.key)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-700 dark:text-slate-300 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-200 dark:hover:bg-white/[0.12] group"
+              className="inline-flex items-center gap-1.5 rounded-full bg-muted dark:bg-card/[0.08] text-foreground/90 dark:text-slate-300 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-200 dark:hover:bg-card/[0.12] group"
             >
-              <span className="text-gray-400 dark:text-slate-500">{pill.label}:</span>
+              <span className="text-muted-foreground/70 dark:text-slate-500">{pill.label}:</span>
               {pill.value}
-              <X className="h-3 w-3 text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+              <X className="h-3 w-3 text-muted-foreground/70 dark:text-slate-500 group-hover:text-muted-foreground dark:group-hover:text-slate-300 transition-colors" />
             </button>
           ))}
           <button
             onClick={clearFilters}
-            className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors px-1"
+            className="text-xs text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-slate-200 transition-colors px-1"
           >
             Clear all
           </button>

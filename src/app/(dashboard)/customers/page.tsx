@@ -106,7 +106,7 @@ export default async function CustomersPage({ searchParams }: Props) {
             <span className="tabular-nums">{displayTotal}</span>
             <span>{isBusiness ? "businesses" : "contacts"}</span>
             {!isBusiness && (
-              <span className="text-gray-400 dark:text-gray-500">· tap a row for a quick view</span>
+              <span className="text-muted-foreground/70 dark:text-muted-foreground">· tap a row for a quick view</span>
             )}
           </>
         }
@@ -114,9 +114,9 @@ export default async function CustomersPage({ searchParams }: Props) {
           !isBusiness
             ? (
                 <>
-                  The same record is used on <strong className="font-medium text-gray-900 dark:text-gray-100">work orders</strong>,{" "}
-                  <strong className="font-medium text-gray-900 dark:text-gray-100">planning</strong>, and the{" "}
-                  <strong className="font-medium text-gray-900 dark:text-gray-100">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
+                  The same record is used on <strong className="font-medium text-foreground dark:text-foreground">work orders</strong>,{" "}
+                  <strong className="font-medium text-foreground dark:text-foreground">planning</strong>, and the{" "}
+                  <strong className="font-medium text-foreground dark:text-foreground">garage</strong>. When a row is linked to Holded, phone, email, and address stay aligned with accounting.
                 </>
               )
             : undefined
@@ -155,23 +155,23 @@ export default async function CustomersPage({ searchParams }: Props) {
         <div className="max-h-[min(70vh,calc(100vh-14rem))] overflow-auto overscroll-contain sm:max-h-[calc(100vh-16rem)]">
           <table className="w-full min-w-[44rem]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-gray-100 bg-gray-50/90 backdrop-blur-sm dark:border-gray-800 dark:bg-white/[0.04]">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 sm:px-5 dark:text-gray-500">Name</th>
+              <tr className="border-b border-border/60 bg-muted/40/90 backdrop-blur-sm dark:border-border dark:bg-card/[0.04]">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 sm:px-5 dark:text-muted-foreground">Name</th>
                 {isBusiness ? (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Contact Person</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Phone</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Email</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Website</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Holded</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Contact Person</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Phone</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 md:table-cell dark:text-muted-foreground">Email</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 md:table-cell dark:text-muted-foreground">Website</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Holded</th>
                   </>
                 ) : (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Type</th>
-                    <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Repairs</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Phone</th>
-                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell dark:text-gray-500">Email</th>
-                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Updated</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Type</th>
+                    <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Repairs</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 md:table-cell dark:text-muted-foreground">Phone</th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 md:table-cell dark:text-muted-foreground">Email</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Updated</th>
                   </>
                 )}
               </tr>

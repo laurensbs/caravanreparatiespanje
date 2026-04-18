@@ -79,7 +79,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
     <div className="animate-fade-in">
       {/* ─── Header ─── */}
       <div className="mb-6 sm:mb-8">
-        <Link href="/units" className="inline-flex items-center gap-1.5 text-[12px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mb-3">
+        <Link href="/units" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground/70 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/50 transition-colors mb-3">
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to units
         </Link>
@@ -87,17 +87,17 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
           <div className="flex min-w-0 items-start gap-3">
             <UnitTypeIconBadge unitType={unit.unitType} className="mt-1" />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">{unitTypeLabel}</p>
-              <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl">{unitTitle}</h1>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[13px] text-gray-500 dark:text-gray-400">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">{unitTypeLabel}</p>
+              <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-tight text-foreground dark:text-foreground sm:text-3xl">{unitTitle}</h1>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[13px] text-muted-foreground dark:text-muted-foreground/70">
                 {unit.registration && (
-                  <span className="inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground/90 dark:bg-gray-800 dark:text-muted-foreground/50">
                     {unit.registration}
                   </span>
                 )}
                 {unit.customer && (
                   <>
-                    {unit.registration && <span className="text-gray-300 dark:text-gray-600">·</span>}
+                    {unit.registration && <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>}
                     <Link href={`/customers/${unit.customer.id}`} className="text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">
                       {unit.customer.name}
                     </Link>
@@ -105,19 +105,19 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 )}
                 {storageLocation && (
                   <>
-                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                    <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       {storageLocation}
                       {storageType && (
-                        <span className="text-gray-400 dark:text-gray-500">· {storageType.toLowerCase()}</span>
+                        <span className="text-muted-foreground/70 dark:text-muted-foreground">· {storageType.toLowerCase()}</span>
                       )}
                     </span>
                   </>
                 )}
                 {unit.repairJobs.length > 0 && (
                   <>
-                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                    <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>
                     <span>{unit.repairJobs.length} repair{unit.repairJobs.length !== 1 ? "s" : ""}</span>
                   </>
                 )}
@@ -142,12 +142,12 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
         <div className="lg:col-span-5 space-y-6">
 
           {/* Specifications (merged details + storage) */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="bg-card dark:bg-foreground rounded-2xl border border-border/60 dark:border-border shadow-sm overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Specifications</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">Specifications</p>
               <button
                 onClick={() => setShowBasics((s) => !s)}
-                className="text-[11px] text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                className="text-[11px] text-muted-foreground/70 hover:text-foreground/90 dark:text-muted-foreground dark:hover:text-muted-foreground/50 transition-colors"
               >
                 {showBasics ? "Hide basics" : "Edit basics"}
               </button>
@@ -172,9 +172,9 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
             </div>
 
             {/* Storage & Location — same card, subtle divider */}
-            <div className="px-5 pt-3 pb-2 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1.5">
-              <Warehouse className="h-3 w-3 text-gray-400 dark:text-gray-500" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Storage</p>
+            <div className="px-5 pt-3 pb-2 border-t border-border/60 dark:border-border flex items-center gap-1.5">
+              <Warehouse className="h-3 w-3 text-muted-foreground/70 dark:text-muted-foreground" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">Storage</p>
             </div>
             <div className="px-5 pb-5">
               <InlineSelectRow icon={MapPin} label="Location" value={storageLocation} field="storageLocation"
@@ -192,25 +192,25 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
           </div>
 
           {/* Notes */}
-          <div className="group/notes bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="group/notes bg-card dark:bg-foreground rounded-2xl border border-border/60 dark:border-border shadow-sm overflow-hidden">
             <div className="px-5 pt-4 pb-1 flex items-center justify-between">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">
                 <StickyNote className="h-3 w-3" /> Notes
               </p>
               {editingField !== "notes" && notes && (
                 <button
                   onClick={() => setEditingField("notes")}
-                  className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted dark:hover:bg-gray-800"
                   aria-label="Edit notes"
                 >
-                  <Pencil className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+                  <Pencil className="h-3 w-3 text-muted-foreground/70 dark:text-muted-foreground" />
                 </button>
               )}
             </div>
             <div className="px-5 pb-5">
               {editingField === "notes" ? (
                 <div className="space-y-2 mt-1">
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="text-sm rounded-xl border-gray-200 dark:border-gray-700 resize-none" autoFocus />
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="text-sm rounded-xl border-border dark:border-border resize-none" autoFocus />
                   <div className="flex gap-1.5">
                     <Button size="sm" className="h-7 text-xs rounded-xl px-3" onClick={() => saveField("notes", notes)} disabled={isPending}>Save</Button>
                     <Button variant="ghost" size="sm" className="h-7 text-xs rounded-xl" onClick={() => { setNotes(unit.notes ?? ""); setEditingField(null); }}>Cancel</Button>
@@ -218,13 +218,13 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 </div>
               ) : (
                 <div
-                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 px-3 py-2 -mx-3"
+                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-muted/40 dark:hover:bg-gray-800/50 px-3 py-2 -mx-3"
                   onClick={() => setEditingField("notes")}
                 >
                   {notes ? (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{notes}</p>
+                    <p className="text-sm text-foreground/90 dark:text-muted-foreground/50 whitespace-pre-wrap leading-relaxed">{notes}</p>
                   ) : (
-                    <p className="text-sm text-gray-400 dark:text-gray-500">Click to add notes</p>
+                    <p className="text-sm text-muted-foreground/70 dark:text-muted-foreground">Click to add notes</p>
                   )}
                 </div>
               )}
@@ -234,12 +234,12 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
 
         {/* Right column — Repairs */}
         <div className="lg:col-span-7">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="bg-card dark:bg-foreground rounded-2xl border border-border/60 dark:border-border shadow-sm overflow-hidden">
             <div className="px-5 pt-4 pb-3 flex items-center gap-2">
-              <Wrench className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">Repairs</p>
+              <Wrench className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">Repairs</p>
               {unit.repairJobs.length > 0 && (
-                <span className="tabular-nums text-[11px] font-medium text-gray-700 dark:text-gray-200">
+                <span className="tabular-nums text-[11px] font-medium text-foreground/90 dark:text-foreground/90">
                   {unit.repairJobs.length}
                 </span>
               )}
@@ -247,24 +247,24 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
 
             {unit.repairJobs.length === 0 ? (
               <div className="px-5 pb-5">
-                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 py-10 text-center">
-                  <Wrench className="h-7 w-7 text-gray-300 dark:text-gray-600 mx-auto mb-2.5" />
-                  <p className="text-sm text-gray-400 dark:text-gray-500">No repairs for this unit</p>
+                <div className="rounded-xl border border-dashed border-border dark:border-border bg-muted/40/60 dark:bg-gray-800/30 py-10 text-center">
+                  <Wrench className="h-7 w-7 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-2.5" />
+                  <p className="text-sm text-muted-foreground/70 dark:text-muted-foreground">No repairs for this unit</p>
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-[700px] overflow-y-auto">
+              <div className="divide-y divide-border/60 dark:divide-border/60 max-h-[700px] overflow-y-auto">
                 {unit.repairJobs.map((job) => (
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 dark:hover:bg-gray-800/40"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate transition-colors group-hover:text-sky-700 dark:group-hover:text-sky-400">
+                      <p className="text-sm font-medium text-foreground dark:text-foreground truncate transition-colors group-hover:text-sky-700 dark:group-hover:text-sky-400">
                         {job.title || "Unnamed"}
                       </p>
-                      <p className="mt-0.5 font-mono text-[11px] text-gray-400 dark:text-gray-500">{job.publicCode}</p>
+                      <p className="mt-0.5 font-mono text-[11px] text-muted-foreground/70 dark:text-muted-foreground">{job.publicCode}</p>
                     </div>
                     <StatusBadge status={job.status as RepairStatus} />
                   </Link>
@@ -294,12 +294,12 @@ const STATUS_BADGE_COLORS: Partial<Record<RepairStatus, string>> = {
   ready_for_check: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
   rejected: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
   blocked: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
-  no_damage: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  archived: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  no_damage: "bg-muted/40 text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70",
+  archived: "bg-muted/40 text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70",
 };
 
 function StatusBadge({ status }: { status: RepairStatus }) {
-  const colorClass = STATUS_BADGE_COLORS[status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
+  const colorClass = STATUS_BADGE_COLORS[status] ?? "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70";
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium shrink-0 ${colorClass}`}>
       {STATUS_LABELS[status] ?? status}
@@ -317,26 +317,26 @@ function InlineRow({ icon: Icon, label, value, field, mono, type, nfcPill, editi
 }) {
   const isEditing = editingField === field;
   return (
-    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-gray-800 first:border-t-0">
-      <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
+    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-border first:border-t-0">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/70 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
       {isEditing ? (
         <div className="flex items-center gap-1.5">
-          <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} className={`h-7 w-40 text-sm rounded-lg border-gray-200 dark:border-gray-700 ${mono ? "font-mono text-xs" : ""}`} autoFocus
+          <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} className={`h-7 w-40 text-sm rounded-lg border-border dark:border-border ${mono ? "font-mono text-xs" : ""}`} autoFocus
             onKeyDown={(e) => { if (e.key === "Enter") onSave(field, value); if (e.key === "Escape") onCancel(); }} />
-          <button onClick={() => onSave(field, value)} disabled={saving} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /></button>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" /></button>
+          <button onClick={() => onSave(field, value)} disabled={saving} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors"><Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /></button>
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" /></button>
         </div>
       ) : (
         <span
-          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "text-gray-900 dark:text-gray-100 hover:text-sky-700 dark:hover:text-sky-400" : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400"}`}
+          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "text-foreground dark:text-foreground hover:text-sky-700 dark:hover:text-sky-400" : "text-muted-foreground/50 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70"}`}
           onClick={() => onEdit(field)}
         >
           {nfcPill && value ? (
-            <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md px-2 py-0.5 text-xs font-mono">{value}</span>
+            <span className="bg-muted dark:bg-gray-800 text-foreground/90 dark:text-muted-foreground/50 rounded-md px-2 py-0.5 text-xs font-mono">{value}</span>
           ) : (
             <span className={`text-sm font-medium ${mono ? "font-mono text-xs" : ""}`}>{value || "—"}</span>
           )}
-          <Pencil className="h-2.5 w-2.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover/row:opacity-100 transition-opacity" />
+          <Pencil className="h-2.5 w-2.5 text-muted-foreground/50 dark:text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
         </span>
       )}
     </div>
@@ -353,12 +353,12 @@ function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder
 }) {
   const isEditing = editingField === field;
   return (
-    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-gray-800 first:border-t-0">
-      <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
+    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-border first:border-t-0">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/70 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
       {isEditing ? (
         <div className="flex items-center gap-1.5">
           <Select value={value} onValueChange={(v) => { onChange(v); onSave(field, v); }}>
-            <SelectTrigger className="h-7 w-40 text-sm rounded-lg border-gray-200 dark:border-gray-700">
+            <SelectTrigger className="h-7 w-40 text-sm rounded-lg border-border dark:border-border">
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -367,19 +367,19 @@ function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder
               ))}
             </SelectContent>
           </Select>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" /></button>
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" /></button>
         </div>
       ) : (
         <span
-          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "hover:text-sky-700 dark:hover:text-sky-400" : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400"}`}
+          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "hover:text-sky-700 dark:hover:text-sky-400" : "text-muted-foreground/50 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70"}`}
           onClick={() => onEdit(field)}
         >
           {chip && value ? (
             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${chip}`}>{value}</span>
           ) : (
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{value || "—"}</span>
+            <span className="text-sm font-medium text-foreground dark:text-foreground">{value || "—"}</span>
           )}
-          <Pencil className="h-2.5 w-2.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover/row:opacity-100 transition-opacity" />
+          <Pencil className="h-2.5 w-2.5 text-muted-foreground/50 dark:text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity" />
         </span>
       )}
     </div>

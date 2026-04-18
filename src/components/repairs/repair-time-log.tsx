@@ -87,14 +87,14 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
       {/* Summary */}
       <div className="flex items-center gap-6">
         <div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold">Billable</p>
-          <p className="text-lg font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+          <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground uppercase tracking-wider font-semibold">Billable</p>
+          <p className="text-lg font-bold text-foreground dark:text-foreground tabular-nums">
             {formatMinutes(totalRounded)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold">Actual</p>
-          <p className="text-lg font-bold text-gray-500 dark:text-gray-400 tabular-nums">
+          <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground uppercase tracking-wider font-semibold">Actual</p>
+          <p className="text-lg font-bold text-muted-foreground dark:text-muted-foreground/70 tabular-nums">
             {formatMinutes(totalRaw)}
           </p>
         </div>
@@ -117,9 +117,9 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
           {Array.from(byUser.entries()).map(([userId, data]) => (
             <div
               key={userId}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300"
+              className="inline-flex items-center gap-1.5 rounded-full bg-muted dark:bg-gray-800 px-3 py-1 text-xs font-medium text-foreground/90 dark:text-muted-foreground/50"
             >
-              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-400">
+              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70">
                 {data.name.charAt(0).toUpperCase()}
               </span>
               {data.name.split(" ")[0]} · {formatMinutes(data.rounded)}
@@ -134,41 +134,41 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
           {timeEntries.map((entry) => (
             <div
               key={entry.id}
-              className="group flex items-center gap-3 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              className="group flex items-center gap-3 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 dark:hover:bg-gray-800/50 transition-colors"
             >
-              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-bold text-gray-500 dark:text-gray-400 shrink-0">
+              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted dark:bg-gray-800 text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70 shrink-0">
                 {(entry.userName ?? "?").charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <span className="font-medium text-gray-700 dark:text-gray-300">
+                <span className="font-medium text-foreground/90 dark:text-muted-foreground/50">
                   {(entry.userName ?? "Unknown").split(" ")[0]}
                 </span>
-                <span className="text-gray-400 mx-1.5">·</span>
-                <span className="text-gray-500 dark:text-gray-400 tabular-nums">
+                <span className="text-muted-foreground/70 mx-1.5">·</span>
+                <span className="text-muted-foreground dark:text-muted-foreground/70 tabular-nums">
                   {entry.endedAt
                     ? `${formatTime(entry.startedAt)}–${formatTime(entry.endedAt)}`
                     : `${formatTime(entry.startedAt)}–...`}
                 </span>
-                <span className="text-gray-400 mx-1.5">·</span>
-                <span className="text-gray-400 text-xs">{formatDate(entry.startedAt)}</span>
+                <span className="text-muted-foreground/70 mx-1.5">·</span>
+                <span className="text-muted-foreground/70 text-xs">{formatDate(entry.startedAt)}</span>
                 {entry.note && (
-                  <span className="text-gray-400 text-xs ml-2 italic">{entry.note}</span>
+                  <span className="text-muted-foreground/70 text-xs ml-2 italic">{entry.note}</span>
                 )}
               </div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 tabular-nums min-w-[40px] text-right">
+              <span className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground/50 tabular-nums min-w-[40px] text-right">
                 {entry.roundedMinutes ? formatMinutes(entry.roundedMinutes) : "—"}
               </span>
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
                 entry.source === "manual"
                   ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                  : "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70"
               }`}>
                 {entry.source === "manual" ? "manual" : "timer"}
               </span>
               <button
                 onClick={() => handleDelete(entry.id)}
                 disabled={isPending}
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground/70 hover:text-red-500 dark:hover:text-red-400 transition-all"
                 title="Delete"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -180,12 +180,12 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
 
       {/* Add manual entry */}
       {showAdd ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+        <div className="rounded-xl border border-border dark:border-border p-3 space-y-2">
           <div className="grid grid-cols-3 gap-2">
             <select
               value={addUserId}
               onChange={(e) => setAddUserId(e.target.value)}
-              className="col-span-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-2 py-1.5 text-sm"
+              className="col-span-1 rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2 py-1.5 text-sm"
             >
               <option value="">Technician...</option>
               {activeUsers
@@ -202,27 +202,27 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
               onChange={(e) => setAddMinutes(e.target.value)}
               placeholder="Minutes"
               min="1"
-              className="col-span-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-2 py-1.5 text-sm"
+              className="col-span-1 rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2 py-1.5 text-sm"
             />
             <input
               type="text"
               value={addNote}
               onChange={(e) => setAddNote(e.target.value)}
               placeholder="Note (optional)"
-              className="col-span-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-2 py-1.5 text-sm"
+              className="col-span-1 rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2 py-1.5 text-sm"
             />
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAdd(false)}
-              className="flex-1 text-xs font-medium text-gray-500 py-1.5 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              className="flex-1 text-xs font-medium text-muted-foreground py-1.5 hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleAdd}
               disabled={!addUserId || !addMinutes || isPending}
-              className="flex-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg py-1.5 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40"
+              className="flex-1 text-xs font-medium text-white bg-foreground dark:bg-muted dark:text-foreground rounded-lg py-1.5 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40"
             >
               Add
             </button>
@@ -231,7 +231,7 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
       ) : (
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 transition-colors"
         >
           <Plus className="h-3 w-3" /> Add manual entry
         </button>

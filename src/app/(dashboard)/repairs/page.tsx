@@ -67,7 +67,7 @@ export default async function RepairsPage({ searchParams }: Props) {
         metadata={
           <>
             <span>
-              <span className="tabular-nums text-gray-700 dark:text-gray-200">{total}</span> work orders
+              <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{total}</span> work orders
             </span>
             {urgent > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-400">
@@ -103,12 +103,12 @@ export default async function RepairsPage({ searchParams }: Props) {
             <Link key={btn.label} href={isActive ? "/repairs" : href} className="shrink-0 snap-start touch-manipulation">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs transition-all duration-150 cursor-pointer sm:py-1.5 ${
                 isActive
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium shadow-sm"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                  ? "bg-foreground dark:bg-card text-white dark:text-foreground font-medium shadow-sm"
+                  : "text-muted-foreground dark:text-slate-400 hover:text-foreground/90 dark:hover:text-slate-200 hover:bg-muted dark:hover:bg-card/[0.06]"
               }`}>
-                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-white dark:bg-gray-900" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-card dark:bg-foreground" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
                 {btn.label}
-                <span className={`tabular-nums font-medium ${isActive ? "" : "text-gray-700 dark:text-slate-300"}`}>{btn.value}</span>
+                <span className={`tabular-nums font-medium ${isActive ? "" : "text-foreground/90 dark:text-slate-300"}`}>{btn.value}</span>
               </span>
             </Link>
           );

@@ -99,14 +99,14 @@ export function HoldedManualLinkForm({
   const pad = variant === "compact" ? "p-3.5" : "p-4";
   const titleClass =
     variant === "compact"
-      ? "text-[9px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500"
-      : "text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500";
+      ? "text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground"
+      : "text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground";
 
   return (
     <div
       id={id}
       className={cn(
-        "rounded-xl border border-dashed border-gray-200 bg-gray-50/80 dark:border-gray-700 dark:bg-white/[0.03]",
+        "rounded-xl border border-dashed border-border bg-muted/40/80 dark:border-border dark:bg-card/[0.03]",
         pad,
         className,
       )}
@@ -129,7 +129,7 @@ export function HoldedManualLinkForm({
       </div>
       <p
         className={cn(
-          "mt-1 text-gray-500 dark:text-gray-400",
+          "mt-1 text-muted-foreground dark:text-muted-foreground/70",
           variant === "compact" ? "text-[11px] leading-snug" : "text-xs",
         )}
       >

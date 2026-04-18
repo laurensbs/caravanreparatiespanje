@@ -130,12 +130,12 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
           {value.map((part) => (
             <div
               key={part.partId}
-              className="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-muted px-3 py-2 text-sm"
+              className="flex items-center gap-2 rounded-lg bg-muted/40 dark:bg-muted px-3 py-2 text-sm"
             >
-              <span className="flex-1 truncate text-gray-700 dark:text-foreground">
+              <span className="flex-1 truncate text-foreground/90 dark:text-foreground">
                 {part.name}
                 {part.partNumber && (
-                  <span className="ml-1.5 font-mono text-xs text-gray-400">
+                  <span className="ml-1.5 font-mono text-xs text-muted-foreground/70">
                     ({part.partNumber})
                   </span>
                 )}
@@ -143,15 +143,15 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  className="rounded px-1 text-gray-400 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground"
+                  className="rounded px-1 text-muted-foreground/70 hover:text-foreground/90 dark:text-muted-foreground dark:hover:text-foreground"
                   onClick={() => updateQuantity(part.partId, part.quantity - 1)}
                 >
                   −
                 </button>
-                <span className="w-6 text-center text-xs font-medium text-gray-600 dark:text-muted-foreground">{part.quantity}</span>
+                <span className="w-6 text-center text-xs font-medium text-muted-foreground dark:text-muted-foreground">{part.quantity}</span>
                 <button
                   type="button"
-                  className="rounded px-1 text-gray-400 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground"
+                  className="rounded px-1 text-muted-foreground/70 hover:text-foreground/90 dark:text-muted-foreground dark:hover:text-foreground"
                   onClick={() => updateQuantity(part.partId, part.quantity + 1)}
                 >
                   +
@@ -160,7 +160,7 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
               <button
                 type="button"
                 onClick={() => removePart(part.partId)}
-                className="text-gray-300 hover:text-red-400 transition-colors"
+                className="text-muted-foreground/50 hover:text-red-400 transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -171,15 +171,15 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button type="button" variant="outline" size="sm" className="w-full justify-start text-gray-400">
+          <Button type="button" variant="outline" size="sm" className="w-full justify-start text-muted-foreground/70">
             <Plus className="mr-2 h-3.5 w-3.5" />
             Add part from catalog
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-96 p-0" align="start">
-          <div className="p-2.5 border-b border-gray-100 dark:border-border">
+          <div className="p-2.5 border-b border-border/60 dark:border-border">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
               <Input
                 placeholder="Search parts..."
                 className="h-8 pl-8 text-sm"
@@ -198,8 +198,8 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                   className={cn(
                     "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
                     !activeCategory
-                      ? "bg-gray-900 dark:bg-foreground text-white dark:text-background"
-                      : "bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-accent",
+                      ? "bg-foreground dark:bg-foreground text-white dark:text-background"
+                      : "bg-muted/40 dark:bg-muted text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-accent",
                   )}
                 >
                   All
@@ -215,8 +215,8 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                       className={cn(
                         "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
                         isActive
-                          ? "bg-gray-900 dark:bg-foreground text-white dark:text-background"
-                          : "bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-accent",
+                          ? "bg-foreground dark:bg-foreground text-white dark:text-background"
+                          : "bg-muted/40 dark:bg-muted text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-accent",
                       )}
                     >
                       <Icon className="h-3 w-3" />
@@ -230,25 +230,25 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
           <div className="max-h-56 overflow-y-auto">
             {showCreate ? (
               <div className="p-3 space-y-2">
-                <p className="text-sm font-semibold text-gray-900 dark:text-foreground">New part</p>
+                <p className="text-sm font-semibold text-foreground dark:text-foreground">New part</p>
                 <form onSubmit={handleCreatePart} className="space-y-2">
                   <div>
-                    <Label className="text-xs text-gray-500 dark:text-muted-foreground">Name *</Label>
+                    <Label className="text-xs text-muted-foreground dark:text-muted-foreground">Name *</Label>
                     <Input name="name" required defaultValue={search} className="h-8 text-sm mt-0.5" autoFocus />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs text-gray-500 dark:text-muted-foreground">Part number</Label>
+                      <Label className="text-xs text-muted-foreground dark:text-muted-foreground">Part number</Label>
                       <Input name="partNumber" className="h-8 text-sm mt-0.5" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-500 dark:text-muted-foreground">Cost (€)</Label>
+                      <Label className="text-xs text-muted-foreground dark:text-muted-foreground">Cost (€)</Label>
                       <Input name="defaultCost" type="number" step="0.01" className="h-8 text-sm mt-0.5" />
                     </div>
                   </div>
                   {categories.length > 0 && (
                     <div>
-                      <Label className="text-xs text-gray-500 dark:text-muted-foreground">Category</Label>
+                      <Label className="text-xs text-muted-foreground dark:text-muted-foreground">Category</Label>
                       <select
                         name="category"
                         defaultValue={activeCategory ?? ""}
@@ -274,7 +274,7 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-3">
-                <p className="text-center text-xs text-gray-400 mb-2">
+                <p className="text-center text-xs text-muted-foreground/70 mb-2">
                   {catalog.length === 0 ? "No parts in catalog yet" : "No matching parts"}
                 </p>
                 <Button
@@ -297,12 +297,12 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                     <button
                       key={part.id}
                       type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/40 dark:hover:bg-accent transition-colors"
                       onClick={() => addPart(part)}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="truncate font-medium text-gray-900 dark:text-foreground">{part.name}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="truncate font-medium text-foreground dark:text-foreground">{part.name}</p>
+                        <p className="text-xs text-muted-foreground/70">
                           {[
                             part.partNumber,
                             part.defaultCost ? `€${part.defaultCost}` : null,
@@ -313,7 +313,7 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                         </p>
                       </div>
                       {CatIcon && (
-                        <CatIcon className="h-3.5 w-3.5 text-gray-300 shrink-0" />
+                        <CatIcon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                       )}
                     </button>
                   );
@@ -321,7 +321,7 @@ export function PartsPicker({ catalog, categories = [], value, onChange }: Parts
                 <button
                   type="button"
                   onClick={() => setShowCreate(true)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[#0CC0DF] hover:bg-gray-50 dark:hover:bg-accent transition-colors text-left border-t border-gray-100 dark:border-border"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs text-[currentColor] hover:bg-muted/40 dark:hover:bg-accent transition-colors text-left border-t border-border/60 dark:border-border"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   New part...

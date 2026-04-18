@@ -153,15 +153,15 @@ export function Sidebar({ userRole }: SidebarProps) {
           "group relative flex items-center rounded-lg text-[13px] font-medium tracking-[-0.005em] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
           effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2",
           isActive
-            ? "bg-card text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.06),0_1px_0_0_rgba(255,255,255,0.6)_inset] dark:bg-white/[0.06] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] dark:ring-1 dark:ring-white/[0.04]"
-            : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground active:scale-[0.98] dark:hover:bg-white/[0.04]",
+            ? "bg-card text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.06),0_1px_0_0_rgba(255,255,255,0.6)_inset] dark:bg-card/[0.06] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] dark:ring-1 dark:ring-white/[0.04]"
+            : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground active:scale-[0.98] dark:hover:bg-card/[0.04]",
         )}
       >
         {/* Active indicator: subtle vertical bar that slides in. */}
         {isActive && !effectiveCollapsed && (
           <span
             aria-hidden
-            className="absolute left-0 top-1/2 h-4 w-[3px] -translate-x-1.5 -translate-y-1/2 rounded-full bg-foreground/80 dark:bg-white/70"
+            className="absolute left-0 top-1/2 h-4 w-[3px] -translate-x-1.5 -translate-y-1/2 rounded-full bg-foreground/80 dark:bg-card/70"
           />
         )}
         <span

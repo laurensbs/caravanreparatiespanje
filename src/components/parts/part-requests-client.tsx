@@ -86,15 +86,15 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
   if (partReqs.length === 0) {
     return (
       <>
-        <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/10 py-16 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/[0.06]">
-            <Package className="h-5 w-5 text-gray-400 dark:text-white/30" />
+        <div className="rounded-2xl border border-dashed border-border dark:border-white/10 py-16 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted dark:bg-card/[0.06]">
+            <Package className="h-5 w-5 text-muted-foreground/70 dark:text-white/30" />
           </div>
-          <p className="text-sm text-gray-500 dark:text-white/40 mb-4">No part requests yet</p>
+          <p className="text-sm text-muted-foreground dark:text-white/40 mb-4">No part requests yet</p>
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted"
           >
             <Plus className="h-4 w-4" /> Add request
           </button>
@@ -108,7 +108,7 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
     <div className="space-y-5">
       {/* Filter + Add */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="-mx-1 flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1 px-1 dark:bg-white/[0.06] [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-1 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1 px-1 dark:bg-card/[0.06] [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
           {FILTERS.map(f => (
             <button
               type="button"
@@ -117,15 +117,15 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
               className={cn(
                 "shrink-0 touch-manipulation rounded-lg px-3.5 py-2.5 text-[13px] font-medium transition-all sm:py-2",
                 filter === f.key
-                  ? "bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white"
-                  : "text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60"
+                  ? "bg-card dark:bg-card/10 shadow-sm text-foreground dark:text-white"
+                  : "text-muted-foreground dark:text-white/40 hover:text-foreground/90 dark:hover:text-white/60"
               )}
             >
               {f.label}
               {counts[f.key] > 0 && (
                 <span className={cn(
                   "ml-1.5 text-[11px] tabular-nums",
-                  filter === f.key ? "text-gray-400 dark:text-white/40" : "text-gray-400/60 dark:text-white/20"
+                  filter === f.key ? "text-muted-foreground/70 dark:text-white/40" : "text-muted-foreground/70/60 dark:text-white/20"
                 )}>
                   {counts[f.key]}
                 </span>
@@ -136,14 +136,14 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="inline-flex min-h-11 w-full shrink-0 touch-manipulation items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 sm:w-auto sm:py-2.5"
+          className="inline-flex min-h-11 w-full shrink-0 touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted sm:w-auto sm:py-2.5"
         >
           <Plus className="h-4 w-4" /> Add
         </button>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 dark:border-white/10 py-12 text-center text-sm text-gray-500 dark:text-white/30">
+        <div className="rounded-2xl border border-border dark:border-white/10 py-12 text-center text-sm text-muted-foreground dark:text-white/30">
           No {filter === "pending" ? "pending" : filter === "ordered" ? "ordered" : filter === "done" ? "received" : ""} requests
         </div>
       ) : (
@@ -152,7 +152,7 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
             <div
               key={req.id}
               className={cn(
-                "group rounded-xl border border-gray-200 bg-white p-4 transition-all dark:border-white/[0.08] dark:bg-white/[0.02]",
+                "group rounded-xl border border-border bg-card p-4 transition-all dark:border-white/[0.08] dark:bg-card/[0.02]",
                 pending && "opacity-50"
               )}
             >
@@ -184,7 +184,7 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                   ) : null}
                   <div className="flex min-w-0 flex-1 items-center gap-2 sm:hidden">
                     <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_DOT[req.status])} />
-                    <span className="text-xs font-medium text-gray-500 dark:text-white/40">
+                    <span className="text-xs font-medium text-muted-foreground dark:text-white/40">
                       {STATUS_LABEL[req.status] ?? req.status}
                     </span>
                   </div>
@@ -193,11 +193,11 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={cn("font-semibold text-[15px]", req.status === "received" ? "line-through text-gray-400 dark:text-white/30" : "text-gray-900 dark:text-white")}>
+                    <span className={cn("font-semibold text-[15px]", req.status === "received" ? "line-through text-muted-foreground/70 dark:text-white/30" : "text-foreground dark:text-white")}>
                       {req.partName ?? "—"}
                     </span>
                     {req.quantity > 1 && (
-                      <span className="text-xs tabular-nums text-gray-400 dark:text-white/30 font-medium">×{req.quantity}</span>
+                      <span className="text-xs tabular-nums text-muted-foreground/70 dark:text-white/30 font-medium">×{req.quantity}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -209,18 +209,18 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                       <ArrowRight className="h-3 w-3" />
                     </Link>
                     {req.jobTitle && (
-                      <span className="max-w-full truncate text-xs text-gray-400 dark:text-white/25 sm:max-w-[240px]">{req.jobTitle}</span>
+                      <span className="max-w-full truncate text-xs text-muted-foreground/70 dark:text-white/25 sm:max-w-[240px]">{req.jobTitle}</span>
                     )}
                   </div>
                   {req.notes && (
-                    <p className="text-xs text-gray-400 dark:text-white/25 mt-1 leading-relaxed">{req.notes}</p>
+                    <p className="text-xs text-muted-foreground/70 dark:text-white/25 mt-1 leading-relaxed">{req.notes}</p>
                   )}
                 </div>
 
                 {/* Status pill — desktop */}
                 <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
                   <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[req.status])} />
-                  <span className="text-xs font-medium text-gray-500 dark:text-white/40">
+                  <span className="text-xs font-medium text-muted-foreground dark:text-white/40">
                     {STATUS_LABEL[req.status] ?? req.status}
                   </span>
                 </div>
@@ -315,7 +315,7 @@ export function AddRequestDialog({ open, onClose, requestType }: {
               {requestType === "equipment" ? "Add Equipment" : "Add Part Request"}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-500 dark:text-white/40 mt-1">
+          <p className="text-sm text-muted-foreground dark:text-white/40 mt-1">
             {requestType === "equipment"
               ? "Request equipment for a repair job"
               : "Request a part — the repair will be set to waiting"}
@@ -325,64 +325,64 @@ export function AddRequestDialog({ open, onClose, requestType }: {
         <div className="px-6 pb-6 space-y-5">
           {/* Repair picker */}
           <div>
-            <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">
+            <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">
               Repair Job
             </label>
             {selectedRepair ? (
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-border dark:border-white/10 bg-muted/40 dark:bg-card/[0.04] px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
                       {selectedRepair.publicCode}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-white/50 truncate mt-0.5">{selectedRepair.title}</p>
+                  <p className="text-sm text-muted-foreground dark:text-white/50 truncate mt-0.5">{selectedRepair.title}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     {selectedRepair.customerName && (
-                      <span className="text-xs text-gray-400 dark:text-white/30">{selectedRepair.customerName}</span>
+                      <span className="text-xs text-muted-foreground/70 dark:text-white/30">{selectedRepair.customerName}</span>
                     )}
                     {selectedRepair.unitRegistration && (
-                      <span className="text-xs font-mono text-gray-400 dark:text-white/30">{selectedRepair.unitRegistration}</span>
+                      <span className="text-xs font-mono text-muted-foreground/70 dark:text-white/30">{selectedRepair.unitRegistration}</span>
                     )}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedRepair(null)}
-                  className="ml-3 flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white/60 sm:h-8 sm:w-8"
+                  className="ml-3 flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-muted hover:text-muted-foreground dark:hover:bg-card/10 dark:hover:text-white/60 sm:h-8 sm:w-8"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-white/25" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 dark:text-white/25" />
                 <input
                   value={repairQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search by ref, customer, plate..."
-                  className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+                  className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card pl-10 pr-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
                   autoFocus
                 />
                 {searching && (
-                  <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+                  <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 animate-spin" />
                 )}
                 {repairResults.length > 0 && (
-                  <div className="absolute z-10 mt-1.5 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-xl max-h-52 overflow-y-auto">
+                  <div className="absolute z-10 mt-1.5 w-full rounded-xl border border-border dark:border-white/10 bg-card dark:bg-foreground shadow-xl max-h-52 overflow-y-auto">
                     {repairResults.map((r) => (
                       <button
                         type="button"
                         key={r.id}
                         onClick={() => { setSelectedRepair(r); setRepairResults([]); setRepairQuery(""); }}
-                        className="min-h-12 w-full touch-manipulation border-b border-gray-100 px-4 py-3 text-left transition-colors last:border-0 hover:bg-gray-50 dark:border-white/[0.06] dark:hover:bg-white/[0.06]"
+                        className="min-h-12 w-full touch-manipulation border-b border-border/60 px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted/40 dark:border-white/[0.06] dark:hover:bg-card/[0.06]"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{r.publicCode}</span>
-                          <span className="text-sm text-gray-700 dark:text-white/70 truncate">{r.title}</span>
+                          <span className="text-sm text-foreground/90 dark:text-white/70 truncate">{r.title}</span>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          {r.customerName && <span className="text-xs text-gray-400 dark:text-white/30">{r.customerName}</span>}
-                          {r.unitRegistration && <span className="text-xs font-mono text-gray-400 dark:text-white/30">{r.unitRegistration}</span>}
+                          {r.customerName && <span className="text-xs text-muted-foreground/70 dark:text-white/30">{r.customerName}</span>}
+                          {r.unitRegistration && <span className="text-xs font-mono text-muted-foreground/70 dark:text-white/30">{r.unitRegistration}</span>}
                         </div>
                       </button>
                     ))}
@@ -394,14 +394,14 @@ export function AddRequestDialog({ open, onClose, requestType }: {
 
           {/* Part name */}
           <div>
-            <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">
+            <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">
               {requestType === "equipment" ? "Equipment name" : "Part name"}
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={requestType === "equipment" ? "e.g. Heat gun, Rivet tool..." : "e.g. Brake pads, Window seal..."}
-              className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+              className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
             />
           </div>
 
@@ -409,34 +409,34 @@ export function AddRequestDialog({ open, onClose, requestType }: {
           <div className="flex flex-col gap-4 sm:flex-row">
             {requestType === "part" && (
               <div className="w-full sm:w-24">
-                <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">Qty</label>
+                <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">Qty</label>
                 <input
                   type="number"
                   min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm tabular-nums transition-all focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+                  className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm tabular-nums transition-all focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
                 />
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">Notes</label>
+              <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">Notes</label>
               <input
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional details..."
-                className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+                className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col-reverse gap-2 border-t border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-white/[0.06] dark:bg-white/[0.02] sm:flex-row sm:gap-3">
+        <div className="flex flex-col-reverse gap-2 border-t border-border/60 bg-muted/40/50 px-6 py-4 dark:border-white/[0.06] dark:bg-card/[0.02] sm:flex-row sm:gap-3">
           <button
             type="button"
             onClick={handleClose}
-            className="min-h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/60 dark:hover:bg-white/10 sm:min-h-0 sm:flex-1"
+            className="min-h-11 w-full touch-manipulation rounded-xl border border-border bg-card py-3 text-sm font-semibold text-foreground/90 transition-colors hover:bg-muted/40 dark:border-white/10 dark:bg-card/[0.06] dark:text-white/60 dark:hover:bg-card/10 sm:min-h-0 sm:flex-1"
           >
             Cancel
           </button>
@@ -447,8 +447,8 @@ export function AddRequestDialog({ open, onClose, requestType }: {
             className={cn(
               "min-h-11 w-full touch-manipulation rounded-xl py-3 text-sm font-semibold transition-all sm:min-h-0 sm:flex-1",
               isValid && !isPending
-                ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-[0.98]"
-                : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/20 cursor-not-allowed"
+                ? "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-gray-800 dark:hover:bg-muted active:scale-[0.98]"
+                : "bg-gray-200 dark:bg-card/10 text-muted-foreground/70 dark:text-white/20 cursor-not-allowed"
             )}
           >
             {isPending ? (

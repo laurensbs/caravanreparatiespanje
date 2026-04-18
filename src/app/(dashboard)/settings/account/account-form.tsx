@@ -92,8 +92,8 @@ export function AccountForm({ userName, userEmail }: AccountFormProps) {
           </div>
           <div className="space-y-1.5">
             <Label>Username</Label>
-            <Input value={userEmail} disabled className="h-10 rounded-xl bg-gray-50 dark:bg-white/[0.03]" />
-            <p className="text-[11.5px] text-gray-500">Username cannot be changed</p>
+            <Input value={userEmail} disabled className="h-10 rounded-xl bg-muted/40 dark:bg-card/[0.03]" />
+            <p className="text-[11.5px] text-muted-foreground">Username cannot be changed</p>
           </div>
           <Button
             type="submit"

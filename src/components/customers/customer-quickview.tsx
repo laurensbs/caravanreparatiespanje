@@ -94,8 +94,8 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
             <td colSpan={6} className="py-20 text-center">
               <div className="flex flex-col items-center gap-2">
                 <Wrench className="h-8 w-8 text-gray-200" />
-                <p className="text-sm font-medium text-gray-400">No contacts found</p>
-                <p className="text-xs text-gray-400">Try adjusting your search or filters</p>
+                <p className="text-sm font-medium text-muted-foreground/70">No contacts found</p>
+                <p className="text-xs text-muted-foreground/70">Try adjusting your search or filters</p>
               </div>
             </td>
           </tr>
@@ -148,7 +148,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
           <tr>
             <td colSpan={6}>
               <div ref={sentinelRef} className="flex justify-center py-4">
-                {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+                {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70" />}
               </div>
             </td>
           </tr>
@@ -156,7 +156,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
         {!hasMore && allCustomers.length > 0 && (
           <tr>
             <td colSpan={6}>
-              <p className="text-center text-[11px] text-gray-400 py-3">
+              <p className="text-center text-[11px] text-muted-foreground/70 py-3">
                 {allCustomers.length} contact{allCustomers.length !== 1 ? "s" : ""}
               </p>
             </td>
@@ -686,7 +686,7 @@ function UnitRow({ unit, onDeleted }: { unit: any; onDeleted: () => void | Promi
         className={`shrink-0 rounded-md px-1.5 py-1 text-[10px] font-medium transition-all ${
           confirming
             ? "bg-red-50 text-red-700 opacity-100 dark:bg-red-500/10 dark:text-red-400"
-            : "text-gray-400 opacity-0 hover:text-red-600 hover:bg-red-50/60 group-hover/unit:opacity-100 dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-red-500/10"
+            : "text-muted-foreground/70 opacity-0 hover:text-red-600 hover:bg-red-50/60 group-hover/unit:opacity-100 dark:text-muted-foreground dark:hover:text-red-400 dark:hover:bg-red-500/10"
         }`}
         title={confirming ? "Click again to confirm" : "Delete unit"}
       >

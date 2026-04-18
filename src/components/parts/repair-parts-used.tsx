@@ -372,21 +372,21 @@ export function RepairPartsUsed({
         zIndex: 9999,
       }}
     >
-      <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-gray-100 dark:border-gray-700 shadow-xl overflow-hidden max-h-[360px] flex flex-col">
+      <div className="bg-card dark:bg-[#0F172A] rounded-2xl border border-border/60 dark:border-border shadow-xl overflow-hidden max-h-[360px] flex flex-col">
         {/* Loading */}
         {isSearching && results.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-gray-400">
+          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground/70">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">Searching parts…</span>
           </div>
         ) : displayItems.length === 0 && !isSearching && query.length >= 2 ? (
           /* No results */
           <div className="py-6 px-4 text-center">
-            <Package className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <Package className="h-8 w-8 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/70">
               No parts found
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground mt-1">
               Try another name or add as custom part
             </p>
           </div>
@@ -395,7 +395,7 @@ export function RepairPartsUsed({
             {showSuggestionsHeader && (
               <div className="px-4 pt-3 pb-1.5 flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3 text-amber-400" />
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/70 dark:text-muted-foreground">
                   Suggested for this job
                 </span>
               </div>
@@ -419,19 +419,19 @@ export function RepairPartsUsed({
                   key={part.id}
                   type="button"
                   onClick={() => selectPart(part)}
-                  className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-gray-50 dark:border-gray-800/50 last:border-b-0 ${
+                  className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-gray-50 dark:border-border/50 last:border-b-0 ${
                     highlightIndex === i
-                      ? "bg-[#0CC0DF]/5 dark:bg-[#0CC0DF]/10"
-                      : "hover:bg-gray-50 dark:hover:bg-white/[0.04] active:bg-sky-50 dark:active:bg-sky-500/10"
+                      ? "bg-[currentColor]/5 dark:bg-[currentColor]/10"
+                      : "hover:bg-muted/40 dark:hover:bg-card/[0.04] active:bg-sky-50 dark:active:bg-sky-500/10"
                   }`}
                   onMouseEnter={() => setHighlightIndex(i)}
                   style={{ minHeight: 56 }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    <p className="text-sm font-medium text-foreground dark:text-foreground truncate">
                       {part.name}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                    <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground mt-0.5 truncate">
                       {[part.partNumber, part.category, part.supplierName]
                         .filter(Boolean)
                         .join(" · ") || "No details"}
@@ -439,7 +439,7 @@ export function RepairPartsUsed({
                   </div>
                   <div className="text-right shrink-0 flex items-center gap-2.5">
                     {cost !== null && (
-                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400 tabular-nums">
+                      <span className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70 tabular-nums">
                         €{cost.toFixed(2)}
                       </span>
                     )}
@@ -470,26 +470,26 @@ export function RepairPartsUsed({
 
         {/* Custom part actions */}
         {showCustomOption && (
-          <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-2.5 flex items-center gap-3 bg-gray-50/50 dark:bg-white/[0.02]">
+          <div className="border-t border-border/60 dark:border-border/50 px-4 py-2.5 flex items-center gap-3 bg-muted/40/50 dark:bg-card/[0.02]">
             <button
               type="button"
               onClick={addCustomPart}
               disabled={isPending}
               className={`text-xs font-medium disabled:opacity-50 transition-colors ${
                 highlightIndex === results.length
-                  ? "text-[#0CC0DF]"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  ? "text-[currentColor]"
+                  : "text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50"
               }`}
               onMouseEnter={() => setHighlightIndex(results.length)}
             >
               Use &ldquo;{query.trim()}&rdquo; as custom part
             </button>
-            <span className="text-gray-200 dark:text-gray-700 text-xs">·</span>
+            <span className="text-gray-200 dark:text-foreground/90 text-xs">·</span>
             <button
               type="button"
               onClick={addToCatalog}
               disabled={isPending}
-              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium disabled:opacity-50 transition-colors"
+              className="text-xs text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50 font-medium disabled:opacity-50 transition-colors"
             >
               Add to catalog
             </button>
@@ -503,7 +503,7 @@ export function RepairPartsUsed({
     <div className="pt-2">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold">
           Parts
           {totalCount > 0 && (
             <span
@@ -524,7 +524,7 @@ export function RepairPartsUsed({
                 setShowPicker(true);
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
-              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
+              className="text-xs text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/50 font-medium flex items-center gap-0.5 transition-all duration-150"
             >
               <Plus className="h-3 w-3" /> Add
             </button>
@@ -532,7 +532,7 @@ export function RepairPartsUsed({
           {!showPicker && !showNewPart && (
             <button
               onClick={() => setShowNewPart(true)}
-              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium flex items-center gap-0.5 transition-all duration-150"
+              className="text-xs text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/50 font-medium flex items-center gap-0.5 transition-all duration-150"
             >
               <Package className="h-3 w-3" /> New
             </button>
@@ -544,7 +544,7 @@ export function RepairPartsUsed({
       {showPicker && (
         <div className="mb-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -563,11 +563,11 @@ export function RepairPartsUsed({
               placeholder="Search parts (name, number, supplier…)"
               disabled={isPending}
               autoFocus
-              className="w-full h-9 pl-9 pr-9 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600 transition-all duration-150 disabled:opacity-50"
+              className="w-full h-9 pl-9 pr-9 text-xs rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600 transition-all duration-150 disabled:opacity-50"
             />
             {isPending ? (
               <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70" />
               </div>
             ) : query ? (
               <button
@@ -578,7 +578,7 @@ export function RepairPartsUsed({
                   setHighlightIndex(-1);
                   inputRef.current?.focus();
                 }}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -591,7 +591,7 @@ export function RepairPartsUsed({
                   setResults([]);
                   setIsOpen(false);
                 }}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -614,8 +614,8 @@ export function RepairPartsUsed({
                   className={cn(
                     "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
                     isActive
-                      ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
-                      : "bg-gray-50 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                      ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
+                      : "bg-muted/40 text-muted-foreground hover:text-foreground/90 dark:bg-gray-800 dark:text-muted-foreground/70 dark:hover:text-gray-200"
                   )}
                 >
                   <Icon className="h-2.5 w-2.5" />
@@ -644,11 +644,11 @@ export function RepairPartsUsed({
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Category name..."
-                  className="h-6 w-28 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-2 text-[10px] placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
+                  className="h-6 w-28 rounded-md border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-[10px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Escape") { setShowNewCategory(false); setNewCategoryName(""); } }}
                 />
-                <button type="button" onClick={() => { setShowNewCategory(false); setNewCategoryName(""); }} className="ml-0.5 p-0.5 rounded text-gray-400 hover:text-gray-600">
+                <button type="button" onClick={() => { setShowNewCategory(false); setNewCategoryName(""); }} className="ml-0.5 p-0.5 rounded text-muted-foreground/70 hover:text-muted-foreground">
                   <X className="h-3 w-3" />
                 </button>
               </form>
@@ -656,7 +656,7 @@ export function RepairPartsUsed({
               <button
                 type="button"
                 onClick={() => setShowNewCategory(true)}
-                className="inline-flex items-center gap-0.5 h-6 px-2 rounded-md text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-dashed border-gray-200 dark:border-gray-700 transition-all duration-150"
+                className="inline-flex items-center gap-0.5 h-6 px-2 rounded-md text-[10px] font-medium text-muted-foreground/70 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/50 border border-dashed border-border dark:border-border transition-all duration-150"
               >
                 <Plus className="h-2.5 w-2.5" /> Filter
               </button>
@@ -697,21 +697,21 @@ export function RepairPartsUsed({
               value={newPartName}
               onChange={(e) => setNewPartName(e.target.value)}
               placeholder="New part name..."
-              className="flex-1 h-9 px-3 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
+              className="flex-1 h-9 px-3 text-xs rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
               autoFocus
               onKeyDown={(e) => { if (e.key === "Escape") { setShowNewPart(false); setNewPartName(""); setNewPartCategory(null); } }}
             />
             <button
               type="submit"
               disabled={isPending || !newPartName.trim()}
-              className="h-9 px-3 text-xs font-medium rounded-lg bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              className="h-9 px-3 text-xs font-medium rounded-lg bg-foreground text-white dark:bg-muted dark:text-foreground hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
             >
               Create & Add
             </button>
             <button
               type="button"
               onClick={() => { setShowNewPart(false); setNewPartName(""); setNewPartCategory(null); }}
-              className="h-9 px-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="h-9 px-2 text-muted-foreground/70 hover:text-muted-foreground rounded-lg hover:bg-muted/40 dark:hover:bg-gray-800 transition-colors"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -719,7 +719,7 @@ export function RepairPartsUsed({
 
           {/* Category pills for new part */}
           <div className="flex flex-wrap items-center gap-1">
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 mr-0.5">Category:</span>
+            <span className="text-[10px] text-muted-foreground/70 dark:text-muted-foreground mr-0.5">Category:</span>
             {partCategories.filter(c => c.active).map((cat) => {
               const Icon = ICON_MAP[cat.icon] ?? Package;
               const isActive = newPartCategory === cat.key;
@@ -731,8 +731,8 @@ export function RepairPartsUsed({
                   className={cn(
                     "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
                     isActive
-                      ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
-                      : "bg-gray-50 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                      ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
+                      : "bg-muted/40 text-muted-foreground hover:text-foreground/90 dark:bg-gray-800 dark:text-muted-foreground/70 dark:hover:text-gray-200"
                   )}
                 >
                   <Icon className="h-2.5 w-2.5" />
@@ -747,7 +747,7 @@ export function RepairPartsUsed({
                   value={newPartCategoryName}
                   onChange={(e) => setNewPartCategoryName(e.target.value)}
                   placeholder="Category name..."
-                  className="h-6 w-28 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-2 text-[10px] placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
+                  className="h-6 w-28 rounded-md border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-[10px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
                   autoFocus
                   onKeyDown={async (e) => {
                     if (e.key === "Escape") { setShowNewPartCategory(false); setNewPartCategoryName(""); }
@@ -766,7 +766,7 @@ export function RepairPartsUsed({
                     }
                   }}
                 />
-                <button type="button" onClick={() => { setShowNewPartCategory(false); setNewPartCategoryName(""); }} className="ml-0.5 p-0.5 rounded text-gray-400 hover:text-gray-600">
+                <button type="button" onClick={() => { setShowNewPartCategory(false); setNewPartCategoryName(""); }} className="ml-0.5 p-0.5 rounded text-muted-foreground/70 hover:text-muted-foreground">
                   <X className="h-3 w-3" />
                 </button>
               </span>
@@ -774,7 +774,7 @@ export function RepairPartsUsed({
               <button
                 type="button"
                 onClick={() => setShowNewPartCategory(true)}
-                className="inline-flex items-center gap-0.5 h-6 px-2 rounded-md text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-dashed border-gray-200 dark:border-gray-700 transition-all duration-150"
+                className="inline-flex items-center gap-0.5 h-6 px-2 rounded-md text-[10px] font-medium text-muted-foreground/70 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/50 border border-dashed border-border dark:border-border transition-all duration-150"
               >
                 <Plus className="h-2.5 w-2.5" /> New
               </button>
@@ -832,8 +832,8 @@ function PartRequestCard({
     <div
       className={`rounded-xl border transition-all duration-150 ${
         pr.status === "cancelled"
-          ? "border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.01] opacity-60"
-          : "border-gray-100 dark:border-gray-800 bg-white dark:bg-white/[0.03] hover:border-gray-200 dark:hover:border-gray-700"
+          ? "border-border/60 dark:border-border bg-muted/40/50 dark:bg-card/[0.01] opacity-60"
+          : "border-border/60 dark:border-border bg-card dark:bg-card/[0.03] hover:border-border dark:hover:border-border"
       }`}
     >
       <div className="px-3.5 py-3">
@@ -841,17 +841,17 @@ function PartRequestCard({
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+              <p className="text-sm font-medium text-foreground dark:text-foreground truncate">
                 {pr.partName}
               </p>
               {isCustom && (
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 shrink-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted dark:bg-gray-700 text-muted-foreground dark:text-muted-foreground/70 shrink-0">
                   Custom
                 </span>
               )}
             </div>
             {(pr.partNumber || pr.category || pr.supplierName) && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
+              <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground truncate mt-0.5">
                 {[pr.partNumber, pr.category, pr.supplierName]
                   .filter(Boolean)
                   .join(" · ")}
@@ -869,23 +869,23 @@ function PartRequestCard({
         {/* Bottom row: quantity + pricing + remove */}
         <div className="flex items-center justify-between gap-2">
           {/* Quantity stepper */}
-          <div className="flex items-center gap-0 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="flex items-center gap-0 rounded-lg border border-border dark:border-border overflow-hidden">
             <button
               type="button"
               onClick={() => onQuantityChange(pr.id, -1)}
               disabled={isPending || pr.quantity <= 1}
-              className="h-7 w-7 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted dark:hover:bg-card/10 disabled:opacity-30 transition-colors"
             >
               <Minus className="h-3 w-3" />
             </button>
-            <span className="h-7 w-8 flex items-center justify-center text-xs font-semibold text-gray-700 dark:text-gray-300 tabular-nums bg-gray-50 dark:bg-white/5 border-x border-gray-200 dark:border-gray-700">
+            <span className="h-7 w-8 flex items-center justify-center text-xs font-semibold text-foreground/90 dark:text-muted-foreground/50 tabular-nums bg-muted/40 dark:bg-card/5 border-x border-border dark:border-border">
               {pr.quantity}
             </span>
             <button
               type="button"
               onClick={() => onQuantityChange(pr.id, 1)}
               disabled={isPending}
-              className="h-7 w-7 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted dark:hover:bg-card/10 disabled:opacity-30 transition-colors"
             >
               <Plus className="h-3 w-3" />
             </button>
@@ -894,22 +894,22 @@ function PartRequestCard({
           {/* Pricing */}
           <div className="flex items-center gap-3 text-xs tabular-nums">
             {unitCost !== null && (
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground dark:text-muted-foreground/70">
                 €{unitCost.toFixed(2)}
                 {pr.quantity > 1 && (
-                  <span className="text-gray-400 dark:text-gray-500 ml-1">
+                  <span className="text-muted-foreground/70 dark:text-muted-foreground ml-1">
                     × {pr.quantity}
                   </span>
                 )}
               </span>
             )}
             {lineSell !== null && (
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
+              <span className="font-semibold text-foreground/90 dark:text-muted-foreground/50">
                 €{lineSell.toFixed(2)}
               </span>
             )}
             {lineTotal !== null && lineSell === null && (
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
+              <span className="font-semibold text-foreground/90 dark:text-muted-foreground/50">
                 €{lineTotal.toFixed(2)}
               </span>
             )}
@@ -920,7 +920,7 @@ function PartRequestCard({
             type="button"
             onClick={() => onRemove(pr.id)}
             disabled={isPending}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-30 transition-all"
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground/70 dark:text-muted-foreground hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-30 transition-all"
             title="Remove"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -948,7 +948,7 @@ const PART_STATUS_COLORS: Record<string, { pill: string; accent: string }> = {
   ordered: { pill: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400", accent: "text-blue-500" },
   shipped: { pill: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400", accent: "text-indigo-500" },
   received: { pill: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400", accent: "text-emerald-500" },
-  cancelled: { pill: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500", accent: "text-gray-400" },
+  cancelled: { pill: "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground", accent: "text-muted-foreground/70" },
 };
 
 function PartStatusPicker({
@@ -991,7 +991,7 @@ function PartStatusPicker({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 w-40 rounded-xl bg-white dark:bg-[#1A1F2E] border border-gray-100 dark:border-gray-700 shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 z-50 w-40 rounded-xl bg-card dark:bg-[#1A1F2E] border border-border/60 dark:border-border shadow-lg overflow-hidden">
           {PART_STATUSES.map((s) => {
             const isActive = s.value === value;
             return (
@@ -1005,8 +1005,8 @@ function PartStatusPicker({
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors",
                   isActive
-                    ? "bg-gray-50 dark:bg-white/5 font-medium text-gray-900 dark:text-gray-100"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                    ? "bg-muted/40 dark:bg-card/5 font-medium text-foreground dark:text-foreground"
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-card/5"
                 )}
               >
                 <span className="w-4 text-center">{s.icon}</span>

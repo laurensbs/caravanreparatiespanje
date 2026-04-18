@@ -47,7 +47,7 @@ const METHOD_COLORS: Record<string, string> = {
   email: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   in_person: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
   sms: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
-  other: "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
+  other: "bg-muted/40 text-muted-foreground dark:bg-muted/400/10 dark:text-muted-foreground/70",
 };
 
 interface CommunicationLog {
@@ -111,7 +111,7 @@ export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props
           if (open) setContactedAt(toLocalDatetime(new Date()));
         }}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="rounded-xl text-xs h-8 border-gray-200 dark:border-gray-700">
+            <Button variant="outline" size="sm" className="rounded-xl text-xs h-8 border-border dark:border-border">
               <Plus className="mr-1 h-3.5 w-3.5" />
               Log Contact
             </Button>
@@ -228,16 +228,16 @@ export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props
       </div>
 
       {logs.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-8 text-center">
-          <MessageSquare className="mx-auto mb-2 h-5 w-5 text-gray-300 dark:text-gray-600" />
-          <p className="text-xs text-gray-400 dark:text-gray-500">No customer communication logged yet</p>
+        <div className="rounded-xl border border-dashed border-border dark:border-border py-8 text-center">
+          <MessageSquare className="mx-auto mb-2 h-5 w-5 text-muted-foreground/50 dark:text-muted-foreground" />
+          <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground">No customer communication logged yet</p>
         </div>
       ) : (
         <div className="space-y-2">
           {logs.map((log) => (
             <div
               key={log.id}
-              className="flex gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3 text-sm"
+              className="flex gap-3 rounded-xl border border-border/60 dark:border-border bg-muted/40/50 dark:bg-foreground/30 p-3 text-sm"
             >
               <div className="shrink-0 mt-0.5">
                 <Badge

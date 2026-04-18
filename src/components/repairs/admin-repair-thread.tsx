@@ -86,15 +86,15 @@ export function AdminRepairThread({
   const hiddenCount = Math.max(0, messages.length - visible.length);
 
   return (
-    <section className="rounded-xl bg-gray-50/80 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-4">
+    <section className="rounded-xl bg-muted/40/80 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
       <header className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-          <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-semibold">
+          <MessageSquare className="h-3.5 w-3.5 text-muted-foreground dark:text-muted-foreground/70" />
+          <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold">
             Conversation with garage
           </p>
           {messages.length > 0 ? (
-            <span className="rounded-full bg-gray-100 dark:bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+            <span className="rounded-full bg-muted dark:bg-card/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground/70">
               {messages.length}
             </span>
           ) : null}
@@ -103,7 +103,7 @@ export function AdminRepairThread({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-200"
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:text-muted-foreground/70 dark:hover:bg-card/[0.05] dark:hover:text-gray-200"
           >
             {expanded ? (
               <>
@@ -119,11 +119,11 @@ export function AdminRepairThread({
       </header>
 
       {loading ? (
-        <p className="py-3 text-center text-xs text-gray-400 dark:text-gray-500">
+        <p className="py-3 text-center text-xs text-muted-foreground/70 dark:text-muted-foreground">
           Loading…
         </p>
       ) : visible.length === 0 ? (
-        <p className="py-3 text-center text-xs text-gray-400 dark:text-gray-500">
+        <p className="py-3 text-center text-xs text-muted-foreground/70 dark:text-muted-foreground">
           No messages yet — send the garage a quick note below.
         </p>
       ) : (
@@ -140,7 +140,7 @@ export function AdminRepairThread({
             return (
               <li key={msg.id}>
                 {showDay ? (
-                  <p className="my-2 text-center text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <p className="my-2 text-center text-[10px] uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">
                     {dayLabel(msg.createdAt)}
                   </p>
                 ) : null}
@@ -178,13 +178,13 @@ export function AdminRepairThread({
           }}
           rows={2}
           placeholder="Reply to garage… (⌘/Ctrl + Enter to send)"
-          className="flex-1 min-w-0 resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.04] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300/70 dark:focus:ring-gray-600"
+          className="flex-1 min-w-0 resize-none rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gray-300/70 dark:focus:ring-gray-600"
         />
         <button
           type="button"
           disabled={!draft.trim() || isPosting}
           onClick={() => void handleSend()}
-          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-100 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border dark:border-gray-600 bg-card dark:bg-card/[0.04] px-4 py-2.5 text-sm font-medium text-foreground dark:text-foreground transition-colors hover:bg-muted dark:hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send className="h-3.5 w-3.5 opacity-70" />
           Send

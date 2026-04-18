@@ -41,7 +41,7 @@ const ROLE_PILL: Record<User["role"], string> = {
   manager: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   technician: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
   staff: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-  viewer: "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400",
+  viewer: "bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70",
 };
 
 export function UsersClient({ users }: { users: User[] }) {
@@ -108,7 +108,7 @@ export function UsersClient({ users }: { users: User[] }) {
 
       {users.length > 0 ? (
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -145,9 +145,9 @@ export function UsersClient({ users }: { users: User[] }) {
           />
         )
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+        <div className="overflow-hidden rounded-xl border border-border/60 dark:border-border">
           <table className="w-full text-left text-[13px]">
-            <thead className="bg-gray-50/60 text-[10.5px] font-semibold uppercase tracking-wider text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
+            <thead className="bg-muted/40/60 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground dark:bg-card/[0.03] dark:text-muted-foreground/70">
               <tr>
                 <th className="px-4 py-2.5">Name</th>
                 <th className="hidden px-4 py-2.5 sm:table-cell">Email</th>
@@ -156,11 +156,11 @@ export function UsersClient({ users }: { users: User[] }) {
                 <th className="w-12 px-4 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-border/60 dark:divide-border/60">
               {filtered.map((user, idx) => (
                 <tr
                   key={user.id}
-                  className="motion-safe:animate-slide-up transition-colors hover:bg-gray-50/60 dark:hover:bg-white/[0.03]"
+                  className="motion-safe:animate-slide-up transition-colors hover:bg-muted/40/60 dark:hover:bg-card/[0.03]"
                   style={{ animationDelay: `${idx * 18}ms`, animationFillMode: "backwards" }}
                 >
                   <td className="px-4 py-2.5">
@@ -169,16 +169,16 @@ export function UsersClient({ users }: { users: User[] }) {
                         {user.name?.charAt(0)?.toUpperCase() ?? "?"}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-gray-900 dark:text-gray-100">
+                        <p className="truncate font-medium text-foreground dark:text-foreground">
                           {user.name}
                         </p>
-                        <p className="truncate text-[11.5px] text-gray-500 sm:hidden dark:text-gray-400">
+                        <p className="truncate text-[11.5px] text-muted-foreground sm:hidden dark:text-muted-foreground/70">
                           {user.email}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="hidden px-4 py-2.5 text-[12.5px] text-gray-500 sm:table-cell dark:text-gray-400">
+                  <td className="hidden px-4 py-2.5 text-[12.5px] text-muted-foreground sm:table-cell dark:text-muted-foreground/70">
                     {user.email}
                   </td>
                   <td className="px-4 py-2.5">
@@ -197,7 +197,7 @@ export function UsersClient({ users }: { users: User[] }) {
                         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
                         user.active
                           ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
-                          : "bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400",
+                          : "bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70",
                       )}
                     >
                       <span
@@ -213,7 +213,7 @@ export function UsersClient({ users }: { users: User[] }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 rounded-full px-3 text-[11.5px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                      className="h-8 rounded-full px-3 text-[11.5px] text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
                       onClick={() => toggleActive(user)}
                     >
                       {user.active ? "Deactivate" : "Activate"}

@@ -109,7 +109,7 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
               <div
                 key={tag.id}
                 className={cn(
-                  "group flex items-center gap-2 rounded-full border border-gray-100 bg-white px-3 py-1.5 text-[12.5px] shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all motion-safe:animate-slide-up dark:border-gray-800 dark:bg-white/[0.03]",
+                  "group flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-[12.5px] shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all motion-safe:animate-slide-up dark:border-border dark:bg-card/[0.03]",
                   isPending && "border-red-300 bg-red-50/80 dark:border-red-700/60 dark:bg-red-500/10",
                 )}
                 style={{ animationDelay: `${idx * 25}ms`, animationFillMode: "backwards" }}
@@ -120,12 +120,12 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
                     style={{ backgroundColor: tag.color }}
                   />
                 )}
-                <span className="font-medium text-gray-800 dark:text-gray-100">{tag.name}</span>
+                <span className="font-medium text-foreground dark:text-foreground">{tag.name}</span>
                 <button
                   type="button"
                   onClick={() => handleDelete(tag.id)}
                   className={cn(
-                    "ml-0.5 flex h-5 w-5 items-center justify-center rounded-full text-gray-400 transition-colors",
+                    "ml-0.5 flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/70 transition-colors",
                     "hover:bg-red-500/10 hover:text-red-600 dark:hover:bg-red-500/20",
                     isPending && "bg-red-500/15 text-red-600",
                   )}
@@ -166,7 +166,7 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
                     className={cn(
                       "h-8 w-8 rounded-full border transition-all motion-safe:active:scale-90",
                       color === c
-                        ? "scale-110 border-gray-900 ring-2 ring-gray-900/10 dark:border-gray-100 dark:ring-white/10"
+                        ? "scale-110 border-gray-900 ring-2 ring-gray-900/10 dark:border-border/60 dark:ring-white/10"
                         : "border-transparent hover:scale-105",
                     )}
                     style={{ backgroundColor: c }}

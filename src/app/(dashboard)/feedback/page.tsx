@@ -31,7 +31,7 @@ export default async function FeedbackPage() {
           </>
         }
       />
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03] max-sm:rounded-xl">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-sm dark:border-border dark:bg-card/[0.03] max-sm:rounded-xl">
         <FeedbackClient
           items={items}
           currentUserId={session.user.id!}

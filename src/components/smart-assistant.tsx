@@ -80,7 +80,7 @@ const CATEGORY_CONFIG: Record<FaqCategory, { label: string; icon: React.ReactNod
   "getting-started": {
     label: "Getting Started",
     icon: <Zap className="h-3.5 w-3.5" />,
-    color: "text-[#0CC0DF]",
+    color: "text-[currentColor]",
   },
   "work-orders": {
     label: "Work Orders",
@@ -1713,13 +1713,13 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-white/80 hover:text-white hover:bg-white/10 shrink-0"
+                    className="h-6 w-6 text-white/80 hover:text-white hover:bg-card/10 shrink-0"
                     onClick={() => setSelectedCategory(null)}
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/15">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-card/15">
                     <Sparkles className="h-3.5 w-3.5 text-white" />
                   </div>
                 )}
@@ -1745,7 +1745,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10"
+                    className="h-6 w-6 text-white/50 hover:text-white hover:bg-card/10"
                     onClick={handleReset}
                     title="New conversation"
                   >
@@ -1755,7 +1755,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10"
+                  className="h-6 w-6 text-white/50 hover:text-white hover:bg-card/10"
                   onClick={() => setOpen(false)}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -1765,14 +1765,14 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
 
             {/* Tab strip */}
             {!selectedCategory && (
-              <div className="mt-3 flex items-center gap-1 rounded-lg bg-white/[0.08] p-0.5">
+              <div className="mt-3 flex items-center gap-1 rounded-lg bg-card/[0.08] p-0.5">
                 <button
                   type="button"
                   onClick={() => setTab("inbox")}
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all",
                     tab === "inbox"
-                      ? "bg-white text-gray-900 shadow-sm"
+                      ? "bg-card text-foreground shadow-sm"
                       : "text-white/75 hover:text-white",
                   )}
                 >
@@ -1783,8 +1783,8 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                       className={cn(
                         "ml-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums",
                         tab === "inbox"
-                          ? overdueInboxCount > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"
-                          : overdueInboxCount > 0 ? "bg-red-500/90 text-white" : "bg-white/20 text-white",
+                          ? overdueInboxCount > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-foreground/90"
+                          : overdueInboxCount > 0 ? "bg-red-500/90 text-white" : "bg-card/20 text-white",
                       )}
                     >
                       {inboxTotalCount > 9 ? "9+" : inboxTotalCount}
@@ -1797,7 +1797,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all",
                     tab === "assistant"
-                      ? "bg-white text-gray-900 shadow-sm"
+                      ? "bg-card text-foreground shadow-sm"
                       : "text-white/75 hover:text-white",
                   )}
                 >
@@ -1831,10 +1831,10 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                     key={faq.id}
                     type="button"
                     onClick={() => handleCategoryFaqClick(faq)}
-                    className="w-full text-left rounded-xl px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-accent transition-colors flex items-start gap-2.5 group"
+                    className="w-full text-left rounded-xl px-3 py-2.5 hover:bg-muted/40 dark:hover:bg-accent transition-colors flex items-start gap-2.5 group"
                   >
-                    <HelpCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-gray-300 dark:text-muted-foreground/40" />
-                    <span className="text-[12px] font-medium leading-snug text-gray-600 dark:text-muted-foreground group-hover:text-gray-900 dark:group-hover:text-foreground transition-colors">
+                    <HelpCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground/50 dark:text-muted-foreground/40" />
+                    <span className="text-[12px] font-medium leading-snug text-muted-foreground dark:text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground transition-colors">
                       {faq.question}
                     </span>
                     <ChevronRight className="h-3 w-3 mt-1 shrink-0 text-gray-200 dark:text-muted-foreground/30 ml-auto" />
@@ -1895,7 +1895,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
 
                 {pageQuickActions.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
+                    <p className="text-[10px] font-semibold text-muted-foreground/70 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
                       Quick actions
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -1904,7 +1904,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                           key={qa.id}
                           type="button"
                           onClick={() => handleQuickActionClick(qa)}
-                          className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full border border-gray-100 dark:border-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-accent hover:border-gray-200 transition-all text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
+                          className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full border border-border/60 dark:border-border bg-card dark:bg-card hover:bg-muted/40 dark:hover:bg-accent hover:border-border transition-all text-muted-foreground dark:text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground"
                         >
                           {qa.icon}
                           {qa.label}
@@ -1915,7 +1915,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                 )}
 
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1 flex flex-wrap items-center gap-x-1.5 gap-y-0">
+                  <p className="text-[10px] font-semibold text-muted-foreground/70 dark:text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1 flex flex-wrap items-center gap-x-1.5 gap-y-0">
                     <span>Browse by topic</span>
                     {relevantCategories.length > 0 && (
                       <span className="normal-case font-medium text-primary/80">· suggested first</span>
@@ -1962,17 +1962,17 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                     ) : (
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-muted shrink-0 mt-0.5">
-                            <Bot className="h-3 w-3 text-gray-400 dark:text-muted-foreground" />
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted dark:bg-muted shrink-0 mt-0.5">
+                            <Bot className="h-3 w-3 text-muted-foreground/70 dark:text-muted-foreground" />
                           </div>
-                          <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-gray-50 dark:bg-muted/60 text-[12px] leading-relaxed text-gray-600 dark:text-muted-foreground">
+                          <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-muted/40 dark:bg-muted/60 text-[12px] leading-relaxed text-muted-foreground dark:text-muted-foreground">
                             <RenderMarkdown text={msg.content} />
 
                             {msg.action && (msg.action.type === "navigate" || msg.action.type === "navigate-filter") && (
                               <button
                                 type="button"
                                 onClick={() => executeAction(msg.action!)}
-                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[#0CC0DF] hover:underline"
+                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[currentColor] hover:underline"
                               >
                                 <ArrowUpRight className="h-3 w-3" />
                                 Go
@@ -1982,7 +1982,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                             {msg.quickAction && !msg.action && (
                               <Link
                                 href={msg.quickAction.href}
-                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[#0CC0DF] hover:underline"
+                                className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] font-medium text-[currentColor] hover:underline"
                               >
                                 <ExternalLink className="h-3 w-3" />
                                 {msg.quickAction.label}
@@ -2002,7 +2002,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                                   key={faq.id}
                                   type="button"
                                   onClick={() => handleRelatedClick(faq.id)}
-                                  className="text-[10px] px-2 py-1 rounded-full border border-gray-100 dark:border-border text-gray-500 dark:text-muted-foreground hover:text-[#0CC0DF] hover:border-[#0CC0DF]/30 transition-all max-w-[180px] truncate"
+                                  className="text-[10px] px-2 py-1 rounded-full border border-border/60 dark:border-border text-muted-foreground dark:text-muted-foreground hover:text-[currentColor] hover:border-[currentColor]/30 transition-all max-w-[180px] truncate"
                                 >
                                   {faq.question.length > 35
                                     ? faq.question.slice(0, 35) + "..."
@@ -2018,10 +2018,10 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
 
                 {isTyping && (
                   <div className="flex items-start gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-muted shrink-0 mt-0.5">
-                      <Bot className="h-3 w-3 text-gray-400 dark:text-muted-foreground" />
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted dark:bg-muted shrink-0 mt-0.5">
+                      <Bot className="h-3 w-3 text-muted-foreground/70 dark:text-muted-foreground" />
                     </div>
-                    <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-gray-50 dark:bg-muted/60">
+                    <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-muted/40 dark:bg-muted/60">
                       <div className="flex gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -2036,7 +2036,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
 
           {/* Input area */}
           {!selectedCategory && tab === "assistant" && (
-            <form onSubmit={handleSubmit} className="border-t border-gray-100 dark:border-border bg-white dark:bg-card shrink-0">
+            <form onSubmit={handleSubmit} className="border-t border-border/60 dark:border-border bg-card dark:bg-card shrink-0">
               {/* Live suggestion chips */}
               {inputSuggestions.length > 0 && (
                 <div className="px-3 pt-2 flex flex-wrap gap-1">
@@ -2045,7 +2045,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                       key={qa.id}
                       type="button"
                       onClick={() => handleSuggestionClick(qa)}
-                      className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-[#0CC0DF]/20 bg-[#0CC0DF]/5 text-[#0CC0DF] hover:bg-[#0CC0DF]/10 transition-all"
+                      className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-[currentColor]/20 bg-[currentColor]/5 text-[currentColor] hover:bg-[currentColor]/10 transition-all"
                     >
                       {qa.icon}
                       {qa.label}

@@ -24,7 +24,7 @@ export default function BoardLoading() {
         {columns.map((c, col) => (
           <div
             key={c}
-            className="min-w-[260px] flex-1 rounded-2xl border border-gray-100 bg-gray-50/40 p-3 dark:border-gray-800 dark:bg-white/[0.02]"
+            className="min-w-[260px] flex-1 rounded-2xl border border-border/60 bg-muted/40/40 p-3 dark:border-border dark:bg-card/[0.02]"
             style={{ animationDelay: `${col * 60}ms` }}
           >
             <div className="mb-3 flex items-center justify-between">
@@ -35,7 +35,7 @@ export default function BoardLoading() {
               {Array.from({ length: 3 + (col % 3) }).map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-gray-100 bg-white p-3 opacity-0 animate-fade-in dark:border-gray-800 dark:bg-white/[0.03]"
+                  className="rounded-xl border border-border/60 bg-card p-3 opacity-0 animate-fade-in dark:border-border dark:bg-card/[0.03]"
                   style={{
                     animationDelay: `${col * 60 + i * 40}ms`,
                     animationFillMode: "forwards",

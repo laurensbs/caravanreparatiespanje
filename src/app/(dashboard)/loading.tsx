@@ -9,7 +9,7 @@ export default function DashboardLoading() {
         <Skeleton className="h-3.5 w-64 opacity-70" />
       </div>
 
-      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-gray-100 shadow-sm dark:border-gray-800 sm:grid-cols-4">
+      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-border/60 shadow-sm dark:border-border sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
@@ -17,7 +17,7 @@ export default function DashboardLoading() {
               i > 0 ? "sm:border-l" : ""
             } ${i >= 2 ? "border-t sm:border-t-0" : ""} ${
               i === 1 ? "border-l" : ""
-            } border-gray-100 dark:border-gray-800`}
+            } border-border/60 dark:border-border`}
             style={{ animationDelay: `${i * 40}ms`, animationFillMode: "forwards" }}
           >
             <Skeleton className="h-2.5 w-20 rounded-full" />
@@ -30,7 +30,7 @@ export default function DashboardLoading() {
         {Array.from({ length: 2 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] opacity-0 animate-fade-in"
+            className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm dark:border-border dark:bg-card/[0.03] opacity-0 animate-fade-in"
             style={{ animationDelay: `${i * 80}ms`, animationFillMode: "forwards" }}
           >
             <Skeleton className="mb-4 h-4 w-32" />
@@ -48,7 +48,7 @@ export default function DashboardLoading() {
       </div>
 
       <div
-        className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] opacity-0 animate-fade-in"
+        className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm dark:border-border dark:bg-card/[0.03] opacity-0 animate-fade-in"
         style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
       >
         <Skeleton className="mb-4 h-4 w-40" />

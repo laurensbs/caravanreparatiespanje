@@ -299,18 +299,18 @@ export function PipelineSummary({ repairs, className }: PipelineSummaryProps) {
       {/* Thin progress bar */}
       <div className="h-2 rounded-full bg-gray-200 dark:bg-muted overflow-hidden">
         <div
-          className="h-full rounded-full bg-[#0CC0DF] transition-all duration-500"
+          className="h-full rounded-full bg-[currentColor] transition-all duration-500"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
 
       {/* Summary text */}
-      <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500 dark:text-muted-foreground">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground dark:text-muted-foreground">
         {PIPELINE_SEGMENTS.map((s) => (
           <Link
             key={s.key}
             href={s.href}
-            className="transition-colors hover:text-gray-900 dark:hover:text-foreground"
+            className="transition-colors hover:text-foreground dark:hover:text-foreground"
           >
             {counts[s.key]} {s.label}
           </Link>

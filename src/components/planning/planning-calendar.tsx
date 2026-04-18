@@ -249,13 +249,13 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 <span className="tabular-nums">{formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}</span>
                 {totalCount > 0 ? (
                   <span>
-                    <span className="tabular-nums text-gray-700 dark:text-gray-200">{totalCount}</span> scheduled
+                    <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{totalCount}</span> scheduled
                   </span>
                 ) : (
-                  <span className="text-gray-400 dark:text-gray-500">empty week</span>
+                  <span className="text-muted-foreground/70 dark:text-muted-foreground">empty week</span>
                 )}
                 {isPending ? (
-                  <span className="animate-pulse text-gray-400 dark:text-gray-500">{t.searching}</span>
+                  <span className="animate-pulse text-muted-foreground/70 dark:text-muted-foreground">{t.searching}</span>
                 ) : null}
               </>
             }
@@ -263,12 +263,12 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
           />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="inline-flex items-center gap-0 rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="inline-flex items-center gap-0 rounded-xl border border-border/60 bg-card shadow-sm dark:border-border dark:bg-card/[0.03]">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 rounded-l-xl rounded-r-none text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                className="h-10 w-10 shrink-0 rounded-l-xl rounded-r-none text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
                 onClick={() => navigateWeek(-1)}
                 aria-label={ariaPrevWeek}
               >
@@ -277,16 +277,16 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
               <button
                 type="button"
                 onClick={goToThisWeek}
-                className="group/today inline-flex h-10 items-center gap-1.5 border-x border-gray-100 dark:border-gray-800 px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.04] dark:hover:text-gray-100 touch-manipulation"
+                className="group/today inline-flex h-10 items-center gap-1.5 border-x border-border/60 dark:border-border px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground dark:text-muted-foreground/50 dark:hover:bg-card/[0.04] dark:hover:text-gray-100 touch-manipulation"
               >
-                <CalendarDays className="h-3.5 w-3.5 text-gray-400 transition-transform group-hover/today:scale-110 dark:text-gray-500" aria-hidden />
+                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground/70 transition-transform group-hover/today:scale-110 dark:text-muted-foreground" aria-hidden />
                 {t.thisWeek}
               </button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 rounded-r-xl rounded-l-none text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                className="h-10 w-10 shrink-0 rounded-r-xl rounded-l-none text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
                 onClick={() => navigateWeek(1)}
                 aria-label={ariaNextWeek}
               >
@@ -296,7 +296,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
               <Select value={filterUser} onValueChange={setFilterUser}>
-                <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-gray-100 bg-white text-sm shadow-sm touch-manipulation dark:border-gray-800 dark:bg-white/[0.03]">
+                <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">
                   <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
                   <SelectValue />
                 </SelectTrigger>
@@ -311,7 +311,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
               </Select>
 
               <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
-                <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-gray-100 bg-white text-sm shadow-sm touch-manipulation dark:border-gray-800 dark:bg-white/[0.03]">
+                <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">
                   <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
                   <SelectValue />
                 </SelectTrigger>
@@ -326,7 +326,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-10 w-full gap-2 rounded-xl border-gray-100 bg-white text-sm shadow-sm touch-manipulation min-[400px]:w-auto dark:border-gray-800 dark:bg-white/[0.03]"
+                className="h-10 w-full gap-2 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation min-[400px]:w-auto dark:border-border dark:bg-card/[0.03]"
                 onClick={() => window.print()}
               >
                 <Printer className="h-4 w-4 shrink-0" />
@@ -335,20 +335,20 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
               <Link
                 href="/repairs"
-                className="hidden sm:inline-flex h-10 items-center rounded-xl px-3 text-[13px] font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                className="hidden sm:inline-flex h-10 items-center rounded-xl px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
               >
                 {t.browseWorkOrders} →
               </Link>
             </div>
           </div>
 
-          <p className="hidden text-xs text-gray-500 md:block dark:text-gray-400">{t.dragHint}</p>
+          <p className="hidden text-xs text-muted-foreground md:block dark:text-muted-foreground/70">{t.dragHint}</p>
         </div>
 
       {/* Print header */}
       <div className="hidden print:block">
         <h1 className="text-2xl font-bold text-center mb-1">{t.planning}</h1>
-        <p className="text-center text-sm text-gray-600 mb-4">
+        <p className="text-center text-sm text-muted-foreground mb-4">
           {formatWeekRange(new Date(weekStart), new Date(weekEnd), lang)}
           {filterUser !== "all" && ` — ${staff.find(u => u.id === filterUser)?.name}`}
         </p>
@@ -357,10 +357,10 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
       {/* Location legend */}
       {locationLegend.length > 0 && (
         <div className={cn(dashboardPanelClass, "px-4 py-3 print:hidden")}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">
             {t.location}
           </p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground dark:text-muted-foreground/70">
             {locationLegend.map((l) => (
               <span key={l.id} className="flex items-center gap-1.5">
                 <span className={`h-2.5 w-2.5 rounded-full ${l.dot}`} />
@@ -400,21 +400,21 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 <div
                   className={cn(
                     "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-gray-300",
-                    !isEmpty && "border-b border-gray-100 dark:border-gray-800",
+                    !isEmpty && "border-b border-border/60 dark:border-border",
                     isToday
                       ? "bg-sky-50/40 dark:bg-sky-500/[0.06]"
                       : isEmpty
                         ? "bg-transparent"
-                        : "bg-gray-50/50 dark:bg-white/[0.02]",
+                        : "bg-muted/40/50 dark:bg-card/[0.02]",
                   )}
                 >
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">
                       {t.days[dayIdx]}
                     </span>
                     <span
                       className={cn(
-                        "text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100",
+                        "text-sm font-semibold tabular-nums text-foreground dark:text-foreground",
                       )}
                     >
                       {day.getDate()} {t.months[day.getMonth()]}
@@ -427,12 +427,12 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                     {dayRepairs.length > 0 ? (
                       <Badge
                         variant="secondary"
-                        className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-gray-800 dark:text-gray-200"
+                        className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-gray-800 dark:text-foreground/90"
                       >
                         {dayRepairs.length}
                       </Badge>
                     ) : (
-                      <span className="text-[12px] text-gray-400 dark:text-gray-500">
+                      <span className="text-[12px] text-muted-foreground/70 dark:text-muted-foreground">
                         {t.noRepairsScheduled}
                       </span>
                     )}
@@ -442,7 +442,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 touch-manipulation print:hidden dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100",
+                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground touch-manipulation print:hidden dark:text-muted-foreground/70 dark:hover:bg-card/[0.06] dark:hover:text-gray-100",
                       isEmpty && "opacity-60 group-hover/day:opacity-100",
                     )}
                     onClick={() => openAddDialog(dayIdx)}
@@ -454,7 +454,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
                 {/* Repairs */}
                 {!isEmpty && (
-                  <div className="divide-y divide-gray-100 print:divide-gray-200 dark:divide-gray-800">
+                  <div className="divide-y divide-border/60 print:divide-border dark:divide-border/60">
                     {dayRepairs.map((r) => (
                       <RepairRow
                         key={r.id}
@@ -543,7 +543,7 @@ function RepairRow({
       ref={setNodeRef}
       className={cn(
         "group relative flex min-h-[3.25rem] items-start gap-3 px-4 py-3.5 transition-all duration-150 print:min-h-0 print:py-2",
-        "hover:bg-gray-50/90 dark:hover:bg-white/[0.04]",
+        "hover:bg-muted/40/90 dark:hover:bg-card/[0.04]",
         isDragging && "opacity-40",
       )}
     >
@@ -578,11 +578,11 @@ function RepairRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <span className="truncate text-sm font-semibold text-foreground dark:text-foreground">
             {repair.title ?? repair.publicCode ?? "—"}
           </span>
           {repair.publicCode && (
-            <span className="hidden shrink-0 font-mono text-[10px] text-gray-400 tabular-nums sm:inline dark:text-gray-500">
+            <span className="hidden shrink-0 font-mono text-[10px] text-muted-foreground/70 tabular-nums sm:inline dark:text-muted-foreground">
               #{repair.publicCode}
             </span>
           )}
@@ -592,7 +592,7 @@ function RepairRow({
         </div>
 
         {/* Meta: customer, unit, location */}
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 print:text-gray-600 dark:text-gray-400">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground print:text-muted-foreground dark:text-muted-foreground/70">
           {repair.customerName && (
             <span className="flex items-center gap-1">
               <User className="h-3 w-3 print:hidden" />
@@ -622,14 +622,14 @@ function RepairRow({
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1 print:hidden">
               {repair.descriptionRaw}
             </p>
-            <p className="hidden print:block text-xs text-gray-700 mt-1 whitespace-pre-line">
+            <p className="hidden print:block text-xs text-foreground/90 mt-1 whitespace-pre-line">
               {repair.descriptionRaw}
             </p>
           </>
         )}
 
         {/* Print-only extra info */}
-        <div className="hidden print:flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+        <div className="hidden print:flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
           {repair.locationName && <span>📍 {repair.locationName}</span>}
           {repair.assignedUserName && <span>👤 {repair.assignedUserName}</span>}
           {repair.estimatedHours && <span>⏱ {repair.estimatedHours}h</span>}
@@ -655,7 +655,7 @@ function RepairDragPreview({
     time.getMinutes(),
   ).padStart(2, "0")}`;
   return (
-    <div className="pointer-events-none inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] shadow-xl dark:border-gray-700 dark:bg-gray-900">
+    <div className="pointer-events-none inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-[13px] shadow-xl dark:border-border dark:bg-foreground">
       <span className={`h-2 w-2 rounded-full ${locDot}`} />
       <span className="font-mono text-xs text-muted-foreground">{timeStr}</span>
       <span className="max-w-[12rem] truncate font-semibold">

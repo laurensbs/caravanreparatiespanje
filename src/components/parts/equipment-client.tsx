@@ -37,16 +37,16 @@ function EquipmentRequestForm({
   onSubmit: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-5 space-y-4">
+    <div className="rounded-2xl border border-border dark:border-white/10 bg-card dark:bg-card/[0.02] p-5 space-y-4">
       <div>
-        <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">
+        <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">
           What do you need?
         </label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Heat gun, Rivet tool, Sealant..."
-          className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+          className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
           autoFocus
           onKeyDown={(e) => {
             if (e.key === "Enter" && name.trim()) onSubmit();
@@ -55,14 +55,14 @@ function EquipmentRequestForm({
         />
       </div>
       <div>
-        <label className="text-[13px] font-semibold text-gray-700 dark:text-white/60 mb-2 block">
+        <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">
           Notes
         </label>
         <input
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Optional details..."
-          className="h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white px-4 text-sm transition-all placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+          className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
           onKeyDown={(e) => {
             if (e.key === "Enter" && name.trim()) onSubmit();
             if (e.key === "Escape") onCancel();
@@ -73,7 +73,7 @@ function EquipmentRequestForm({
         <button
           type="button"
           onClick={onCancel}
-          className="min-h-11 w-full touch-manipulation rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:bg-white/10 sm:min-h-0 sm:flex-1 sm:py-2.5"
+          className="min-h-11 w-full touch-manipulation rounded-xl border border-border bg-card py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/40 dark:border-white/10 dark:bg-card/[0.06] dark:text-white/50 dark:hover:bg-card/10 sm:min-h-0 sm:flex-1 sm:py-2.5"
         >
           Cancel
         </button>
@@ -84,8 +84,8 @@ function EquipmentRequestForm({
           className={cn(
             "min-h-11 w-full touch-manipulation rounded-xl py-3 text-sm font-semibold transition-all sm:min-h-0 sm:flex-1 sm:py-2.5",
             name.trim() && !pending
-              ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-[0.98]"
-              : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/20 cursor-not-allowed"
+              ? "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-gray-800 dark:hover:bg-muted active:scale-[0.98]"
+              : "bg-gray-200 dark:bg-card/10 text-muted-foreground/70 dark:text-white/20 cursor-not-allowed"
           )}
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Add"}
@@ -158,15 +158,15 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
     }
 
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/10 py-16 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/[0.06]">
-          <Wrench className="h-5 w-5 text-gray-400 dark:text-white/30" />
+      <div className="rounded-2xl border border-dashed border-border dark:border-white/10 py-16 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted dark:bg-card/[0.06]">
+          <Wrench className="h-5 w-5 text-muted-foreground/70 dark:text-white/30" />
         </div>
-        <p className="text-sm text-gray-500 dark:text-white/40 mb-4">No equipment requests yet</p>
+        <p className="text-sm text-muted-foreground dark:text-white/40 mb-4">No equipment requests yet</p>
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+          className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted"
         >
           <Plus className="h-4 w-4" /> Add request
         </button>
@@ -191,7 +191,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 sm:w-auto sm:py-2.5"
+            className="inline-flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted sm:w-auto sm:py-2.5"
           >
             <Plus className="h-4 w-4" /> Add
           </button>
@@ -204,7 +204,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
             <div
               key={req.id}
               className={cn(
-                "group flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-all dark:border-white/[0.08] dark:bg-white/[0.02] sm:flex-row sm:items-start sm:gap-3",
+                "group flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-all dark:border-white/[0.08] dark:bg-card/[0.02] sm:flex-row sm:items-start sm:gap-3",
                 pending && "opacity-50"
               )}
             >
@@ -224,15 +224,15 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
                       req.status === "ordered" ? "bg-blue-400" : req.status === "shipped" ? "bg-violet-400" : "bg-amber-400"
                     )}
                   />
-                  <span className="text-xs font-medium capitalize text-gray-400 dark:text-white/30">{req.status}</span>
+                  <span className="text-xs font-medium capitalize text-muted-foreground/70 dark:text-white/30">{req.status}</span>
                 </div>
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[15px] font-semibold text-gray-900 dark:text-white">
+                <span className="text-[15px] font-semibold text-foreground dark:text-white">
                   {req.partName ?? "—"}
                 </span>
                 {req.notes && (
-                  <p className="mt-0.5 text-xs leading-relaxed text-gray-400 dark:text-white/25">{req.notes}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/70 dark:text-white/25">{req.notes}</p>
                 )}
                 {req.jobRef && <p className="mt-0.5 text-xs text-blue-500 dark:text-blue-400">{req.jobRef}</p>}
               </div>
@@ -243,7 +243,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
                     req.status === "ordered" ? "bg-blue-400" : req.status === "shipped" ? "bg-violet-400" : "bg-amber-400"
                   )}
                 />
-                <span className="text-xs font-medium capitalize text-gray-400 dark:text-white/30">{req.status}</span>
+                <span className="text-xs font-medium capitalize text-muted-foreground/70 dark:text-white/30">{req.status}</span>
               </div>
             </div>
           ))}
@@ -252,18 +252,18 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
 
       {done.length > 0 && (
         <div className="space-y-1">
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/20">
+          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 dark:text-white/20">
             Received ({done.length})
           </p>
           {done.map((req) => (
             <div
               key={req.id}
-              className="flex min-h-11 items-center gap-3 rounded-xl bg-gray-50 p-3 transition-all dark:bg-white/[0.02]"
+              className="flex min-h-11 items-center gap-3 rounded-xl bg-muted/40 p-3 transition-all dark:bg-card/[0.02]"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/15 sm:h-6 sm:w-6">
                 <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 sm:h-3.5 sm:w-3.5" />
               </div>
-              <span className="text-sm text-gray-400 line-through dark:text-white/30">{req.partName ?? "—"}</span>
+              <span className="text-sm text-muted-foreground/70 line-through dark:text-white/30">{req.partName ?? "—"}</span>
             </div>
           ))}
         </div>

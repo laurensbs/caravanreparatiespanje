@@ -22,7 +22,7 @@ export function DashboardPageCanvas({
         "animate-fade-in min-h-[calc(100dvh-3.25rem)] bg-background px-3 py-4 sm:px-4 sm:py-5",
         "max-lg:mx-0 max-lg:px-3",
         "-mx-3 md:-mx-4 md:px-4",
-        "print:mx-0 print:min-h-0 print:bg-white print:px-0 print:py-0",
+        "print:mx-0 print:min-h-0 print:bg-card print:px-0 print:py-0",
         className,
       )}
       style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}

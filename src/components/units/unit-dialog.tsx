@@ -308,7 +308,7 @@ export function UnitDialog({ unit, open, onOpenChange, allTags = [] }: UnitDialo
                   className={`h-8 gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition-all ${
                     confirmDelete
                       ? "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
-                      : "text-gray-400 hover:text-red-600 hover:bg-red-50/60 dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-red-500/10"
+                      : "text-muted-foreground/70 hover:text-red-600 hover:bg-red-50/60 dark:text-muted-foreground dark:hover:text-red-400 dark:hover:bg-red-500/10"
                   }`}
                 >
                   {confirmDelete ? (

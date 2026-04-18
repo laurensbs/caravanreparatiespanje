@@ -78,7 +78,7 @@ const statusConfig = {
     label: "Dismissed",
     icon: XCircle,
     variant: "outline" as const,
-    className: "bg-gray-50 text-gray-500 dark:bg-gray-500/10 dark:text-gray-400",
+    className: "bg-muted/40 text-muted-foreground dark:bg-muted/400/10 dark:text-muted-foreground/70",
   },
 };
 

@@ -19,7 +19,7 @@ export function SettingsPanel({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]",
+        "rounded-2xl border border-border/60 bg-card shadow-sm dark:border-border dark:bg-card/[0.03]",
         padded && "p-4 sm:p-5",
         className,
       )}
@@ -51,16 +51,16 @@ export function SettingsSectionHeader({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {Icon ? (
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
               <Icon className="h-3.5 w-3.5" />
             </span>
           ) : null}
-          <h2 className="text-[15px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground dark:text-foreground">
             {title}
           </h2>
         </div>
         {description ? (
-          <p className="mt-1 text-[12.5px] leading-relaxed text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground dark:text-muted-foreground/70">
             {description}
           </p>
         ) : null}
@@ -89,17 +89,17 @@ export function SettingsEmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 px-6 py-14 text-center dark:border-gray-800 dark:bg-white/[0.02]",
+        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/40/40 px-6 py-14 text-center dark:border-border dark:bg-card/[0.02]",
         className,
       )}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-white/[0.06] dark:text-gray-500">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground/70 dark:bg-card/[0.06] dark:text-muted-foreground">
         <Icon className="h-5 w-5" />
       </div>
       <div className="space-y-1">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</p>
+        <p className="text-sm font-medium text-foreground dark:text-foreground">{title}</p>
         {description ? (
-          <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground/70">{description}</p>
         ) : null}
       </div>
       {action ? <div className="pt-1">{action}</div> : null}
@@ -130,9 +130,9 @@ export function SettingsTile({
         animationFillMode: "backwards",
       }}
       className={cn(
-        "group relative flex w-full flex-col gap-1 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all duration-200",
-        "hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-md active:scale-[0.99]",
-        "dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-700",
+        "group relative flex w-full flex-col gap-1 rounded-2xl border border-border/60 bg-card p-4 text-left shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all duration-200",
+        "hover:-translate-y-0.5 hover:border-border hover:shadow-md active:scale-[0.99]",
+        "dark:border-border dark:bg-card/[0.03] dark:hover:border-border",
         "motion-safe:animate-slide-up",
         className,
       )}

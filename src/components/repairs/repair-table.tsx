@@ -193,7 +193,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       return { type: "warranty", label: "Warranty", color: "text-purple-600 dark:text-purple-400" };
     }
     if (job.invoiceStatus === "no_damage") {
-      return { type: "no-damage", label: "No Damage", color: "text-gray-400 dark:text-slate-500" };
+      return { type: "no-damage", label: "No Damage", color: "text-muted-foreground/70 dark:text-slate-500" };
     }
     if (job.invoiceStatus === "paid") {
       return { type: "paid", label: "Paid", color: "text-emerald-600 dark:text-emerald-400" };
@@ -235,8 +235,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   };
 
   const STATUS_PILL: Record<string, string> = {
-    new: "bg-gray-100 text-gray-600 dark:bg-slate-700/60 dark:text-slate-200",
-    todo: "bg-gray-100 text-gray-600 dark:bg-slate-700/60 dark:text-slate-200",
+    new: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-slate-200",
+    todo: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-slate-200",
     in_inspection: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
     no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
@@ -249,7 +249,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
     completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-    archived: "bg-gray-100 text-gray-400 dark:bg-slate-700/40 dark:text-slate-400",
+    archived: "bg-muted text-muted-foreground/70 dark:bg-slate-700/40 dark:text-slate-400",
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
@@ -274,7 +274,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {/* Column headers */}
-      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-slate-500 select-none">
+      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-slate-500 select-none">
         <div className="w-8 shrink-0" />
         <div className="flex-[2] min-w-0 cursor-pointer" onClick={() => handleSort("title")}>
           <span className="inline-flex items-center">Title<SortIcon column="title" /></span>
@@ -299,10 +299,10 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       {/* Repair rows — cards on small screens, table-style row from md */}
       <div className="space-y-2 md:space-y-0">
         {allJobs.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-20 text-gray-400 dark:text-slate-500">
+          <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground/70 dark:text-slate-500">
             <ArrowUpDown className="h-8 w-8 opacity-20" />
-            <p className="font-medium text-sm text-gray-500 dark:text-slate-400">No repair jobs found</p>
-            <p className="text-xs text-gray-400 dark:text-slate-500">Try adjusting your filters</p>
+            <p className="font-medium text-sm text-muted-foreground dark:text-slate-400">No repair jobs found</p>
+            <p className="text-xs text-muted-foreground/70 dark:text-slate-500">Try adjusting your filters</p>
           </div>
         ) : (
           allJobs.map((job, idx) => {
@@ -317,7 +317,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
             const titleBlock = (
               <>
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-[15px] font-medium text-gray-900 transition-colors group-hover:text-[#0CC0DF] dark:text-slate-100">
+                  <p className="truncate text-[15px] font-medium text-foreground transition-colors group-hover:text-[currentColor] dark:text-slate-100">
                     {job.title || "Unnamed repair"}
                   </p>
                   {job.jobType && job.jobType !== "repair" && (
@@ -330,11 +330,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 </div>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   {job.publicCode && (
-                    <span className="font-mono text-[11px] text-gray-400 dark:text-slate-500">{job.publicCode}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground/70 dark:text-slate-500">{job.publicCode}</span>
                   )}
-                  {job.publicCode && job.descriptionRaw && <span className="text-gray-300 dark:text-slate-600">·</span>}
+                  {job.publicCode && job.descriptionRaw && <span className="text-muted-foreground/50 dark:text-slate-600">·</span>}
                   {job.descriptionRaw && (
-                    <span className="truncate text-[11px] text-gray-400 dark:text-slate-500">{job.descriptionRaw.slice(0, 60)}</span>
+                    <span className="truncate text-[11px] text-muted-foreground/70 dark:text-slate-500">{job.descriptionRaw.slice(0, 60)}</span>
                   )}
                 </div>
                 {job.tags.length > 0 && (
@@ -357,7 +357,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <>
                 {(() => {
                   const doc = getDocumentInfo(job);
-                  if (!doc) return <span className="block truncate text-[11px] text-gray-300 dark:text-slate-600">—</span>;
+                  if (!doc) return <span className="block truncate text-[11px] text-muted-foreground/50 dark:text-slate-600">—</span>;
                   if (!doc.pdfUrl) {
                     return <span className={`block truncate text-[11px] font-medium ${doc.color}`}>{doc.label}</span>;
                   }
@@ -376,7 +376,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                           href={doc.holdedUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 text-gray-400 opacity-100 transition-opacity hover:text-gray-600 group-hover/doc:opacity-100 dark:hover:text-gray-300 md:opacity-0 md:group-hover/doc:opacity-100"
+                          className="shrink-0 text-muted-foreground/70 opacity-100 transition-opacity hover:text-muted-foreground group-hover/doc:opacity-100 dark:hover:text-muted-foreground/50 md:opacity-0 md:group-hover/doc:opacity-100"
                           title="Open in Holded"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -393,7 +393,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <TableStatusPicker
                 value={job.status}
                 onChange={(val) => quickStatusChange(job.id, val)}
-                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-gray-100 dark:bg-slate-700/60 text-gray-600 dark:text-slate-200"}
+                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-slate-700/60 text-muted-foreground dark:text-slate-200"}
                 accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}
               />
             );
@@ -402,7 +402,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <Fragment key={job.id}>
                 {/* Phone / small tablet: card */}
                 <div
-                  className={`group relative touch-manipulation rounded-xl border border-gray-100/90 bg-white/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-white/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-sky-200 dark:ring-sky-500/25" : ""} animate-slide-up`}
+                  className={`group relative touch-manipulation rounded-xl border border-border/60/90 bg-card/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-card/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-sky-200 dark:ring-sky-500/25" : ""} animate-slide-up`}
                   style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                   role="button"
                   tabIndex={0}
@@ -438,37 +438,37 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                           status={job.status}
                         />
                       )}
-                      <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 dark:border-white/[0.06]">
+                      <div className="grid grid-cols-2 gap-3 border-t border-border/60 pt-3 dark:border-white/[0.06]">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Contact</p>
-                          <p className="mt-1 truncate text-sm font-medium text-gray-800 dark:text-slate-200">
-                            {job.customerName ?? <span className="text-gray-400">—</span>}
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Contact</p>
+                          <p className="mt-1 truncate text-sm font-medium text-foreground dark:text-slate-200">
+                            {job.customerName ?? <span className="text-muted-foreground/70">—</span>}
                           </p>
                           {job.locationName && (
                             <div className="mt-0.5 flex items-center gap-1.5">
                               <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
-                              <span className="truncate text-[11px] text-gray-500 dark:text-slate-400">{job.locationName}</span>
+                              <span className="truncate text-[11px] text-muted-foreground dark:text-slate-400">{job.locationName}</span>
                             </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Document</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Document</p>
                           <div className="mt-1">{documentCell}</div>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Planned</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Planned</p>
                           <div className="mt-1">
                             {job.dueDate ? (
-                              <SmartDate date={job.dueDate} className="text-xs text-gray-600 dark:text-slate-300" />
+                              <SmartDate date={job.dueDate} className="text-xs text-muted-foreground dark:text-slate-300" />
                             ) : (
-                              <span className="text-[11px] text-gray-400 dark:text-slate-600">—</span>
+                              <span className="text-[11px] text-muted-foreground/70 dark:text-slate-600">—</span>
                             )}
                           </div>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">Updated</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Updated</p>
                           <div className="mt-1">
-                            <SmartDate date={job.updatedAt} className="text-[11px] text-gray-500 dark:text-slate-400" />
+                            <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground dark:text-slate-400" />
                           </div>
                         </div>
                       </div>
@@ -478,7 +478,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Desktop: wide row */}
                 <div
-                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-gray-100/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-gray-50 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-white/[0.03] md:flex ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100 dark:bg-sky-500/[0.06] dark:ring-sky-500/20" : ""} animate-slide-up`}
+                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-border/60/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-muted/40 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-card/[0.03] md:flex ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100 dark:bg-sky-500/[0.06] dark:ring-sky-500/20" : ""} animate-slide-up`}
                   style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                   onClick={goToJob}
                 >
@@ -507,13 +507,13 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   </div>
 
                   <div className="hidden min-w-0 flex-1 md:block">
-                    <span className="block truncate text-sm text-gray-800 dark:text-slate-200">
-                      {job.customerName ?? <span className="text-gray-300 dark:text-slate-600">—</span>}
+                    <span className="block truncate text-sm text-foreground dark:text-slate-200">
+                      {job.customerName ?? <span className="text-muted-foreground/50 dark:text-slate-600">—</span>}
                     </span>
                     {job.locationName && (
                       <div className="mt-0.5 flex items-center gap-1.5">
                         <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
-                        <span className="truncate text-[11px] text-gray-400 dark:text-slate-400">{job.locationName}</span>
+                        <span className="truncate text-[11px] text-muted-foreground/70 dark:text-slate-400">{job.locationName}</span>
                       </div>
                     )}
                   </div>
@@ -524,14 +524,14 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                   <div className="hidden w-24 shrink-0 md:block">
                     {job.dueDate ? (
-                      <SmartDate date={job.dueDate} className="text-xs text-gray-500 dark:text-slate-300" />
+                      <SmartDate date={job.dueDate} className="text-xs text-muted-foreground dark:text-slate-300" />
                     ) : (
-                      <span className="text-[11px] text-gray-300 dark:text-slate-600">—</span>
+                      <span className="text-[11px] text-muted-foreground/50 dark:text-slate-600">—</span>
                     )}
                   </div>
 
                   <div className="hidden w-20 shrink-0 text-right md:block">
-                    <SmartDate date={job.updatedAt} className="text-[11px] text-gray-400 dark:text-slate-400" />
+                    <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/70 dark:text-slate-400" />
                   </div>
                 </div>
               </Fragment>
@@ -543,12 +543,12 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       {/* Infinite scroll sentinel */}
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-6">
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70" />}
         </div>
       )}
 
       {!hasMore && allJobs.length > 0 && (
-        <p className="text-center text-[11px] text-gray-400 dark:text-slate-500 py-4">
+        <p className="text-center text-[11px] text-muted-foreground/70 dark:text-slate-500 py-4">
           {allJobs.length} repair{allJobs.length !== 1 ? "s" : ""}
         </p>
       )}
@@ -590,10 +590,10 @@ function TableStatusPicker({ value, onChange, pillClass, accentClass }: { value:
         </span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 max-h-[min(360px,70dvh)] min-w-[180px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900 md:left-0 md:right-auto">
+        <div className="absolute right-0 top-full z-50 mt-1 max-h-[min(360px,70dvh)] min-w-[180px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-lg dark:border-border dark:bg-foreground md:left-0 md:right-auto">
           {TABLE_STATUS_GROUPS.map((group) => (
             <div key={group.label} className="mb-0.5 last:mb-0">
-              <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-3 pt-2 pb-0.5">{group.label}</p>
+              <p className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground/50 dark:text-muted-foreground px-3 pt-2 pb-0.5">{group.label}</p>
               {group.items.map((val) => {
                 const active = value === val;
                 return (
@@ -603,8 +603,8 @@ function TableStatusPicker({ value, onChange, pillClass, accentClass }: { value:
                     onClick={() => { if (val !== value) onChange(val); setOpen(false); }}
                     className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       active
-                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
+                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50"
                     }`}
                   >
                     {STATUS_LABELS[val as RepairStatus]}

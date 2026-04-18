@@ -16,7 +16,7 @@ export default function PlanningLoading() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-sm dark:border-border dark:bg-card/[0.03]">
         <Skeleton className="mb-2 h-2.5 w-20 rounded-full" />
         <div className="flex flex-wrap gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -29,10 +29,10 @@ export default function PlanningLoading() {
         {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
-            className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm opacity-0 animate-fade-in dark:border-gray-800 dark:bg-white/[0.03]"
+            className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm opacity-0 animate-fade-in dark:border-border dark:bg-card/[0.03]"
             style={{ animationDelay: `${i * 50}ms`, animationFillMode: "forwards" }}
           >
-            <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
+            <div className="flex items-center justify-between border-b border-border/60 bg-muted/40/50 px-4 py-3 dark:border-border dark:bg-card/[0.02]">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-16" />
             </div>

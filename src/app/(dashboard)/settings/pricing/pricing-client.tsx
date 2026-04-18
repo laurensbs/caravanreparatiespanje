@@ -60,11 +60,11 @@ export function PricingSettingsClient({
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label className="text-[12px] font-medium uppercase tracking-wider text-gray-500">
+            <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
               Hourly rate · excl. VAT
             </Label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/70">
                 €
               </span>
               <Input
@@ -78,12 +78,12 @@ export function PricingSettingsClient({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[12px] font-medium uppercase tracking-wider text-gray-500">
+            <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
               Incl. VAT · {tax}%
             </Label>
-            <div className="flex h-10 items-center justify-between rounded-xl border border-gray-100 bg-gray-50/60 px-3 text-[14px] font-semibold tabular-nums text-gray-700 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200">
+            <div className="flex h-10 items-center justify-between rounded-xl border border-border/60 bg-muted/40/60 px-3 text-[14px] font-semibold tabular-nums text-foreground/90 dark:border-border dark:bg-card/[0.03] dark:text-foreground/90">
               <span>€{rateInclVat.toFixed(2)}</span>
-              <span className="text-[10.5px] font-medium uppercase tracking-wider text-gray-400">
+              <span className="text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 auto
               </span>
             </div>
@@ -98,7 +98,7 @@ export function PricingSettingsClient({
           description="Default markup % on parts. Can be overridden per part."
         />
         <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium uppercase tracking-wider text-gray-500">
+          <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
             Markup %
           </Label>
           <div className="relative max-w-xs">
@@ -110,13 +110,13 @@ export function PricingSettingsClient({
               onChange={(e) => setDefaultMarkup(e.target.value)}
               className="h-10 rounded-xl pr-8 text-[14px] tabular-nums"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/70">
               %
             </span>
           </div>
-          <p className="text-[12px] text-gray-500 dark:text-gray-400">
+          <p className="text-[12px] text-muted-foreground dark:text-muted-foreground/70">
             A part costing €100 sells at{" "}
-            <span className="font-medium tabular-nums text-gray-800 dark:text-gray-100">
+            <span className="font-medium tabular-nums text-foreground dark:text-foreground">
               €{(100 * (1 + markup / 100)).toFixed(2)}
             </span>
           </p>
@@ -130,7 +130,7 @@ export function PricingSettingsClient({
           description="Default tax rate applied to invoice line items pushed to Holded."
         />
         <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium uppercase tracking-wider text-gray-500">
+          <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
             Tax %
           </Label>
           <div className="relative max-w-xs">
@@ -142,7 +142,7 @@ export function PricingSettingsClient({
               onChange={(e) => setDefaultTax(e.target.value)}
               className="h-10 rounded-xl pr-8 text-[14px] tabular-nums"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/70">
               %
             </span>
           </div>
@@ -151,10 +151,10 @@ export function PricingSettingsClient({
 
       <SettingsPanel className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+          <p className="text-[14px] font-semibold tracking-tight text-foreground dark:text-foreground">
             {dirty ? "You have unsaved changes" : "All set"}
           </p>
-          <p className="text-[12.5px] text-gray-500 dark:text-gray-400">
+          <p className="text-[12.5px] text-muted-foreground dark:text-muted-foreground/70">
             {dirty
               ? "Save to apply the new rate, markup and VAT everywhere."
               : "Your pricing defaults are up to date."}

@@ -97,7 +97,7 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
             )}
           </span>
           {totalLoggedMinutes > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 dark:text-gray-500">
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground/70 dark:text-muted-foreground">
               <Clock className="h-3 w-3" />
               {formatMinutes(totalLoggedMinutes)}
             </span>
@@ -144,7 +144,7 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
                   });
                 }}
                 disabled={isPending}
-                className="text-xs px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+                className="text-xs px-2.5 py-1 rounded-lg border border-border dark:border-border text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted dark:hover:bg-gray-800 font-medium transition-colors"
               >
                 + {d.title}
               </button>
@@ -160,7 +160,7 @@ export function RepairTaskList({ repairJobId, initialTasks, totalLoggedMinutes =
             <div key={task.id}>
               <div
                 className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs group ${
-                  task.status === "problem" ? "bg-red-50/60 dark:bg-red-950/20" : "bg-white/60 dark:bg-white/5"
+                  task.status === "problem" ? "bg-red-50/60 dark:bg-red-950/20" : "bg-card/60 dark:bg-card/5"
                 } ${task.status === "done" ? "opacity-50" : ""} border border-border/40`}
               >
                 <span className="text-[11px] shrink-0">

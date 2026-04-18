@@ -49,26 +49,26 @@ export function BusinessesTableClient({ suppliers }: { suppliers: Supplier[] }) 
           <td colSpan={6} className="py-20 text-center">
             <div className="flex flex-col items-center gap-2">
               <Building2 className="h-8 w-8 text-gray-200" />
-              <p className="text-sm font-medium text-gray-400">No businesses found</p>
-              <p className="text-xs text-gray-400">Businesses are synced from Holded</p>
+              <p className="text-sm font-medium text-muted-foreground/70">No businesses found</p>
+              <p className="text-xs text-muted-foreground/70">Businesses are synced from Holded</p>
             </div>
           </td>
         </tr>
       ) : (
         visible.map((s) => (
-          <tr key={s.id} className="group hover:bg-gray-50 dark:hover:bg-accent transition-colors duration-150">
+          <tr key={s.id} className="group hover:bg-muted/40 dark:hover:bg-accent transition-colors duration-150">
             <td className="px-5 py-3.5">
-              <span className="text-sm font-medium text-gray-900">{s.name}</span>
+              <span className="text-sm font-medium text-foreground">{s.name}</span>
             </td>
-            <td className="px-5 py-3.5 text-sm text-gray-500">{s.contactName || <span className="text-gray-300">—</span>}</td>
-            <td className="px-5 py-3.5 text-sm text-gray-500">{s.phone || <span className="text-gray-300">—</span>}</td>
-            <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">{s.email || <span className="text-gray-300">—</span>}</td>
-            <td className="px-5 py-3.5 text-sm text-gray-500 hidden md:table-cell">
+            <td className="px-5 py-3.5 text-sm text-muted-foreground">{s.contactName || <span className="text-muted-foreground/50">—</span>}</td>
+            <td className="px-5 py-3.5 text-sm text-muted-foreground">{s.phone || <span className="text-muted-foreground/50">—</span>}</td>
+            <td className="px-5 py-3.5 text-sm text-muted-foreground hidden md:table-cell">{s.email || <span className="text-muted-foreground/50">—</span>}</td>
+            <td className="px-5 py-3.5 text-sm text-muted-foreground hidden md:table-cell">
               {s.website ? (
-                <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-[#0CC0DF] hover:underline truncate max-w-[200px] inline-block">
+                <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-[currentColor] hover:underline truncate max-w-[200px] inline-block">
                   {s.website.replace(/^https?:\/\//, "")}
                 </a>
-              ) : <span className="text-gray-300">—</span>}
+              ) : <span className="text-muted-foreground/50">—</span>}
             </td>
             <td className="px-5 py-3.5">
               {s.holdedContactId ? (
@@ -76,7 +76,7 @@ export function BusinessesTableClient({ suppliers }: { suppliers: Supplier[] }) 
                   <ExternalLink className="h-2.5 w-2.5" /> Linked
                 </span>
               ) : (
-                <span className="text-gray-300">—</span>
+                <span className="text-muted-foreground/50">—</span>
               )}
             </td>
           </tr>
@@ -86,7 +86,7 @@ export function BusinessesTableClient({ suppliers }: { suppliers: Supplier[] }) 
         <tr>
           <td colSpan={6}>
             <div ref={sentinelRef} className="flex justify-center py-4">
-              <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70" />
             </div>
           </td>
         </tr>
@@ -94,7 +94,7 @@ export function BusinessesTableClient({ suppliers }: { suppliers: Supplier[] }) 
       {!hasMore && visible.length > 0 && (
         <tr>
           <td colSpan={6}>
-            <p className="text-center text-[11px] text-gray-400 py-3">
+            <p className="text-center text-[11px] text-muted-foreground/70 py-3">
               {suppliers.length} business{suppliers.length !== 1 ? "es" : ""}
             </p>
           </td>

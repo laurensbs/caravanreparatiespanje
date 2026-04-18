@@ -302,7 +302,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
               Add Part
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[min(92vh,900px)] gap-0 border-gray-100 p-0 dark:border-white/10 sm:max-w-2xl">
+          <DialogContent className="max-h-[min(92vh,900px)] gap-0 border-border/60 p-0 dark:border-white/10 sm:max-w-2xl">
             <PartForm
               part={editingPart}
               suppliers={suppliers}
@@ -446,7 +446,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                   return (
                   <TableRow key={part.id}>
                     <TableCell>
-                      <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground")}>
+                      <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground")}>
                         <CatIcon className="h-3.5 w-3.5" />
                       </span>
                     </TableCell>
@@ -599,8 +599,8 @@ function PartForm({
     });
   }
 
-  const fieldInput = "w-full h-11 text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 px-4 focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40 transition-all duration-150 shadow-none";
-  const fieldLabel = "text-sm font-medium text-gray-700 dark:text-slate-300";
+  const fieldInput = "w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-slate-500 px-4 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none";
+  const fieldLabel = "text-sm font-medium text-foreground/90 dark:text-slate-300";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -608,10 +608,10 @@ function PartForm({
       <div className="px-6 pt-6 pb-4 sm:px-8 sm:pt-8">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 tracking-tight">
+            <h2 className="text-xl font-semibold text-foreground dark:text-slate-100 tracking-tight">
               {isEditing ? "Edit part" : "Add part"}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
               {isEditing ? "Update this part's details" : "Create a new part and sync it to Holded"}
             </p>
           </div>
@@ -687,9 +687,9 @@ function PartForm({
 
         {/* Calculated price */}
         {!isNaN(ourPrice) && (
-          <div className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02] px-4 py-3">
-            <span className="text-sm font-medium text-gray-900 dark:text-slate-100">Our Price: €{ourPrice.toFixed(2)}</span>
-            <span className="text-xs text-gray-500 dark:text-slate-400">({effectiveMarkup}% markup)</span>
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-white/[0.06] bg-muted/40/50 dark:bg-card/[0.02] px-4 py-3">
+            <span className="text-sm font-medium text-foreground dark:text-slate-100">Our Price: €{ourPrice.toFixed(2)}</span>
+            <span className="text-xs text-muted-foreground dark:text-slate-400">({effectiveMarkup}% markup)</span>
           </div>
         )}
 
@@ -732,15 +732,15 @@ function PartForm({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Optional internal description"
             rows={3}
-            className="w-full min-h-[96px] text-sm rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 px-4 py-3 focus:ring-2 focus:ring-[#0CC0DF]/15 focus:border-[#0CC0DF]/40 transition-all duration-150 shadow-none resize-none"
+            className="w-full min-h-[96px] text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-slate-500 px-4 py-3 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none resize-none"
           />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col-reverse gap-3 border-t border-gray-100 px-6 py-4 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+      <div className="flex flex-col-reverse gap-3 border-t border-border/60 px-6 py-4 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between sm:px-8">
         {!isEditing && (
-          <p className="hidden text-center text-xs text-gray-400 dark:text-slate-500 sm:block sm:text-left">
+          <p className="hidden text-center text-xs text-muted-foreground/70 dark:text-slate-500 sm:block sm:text-left">
             New parts are also synced to Holded.
           </p>
         )}

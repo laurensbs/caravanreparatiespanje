@@ -71,7 +71,7 @@ export function PhotoCard({
             download
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-md bg-white/90 p-1.5 hover:bg-white transition-colors"
+            className="rounded-md bg-card/90 p-1.5 hover:bg-card transition-colors"
           >
             <Download className="h-3.5 w-3.5 text-foreground" />
           </a>
@@ -88,7 +88,7 @@ export function PhotoCard({
                 }
               });
             }}
-            className="rounded-md bg-white/90 p-1.5 hover:bg-red-100 transition-colors disabled:opacity-50"
+            className="rounded-md bg-card/90 p-1.5 hover:bg-red-100 transition-colors disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5 text-red-600" />
           </button>
@@ -106,7 +106,7 @@ export function PhotoCard({
           onClick={() => setExpanded(false)}
         >
           <button
-            className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-card/10 text-white hover:bg-card/20 transition-colors"
             onClick={() => setExpanded(false)}
           >
             <XIcon className="h-5 w-5" />
@@ -249,7 +249,7 @@ export function JobTypePicker({
         />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[160px]">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-card dark:bg-foreground border border-border dark:border-border rounded-xl shadow-lg p-1 min-w-[160px]">
           {(Object.keys(JOB_TYPE_LABELS) as JobType[]).map((type) => {
             const TypeIcon = JOB_TYPE_ICON[type];
             const active = value === type;
@@ -264,8 +264,8 @@ export function JobTypePicker({
                 className={cn(
                   "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   active
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                    ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50",
                 )}
               >
                 <TypeIcon className="h-3.5 w-3.5" />
@@ -362,7 +362,7 @@ export function StatusPicker({
     <button
       type="button"
       onClick={() => setOpen(!open)}
-      className="flex items-center justify-between w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 px-3 text-sm font-medium text-gray-900 dark:text-gray-100 transition-all hover:border-gray-300 dark:hover:border-gray-600"
+      className="flex items-center justify-between w-full h-11 rounded-xl border border-border dark:border-border bg-card dark:bg-card/5 px-3 text-sm font-medium text-foreground dark:text-foreground transition-all hover:border-foreground/20 dark:hover:border-gray-600"
     >
       <span className="flex items-center gap-2">
         <span
@@ -372,7 +372,7 @@ export function StatusPicker({
       </span>
       <ChevronDown
         className={cn(
-          "h-3.5 w-3.5 text-gray-400 transition-transform",
+          "h-3.5 w-3.5 text-muted-foreground/70 transition-transform",
           open && "rotate-180",
         )}
       />
@@ -383,10 +383,10 @@ export function StatusPicker({
     <div className="relative" ref={ref}>
       {variant === "select" ? triggerSelect : triggerPill}
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-card dark:bg-foreground border border-border dark:border-border rounded-xl shadow-lg p-1 min-w-[180px] max-h-[360px] overflow-y-auto">
           {STATUS_GROUPS.map((group) => (
             <div key={group.label} className="mb-0.5 last:mb-0">
-              <p className="text-[9px] uppercase tracking-wider font-semibold text-gray-300 dark:text-gray-600 px-3 pt-2 pb-0.5">
+              <p className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground/50 dark:text-muted-foreground px-3 pt-2 pb-0.5">
                 {group.label}
               </p>
               {group.items.map((val) => {
@@ -402,8 +402,8 @@ export function StatusPicker({
                     className={cn(
                       "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                       active
-                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                        ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
+                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50",
                     )}
                   >
                     {STATUS_LABELS[val as RepairStatus]}
@@ -447,7 +447,7 @@ export function InlinePillPicker({
 
   const badgeColor =
     colorMap[value] ??
-    "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+    "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border";
 
   return (
     <div className="relative" ref={ref}>
@@ -465,7 +465,7 @@ export function InlinePillPicker({
         />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 min-w-[160px] max-h-[300px] overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-card dark:bg-foreground border border-border dark:border-border rounded-xl shadow-lg p-1 min-w-[160px] max-h-[300px] overflow-y-auto">
           {Object.entries(options).map(([val, label]) => {
             const active = value === val;
             return (
@@ -479,8 +479,8 @@ export function InlinePillPicker({
                 className={cn(
                   "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   active
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                    ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50",
                 )}
               >
                 {label}

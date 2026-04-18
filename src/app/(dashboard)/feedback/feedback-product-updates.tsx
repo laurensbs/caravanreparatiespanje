@@ -42,7 +42,7 @@ export function FeedbackProductUpdates({ openRequestCount, doneRequestCount }: F
       className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
       aria-labelledby="product-updates-heading"
     >
-      <div className="relative border-b border-border/40 bg-gradient-to-br from-[#0CC0DF]/12 via-indigo-500/[0.08] to-transparent px-4 py-6 sm:px-6 sm:py-8 dark:from-[#0CC0DF]/10 dark:via-indigo-500/[0.12] dark:to-transparent">
+      <div className="relative border-b border-border/40 bg-gradient-to-br from-[currentColor]/12 via-indigo-500/[0.08] to-transparent px-4 py-6 sm:px-6 sm:py-8 dark:from-[currentColor]/10 dark:via-indigo-500/[0.12] dark:to-transparent">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-25"
           style={{
@@ -184,7 +184,7 @@ function MetricTile({
   return (
     <div
       className={cn(
-        "animate-scale-in rounded-xl border border-white/60 bg-white/80 px-2.5 py-3 text-center shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.06]",
+        "animate-scale-in rounded-xl border border-white/60 bg-card/80 px-2.5 py-3 text-center shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-card/[0.06]",
         tone === "cyan" && "ring-1 ring-cyan-500/10",
         tone === "indigo" && "ring-1 ring-indigo-500/10",
         tone === "slate" && "ring-1 ring-black/5 dark:ring-white/10",

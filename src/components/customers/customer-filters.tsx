@@ -81,7 +81,7 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
             <button
               type="button"
               onClick={() => { setSearchInput(""); updateFilter("q", undefined); }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-muted-foreground"
             >
               <X className="h-4 w-4" />
             </button>

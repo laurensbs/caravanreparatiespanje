@@ -149,18 +149,18 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
                     <MapPin className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-[14px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                  <span className="text-[14px] font-semibold tracking-tight text-foreground dark:text-foreground">
                     {loc.name}
                   </span>
                 </div>
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-500">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 dark:text-muted-foreground">
                   <Pencil className="h-3.5 w-3.5" />
                 </span>
               </div>
-              <p className="mt-1 line-clamp-2 text-[12.5px] text-gray-500 dark:text-gray-400">
+              <p className="mt-1 line-clamp-2 text-[12.5px] text-muted-foreground dark:text-muted-foreground/70">
                 {loc.description || "No description"}
               </p>
-              <p className="mt-2 text-[10.5px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <p className="mt-2 text-[10.5px] uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">
                 Slug · {loc.slug}
               </p>
             </SettingsTile>

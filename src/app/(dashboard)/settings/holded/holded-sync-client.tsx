@@ -70,13 +70,13 @@ function StatTile({
 }) {
   const pct = total > 0 ? Math.round((linked / total) * 100) : 0;
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-sm dark:border-border dark:bg-card/[0.03]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
             <Icon className="h-3.5 w-3.5" />
           </span>
-          <span className="text-[12.5px] font-medium text-gray-700 dark:text-gray-200">{label}</span>
+          <span className="text-[12.5px] font-medium text-foreground/90 dark:text-foreground/90">{label}</span>
         </div>
         <span
           className={cn(
@@ -85,19 +85,19 @@ function StatTile({
               ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
               : pct >= 50
               ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-              : "bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400",
+              : "bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70",
           )}
         >
           {pct}%
         </span>
       </div>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-[22px] font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+        <span className="text-[22px] font-semibold tabular-nums text-foreground dark:text-foreground">
           {linked}
         </span>
-        <span className="text-[12px] text-gray-500 dark:text-gray-400">/ {total} linked</span>
+        <span className="text-[12px] text-muted-foreground dark:text-muted-foreground/70">/ {total} linked</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-white/[0.06]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted dark:bg-card/[0.06]">
         <div
           className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-500 transition-[width] duration-700 ease-out"
           style={{ width: `${pct}%` }}
@@ -187,7 +187,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
           description={
             <>
               Set{" "}
-              <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[11px] text-gray-700 dark:bg-white/[0.06] dark:text-gray-200">
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground/90 dark:bg-card/[0.06] dark:text-foreground/90">
                 HOLDED_API_KEY
               </code>{" "}
               in your environment to enable the integration.
@@ -206,10 +206,10 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           </span>
           <div>
-            <p className="text-[14px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            <p className="text-[14px] font-semibold tracking-tight text-foreground dark:text-foreground">
               Holded connected
             </p>
-            <p className="text-[12.5px] text-gray-500 dark:text-gray-400">
+            <p className="text-[12.5px] text-muted-foreground dark:text-muted-foreground/70">
               Two-way sync is active. Edits push to Holded on save.
             </p>
           </div>
@@ -218,7 +218,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
           href="https://app.holded.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-100 px-3 text-[12.5px] font-medium text-gray-600 transition-colors hover:border-gray-200 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.04]"
+          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 px-3 text-[12.5px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 dark:border-border dark:text-muted-foreground/50 dark:hover:bg-card/[0.04]"
         >
           Open Holded <ExternalLink className="h-3.5 w-3.5" />
         </a>
@@ -239,10 +239,10 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
               <FileText className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <h3 className="text-[14px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+              <h3 className="text-[14px] font-semibold tracking-tight text-foreground dark:text-foreground">
                 Match invoices &amp; quotes to repairs
               </h3>
-              <p className="mt-1 max-w-2xl text-[12.5px] leading-relaxed text-gray-500 dark:text-gray-400">
+              <p className="mt-1 max-w-2xl text-[12.5px] leading-relaxed text-muted-foreground dark:text-muted-foreground/70">
                 One full pass over Holded: links PDFs to work orders (public code, plate, title, date),
                 syncs payment status and resolves missing contact IDs. Same logic as the cron — use it
                 after fixing contacts or when many jobs are still missing a document link.
@@ -264,7 +264,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
           </Button>
         </div>
         {invoiceDiscoveryStats ? (
-          <div className="grid gap-3 border-t border-gray-100 pt-4 sm:grid-cols-3 lg:grid-cols-6 dark:border-gray-800">
+          <div className="grid gap-3 border-t border-border/60 pt-4 sm:grid-cols-3 lg:grid-cols-6 dark:border-border">
             {[
               { label: "Scanned", value: invoiceDiscoveryStats.invoicesTotal },
               { label: "New links", value: invoiceDiscoveryStats.discovered, tone: "emerald" },
@@ -274,12 +274,12 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
               { label: "Errors", value: invoiceDiscoveryStats.errors, tone: "red" },
             ].map((s) => (
               <div key={s.label}>
-                <p className="text-[10.5px] font-medium uppercase tracking-wider text-gray-400">
+                <p className="text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground/70">
                   {s.label}
                 </p>
                 <p
                   className={cn(
-                    "mt-0.5 text-[18px] font-semibold tabular-nums text-gray-900 dark:text-gray-100",
+                    "mt-0.5 text-[18px] font-semibold tabular-nums text-foreground dark:text-foreground",
                     s.tone === "emerald" && "text-emerald-600 dark:text-emerald-400",
                     s.tone === "red" && "text-red-600 dark:text-red-400",
                   )}
@@ -334,7 +334,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
         <SettingsPanel className="space-y-3">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            <span className="text-[14px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            <span className="text-[14px] font-semibold tracking-tight text-foreground dark:text-foreground">
               {lastResult.type} sync complete
             </span>
           </div>
@@ -346,12 +346,12 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
               { label: "Skipped", value: lastResult.result.skipped },
             ].map((s) => (
               <div key={s.label}>
-                <p className="text-[10.5px] font-medium uppercase tracking-wider text-gray-400">
+                <p className="text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground/70">
                   {s.label}
                 </p>
                 <p
                   className={cn(
-                    "mt-0.5 text-[20px] font-semibold tabular-nums text-gray-900 dark:text-gray-100",
+                    "mt-0.5 text-[20px] font-semibold tabular-nums text-foreground dark:text-foreground",
                     s.tone === "emerald" && "text-emerald-600 dark:text-emerald-400",
                     s.tone === "sky" && "text-sky-600 dark:text-sky-400",
                   )}
@@ -386,17 +386,17 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
 
       <SettingsPanel className="space-y-3">
         <SettingsSectionHeader title="How sync works" />
-        <div className="space-y-2 text-[12.5px] leading-relaxed text-gray-500 dark:text-gray-400">
+        <div className="space-y-2 text-[12.5px] leading-relaxed text-muted-foreground dark:text-muted-foreground/70">
           <p>
-            <strong className="text-gray-800 dark:text-gray-200">Contacts:</strong> matched by name, email
+            <strong className="text-foreground dark:text-foreground/90">Contacts:</strong> matched by name, email
             or Holded ID. Phone, email and type are pulled in. New Holded suppliers are created locally.
           </p>
           <p>
-            <strong className="text-gray-800 dark:text-gray-200">Products:</strong> matched by SKU or name.
+            <strong className="text-foreground dark:text-foreground/90">Products:</strong> matched by SKU or name.
             New products import as parts. Existing parts get SKU, cost and description updated.
           </p>
           <p>
-            <strong className="text-gray-800 dark:text-gray-200">Push on save:</strong> editing a contact or
+            <strong className="text-foreground dark:text-foreground/90">Push on save:</strong> editing a contact or
             creating an invoice / quote here pushes to Holded in real time.
           </p>
         </div>

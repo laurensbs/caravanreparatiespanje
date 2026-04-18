@@ -278,11 +278,11 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
         {/* Infinite scroll sentinel */}
         {hasMore && (
           <div ref={sentinelRef} className="flex justify-center py-4">
-            {scrollLoading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+            {scrollLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70" />}
           </div>
         )}
         {!hasMore && allUnits.length > 0 && (
-          <p className="text-center text-[11px] text-gray-400 py-3">
+          <p className="text-center text-[11px] text-muted-foreground/70 py-3">
             {allUnits.length} unit{allUnits.length !== 1 ? "s" : ""}
           </p>
         )}

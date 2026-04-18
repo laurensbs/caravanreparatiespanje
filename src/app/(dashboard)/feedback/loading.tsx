@@ -11,8 +11,8 @@ export default function FeedbackLoading() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex items-center justify-end border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-sm dark:border-border dark:bg-card/[0.03]">
+        <div className="flex items-center justify-end border-b border-border/60 px-4 py-3 dark:border-border">
           <Skeleton className="h-10 w-32 rounded-xl sm:h-9" />
         </div>
         <div className="space-y-3 p-4 sm:p-6">

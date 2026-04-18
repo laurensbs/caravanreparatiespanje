@@ -156,7 +156,7 @@ export function CustomerDetail({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/customers" className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-accent transition-colors">
+          <Link href="/customers" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground/70 hover:text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-accent transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
@@ -166,7 +166,7 @@ export function CustomerDetail({
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-9 text-xl font-semibold text-gray-900 w-64 rounded-xl border-gray-200"
+                    className="h-9 text-xl font-semibold text-foreground w-64 rounded-xl border-border"
                     autoFocus
                     onKeyDown={(e) => { if (e.key === "Enter") saveField("name", name); if (e.key === "Escape") setEditingField(null); }}
                   />
@@ -179,9 +179,9 @@ export function CustomerDetail({
                 </div>
               ) : (
                 <>
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-foreground">{customer.name}</h1>
-                  <button onClick={() => startEditField("name")} className="opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-accent" title="Edit name">
-                    <Pencil className="h-3 w-3 text-gray-400" />
+                  <h1 className="text-2xl font-semibold text-foreground dark:text-foreground">{customer.name}</h1>
+                  <button onClick={() => startEditField("name")} className="opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted dark:hover:bg-accent" title="Edit name">
+                    <Pencil className="h-3 w-3 text-muted-foreground/70" />
                   </button>
                 </>
               )}
@@ -193,7 +193,7 @@ export function CustomerDetail({
                 className="cursor-pointer"
                 title="Click to toggle type"
               >
-                <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+                <span className="inline-flex items-center rounded-full bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 hover:bg-gray-200 dark:hover:bg-accent transition-colors">
                   {customer.contactType === "business" ? "Business" : "Person"}
                 </span>
               </button>
@@ -204,7 +204,7 @@ export function CustomerDetail({
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {[customer.phone, customer.email].filter(Boolean).join(" · ") || "No contact info"}
             </p>
             {allTags.length > 0 && (
@@ -220,7 +220,7 @@ export function CustomerDetail({
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" onClick={() => setDeleteOpen(true)}>
+          <button className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground/70 hover:text-red-500 hover:bg-red-50 transition-colors" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -238,9 +238,9 @@ export function CustomerDetail({
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Left column: Contact + Address — all inline-editable */}
         <div className="space-y-5 lg:col-span-1">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border">
+        <div className="bg-card dark:bg-card rounded-2xl shadow-sm border border-border/60 dark:border-border">
           <div className="p-5 space-y-0.5">
-            <p className="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground/70 dark:text-muted-foreground uppercase tracking-wider mb-2">
               <User className="h-3.5 w-3.5" /> Contact
             </p>
             <InlineField icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={phone} field="phone"
@@ -259,9 +259,9 @@ export function CustomerDetail({
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border">
+        <div className="bg-card dark:bg-card rounded-2xl shadow-sm border border-border/60 dark:border-border">
           <div className="p-5 space-y-0.5">
-            <p className="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground/70 dark:text-muted-foreground uppercase tracking-wider mb-2">
               <MapPin className="h-3.5 w-3.5" /> Address
             </p>
             <InlineField icon={null} label="Street" value={address} field="address"
@@ -282,16 +282,16 @@ export function CustomerDetail({
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border">
+        <div className="bg-card dark:bg-card rounded-2xl shadow-sm border border-border/60 dark:border-border">
           <div className="p-5">
             <div className="group/notes">
               <div className="flex items-center justify-between mb-2">
-                <p className="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-muted-foreground uppercase tracking-wider">
+                <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground/70 dark:text-muted-foreground uppercase tracking-wider">
                   <StickyNote className="h-3.5 w-3.5" /> Notes
                 </p>
                 {editingField !== "notes" && (
-                  <button onClick={() => startEditField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-accent">
-                    <Pencil className="h-2.5 w-2.5 text-gray-400" />
+                  <button onClick={() => startEditField("notes")} className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted dark:hover:bg-accent">
+                    <Pencil className="h-2.5 w-2.5 text-muted-foreground/70" />
                   </button>
                 )}
               </div>
@@ -304,7 +304,7 @@ export function CustomerDetail({
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 dark:text-muted-foreground whitespace-pre-wrap cursor-pointer hover:text-gray-900 dark:hover:text-foreground transition-colors" onClick={() => startEditField("notes")}>
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground whitespace-pre-wrap cursor-pointer hover:text-foreground dark:hover:text-foreground transition-colors" onClick={() => startEditField("notes")}>
                   {notes || <span className="italic text-xs">Click to add notes</span>}
                 </p>
               )}
@@ -318,7 +318,7 @@ export function CustomerDetail({
                 href={`https://app.holded.com/contacts/${customer.holdedContactId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-[#0CC0DF] transition-colors rounded-xl border border-dashed border-gray-200 dark:border-border py-2.5 hover:border-[#0CC0DF]/30 hover:bg-gray-50 dark:hover:bg-accent"
+                className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 hover:text-[currentColor] transition-colors rounded-xl border border-dashed border-border dark:border-border py-2.5 hover:border-[currentColor]/30 hover:bg-muted/40 dark:hover:bg-accent"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 View in Holded
@@ -328,16 +328,16 @@ export function CustomerDetail({
 
         {/* Right column: Units + Repairs */}
         <div className="space-y-4 lg:col-span-2">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border">
+          <div className="bg-card dark:bg-card rounded-2xl shadow-sm border border-border/60 dark:border-border">
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-muted">
-                    <Truck className="h-4 w-4 text-gray-500 dark:text-muted-foreground" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted dark:bg-muted">
+                    <Truck className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-foreground">Units</p>
-                    <p className="text-[11px] text-gray-500">{customer.units.length} linked</p>
+                    <p className="text-sm font-semibold text-foreground dark:text-foreground">Units</p>
+                    <p className="text-[11px] text-muted-foreground">{customer.units.length} linked</p>
                   </div>
                 </div>
                 {!addingUnit && (
@@ -359,7 +359,7 @@ export function CustomerDetail({
 
               {/* Add new unit form */}
               {addingUnit && (
-                <div className="mb-3 border border-gray-100 dark:border-border rounded-xl p-3 bg-gray-50/50 dark:bg-muted/50 space-y-2">
+                <div className="mb-3 border border-border/60 dark:border-border rounded-xl p-3 bg-muted/40/50 dark:bg-muted/50 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px]">License Plate</Label>
@@ -412,12 +412,12 @@ export function CustomerDetail({
               )}
 
               {customer.units.length === 0 && !addingUnit ? (
-                <p className="text-sm text-gray-400 italic">No units linked</p>
+                <p className="text-sm text-muted-foreground/70 italic">No units linked</p>
               ) : (
                 <div className="space-y-1.5">
                   {customer.units.map((unit: any) => (
                     editingUnitId === unit.id ? (
-                      <div key={unit.id} className="border border-gray-100 dark:border-border rounded-xl p-3 bg-gray-50/50 dark:bg-muted/50 space-y-2">
+                      <div key={unit.id} className="border border-border/60 dark:border-border rounded-xl p-3 bg-muted/40/50 dark:bg-muted/50 space-y-2">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <Label className="text-[10px]">License Plate</Label>
@@ -470,20 +470,20 @@ export function CustomerDetail({
                     ) : (
                       <div
                         key={unit.id}
-                        className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-border px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors group"
+                        className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-border px-4 py-3 text-sm hover:bg-muted/40 dark:hover:bg-accent transition-colors group"
                       >
                         <Link href={`/units/${unit.id}`} className="min-w-0 flex-1">
                           <p className="font-medium text-[13px] truncate">
                             {[unit.brand, unit.model].filter(Boolean).join(" ") || "No details yet"}
                           </p>
                           {unit.registration && (
-                            <p className="font-mono text-[11px] text-gray-400">{unit.registration}</p>
+                            <p className="font-mono text-[11px] text-muted-foreground/70">{unit.registration}</p>
                           )}
                         </Link>
                         <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
-                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-accent"
+                            className="p-1 rounded hover:bg-muted dark:hover:bg-accent"
                             title="Edit unit"
                             onClick={() => {
                               setEditingUnitId(unit.id);
@@ -496,7 +496,7 @@ export function CustomerDetail({
                               });
                             }}
                           >
-                            <Pencil className="h-3 w-3 text-gray-400" />
+                            <Pencil className="h-3 w-3 text-muted-foreground/70" />
                           </button>
                           {canDeleteCustomerUnits && (
                             <button
@@ -510,7 +510,7 @@ export function CustomerDetail({
                                 })
                               }
                             >
-                              <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
+                              <Trash2 className="h-3 w-3 text-muted-foreground/70 hover:text-red-600 dark:hover:text-red-400" />
                             </button>
                           )}
                         </div>
@@ -522,29 +522,29 @@ export function CustomerDetail({
             </div>
           </div>
 
-          <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border">
+          <div className="bg-card dark:bg-card rounded-2xl shadow-sm border border-border/60 dark:border-border">
             <div className="p-5">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-muted">
-                  <Wrench className="h-4 w-4 text-gray-500 dark:text-muted-foreground" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted dark:bg-muted">
+                  <Wrench className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground">Repairs</p>
-                  <p className="text-[11px] text-gray-500">{customer.repairJobs.length} total</p>
+                  <p className="text-sm font-semibold text-foreground dark:text-foreground">Repairs</p>
+                  <p className="text-[11px] text-muted-foreground">{customer.repairJobs.length} total</p>
                 </div>
               </div>
               {customer.repairJobs.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No repair jobs linked</p>
+                <p className="text-sm text-muted-foreground/70 italic">No repair jobs linked</p>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {customer.repairJobs.map((job: any) => (
                     <div
                       key={job.id}
-                      className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-border px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-border px-4 py-3 text-sm hover:bg-muted/40 dark:hover:bg-accent transition-colors"
                     >
                       <Link href={`/repairs/${job.id}`} className="min-w-0 flex-1">
                         <p className="font-medium text-[13px] truncate">{job.title || "Unnamed"}</p>
-                        <p className="font-mono text-[11px] text-gray-400">{job.publicCode}</p>
+                        <p className="font-mono text-[11px] text-muted-foreground/70">{job.publicCode}</p>
                       </Link>
                       <div className="flex items-center gap-1 shrink-0">
                         {job.holdedQuoteId && (
@@ -553,7 +553,7 @@ export function CustomerDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={`Quote PDF${job.holdedQuoteNum ? ` ${job.holdedQuoteNum}` : ""}`}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-[#0CC0DF] hover:bg-gray-100 dark:hover:bg-accent"
+                            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-[currentColor] hover:bg-muted dark:hover:bg-accent"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <FileText className="h-3.5 w-3.5" />
@@ -565,7 +565,7 @@ export function CustomerDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={`Invoice PDF${job.holdedInvoiceNum ? ` ${job.holdedInvoiceNum}` : ""}`}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-[#0CC0DF] hover:bg-gray-100 dark:hover:bg-accent"
+                            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-[currentColor] hover:bg-muted dark:hover:bg-accent"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Receipt className="h-3.5 w-3.5" />
@@ -587,7 +587,7 @@ export function CustomerDetail({
                 </div>
               )}
               {canSyncHoldedRepairLinks && customer.holdedContactId && customer.repairJobs.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-border">
+                <div className="mt-4 pt-4 border-t border-border/60 dark:border-border">
                   <Button
                     type="button"
                     variant="outline"
@@ -603,7 +603,7 @@ export function CustomerDetail({
                     )}
                     Link Holded invoices & quotes to work orders
                   </Button>
-                  <p className="text-[11px] text-gray-500 dark:text-muted-foreground mt-1.5 leading-snug">
+                  <p className="text-[11px] text-muted-foreground dark:text-muted-foreground mt-1.5 leading-snug">
                     Uses the same matching as background sync. When counts line up, remaining documents can pair by date
                     order.
                   </p>
@@ -616,23 +616,23 @@ export function CustomerDetail({
 
       {/* Holded Documents — Invoices & Quotes */}
       {(holdedInvoices.length > 0 || holdedQuotes.length > 0) && (
-        <div className="bg-white dark:bg-card rounded-2xl shadow-sm border border-gray-100 dark:border-border">
+        <div className="bg-card dark:bg-card rounded-2xl shadow-sm border border-border/60 dark:border-border">
           <div className="p-5">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-muted">
-                <Receipt className="h-4 w-4 text-gray-500 dark:text-muted-foreground" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted dark:bg-muted">
+                <Receipt className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-foreground">Holded Documents</p>
-                <p className="text-[11px] text-gray-500">{holdedInvoices.length + holdedQuotes.length} documents</p>
+                <p className="text-sm font-semibold text-foreground dark:text-foreground">Holded Documents</p>
+                <p className="text-[11px] text-muted-foreground">{holdedInvoices.length + holdedQuotes.length} documents</p>
               </div>
-              <div className="ml-auto flex gap-1 bg-gray-100 dark:bg-muted rounded-lg p-0.5">
+              <div className="ml-auto flex gap-1 bg-muted dark:bg-muted rounded-lg p-0.5">
                 <button
                   type="button"
                   className={`px-3 py-1 text-[11px] font-medium rounded-md transition-all ${
                     holdedTab === "invoices"
-                      ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
-                      : "text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground"
+                      ? "bg-card dark:bg-card text-foreground dark:text-foreground shadow-sm"
+                      : "text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-foreground"
                   }`}
                   onClick={() => setHoldedTab("invoices")}
                 >
@@ -642,8 +642,8 @@ export function CustomerDetail({
                   type="button"
                   className={`px-3 py-1 text-[11px] font-medium rounded-md transition-all ${
                     holdedTab === "quotes"
-                      ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
-                      : "text-gray-500 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground"
+                      ? "bg-card dark:bg-card text-foreground dark:text-foreground shadow-sm"
+                      : "text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-foreground"
                   }`}
                   onClick={() => setHoldedTab("quotes")}
                 >
@@ -658,7 +658,7 @@ export function CustomerDetail({
             {holdedTab === "invoices" && (
               <div className="space-y-1.5">
                 {holdedInvoices.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic py-2">No invoices</p>
+                  <p className="text-sm text-muted-foreground/70 italic py-2">No invoices</p>
                 ) : (
                   holdedInvoices.map((inv: any) => {
                     const isDraft = inv.status === 0 && inv.draft === 1;
@@ -667,11 +667,11 @@ export function CustomerDetail({
                       <Wrapper
                         key={inv.id}
                         {...(!isDraft ? { href: `/api/holded/pdf?type=invoice&id=${inv.id}`, target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className={`flex items-center justify-between rounded-xl border border-gray-100 dark:border-border px-4 py-3 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-gray-50 dark:hover:bg-accent cursor-pointer"}`}
+                        className={`flex items-center justify-between rounded-xl border border-border/60 dark:border-border px-4 py-3 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-muted/40 dark:hover:bg-accent cursor-pointer"}`}
                       >
                         <div className="min-w-0 mr-2">
                           <p className="font-medium text-[13px]">{inv.docNumber || "Draft"}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-muted-foreground truncate">
+                          <p className="text-[11px] text-muted-foreground dark:text-muted-foreground truncate">
                             {inv.desc || "No description"}
                             {inv.date && ` · ${new Date(inv.date * 1000).toLocaleDateString("nl-NL")}`}
                           </p>
@@ -689,7 +689,7 @@ export function CustomerDetail({
                           >
                             {inv.status === 1 ? "Paid" : inv.status === 2 ? "Partial" : isDraft ? "Draft" : "Unpaid"}
                           </span>
-                          {!isDraft && <FileText className="h-3 w-3 text-gray-400" />}
+                          {!isDraft && <FileText className="h-3 w-3 text-muted-foreground/70" />}
                         </div>
                       </Wrapper>
                     );
@@ -701,7 +701,7 @@ export function CustomerDetail({
             {holdedTab === "quotes" && (
               <div className="space-y-1.5">
                 {holdedQuotes.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic py-2">No quotes</p>
+                  <p className="text-sm text-muted-foreground/70 italic py-2">No quotes</p>
                 ) : (
                   holdedQuotes.map((q: any) => {
                     const isDraft = q.draft === 1;
@@ -710,11 +710,11 @@ export function CustomerDetail({
                       <Wrapper
                         key={q.id}
                         {...(!isDraft ? { href: `/api/holded/pdf?type=estimate&id=${q.id}`, target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className={`flex items-center justify-between rounded-xl border border-gray-100 dark:border-border px-4 py-3 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-gray-50 dark:hover:bg-accent cursor-pointer"}`}
+                        className={`flex items-center justify-between rounded-xl border border-border/60 dark:border-border px-4 py-3 text-sm transition-colors ${isDraft ? "opacity-60" : "hover:bg-muted/40 dark:hover:bg-accent cursor-pointer"}`}
                       >
                         <div className="min-w-0 mr-2">
                           <p className="font-medium text-[13px]">{q.docNumber || "Draft"}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-muted-foreground truncate">
+                          <p className="text-[11px] text-muted-foreground dark:text-muted-foreground truncate">
                             {q.desc || "No description"}
                             {q.date && ` · ${new Date(q.date * 1000).toLocaleDateString("nl-NL")}`}
                           </p>
@@ -726,13 +726,13 @@ export function CustomerDetail({
                               q.status === 1
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
                                 : isDraft
-                                ? "bg-gray-50 text-gray-600 border border-gray-200 dark:bg-muted dark:text-muted-foreground dark:border-border"
+                                ? "bg-muted/40 text-muted-foreground border border-border dark:bg-muted dark:text-muted-foreground dark:border-border"
                                 : "bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
                             }`}
                           >
                             {q.status === 1 ? "Accepted" : isDraft ? "Draft" : "Sent"}
                           </span>
-                          {!isDraft && <FileText className="h-3 w-3 text-gray-400" />}
+                          {!isDraft && <FileText className="h-3 w-3 text-muted-foreground/70" />}
                         </div>
                       </Wrapper>
                     );
@@ -754,7 +754,7 @@ export function CustomerDetail({
           <DialogHeader>
             <DialogTitle>Remove unit?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-500 dark:text-muted-foreground">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
             Permanently delete <strong className="text-foreground">{unitPendingDelete?.label}</strong>? Repair jobs stay
             on file but will no longer be linked to this caravan.
           </p>
@@ -795,7 +795,7 @@ export function CustomerDetail({
           <DialogHeader>
             <DialogTitle>Delete &ldquo;{customer.name}&rdquo;?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-500">This will remove the customer from the admin. Linked repairs and units will be unlinked.</p>
+          <p className="text-sm text-muted-foreground">This will remove the customer from the admin. Linked repairs and units will be unlinked.</p>
           {customer.holdedContactId && (
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-2">
@@ -873,7 +873,7 @@ function InlineField({
     return (
       <div className="flex items-center gap-2 py-2">
         <div className="w-20 shrink-0">
-          <span className="text-[11px] text-gray-500">{label}</span>
+          <span className="text-[11px] text-muted-foreground">{label}</span>
         </div>
         <Input
           value={value}
@@ -894,22 +894,22 @@ function InlineField({
   }
 
   return (
-    <div className="flex items-center justify-between py-2.5 group/row text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-accent -mx-3 px-3 rounded-lg transition-colors" onClick={() => onEdit(field)}>
-      <span className="flex items-center gap-2 text-gray-500 dark:text-muted-foreground shrink-0">
+    <div className="flex items-center justify-between py-2.5 group/row text-sm cursor-pointer hover:bg-muted/40 dark:hover:bg-accent -mx-3 px-3 rounded-lg transition-colors" onClick={() => onEdit(field)}>
+      <span className="flex items-center gap-2 text-muted-foreground dark:text-muted-foreground shrink-0">
         {icon}
         {label}
       </span>
       <div className="flex items-center gap-1.5 min-w-0">
         {value ? (
           href ? (
-            <a href={href} className="font-medium text-gray-900 hover:text-[#0CC0DF] truncate max-w-[200px]" onClick={(e) => e.stopPropagation()}>{value}</a>
+            <a href={href} className="font-medium text-foreground hover:text-[currentColor] truncate max-w-[200px]" onClick={(e) => e.stopPropagation()}>{value}</a>
           ) : (
-            <span className="font-medium text-gray-900 truncate max-w-[200px]">{value}</span>
+            <span className="font-medium text-foreground truncate max-w-[200px]">{value}</span>
           )
         ) : (
-          <span className="text-xs text-gray-300 italic">—</span>
+          <span className="text-xs text-muted-foreground/50 italic">—</span>
         )}
-        <Pencil className="h-2.5 w-2.5 text-gray-400 opacity-0 group-hover/row:opacity-100 transition-opacity shrink-0" />
+        <Pencil className="h-2.5 w-2.5 text-muted-foreground/70 opacity-0 group-hover/row:opacity-100 transition-opacity shrink-0" />
       </div>
     </div>
   );

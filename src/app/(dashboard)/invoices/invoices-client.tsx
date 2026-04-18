@@ -261,11 +261,11 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
 
   return (
     <div className="animate-fade-in">
-      <header className="border-b border-border/60 bg-white px-4 py-5 dark:bg-transparent sm:px-6 sm:py-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+      <header className="border-b border-border/60 bg-card px-4 py-5 dark:bg-transparent sm:px-6 sm:py-6">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">
           Billing
         </p>
-        <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl">
+        <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-foreground dark:text-foreground sm:text-3xl">
           Invoices &amp; quotes
         </h1>
         <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">

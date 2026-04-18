@@ -28,7 +28,7 @@ export default async function PartsPage() {
   const equipmentCount = requests.filter((r) => r.requestType === "equipment").length;
 
   const tabTriggerClass =
-    "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] font-medium text-gray-500 transition-colors hover:text-gray-800 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-black/[0.04] dark:text-gray-400 dark:hover:text-gray-100 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-gray-100";
+    "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-black/[0.04] dark:text-muted-foreground/70 dark:hover:text-gray-100 dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-gray-100";
 
   return (
     <DashboardPageCanvas>
@@ -39,13 +39,13 @@ export default async function PartsPage() {
           metadata={
             <>
               <span>
-                <span className="tabular-nums text-gray-700 dark:text-gray-200">{parts.length}</span> parts
+                <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{parts.length}</span> parts
               </span>
               <span>
-                <span className="tabular-nums text-gray-700 dark:text-gray-200">{partRequestCount}</span> requests
+                <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{partRequestCount}</span> requests
               </span>
               <span>
-                <span className="tabular-nums text-gray-700 dark:text-gray-200">{suppliers.length}</span> suppliers
+                <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{suppliers.length}</span> suppliers
               </span>
             </>
           }
@@ -57,15 +57,15 @@ export default async function PartsPage() {
         <Tabs defaultValue="catalog" className="w-full">
           <TabsList
             className={cn(
-              "inline-flex h-auto w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-gray-50/80 p-1 sm:w-auto",
-              "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-gray-800 dark:bg-white/[0.04]"
+              "inline-flex h-auto w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-border/60 bg-muted/40/80 p-1 sm:w-auto",
+              "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-border dark:bg-card/[0.04]"
             )}
           >
             <TabsTrigger value="catalog" className={tabTriggerClass}>
               <Package className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">
                 Catalog
-                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
                   {parts.length}
                 </span>
               </span>
@@ -74,7 +74,7 @@ export default async function PartsPage() {
               <ClipboardList className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">
                 Part requests
-                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
                   {partRequestCount}
                 </span>
               </span>
@@ -83,7 +83,7 @@ export default async function PartsPage() {
               <Wrench className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">
                 Equipment
-                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
                   {equipmentCount}
                 </span>
               </span>
@@ -92,7 +92,7 @@ export default async function PartsPage() {
               <Truck className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">
                 Suppliers
-                <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
                   {suppliers.length}
                 </span>
               </span>

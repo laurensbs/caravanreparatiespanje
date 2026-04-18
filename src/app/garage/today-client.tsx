@@ -354,11 +354,11 @@ export function GarageTodayClient({
   }, [allUsers, recentWorkerIds]);
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background text-white">
+    <div className="flex min-h-[100dvh] flex-col bg-stone-950 text-white">
       {/* Unified sticky shell — keeps top bar, search (mobile), stat strip and
           tab bar stacked together so they can't overlap when the browser
           chrome resizes or the stat row wraps on a phone. */}
-      <div className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-background/90 backdrop-blur-xl">
+      <div className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-stone-950/90 backdrop-blur-xl">
         <header className="mx-auto max-w-6xl">
           {/* Row 1: identity + search + refresh */}
           <div className="flex h-14 items-center gap-2 px-3 sm:px-4">

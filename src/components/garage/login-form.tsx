@@ -67,7 +67,7 @@ export function GarageLoginForm() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex min-h-dvh items-center justify-center overflow-hidden bg-gradient-to-b from-gray-950 via-gray-950 to-black text-white select-none"
+      className="fixed inset-0 z-[100] flex min-h-dvh select-none items-center justify-center overflow-hidden bg-gradient-to-b from-stone-950 via-stone-950 to-stone-900 text-white"
       style={{
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",

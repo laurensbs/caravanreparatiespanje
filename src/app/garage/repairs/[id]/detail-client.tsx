@@ -402,10 +402,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   return (
     // `min-h-[100dvh]` handles mobile browser URL bar resize better than `h-screen`
     // which traps content behind the iOS Safari bottom chrome.
-    <div className="flex min-h-[100dvh] flex-col bg-background">
+    <div className="flex min-h-[100dvh] flex-col bg-stone-950 text-white">
 
       {/* ─── HEADER ─── */}
-      <header className="safe-area-pt sticky top-0 z-30 shrink-0 border-b border-white/[0.06] bg-background/95 backdrop-blur-xl">
+      <header className="safe-area-pt sticky top-0 z-30 shrink-0 border-b border-white/[0.06] bg-stone-950/95 backdrop-blur-xl">
         <div className="mx-auto max-w-4xl px-3 sm:px-4">
           {/* Nav row — always contains Back + Lang + Refresh. Running timers
               live on their own horizontally-scrollable row just below so we
@@ -945,7 +945,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </main>
 
       {/* ─── BOTTOM: Action bar + Tab nav ─── */}
-      <div className="safe-area-pb fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-background/95 backdrop-blur-xl">
+      <div className="safe-area-pb fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl">
         {/* Action buttons */}
         {isActive && (
           <div className="mx-auto max-w-4xl px-4 pb-1 pt-2">

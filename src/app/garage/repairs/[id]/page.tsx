@@ -2,6 +2,7 @@ import { getGarageRepairDetail, garageAutoStart, getRepairFindings, getRepairBlo
 import { getPartCategories } from "@/actions/parts";
 import { getJobActiveTimers } from "@/actions/time-entries";
 import { auth } from "@/lib/auth";
+import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { notFound } from "next/navigation";
 import { GarageRepairDetailClient } from "./detail-client";
 
@@ -11,9 +12,13 @@ export default async function GarageRepairDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [repair, session, findings, blockers, partCategories, activeTimers, allUsers] = await Promise.all([
+  // Same parallel-render guard as /garage page: bail out cleanly if
+  // the layout will be showing the PIN screen anyway.
+  const [authed, session] = await Promise.all([isGarageAuthenticated(), auth()]);
+  if (!authed && !session?.user) return null;
+
+  const [repair, findings, blockers, partCategories, activeTimers, allUsers] = await Promise.all([
     getGarageRepairDetail(id),
-    auth(),
     getRepairFindings(id),
     getRepairBlockers(id),
     getPartCategories(),

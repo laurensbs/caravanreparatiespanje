@@ -73,6 +73,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
     return "en";
   });
   const [filterUser, setFilterUser] = useState<string>("all");
+  const [filterLocation, setFilterLocation] = useState<string>("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogDate, setAddDialogDate] = useState<Date | null>(null);
   const [dragRepairId, setDragRepairId] = useState<string | null>(null);
@@ -132,9 +133,9 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
   const todayStr = new Date().toDateString();
 
-  const filteredRepairs = filterUser === "all"
-    ? repairs
-    : repairs.filter((r) => r.assignedUserId === filterUser);
+  const filteredRepairs = repairs
+    .filter((r) => filterUser === "all" || r.assignedUserId === filterUser)
+    .filter((r) => filterLocation === "all" || r.locationId === filterLocation);
 
   function repairsForDay(dayIndex: number) {
     const dayDate = days[dayIndex];
@@ -309,6 +310,25 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                   ))}
                 </SelectContent>
               </Select>
+
+              {locations.length > 1 ? (
+                <Select value={filterLocation} onValueChange={setFilterLocation}>
+                  <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">
+                    <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {lang === "nl" ? "Alle locaties" : lang === "es" ? "Todas las ubicaciones" : "All locations"}
+                    </SelectItem>
+                    {locations.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
 
               <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
                 <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">

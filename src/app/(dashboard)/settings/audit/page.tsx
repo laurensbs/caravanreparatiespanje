@@ -14,7 +14,7 @@ const AUDIT_BASE = "/settings/audit";
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; action?: string; entity?: string; q?: string; dateFrom?: string; dateTo?: string }>;
+  searchParams: Promise<{ page?: string; action?: string; entity?: string; q?: string; dateFrom?: string; dateTo?: string; userId?: string }>;
 }) {
   await requireRole("admin");
   const params = await searchParams;
@@ -25,6 +25,7 @@ export default async function AuditLogPage({
   const conditions = [];
   if (params.action) conditions.push(eq(auditLogs.action, params.action));
   if (params.entity) conditions.push(eq(auditLogs.entityType, params.entity));
+  if (params.userId) conditions.push(eq(auditLogs.userId, params.userId));
   if (params.q) conditions.push(like(auditLogs.entityType, `%${params.q}%`));
   if (params.dateFrom) conditions.push(gte(auditLogs.createdAt, new Date(params.dateFrom)));
   if (params.dateTo) {
@@ -35,7 +36,7 @@ export default async function AuditLogPage({
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [logs, countResult, holdedDataGaps] = await Promise.all([
+  const [logs, countResult, holdedDataGaps, allUsers] = await Promise.all([
     db
       .select({
         id: auditLogs.id,
@@ -87,6 +88,10 @@ export default async function AuditLogPage({
     )
     .orderBy(desc(repairJobs.updatedAt))
     .limit(50),
+    db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .orderBy(users.name),
   ]);
 
   const totalCount = Number(countResult[0]?.count ?? 0);
@@ -216,6 +221,8 @@ export default async function AuditLogPage({
         entity={params.entity}
         dateFrom={params.dateFrom}
         dateTo={params.dateTo}
+        userId={params.userId}
+        users={allUsers}
       />
 
       <SettingsPanel padded={false} className="overflow-hidden">

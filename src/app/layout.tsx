@@ -5,7 +5,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Caravan Repairs Admin",
+  title: {
+    default: "Reparatie Panel",
+    template: "%s · Reparatie Panel",
+  },
   description: "Internal repair management system",
   robots: {
     index: false,
@@ -13,10 +16,15 @@ export const metadata: Metadata = {
     googleBot: { index: false, follow: false },
   },
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+    shortcut: "/favicon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Caravan Repairs",
+    title: "Reparatie",
   },
 };
 
@@ -26,6 +34,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
+  ],
 };
 
 export default function RootLayout({

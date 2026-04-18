@@ -63,18 +63,18 @@ export default async function DashboardPage() {
       <div className="-mx-1 flex gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {quickPills.map((pill) => (
           <Link key={pill.label} href={pill.href} className="shrink-0">
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-gray-500 transition-all duration-150 hover:cursor-pointer hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-200">
-              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot}`} />
+            <span className="group inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] transition-all duration-150 hover:-translate-y-px hover:border-foreground/15 hover:text-foreground hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.10)]">
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot} transition-transform group-hover:scale-125`} />
               {pill.label}
-              <span className="font-medium tabular-nums text-gray-700 dark:text-slate-300">{pill.value}</span>
+              <span className="font-medium tabular-nums text-foreground">{pill.value}</span>
             </span>
           </Link>
         ))}
       </div>
 
       {/* ── Pipeline Progress ──────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-100 bg-white/80 px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] sm:px-5">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+      <div className={cn(dashboardPanelClass, "px-4 py-3 sm:px-5")}>
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
           Pipeline
         </p>
         <PipelineSummary repairs={pipelineJobs} />
@@ -88,23 +88,24 @@ export default async function DashboardPage() {
         <div className={cn("lg:col-span-2 overflow-hidden", dashboardPanelClass)}>
           <div className="flex flex-col gap-3 p-5 pb-3 sm:flex-row sm:items-end sm:justify-between sm:p-6 sm:pb-4">
             <div className="min-w-0 space-y-0.5">
-              <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-foreground">Recent Activity</h2>
-              <p className="text-sm text-gray-500 dark:text-muted-foreground">Latest updated repair jobs</p>
+              <h2 className="text-lg font-semibold tracking-[-0.015em] text-foreground">Recent Activity</h2>
+              <p className="text-sm text-muted-foreground">Latest updated repair jobs</p>
             </div>
             <Link
               href="/repairs"
-              className="inline-flex shrink-0 items-center gap-1 self-start text-sm text-gray-500 transition-colors hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground sm:self-auto"
+              className="group inline-flex shrink-0 items-center gap-1 self-start text-sm text-muted-foreground transition-colors hover:text-foreground sm:self-auto"
             >
-              View all <ArrowRight className="h-3.5 w-3.5" />
+              View all <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
           <div className="px-5 pb-5 sm:px-6 sm:pb-6">
             {recentJobs.length === 0 ? (
               <div className="py-16 text-center">
-                <Wrench className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-                <p className="font-medium text-sm text-gray-500">No repair jobs yet</p>
-                <Link href="/repairs/new" className="text-sm text-[#0CC0DF] hover:underline mt-1 inline-block">
+                <Wrench className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+                <p className="text-sm font-medium text-muted-foreground">No repair jobs yet</p>
+                <Link href="/repairs/new" className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-foreground underline-offset-4 hover:underline">
                   Create your first repair job
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             ) : (
@@ -123,22 +124,22 @@ export default async function DashboardPage() {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="group flex flex-col gap-3 rounded-xl p-3 transition-all duration-150 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between sm:p-4 dark:hover:bg-accent"
+                    className="group relative flex flex-col gap-3 rounded-xl p-3 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900 transition-colors group-hover:text-[#0CC0DF] dark:text-foreground">
+                      <p className="truncate text-sm font-medium tracking-[-0.005em] text-foreground transition-transform group-hover:translate-x-0.5">
                         {job.title || job.customerName || "Unnamed repair"}
                       </p>
-                      <p className="mt-0.5 text-sm text-gray-500 dark:text-muted-foreground">
+                      <p className="mt-0.5 text-sm text-muted-foreground">
                         {job.locationName && `${job.locationName} · `}
                         {job.customerName}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center gap-2 sm:ml-4 sm:justify-end sm:gap-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusPill[job.status as string] ?? "bg-gray-100 text-gray-600 dark:bg-muted dark:text-muted-foreground"}`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium tracking-[-0.005em] ${statusPill[job.status as string] ?? "bg-muted text-muted-foreground"}`}>
                         {STATUS_LABELS[job.status as RepairStatus]}
                       </span>
-                      <SmartDate date={job.updatedAt} className="text-xs text-gray-400" />
+                      <SmartDate date={job.updatedAt} className="text-xs text-muted-foreground/70 tabular-nums" />
                     </div>
                   </Link>
                   );
@@ -155,19 +156,19 @@ export default async function DashboardPage() {
 
           {/* Status Summary */}
           <div className={cn(dashboardPanelClass, "p-5")}>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Status Summary</h3>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Status Summary</h3>
             <div className="space-y-0">
               {quickPills.map((pill) => (
                 <Link
                   key={pill.label}
                   href={pill.href}
-                  className="flex items-center justify-between py-2 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent -mx-2.5 px-2.5 rounded-lg"
+                  className="group -mx-2.5 flex items-center justify-between rounded-lg px-2.5 py-2 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-muted/60"
                 >
-                  <span className="flex items-center gap-2 text-xs text-gray-600 dark:text-muted-foreground">
-                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pill.dot}`} />
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground transition-colors group-hover:text-foreground">
+                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pill.dot} transition-transform group-hover:scale-125`} />
                     {pill.label}
                   </span>
-                  <span className="text-xs font-medium text-gray-900 dark:text-foreground tabular-nums">{pill.value}</span>
+                  <span className="text-xs font-medium text-foreground tabular-nums">{pill.value}</span>
                 </Link>
               ))}
             </div>
@@ -175,9 +176,9 @@ export default async function DashboardPage() {
 
           {/* Location Breakdown */}
           <div className={cn(dashboardPanelClass, "p-6")}>
-            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-foreground">By Location</h3>
+            <h3 className="mb-4 text-sm font-semibold tracking-[-0.01em] text-foreground">By Location</h3>
             {jobsByLocation.length === 0 ? (
-              <p className="text-sm text-gray-500">No data</p>
+              <p className="text-sm text-muted-foreground">No data</p>
             ) : (
               (() => {
                 const mainLocations = ["Cruïllas", "Peratallada", "Sant Climent"];
@@ -195,31 +196,31 @@ export default async function DashboardPage() {
                       <Link
                         key={item.locationName ?? "unassigned"}
                         href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
-                        className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent -mx-3 px-3 rounded-lg"
+                        className="group -mx-3 flex items-center justify-between rounded-lg px-3 py-2.5 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-muted/60"
                       >
-                    <span className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-muted-foreground">
+                        <span className="flex items-center gap-2.5 text-sm text-muted-foreground transition-colors group-hover:text-foreground">
                           <span className={`h-2 w-2 rounded-full shrink-0 ${{
                             "cruïllas": "bg-sky-400",
                             "peratallada": "bg-amber-400",
                             "sant climent": "bg-emerald-400",
-                          }[item.locationName?.toLowerCase() ?? ""] ?? "bg-gray-300"}`} />
+                          }[item.locationName?.toLowerCase() ?? ""] ?? "bg-muted-foreground/30"}`} />
                           {item.locationName ?? "Unassigned"}
                         </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-foreground tabular-nums">{item.count}</span>
+                        <span className="text-sm font-medium text-foreground tabular-nums">{item.count}</span>
                       </Link>
                     ))}
                     {miscTotal > 0 && (
                       <>
-                        <div className="border-t border-gray-100 dark:border-border my-2" />
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Other</p>
+                        <div className="my-2 border-t border-border/60" />
+                        <p className="mb-1 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground/70">Other</p>
                         {misc.map((item) => (
                           <Link
                             key={item.locationName ?? "unassigned"}
                             href={item.locationId ? `/repairs?locationId=${item.locationId}` : "/repairs"}
-                            className="flex items-center justify-between py-2 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent -mx-3 px-3 rounded-lg"
+                            className="-mx-3 flex items-center justify-between rounded-lg px-3 py-2 transition-all duration-200 hover:bg-muted/60"
                           >
-                            <span className="text-sm text-gray-500">{item.locationName ?? "Unassigned"}</span>
-                            <span className="text-sm font-medium text-gray-500 tabular-nums">{item.count}</span>
+                            <span className="text-sm text-muted-foreground">{item.locationName ?? "Unassigned"}</span>
+                            <span className="text-sm font-medium text-muted-foreground tabular-nums">{item.count}</span>
                           </Link>
                         ))}
                       </>
@@ -233,7 +234,7 @@ export default async function DashboardPage() {
           {/* Follow-ups */}
           {followUps.length > 0 && (
             <div className={cn(dashboardPanelClass, "p-6")}>
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-foreground">
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-[-0.01em] text-foreground">
                 <PhoneOff className="h-3.5 w-3.5 text-amber-500" />
                 Needs Follow-up
               </h3>
@@ -252,20 +253,20 @@ export default async function DashboardPage() {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="flex items-center justify-between py-2.5 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent -mx-3 px-3 rounded-lg"
+                    className="-mx-3 flex items-center justify-between rounded-lg px-3 py-2.5 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-muted/60"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-foreground truncate">{job.customerName || job.title || "Unknown"}</p>
-                      <span className="text-xs text-gray-400 font-mono">{job.publicCode}</span>
+                      <p className="truncate text-sm font-medium tracking-[-0.005em] text-foreground">{job.customerName || job.title || "Unknown"}</p>
+                      <span className="font-mono text-xs text-muted-foreground/70">{job.publicCode}</span>
                     </div>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ml-2 shrink-0 ${responsePill[job.customerResponseStatus as string] ?? "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground"}`}>
+                    <span className={`ml-2 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium ${responsePill[job.customerResponseStatus as string] ?? "bg-muted text-muted-foreground"}`}>
                       {CUSTOMER_RESPONSE_LABELS[job.customerResponseStatus as CustomerResponseStatus]}
                     </span>
                   </Link>
                   );
                 })}
                 {followUps.length > 6 && (
-                  <Link href="/repairs?customerResponseStatus=no_response" className="block text-center text-xs text-gray-400 hover:text-gray-600 py-2 transition-colors">
+                  <Link href="/repairs?customerResponseStatus=no_response" className="block py-2 text-center text-xs text-muted-foreground transition-colors hover:text-foreground">
                     +{followUps.length - 6} more
                   </Link>
                 )}

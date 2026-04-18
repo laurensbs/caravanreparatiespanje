@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Use for list shells, filters bars, and page sections outside the repair editor.
  */
 export const dashboardPanelClass =
-  "rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]";
+  "rounded-2xl border border-border/60 bg-card text-card-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_1px_0_0_rgba(255,255,255,0.6)_inset] dark:shadow-[0_1px_2px_0_rgba(0,0,0,0.30),0_1px_0_0_rgba(255,255,255,0.04)_inset]";
 
 /** Full-width canvas behind dashboard pages (matches repair detail `#F9FAFB` workspace). */
 export function DashboardPageCanvas({
@@ -19,7 +19,7 @@ export function DashboardPageCanvas({
   return (
     <div
       className={cn(
-        "animate-fade-in min-h-[calc(100dvh-3.25rem)] bg-[#F9FAFB] px-3 py-4 sm:px-4 sm:py-5 dark:bg-background",
+        "animate-fade-in min-h-[calc(100dvh-3.25rem)] bg-background px-3 py-4 sm:px-4 sm:py-5",
         "max-lg:mx-0 max-lg:px-3",
         "-mx-3 md:-mx-4 md:px-4",
         "print:mx-0 print:min-h-0 print:bg-white print:px-0 print:py-0",
@@ -63,20 +63,20 @@ export function DashboardPageHeader({
     >
       <div className="min-w-0 space-y-2">
         {eyebrow ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl">
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground sm:text-3xl">
           {title}
         </h1>
         {metadata ? (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
             {metadata}
           </div>
         ) : null}
         {description ? (
-          <div className="max-w-2xl text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+          <div className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {description}
           </div>
         ) : null}
@@ -104,47 +104,46 @@ export function StatStrip({
   className?: string;
 }) {
   const toneClass: Record<NonNullable<typeof items[number]["tone"]>, string> = {
-    default: "text-gray-900 dark:text-gray-100",
+    default: "text-foreground",
     emerald: "text-emerald-600 dark:text-emerald-400",
     amber: "text-amber-600 dark:text-amber-400",
-    red: "text-red-600 dark:text-red-400",
+    red: "text-destructive",
     sky: "text-sky-600 dark:text-sky-400",
     violet: "text-violet-600 dark:text-violet-400",
   };
   return (
     <div
       className={cn(
-        "grid grid-cols-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03] sm:grid-cols-4",
+        "grid grid-cols-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] sm:grid-cols-4",
         className,
       )}
     >
       {items.map((item, i) => {
         const body = (
           <div className="flex flex-col gap-0.5 px-5 py-4">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
               {item.label}
             </p>
             <p
               className={cn(
-                "text-[22px] font-semibold tabular-nums leading-none mt-1.5",
+                "text-[22px] font-semibold tabular-nums leading-none tracking-[-0.02em] mt-1.5",
                 toneClass[item.tone ?? "default"],
               )}
             >
               {item.value}
             </p>
             {item.hint ? (
-              <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">{item.hint}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground/80">{item.hint}</p>
             ) : null}
           </div>
         );
         const classes = cn(
           "relative transition-colors",
-          // Dividers: border between, wrapping rows on small screens.
-          "border-gray-100 dark:border-gray-800",
+          "border-border/60",
           i > 0 && "sm:border-l",
           i >= 2 && "border-t sm:border-t-0",
           i === 1 && "border-l",
-          item.href && "hover:bg-gray-50 dark:hover:bg-white/[0.04]",
+          item.href && "hover:bg-muted/50",
         );
         if (item.href) {
           return (
@@ -191,7 +190,7 @@ export function SegmentedTabs<T extends string>({
     <div
       role="tablist"
       className={cn(
-        "inline-flex w-full overflow-x-auto whitespace-nowrap rounded-xl border border-gray-100 bg-gray-50/80 p-1 text-gray-500 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)] dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400 sm:w-auto",
+        "inline-flex w-full overflow-x-auto whitespace-nowrap rounded-xl border border-border/60 bg-muted/50 p-1 text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)] sm:w-auto",
         className,
       )}
     >
@@ -200,11 +199,11 @@ export function SegmentedTabs<T extends string>({
         const content = (
           <span
             className={cn(
-              "inline-flex items-center gap-2 rounded-lg font-medium transition-all",
+              "inline-flex items-center gap-2 rounded-lg font-medium tracking-[-0.005em] transition-all",
               base,
               active
-                ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/[0.04] dark:bg-gray-900 dark:text-gray-100 dark:ring-white/[0.04]"
-                : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100",
+                ? "bg-card text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.06),0_1px_0_0_rgba(255,255,255,0.6)_inset] ring-1 ring-border/40 dark:shadow-[0_1px_2px_0_rgba(0,0,0,0.30)]"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {tab.icon ? <span className="shrink-0 opacity-70">{tab.icon}</span> : null}
@@ -214,8 +213,8 @@ export function SegmentedTabs<T extends string>({
                 className={cn(
                   "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
                   active
-                    ? "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-200"
-                    : "bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400",
+                    ? "bg-foreground/[0.06] text-foreground"
+                    : "bg-foreground/[0.04] text-muted-foreground",
                 )}
               >
                 {tab.count}
@@ -230,7 +229,7 @@ export function SegmentedTabs<T extends string>({
               role="tab"
               aria-selected={active}
               href={hrefFor(tab.value)}
-              className="outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-lg"
+              className="outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-lg"
             >
               {content}
             </Link>
@@ -243,7 +242,7 @@ export function SegmentedTabs<T extends string>({
             type="button"
             aria-selected={active}
             onClick={() => onValueChange?.(tab.value)}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-lg"
+            className="outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-lg"
           >
             {content}
           </button>

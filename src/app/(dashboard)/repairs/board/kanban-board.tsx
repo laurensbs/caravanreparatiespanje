@@ -107,49 +107,50 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
       {BOARD_COLUMNS.map((status) => (
         <div
           key={status}
-          className={`flex min-w-[min(260px,calc(100vw-2.5rem))] max-w-[300px] shrink-0 snap-start flex-col rounded-lg border bg-muted/30 transition-colors ${
-            dropTarget === status ? "border-primary bg-primary/5" : ""
+          className={`flex min-w-[min(260px,calc(100vw-2.5rem))] max-w-[300px] shrink-0 snap-start flex-col rounded-2xl border border-border/60 bg-muted/30 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            dropTarget === status ? "border-foreground/40 bg-muted/70 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.20)] scale-[1.01]" : ""
           }`}
           onDragOver={(e) => handleDragOver(e, status)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, status)}
         >
-          <div className="flex items-center gap-2 border-b p-3">
+          <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2.5">
             <Badge
               variant="secondary"
-              className={STATUS_COLORS[status]}
+              className={`${STATUS_COLORS[status]} h-5 rounded-md px-2 text-[11px]`}
             >
               {STATUS_LABELS[status]}
             </Badge>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
               {jobsByStatus[status]?.length ?? 0}
             </span>
           </div>
           <div className="flex-1 space-y-2 p-2">
-            {(jobsByStatus[status] ?? []).map((job) => (
+            {(jobsByStatus[status] ?? []).map((job, idx) => (
               <div
                 key={job.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, job.id)}
                 onDragEnd={handleDragEnd}
-                className={`min-h-[4.5rem] cursor-grab touch-manipulation rounded-lg border bg-background p-3 shadow-sm transition-opacity hover:shadow-md active:cursor-grabbing ${
-                  draggingId === job.id ? "opacity-50" : ""
+                style={{ animationDelay: `${Math.min(idx * 30, 240)}ms` }}
+                className={`group relative min-h-[4.5rem] cursor-grab touch-manipulation rounded-xl border border-border/60 bg-card p-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 animate-[fadeUp_320ms_ease-out_forwards] hover:-translate-y-px hover:border-foreground/15 hover:shadow-[0_6px_18px_-8px_rgba(0,0,0,0.18)] active:cursor-grabbing ${
+                  draggingId === job.id ? "opacity-40 scale-95 rotate-1" : ""
                 }`}
                 onClick={() => router.push(`/repairs/${job.id}`)}
               >
                 <div className="mb-1 flex items-center gap-1.5">
                   <span
-                    className={`h-2 w-2 rounded-full ${PRIORITY_DOT[job.priority] ?? "bg-gray-400"}`}
+                    className={`h-2 w-2 rounded-full ${PRIORITY_DOT[job.priority] ?? "bg-muted-foreground/40"}`}
                   />
-                  <span className="text-xs font-mono text-muted-foreground">
+                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                     {job.publicCode}
                   </span>
                 </div>
-                <p className="text-sm font-medium leading-tight line-clamp-2">
+                <p className="line-clamp-2 text-sm font-medium leading-tight tracking-[-0.005em]">
                   {job.title}
                 </p>
                 {(job.customerName || job.locationName) && (
-                  <p className="mt-1 text-xs text-muted-foreground truncate">
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
                     {[job.customerName, job.locationName]
                       .filter(Boolean)
                       .join(" • ")}
@@ -158,7 +159,7 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
               </div>
             ))}
             {(jobsByStatus[status] ?? []).length === 0 && (
-              <p className="py-8 text-center text-xs text-muted-foreground">
+              <p className="py-8 text-center text-xs text-muted-foreground/60">
                 No jobs
               </p>
             )}

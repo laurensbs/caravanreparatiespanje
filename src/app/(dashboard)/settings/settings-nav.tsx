@@ -10,6 +10,7 @@ import {
   Plug,
   Receipt,
   Shield,
+  Activity,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ const BASE: Item[] = [
 ];
 
 const AUDIT: Item = { href: "/settings/audit", label: "Audit log", icon: Shield };
+const ACTIVITY: Item = { href: "/settings/activity", label: "Activity", icon: Activity };
 
 function activeFor(pathname: string, items: Item[]): string {
   // Most specific match wins.
@@ -41,11 +43,21 @@ function activeFor(pathname: string, items: Item[]): string {
   return best;
 }
 
-export function SettingsNav({ showAudit }: { showAudit: boolean }) {
+export function SettingsNav({
+  showAudit,
+  showOwner,
+}: {
+  showAudit: boolean;
+  showOwner?: boolean;
+}) {
   const pathname = usePathname();
-  const items = showAudit
-    ? [...BASE.slice(0, 5), AUDIT, ...BASE.slice(5)]
-    : BASE;
+  // Layout: ...base, [Audit?], [Pricing], [Activity (owner-only)?]
+  const items: Item[] = [
+    ...BASE.slice(0, 5),
+    ...(showAudit ? [AUDIT] : []),
+    ...BASE.slice(5),
+    ...(showOwner ? [ACTIVITY] : []),
+  ];
   const active = activeFor(pathname, items);
 
   return (

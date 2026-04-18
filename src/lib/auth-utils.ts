@@ -52,3 +52,27 @@ export function canExport(role: UserRole): boolean {
 export function canImport(role: UserRole): boolean {
   return hasMinRole(role, "admin");
 }
+
+/**
+ * The "owner" — a single person who sees the workspace activity portal
+ * and (in the future) any owner-only billing screens. We don't have a
+ * dedicated DB role for this yet; for now it's identified by email.
+ *
+ * If you ever change owner, swap the constant or move this to a settings
+ * row. Lower-cased + trimmed compare, so casing in the DB doesn't break
+ * the match.
+ */
+export const OWNER_EMAIL = "laurensbos@hotmail.com";
+
+export function isOwner(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return email.toLowerCase().trim() === OWNER_EMAIL;
+}
+
+export async function requireOwner() {
+  const session = await requireAuth();
+  if (!isOwner(session.user.email)) {
+    throw new Error("Forbidden");
+  }
+  return session;
+}

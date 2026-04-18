@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { hasMinRole } from "@/lib/auth-utils";
+import { hasMinRole, isOwner } from "@/lib/auth-utils";
 import type { UserRole } from "@/types";
 import { SettingsNav } from "./settings-nav";
 import { SettingsChildren } from "./settings-children";
@@ -15,6 +15,7 @@ export default async function SettingsLayout({
 }) {
   const session = await auth();
   const showAudit = !!session?.user?.role && hasMinRole(session.user.role as UserRole, "admin");
+  const showOwner = isOwner(session?.user?.email);
 
   return (
     <DashboardPageCanvas>
@@ -29,7 +30,7 @@ export default async function SettingsLayout({
         }
       />
 
-      <SettingsNav showAudit={showAudit} />
+      <SettingsNav showAudit={showAudit} showOwner={showOwner} />
 
       <SettingsChildren>{children}</SettingsChildren>
     </DashboardPageCanvas>

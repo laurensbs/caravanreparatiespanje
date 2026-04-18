@@ -12,19 +12,20 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 type Account = {
   name: string;
+  /** The actual login identifier — never shown in the UI, only sent to
+   *  signIn(). Workers see their first name, that's it. */
   email: string;
   /** Tailwind gradient classes for the avatar disc. Deliberately no
    *  cyan/sky tints — the new identity is warm + neutral with a few
    *  saturated personality picks. */
   color: string;
-  role: string;
 };
 
 const ACCOUNTS: Account[] = [
-  { name: "Jake", email: "jake", color: "from-indigo-500 to-blue-600", role: "Admin" },
-  { name: "Johan", email: "johan", color: "from-violet-500 to-fuchsia-500", role: "Admin" },
-  { name: "Laurens", email: "laurensbos@hotmail.com", color: "from-emerald-500 to-teal-600", role: "Owner" },
-  { name: "Noah", email: "noah@caravanrepairspain.com", color: "from-amber-500 to-orange-500", role: "Admin" },
+  { name: "Jake", email: "jake", color: "from-indigo-500 to-blue-600" },
+  { name: "Johan", email: "johan", color: "from-violet-500 to-fuchsia-500" },
+  { name: "Laurens", email: "laurensbos@hotmail.com", color: "from-emerald-500 to-teal-600" },
+  { name: "Noah", email: "noah@caravanrepairspain.com", color: "from-amber-500 to-orange-500" },
 ];
 
 type Stage = "pick" | "password" | "success";
@@ -165,12 +166,7 @@ export default function LoginPage() {
                 >
                   {acc.name.charAt(0)}
                 </div>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-sm font-medium tracking-[-0.005em]">{acc.name}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
-                    {acc.role}
-                  </span>
-                </div>
+                <span className="text-sm font-medium tracking-[-0.005em]">{acc.name}</span>
               </button>
             ))}
           </div>
@@ -207,9 +203,7 @@ export default function LoginPage() {
                   <div className="text-sm font-medium leading-tight tracking-[-0.005em]">
                     {selected.name}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {selected.role} · {selected.email}
-                  </div>
+                  <div className="text-xs text-muted-foreground">Voer je wachtwoord in</div>
                 </div>
                 <button
                   type="button"

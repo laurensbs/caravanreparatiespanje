@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, auditLogs } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { UserRole } from "@/types";
 
@@ -118,6 +118,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       return isLoggedIn;
+    },
+  },
+  events: {
+    /**
+     * Persist a "login" audit row whenever NextAuth issues a fresh
+     * session (i.e. password sign-in, not on every JWT refresh). The
+     * row is what powers the owner-only Activity portal at
+     * /settings/activity. Failures are swallowed so a flaky audit
+     * insert never blocks login.
+     */
+    async signIn({ user }) {
+      if (!user?.id) return;
+      try {
+        await db.insert(auditLogs).values({
+          userId: user.id,
+          action: "login",
+          entityType: "user",
+          entityId: user.id,
+        });
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.warn("[auth.events.signIn] could not write audit row", err);
+        }
+      }
     },
   },
 });

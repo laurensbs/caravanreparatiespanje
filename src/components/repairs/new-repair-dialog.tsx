@@ -386,7 +386,7 @@ export function NewRepairDialog({
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Customer</Label>
+                        <Label required className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Customer</Label>
                         <CustomerSearch
                           customers={customers}
                           value={customerId ?? undefined}
@@ -412,7 +412,12 @@ export function NewRepairDialog({
                   <div className="space-y-4">
                     {/* Description */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">{config.descLabel}</Label>
+                      <Label
+                        hint="omschrijf het probleem"
+                        className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70"
+                      >
+                        {config.descLabel}
+                      </Label>
                       <Textarea
                         name="descriptionRaw"
                         placeholder={config.descPlaceholder}

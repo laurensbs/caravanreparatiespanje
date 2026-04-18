@@ -92,6 +92,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const { pathname } = request.nextUrl;
       const isOnLogin = pathname.startsWith("/login");
       const isGarage = pathname.startsWith("/garage");
+      const hasGarageCookie = !!request.cookies.get("garage_auth")?.value;
+
+      // Garage-PWA "lock-in": als deze browser een actieve garage-sessie heeft
+      // en niet als admin is ingelogd, dan stuur alle navigatie buiten /garage
+      // terug naar /garage. Zo kunnen werkers nooit per ongeluk in het admin-
+      // dashboard of inlogscherm belanden (de tablet opent dit als app).
+      if (hasGarageCookie && !isLoggedIn && !isGarage) {
+        return Response.redirect(new URL("/garage", request.nextUrl));
+      }
 
       if (isOnLogin) {
         if (isLoggedIn) {

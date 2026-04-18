@@ -17,10 +17,6 @@ export const metadata: Metadata = {
     follow: false,
     googleBot: { index: false, follow: false },
   },
-  icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
-  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

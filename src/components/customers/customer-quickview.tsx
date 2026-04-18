@@ -71,7 +71,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
       <tbody className="divide-y divide-border/60">
         {allCustomers.length === 0 ? (
           <tr>
-            <td colSpan={6} className="py-20 text-center">
+            <td colSpan={5} className="py-20 text-center">
               <div className="flex flex-col items-center gap-2">
                 <Wrench className="h-8 w-8 text-foreground/90" />
                 <p className="text-sm font-medium text-muted-foreground/70">No contacts found</p>
@@ -86,18 +86,10 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
               className="group cursor-pointer touch-manipulation transition-colors duration-150 hover:bg-muted/50 active:bg-muted/70"
               onClick={() => router.push(`/customers/${c.id}`)}
             >
-              <td className="px-4 py-4 sm:px-5">
-                <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                  {c.name}
-                </span>
-                {c.phone && (
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground md:hidden">{c.phone}</p>
-                )}
-              </td>
-              <td className="px-4 py-4 sm:px-5">
+              <td className="px-4 py-3.5 sm:px-5">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    {c.contactType === "business" ? "Business" : "Person"}
+                  <span className="text-sm font-medium tracking-[-0.005em] text-foreground transition-colors group-hover:text-foreground/90">
+                    {c.name}
                   </span>
                   {c.holdedContactId && (
                     <span className="text-emerald-600 dark:text-emerald-400" title="Linked to Holded">
@@ -105,20 +97,26 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
                     </span>
                   )}
                 </span>
+                {c.phone && (
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground md:hidden">{c.phone}</p>
+                )}
               </td>
-              <td className="px-4 py-4 text-center sm:px-5">
-                <span
-                  className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums ${
-                    c.repairCount > 0 ? "bg-muted text-muted-foreground" : "text-muted-foreground/70"
-                  }`}
-                  title="Work orders linked to this contact"
-                >
-                  {c.repairCount}
-                </span>
+              <td className="px-4 py-3.5 text-center sm:px-5">
+                {c.repairCount > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11.5px] font-semibold tabular-nums text-foreground/85"
+                    title="Work orders linked to this contact"
+                  >
+                    <Wrench className="h-3 w-3 opacity-60" />
+                    {c.repairCount}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground/40 tabular-nums">0</span>
+                )}
               </td>
-              <td className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">{c.phone || <span className="text-muted-foreground/40">—</span>}</td>
-              <td className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">{c.email || <span className="text-muted-foreground/40">—</span>}</td>
-              <td className="px-4 py-4 text-right sm:px-5">
+              <td className="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell">{c.phone || <span className="text-muted-foreground/40">—</span>}</td>
+              <td className="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell">{c.email || <span className="text-muted-foreground/40">—</span>}</td>
+              <td className="px-4 py-3.5 text-right sm:px-5">
                 <SmartDate date={c.updatedAt} className="text-xs text-muted-foreground" />
               </td>
             </tr>
@@ -126,7 +124,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
         )}
         {hasMore && (
           <tr>
-            <td colSpan={6}>
+            <td colSpan={5}>
               <div ref={sentinelRef} className="flex justify-center py-4">
                 {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70" />}
               </div>
@@ -135,7 +133,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
         )}
         {!hasMore && allCustomers.length > 0 && (
           <tr>
-            <td colSpan={6}>
+            <td colSpan={5}>
               <p className="text-center text-[11px] text-muted-foreground/70 py-3">
                 {allCustomers.length} contact{allCustomers.length !== 1 ? "s" : ""}
               </p>

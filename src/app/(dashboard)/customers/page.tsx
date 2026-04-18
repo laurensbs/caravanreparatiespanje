@@ -139,17 +139,6 @@ export default async function CustomersPage({ searchParams }: Props) {
         />
       )}
 
-      {/* ── Holded hint ────────────────────────────────── */}
-      {isBusiness ? (
-        <HoldedHint variant="readonly">
-          Businesses (suppliers) are synced from <strong>Holded</strong>. Edit supplier details in Holded — changes appear here on next sync.
-        </HoldedHint>
-      ) : (
-        <HoldedHint variant="sync">
-          Contacts with the <span className="inline-flex items-center text-foreground/80"><ExternalLink className="h-2.5 w-2.5 mx-0.5" /></span> icon are linked to Holded. Editing their phone, email, or address will update in Holded too.
-        </HoldedHint>
-      )}
-
       {/* ── Table (horizontal scroll on small screens — keeps all columns) ─ */}
       <div className={cn("overflow-hidden", dashboardPanelClass)}>
         <div className="max-h-[min(70vh,calc(100vh-14rem))] overflow-auto overscroll-contain sm:max-h-[calc(100vh-16rem)]">
@@ -167,7 +156,6 @@ export default async function CustomersPage({ searchParams }: Props) {
                   </>
                 ) : (
                   <>
-                    <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Type</th>
                     <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">Repairs</th>
                     <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 md:table-cell dark:text-muted-foreground">Phone</th>
                     <th className="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 md:table-cell dark:text-muted-foreground">Email</th>

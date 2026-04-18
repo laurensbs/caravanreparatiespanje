@@ -5,7 +5,6 @@ import { PartsClient } from "@/components/parts/parts-client";
 import { SuppliersClient } from "@/components/parts/suppliers-client";
 import { PartRequestsClient } from "@/components/parts/part-requests-client";
 import { EquipmentClient } from "@/components/parts/equipment-client";
-import { HoldedHint } from "@/components/holded-hint";
 import { Package, ClipboardList, Wrench, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +25,10 @@ export default async function PartsPage() {
   const defaultMarkup = parseFloat(settings.default_markup_percent ?? "25");
   const partRequestCount = requests.filter((r) => r.requestType !== "equipment").length;
   const equipmentCount = requests.filter((r) => r.requestType === "equipment").length;
+  // Low + out of stock combined for the catalog tab badge.
+  const lowStockTotal = parts.filter(
+    (p) => p.minStockLevel > 0 && p.stockQuantity <= p.minStockLevel,
+  ).length;
 
   const tabTriggerClass =
     "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-black/[0.04] dark:text-muted-foreground/70 dark:hover:text-foreground dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-foreground";
@@ -68,6 +71,14 @@ export default async function PartsPage() {
                 <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
                   {parts.length}
                 </span>
+                {lowStockTotal > 0 ? (
+                  <span
+                    className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+                    title={`${lowStockTotal} parts at or below min-stock`}
+                  >
+                    {lowStockTotal} low
+                  </span>
+                ) : null}
               </span>
             </TabsTrigger>
             <TabsTrigger value="requests" className={tabTriggerClass}>
@@ -100,10 +111,6 @@ export default async function PartsPage() {
           </TabsList>
 
           <TabsContent value="catalog" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
-            <HoldedHint variant="sync" className="mb-4">
-              Parts catalog is synced from <strong>Holded products</strong>. Prices set here are used for cost estimates.
-              Adding parts to a repair doesn&apos;t change anything in Holded.
-            </HoldedHint>
             <PartsClient parts={parts} suppliers={suppliers} categories={categories} defaultMarkup={defaultMarkup} />
           </TabsContent>
 
@@ -116,10 +123,6 @@ export default async function PartsPage() {
           </TabsContent>
 
           <TabsContent value="suppliers" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
-            <HoldedHint variant="readonly" className="mb-4">
-              Suppliers are synced from <strong>Holded contacts</strong> (type: supplier). To add or edit suppliers,
-              update them in Holded and run a sync.
-            </HoldedHint>
             <SuppliersClient suppliers={suppliers} />
           </TabsContent>
         </Tabs>

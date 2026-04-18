@@ -21,12 +21,14 @@ const REPAIR_STATUS_OPTIONS: Record<string, string> = {
 };
 
 interface CustomerFiltersBarProps {
-  locations: Location[];
+  /** Kept for back-compat with the page; locations are no longer
+   *  rendered as a filter — contacts aren't tied to a location. */
+  locations?: Location[];
   currentFilters: CustomerFilters;
   allTags?: { id: string; name: string; color: string | null }[];
 }
 
-export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: CustomerFiltersBarProps) {
+export function CustomerFiltersBar({ currentFilters, allTags = [] }: CustomerFiltersBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -67,107 +69,74 @@ export function CustomerFiltersBar({ locations, currentFilters, allTags = [] }: 
   );
 
   return (
-    <div className="rounded-xl border border-border/80 bg-card p-4 shadow-sm">
-      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
-        <div className="relative min-w-0 flex-1 lg:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search contacts…"
-            className="h-11 touch-manipulation rounded-xl border-border bg-background pl-9 pr-9 text-sm"
-            value={searchInput}
-            onChange={handleSearchChange}
-          />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={() => { setSearchInput(""); updateFilter("q", undefined); }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-muted-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        <Select
-          value={currentFilters.repairStatus ?? "all"}
-          onValueChange={(val) => updateFilter("repairStatus", val)}
-        >
-          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm lg:w-56">
-            <SelectValue placeholder="Repair status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All contacts</SelectItem>
-            {Object.entries(REPAIR_STATUS_OPTIONS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={currentFilters.locationId ?? "all"}
-          onValueChange={(val) => updateFilter("locationId", val)}
-        >
-          <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl border-border bg-background text-sm lg:w-44">
-            <SelectValue placeholder="Location" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All locations</SelectItem>
-            {locations.map((loc) => (
-              <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {allTags.length > 0 && (
-          <Select
-            value={currentFilters.tagId ?? "all"}
-            onValueChange={(val) => updateFilter("tagId", val)}
-          >
-            <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl border-border bg-background text-sm lg:w-44">
-              <SelectValue placeholder="Tag" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tags</SelectItem>
-              {allTags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id}>
-                  <span className="flex items-center gap-1.5">
-                    {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
-                    {tag.name}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
-          <Input
-            type="date"
-            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
-            value={currentFilters.dateFrom ?? ""}
-            onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
-            aria-label="Updated from"
-          />
-          <Input
-            type="date"
-            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
-            value={currentFilters.dateTo ?? ""}
-            onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
-            aria-label="Updated to"
-          />
-        </div>
-
-        {hasActiveFilters && (
+    <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+      <div className="relative min-w-0 flex-1 lg:max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search contacts by name, phone, email…"
+          className="h-11 w-full touch-manipulation rounded-xl bg-card pl-9 pr-9 text-sm"
+          value={searchInput}
+          onChange={handleSearchChange}
+        />
+        {searchInput && (
           <button
             type="button"
-            onClick={clearFilters}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground touch-manipulation lg:h-auto lg:justify-start lg:border-0 lg:px-0 lg:hover:bg-transparent"
+            onClick={() => { setSearchInput(""); updateFilter("q", undefined); }}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
-            Clear filters
           </button>
         )}
       </div>
+
+      <Select
+        value={currentFilters.repairStatus ?? "all"}
+        onValueChange={(val) => updateFilter("repairStatus", val)}
+      >
+        <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl bg-card text-sm lg:w-56">
+          <SelectValue placeholder="Filter by repairs" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All — any repair status</SelectItem>
+          {Object.entries(REPAIR_STATUS_OPTIONS).map(([value, label]) => (
+            <SelectItem key={value} value={value}>{label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {allTags.length > 0 && (
+        <Select
+          value={currentFilters.tagId ?? "all"}
+          onValueChange={(val) => updateFilter("tagId", val)}
+        >
+          <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl bg-card text-sm lg:w-44">
+            <SelectValue placeholder="Tag" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {allTags.map((tag) => (
+              <SelectItem key={tag.id} value={tag.id}>
+                <span className="flex items-center gap-1.5">
+                  {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
+                  {tag.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground touch-manipulation lg:h-9"
+        >
+          <X className="h-3.5 w-3.5" />
+          Clear filters
+        </button>
+      )}
     </div>
   );
 }

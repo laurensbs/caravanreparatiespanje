@@ -29,7 +29,14 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  Plus, Pencil, Trash2, ExternalLink, Search,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Plus, Pencil, Trash2, ExternalLink, Search, MoreHorizontal,
   Zap, Wrench, SquareStack, Paintbrush, Droplets,
   Snowflake, Warehouse, Truck, Sparkles, Hammer,
   Package, Home, AlertTriangle, CheckCircle, FilterX,
@@ -156,6 +163,11 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
 
   const lowStockCount = parts.filter((p) => p.stockQuantity > 0 && p.stockQuantity <= p.minStockLevel).length;
   const outOfStockCount = parts.filter((p) => p.minStockLevel > 0 && p.stockQuantity <= 0).length;
+
+  // Conditionally show columns: only render Stock if at least one part
+  // is stock-tracked, and Order if at least one has an external link.
+  const showStockColumn = parts.some((p) => p.minStockLevel > 0 || p.stockQuantity > 0);
+  const showOrderColumn = parts.some((p) => p.orderUrl);
 
   return (
     <div className="space-y-4">
@@ -451,9 +463,9 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                   <TableHead>Part #</TableHead>
                   <TableHead>Cost</TableHead>
                   <TableHead>Our Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead className="hidden xl:table-cell">Order</TableHead>
-                  <TableHead className="w-24" />
+                  {showStockColumn ? <TableHead>Stock</TableHead> : null}
+                  {showOrderColumn ? <TableHead className="hidden xl:table-cell">Order</TableHead> : null}
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -466,7 +478,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                   const isLowStock = part.stockQuantity > 0 && part.stockQuantity <= part.minStockLevel;
                   const isOutOfStock = part.minStockLevel > 0 && part.stockQuantity <= 0;
                   return (
-                  <TableRow key={part.id}>
+                  <TableRow key={part.id} className="group">
                     <TableCell>
                       <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg", cat?.color ?? "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground")}>
                         <CatIcon className="h-3.5 w-3.5" />
@@ -483,53 +495,70 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
                     <TableCell className="text-sm font-medium">
                       {ourPrice !== null ? `€${ourPrice.toFixed(2)}` : "—"}
                     </TableCell>
+                    {showStockColumn ? (
+                      <TableCell>
+                        {part.minStockLevel > 0 || part.stockQuantity > 0 ? (
+                          <span className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                            isOutOfStock ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" :
+                            isLowStock ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
+                            "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                          )}>
+                            {isOutOfStock || isLowStock ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
+                            {part.stockQuantity}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50">—</span>
+                        )}
+                      </TableCell>
+                    ) : null}
+                    {showOrderColumn ? (
+                      <TableCell className="hidden xl:table-cell">
+                        {part.orderUrl ? (
+                          <a
+                            href={part.orderUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-foreground/80 hover:text-foreground hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Order
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50">—</span>
+                        )}
+                      </TableCell>
+                    ) : null}
                     <TableCell>
-                      {part.minStockLevel > 0 ? (
-                        <span className={cn(
-                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                          isOutOfStock ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" :
-                          isLowStock ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" :
-                          "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
-                        )}>
-                          {isOutOfStock || isLowStock ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
-                          {part.stockQuantity}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden xl:table-cell">
-                      {part.orderUrl ? (
-                        <a
-                          href={part.orderUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Order
-                        </a>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => openEdit(part)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 touch-manipulation text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(part)}
-                          disabled={isPending}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 touch-manipulation text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100 hover:text-foreground"
+                            aria-label={`Actions for ${part.name}`}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem onSelect={() => openEdit(part)}>
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={() => handleDelete(part)}
+                            disabled={isPending}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                   );

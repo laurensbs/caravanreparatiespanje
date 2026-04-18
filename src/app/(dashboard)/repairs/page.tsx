@@ -49,16 +49,7 @@ export default async function RepairsPage({ searchParams }: Props) {
     MAIN_LOCATIONS.includes(l.name.toLowerCase())
   );
 
-  const { byStatus, urgent } = statusCounts;
-
-  const quickButtons = [
-    { label: "To Do", value: (byStatus["new"] ?? 0) + (byStatus["todo"] ?? 0), status: "todo" },
-    { label: "In Progress", value: (byStatus["in_progress"] ?? 0) + (byStatus["scheduled"] ?? 0) + (byStatus["in_inspection"] ?? 0), status: "in_progress" },
-    { label: "Waiting Parts", value: byStatus["waiting_parts"] ?? 0, status: "waiting_parts" },
-    { label: "Waiting Customer", value: byStatus["waiting_customer"] ?? 0, status: "waiting_customer" },
-    { label: "Completed", value: byStatus["completed"] ?? 0, status: "completed" },
-    { label: "Urgent", value: urgent, status: undefined as string | undefined, priority: "urgent" as string | undefined },
-  ];
+  const { urgent } = statusCounts;
 
   return (
     <DashboardPageCanvas>
@@ -110,41 +101,6 @@ export default async function RepairsPage({ searchParams }: Props) {
                 }`}
               >
                 {focus.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Status / priority quick filters — horizontal scroll on narrow screens */}
-      <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 pt-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-        {quickButtons.map((btn) => {
-          const href = btn.priority
-            ? `/repairs?priority=${btn.priority}`
-            : `/repairs?status=${btn.status}`;
-          const isActive = btn.priority
-            ? filters.priority === btn.priority
-            : filters.status === btn.status;
-
-          const dotColor: Record<string, string> = {
-            "To Do": "bg-muted-foreground/40",
-            "In Progress": "bg-foreground",
-            "Waiting Parts": "bg-amber-400",
-            "Waiting Customer": "bg-orange-400",
-            "Completed": "bg-emerald-400",
-            "Urgent": "bg-red-400",
-          };
-
-          return (
-            <Link key={btn.label} href={isActive ? "/repairs" : href} className="shrink-0 snap-start touch-manipulation">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs transition-all duration-150 cursor-pointer sm:py-1.5 ${
-                isActive
-                  ? "bg-foreground dark:bg-card text-white dark:text-foreground font-medium shadow-sm"
-                  : "text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/90 hover:bg-muted dark:hover:bg-card/[0.06]"
-              }`}>
-                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-card dark:bg-foreground" : (dotColor[btn.label] ?? "bg-foreground/30")}`} />
-                {btn.label}
-                <span className={`tabular-nums font-medium ${isActive ? "" : "text-foreground/90 dark:text-foreground/80"}`}>{btn.value}</span>
               </span>
             </Link>
           );

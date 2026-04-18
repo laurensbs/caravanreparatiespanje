@@ -409,8 +409,13 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 key={dayIdx}
                 dayIndex={dayIdx}
                 className={cn(
-                  dashboardPanelClass,
                   "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-foreground/20",
+                  // Empty days collapse to a thin inline strip; full days
+                  // get the same panel chrome as before. This keeps a
+                  // light week from filling the screen with placeholders.
+                  isEmpty
+                    ? "rounded-xl border border-dashed border-border/50 bg-transparent"
+                    : cn(dashboardPanelClass),
                   isToday && "ring-2 ring-foreground/30 dark:ring-foreground/40",
                   isEmpty && "print:hidden",
                 )}
@@ -419,7 +424,8 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 {/* Day header */}
                 <div
                   className={cn(
-                    "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-foreground/20",
+                    "flex items-center justify-between gap-2 transition-colors print:border-foreground/20",
+                    isEmpty ? "px-4 py-2" : "px-4 py-3",
                     !isEmpty && "border-b border-border/60 dark:border-border",
                     isToday
                       ? "bg-muted/40 dark:bg-foreground/[0.06]"
@@ -429,12 +435,16 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                   )}
                 >
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">
+                    <span className={cn(
+                      "text-[10px] font-semibold uppercase tracking-wide",
+                      isEmpty ? "text-muted-foreground/50" : "text-muted-foreground/70 dark:text-muted-foreground",
+                    )}>
                       {t.days[dayIdx]}
                     </span>
                     <span
                       className={cn(
-                        "text-sm font-semibold tabular-nums text-foreground dark:text-foreground",
+                        "text-sm font-semibold tabular-nums",
+                        isEmpty ? "text-muted-foreground/70" : "text-foreground dark:text-foreground",
                       )}
                     >
                       {day.getDate()} {t.months[day.getMonth()]}
@@ -451,21 +461,21 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                       >
                         {dayRepairs.length}
                       </Badge>
-                    ) : (
-                      <span className="text-[12px] text-muted-foreground/70 dark:text-muted-foreground">
-                        {t.noRepairsScheduled}
-                      </span>
-                    )}
+                    ) : null}
                   </div>
+                  {/* Add button: visible on full days, hover-only on empty
+                      days so the empty strip isn't littered with seven
+                      identical buttons. */}
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground touch-manipulation print:hidden dark:text-muted-foreground/70 dark:hover:bg-card/[0.06] dark:hover:text-foreground",
-                      isEmpty && "opacity-60 group-hover/day:opacity-100",
+                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground touch-manipulation print:hidden dark:text-muted-foreground/70 dark:hover:bg-card/[0.06] dark:hover:text-foreground",
+                      isEmpty && "opacity-0 group-hover/day:opacity-100 focus-visible:opacity-100",
                     )}
                     onClick={() => openAddDialog(dayIdx)}
+                    aria-label={`Add repair on ${t.days[dayIdx]} ${day.getDate()}`}
                   >
                     <Plus className="mr-1 h-3.5 w-3.5" />
                     {t.addRepair}

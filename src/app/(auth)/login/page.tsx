@@ -67,7 +67,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Onjuist wachtwoord");
+      setError("Incorrect password");
       setLoading(false);
       setShake(true);
       setTimeout(() => setShake(false), 450);
@@ -130,10 +130,10 @@ export default function LoginPage() {
           className="mt-1.5 text-sm text-muted-foreground animate-[fadeIn_300ms_ease-out]"
         >
           {stage === "success"
-            ? `Welkom, ${selected?.name}`
+            ? `Welcome, ${selected?.name}`
             : stage === "password"
-            ? `Welkom terug, ${selected?.name}`
-            : "Kies je account om door te gaan"}
+            ? `Welcome back, ${selected?.name}`
+            : "Choose your account to continue"}
         </p>
       </div>
 
@@ -203,14 +203,14 @@ export default function LoginPage() {
                   <div className="text-sm font-medium leading-tight tracking-[-0.005em]">
                     {selected.name}
                   </div>
-                  <div className="text-xs text-muted-foreground">Voer je wachtwoord in</div>
+                  <div className="text-xs text-muted-foreground">Enter your password</div>
                 </div>
                 <button
                   type="button"
                   onClick={reset}
                   disabled={loading}
                   className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-                  aria-label="Andere gebruiker"
+                  aria-label="Choose a different account"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
@@ -222,7 +222,7 @@ export default function LoginPage() {
                     ref={passwordRef}
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Wachtwoord"
+                    placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyUp={(e) => {
@@ -245,7 +245,7 @@ export default function LoginPage() {
                     onClick={() => setShowPassword((v) => !v)}
                     tabIndex={-1}
                     className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label={showPassword ? "Wachtwoord verbergen" : "Wachtwoord tonen"}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -260,7 +260,7 @@ export default function LoginPage() {
                     }`}
                     aria-live="polite"
                   >
-                    {capsLock ? "Caps Lock staat aan" : "\u00A0"}
+                    {capsLock ? "Caps Lock is on" : "\u00A0"}
                   </p>
                   <p
                     className={`text-right text-destructive transition-opacity duration-200 ${
@@ -281,10 +281,10 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Spinner className="mr-2" />
-                    Bezig met inloggen…
+                    Signing in…
                   </>
                 ) : (
-                  "Inloggen"
+                  "Sign in"
                 )}
               </Button>
             </form>
@@ -318,7 +318,7 @@ export default function LoginPage() {
                 />
               </div>
               <p className="text-sm text-muted-foreground tracking-[-0.005em]">
-                Dashboard wordt geladen…
+                Loading dashboard…
               </p>
             </div>
           )}

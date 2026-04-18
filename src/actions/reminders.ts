@@ -133,7 +133,7 @@ export async function getInboxBadgeSummary() {
 }
 
 export async function completeReminder(reminderId: string) {
-  const session = await requireAuth();
+  await requireAuth();
 
   await db
     .update(actionReminders)
@@ -144,11 +144,23 @@ export async function completeReminder(reminderId: string) {
 }
 
 export async function dismissReminder(reminderId: string) {
-  const session = await requireAuth();
+  await requireAuth();
 
   await db
     .update(actionReminders)
     .set({ dismissedAt: new Date() })
+    .where(eq(actionReminders.id, reminderId));
+
+  revalidatePath("/");
+}
+
+/** Inverse of complete + dismiss. Powers the toast Undo action. */
+export async function reopenReminder(reminderId: string) {
+  await requireAuth();
+
+  await db
+    .update(actionReminders)
+    .set({ completedAt: null, dismissedAt: null })
     .where(eq(actionReminders.id, reminderId));
 
   revalidatePath("/");

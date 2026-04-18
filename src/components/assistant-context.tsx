@@ -6,7 +6,9 @@ import {
   getInboxBadgeSummary,
   completeReminder as completeReminderAction,
   dismissReminder as dismissReminderAction,
+  reopenReminder as reopenReminderAction,
 } from "@/actions/reminders";
+import { toastWithUndo } from "@/lib/toast-undo";
 import {
   getUnreadGarageRepliesSummary,
   markGarageRepliesRead,
@@ -171,28 +173,55 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
   const completeInboxItem = useCallback(
     async (id: string) => {
+      // Snapshot the item so Undo can rebuild local state without a refetch.
+      const snapshot = inboxItems.find((r) => r.id === id);
       setInboxItems((prev) => prev.filter((r) => r.id !== id));
       setInboxTotalCount((c) => Math.max(0, c - 1));
       try {
         await completeReminderAction(id);
+        toastWithUndo({
+          message: "Marked done",
+          description: snapshot?.title,
+          undo: async () => {
+            await reopenReminderAction(id);
+            if (snapshot) {
+              setInboxItems((prev) => [snapshot, ...prev]);
+              setInboxTotalCount((c) => c + 1);
+            }
+            void refreshBadge();
+          },
+        });
       } finally {
         void refreshBadge();
       }
     },
-    [refreshBadge],
+    [inboxItems, refreshBadge],
   );
 
   const dismissInboxItem = useCallback(
     async (id: string) => {
+      const snapshot = inboxItems.find((r) => r.id === id);
       setInboxItems((prev) => prev.filter((r) => r.id !== id));
       setInboxTotalCount((c) => Math.max(0, c - 1));
       try {
         await dismissReminderAction(id);
+        toastWithUndo({
+          message: "Dismissed",
+          description: snapshot?.title,
+          undo: async () => {
+            await reopenReminderAction(id);
+            if (snapshot) {
+              setInboxItems((prev) => [snapshot, ...prev]);
+              setInboxTotalCount((c) => c + 1);
+            }
+            void refreshBadge();
+          },
+        });
       } finally {
         void refreshBadge();
       }
     },
-    [refreshBadge],
+    [inboxItems, refreshBadge],
   );
 
   const dispatchAction = useCallback(

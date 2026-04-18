@@ -1430,8 +1430,33 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<FaqCategory | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Persist last 8 questions across sessions for quick recall.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("assistant.history");
+      if (raw) setHistory(JSON.parse(raw).slice(0, 8));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function rememberQuestion(q: string) {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    setHistory((prev) => {
+      const next = [trimmed, ...prev.filter((x) => x !== trimmed)].slice(0, 8);
+      try {
+        window.localStorage.setItem("assistant.history", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
 
   // Backward compat: listen for legacy window event too
   useEffect(() => {
@@ -1526,6 +1551,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
     setIsTyping(true);
+    rememberQuestion(query);
 
     setTimeout(() => {
       // Direct FAQ override (from clicking a topic)
@@ -1845,6 +1871,29 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
             ) : showHome ? (
               /* Home / empty state */
               <div className="p-3 space-y-3">
+                {/* Recent questions — quick recall, only when present and the
+                    page contextual block isn't taking the whole top */}
+                {history.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 flex items-center gap-1 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+                      <Clock className="h-3 w-3" />
+                      Recent
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {history.slice(0, 5).map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => answerQuestion(q)}
+                          className="group inline-flex max-w-full items-center gap-1 rounded-full border border-border/60 bg-card px-2 py-1 text-[11px] font-medium tracking-[-0.005em] text-muted-foreground transition-all duration-150 hover:-translate-y-px hover:border-foreground/15 hover:text-foreground"
+                        >
+                          <span className="truncate">{q}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {context?.job && page === "repair-detail" && (
                   <div className="rounded-xl border border-primary/15 bg-primary/[0.04] px-3 py-2.5 space-y-1">
                     <div className="flex items-start justify-between gap-2">

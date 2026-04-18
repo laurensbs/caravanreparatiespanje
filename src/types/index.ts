@@ -27,23 +27,30 @@ import type {
 
 export type UserRole = "admin" | "manager" | "staff" | "technician" | "viewer";
 
-export type RepairStatus =
-  | "new"
-  | "todo"
-  | "in_inspection"
-  | "no_damage"
-  | "quote_needed"
-  | "waiting_approval"
-  | "waiting_customer"
-  | "waiting_parts"
-  | "scheduled"
-  | "in_progress"
-  | "blocked"
-  | "ready_for_check"
-  | "completed"
-  | "invoiced"
-  | "rejected"
-  | "archived";
+export const REPAIR_STATUSES = [
+  "new",
+  "todo",
+  "in_inspection",
+  "no_damage",
+  "quote_needed",
+  "waiting_approval",
+  "waiting_customer",
+  "waiting_parts",
+  "scheduled",
+  "in_progress",
+  "blocked",
+  "ready_for_check",
+  "completed",
+  "invoiced",
+  "rejected",
+  "archived",
+] as const;
+export type RepairStatus = (typeof REPAIR_STATUSES)[number];
+
+/** Type guard. Use when reading status from URL params or external data. */
+export function isRepairStatus(v: unknown): v is RepairStatus {
+  return typeof v === "string" && (REPAIR_STATUSES as readonly string[]).includes(v);
+}
 
 export type Priority = "low" | "normal" | "high" | "urgent";
 

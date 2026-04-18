@@ -402,10 +402,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   return (
     // `min-h-[100dvh]` handles mobile browser URL bar resize better than `h-screen`
     // which traps content behind the iOS Safari bottom chrome.
-    <div className="flex min-h-[100dvh] flex-col bg-gray-950">
+    <div className="flex min-h-[100dvh] flex-col bg-background">
 
       {/* ─── HEADER ─── */}
-      <header className="safe-area-pt sticky top-0 z-30 shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
+      <header className="safe-area-pt sticky top-0 z-30 shrink-0 border-b border-white/[0.06] bg-background/95 backdrop-blur-xl">
         <div className="mx-auto max-w-4xl px-3 sm:px-4">
           {/* Nav row — always contains Back + Lang + Refresh. Running timers
               live on their own horizontally-scrollable row just below so we
@@ -945,7 +945,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
       </main>
 
       {/* ─── BOTTOM: Action bar + Tab nav ─── */}
-      <div className="safe-area-pb fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl">
+      <div className="safe-area-pb fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-background/95 backdrop-blur-xl">
         {/* Action buttons */}
         {isActive && (
           <div className="mx-auto max-w-4xl px-4 pb-1 pt-2">
@@ -1083,7 +1083,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
           setShowWorkerPicker(false);
         }
       }}>
-        <DialogContent className="rounded-2xl max-w-sm bg-gray-900 border-white/[0.08] text-white">
+        <DialogContent className="rounded-2xl max-w-sm bg-foreground border-white/[0.08] text-white">
           <DialogHeader>
             <DialogTitle>{t("Who are you?", "¿Quién eres?", "Wie ben je?")}</DialogTitle>
           </DialogHeader>
@@ -1116,7 +1116,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Comment Dialog */}
       <Dialog open={showComment} onOpenChange={setShowComment}>
-        <DialogContent className="rounded-2xl max-w-md bg-gray-900 border-white/[0.08] text-white">
+        <DialogContent className="rounded-2xl max-w-md bg-foreground border-white/[0.08] text-white">
           <DialogHeader>
             <DialogTitle>{t("Add Comment", "Añadir Comentario", "Opmerking Toevoegen")}</DialogTitle>
           </DialogHeader>
@@ -1138,7 +1138,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Not Done Dialog */}
       <Dialog open={showNotDone} onOpenChange={setShowNotDone}>
-        <DialogContent className="rounded-2xl max-w-md bg-gray-900 border-white/[0.08] text-white">
+        <DialogContent className="rounded-2xl max-w-md bg-foreground border-white/[0.08] text-white">
           <DialogHeader>
             <DialogTitle className="text-amber-400">{t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}</DialogTitle>
           </DialogHeader>
@@ -1160,7 +1160,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
       {/* Suggest Task Dialog */}
       <Dialog open={showSuggest} onOpenChange={setShowSuggest}>
-        <DialogContent className="rounded-2xl max-w-md bg-gray-900 border-white/[0.08] text-white">
+        <DialogContent className="rounded-2xl max-w-md bg-foreground border-white/[0.08] text-white">
           <DialogHeader>
             <DialogTitle>{t("Suggest Extra Task", "Sugerir Tarea Extra", "Extra Taak Voorstellen")}</DialogTitle>
           </DialogHeader>

@@ -400,7 +400,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
             <button
               key={pill.key}
               onClick={() => removePill(pill.key)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-muted dark:bg-card/[0.08] text-foreground/90 dark:text-foreground/80 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-200 dark:hover:bg-card/[0.12] group"
+              className="inline-flex items-center gap-1.5 rounded-full bg-muted dark:bg-card/[0.08] text-foreground/90 dark:text-foreground/80 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-foreground/[0.10] dark:hover:bg-card/[0.12] group"
             >
               <span className="text-muted-foreground/70 dark:text-muted-foreground">{pill.label}:</span>
               {pill.value}

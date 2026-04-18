@@ -323,7 +323,7 @@ function PhotoSourceSheet({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-t-3xl bg-gray-950 ring-1 ring-white/10 shadow-2xl pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-2xl motion-safe:animate-slide-up"
+        className="w-full max-w-sm rounded-t-3xl bg-background ring-1 ring-white/10 shadow-2xl pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-2xl motion-safe:animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mt-2 mb-1 h-1 w-10 rounded-full bg-white/10 sm:hidden" />

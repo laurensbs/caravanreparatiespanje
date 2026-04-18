@@ -70,7 +70,7 @@ export function ProblemDialog({ open, onClose, taskId, onComplete }: ProblemDial
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md bg-gray-900 border-white/[0.08] text-white">
+      <DialogContent className="max-w-md bg-foreground border-white/[0.08] text-white">
         <DialogHeader>
           <DialogTitle className="text-lg text-white">
             {t("Report Problem", "Reportar Problema", "Probleem Melden")}

@@ -235,7 +235,7 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
           "inline-flex items-center gap-1.5 h-8 text-sm px-3.5 rounded-xl font-medium shadow-sm transition-colors",
           isActive
             ? "bg-[currentColor]/10 text-[currentColor]"
-            : "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-gray-800 dark:hover:bg-muted"
+            : "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-foreground/90 dark:hover:bg-muted"
         )}
       >
         <Plus className="h-3.5 w-3.5" />
@@ -252,15 +252,15 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
             pos.placement === "bottom" ? "slide-in-from-top-1" : "slide-in-from-bottom-1"
           )}
         >
-          <button type="button" onClick={() => pick(onLabour)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/90 dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-gray-800 transition-colors text-left">
+          <button type="button" onClick={() => pick(onLabour)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/90 dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-foreground/[0.10] transition-colors text-left">
             <Clock className="h-3.5 w-3.5 text-muted-foreground/70" />
             Add labour
           </button>
-          <button type="button" onClick={() => pick(onPart)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/90 dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-gray-800 transition-colors text-left">
+          <button type="button" onClick={() => pick(onPart)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/90 dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-foreground/[0.10] transition-colors text-left">
             <Package className="h-3.5 w-3.5 text-muted-foreground/70" />
             Add part
           </button>
-          <button type="button" onClick={() => pick(onCustom)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/90 dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-gray-800 transition-colors text-left">
+          <button type="button" onClick={() => pick(onCustom)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/90 dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-foreground/[0.10] transition-colors text-left">
             <Pencil className="h-3.5 w-3.5 text-muted-foreground/70" />
             Add custom
           </button>
@@ -730,8 +730,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
   const statusBadgeColor = (() => {
     const m: Record<string, string> = {
-      new: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border",
-      todo: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border",
+      new: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border",
+      todo: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border",
       in_inspection: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
       quote_needed: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
       waiting_approval: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
@@ -744,19 +744,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       completed: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
       invoiced: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
       rejected: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
-      archived: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/70 dark:border-border",
+      archived: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:border-border",
     };
-    return m[status] ?? "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border";
+    return m[status] ?? "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border";
   })();
 
   const priorityBadgeColor = (() => {
     const m: Record<string, string> = {
-      low: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/70 dark:border-border",
-      normal: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border",
+      low: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:border-border",
+      normal: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border",
       high: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
       urgent: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
     };
-    return m[priority] ?? "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border";
+    return m[priority] ?? "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border";
   })();
 
   return (
@@ -816,7 +816,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       setExpandCustomer((v) => !v);
                       setTimeout(() => document.getElementById("customer-section")?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
                     }}
-                    className="text-foreground/90 dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-all duration-150"
+                    className="text-foreground/90 dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-foreground transition-all duration-150"
                   >
                     {job.customer.name}
                   </button>
@@ -866,14 +866,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   onChange={setCustomerResponseStatus}
                   options={CUSTOMER_RESPONSE_LABELS}
                   colorMap={{
-                    not_contacted: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border",
+                    not_contacted: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border",
                     contacted: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
                     waiting_response: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
                     approved: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
                     declined: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
-                    no_response: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/70 dark:border-border",
+                    no_response: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:border-border",
                     reply_not_required:
-                      "bg-muted text-muted-foreground border-slate-200 dark:bg-slate-800/60 dark:text-foreground/80 dark:border-slate-600",
+                      "bg-muted text-muted-foreground border-slate-200 dark:bg-foreground/[0.08] dark:text-foreground/80 dark:border-slate-600",
                   }}
                 />
                 <InlinePillPicker
@@ -887,18 +887,18 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   }}
                   options={INVOICE_STATUS_LABELS}
                   colorMap={{
-                    not_invoiced: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border",
-                    draft: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border",
+                    not_invoiced: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border",
+                    draft: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border",
                     sent: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
                     paid: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
                     warranty: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
                     our_costs: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800",
                     rejected: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
-                    no_damage: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/70 dark:border-border",
+                    no_damage: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:border-border",
                   }}
                 />
                 {repairWorkers.length > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground dark:text-muted-foreground/70 bg-muted dark:bg-gray-800 border border-border dark:border-border">
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground dark:text-muted-foreground/70 bg-muted dark:bg-foreground/[0.08] border border-border dark:border-border">
                     <User className="h-3 w-3" />
                     {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
                   </span>
@@ -944,7 +944,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     ) : (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-border dark:border-border bg-card dark:bg-gray-800 text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-700 transition-all duration-150">
+                        <button className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-border dark:border-border bg-card dark:bg-foreground/[0.08] text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.12] transition-all duration-150">
                           <Play className="h-3 w-3" />
                           Start / Schedule
                         </button>
@@ -1023,7 +1023,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="h-11 min-h-11 flex-1 touch-manipulation rounded-xl bg-foreground px-6 font-medium text-white shadow-sm transition-all duration-150 hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted sm:h-10 sm:min-h-0 sm:flex-initial"
+              className="h-11 min-h-11 flex-1 touch-manipulation rounded-xl bg-foreground px-6 font-medium text-white shadow-sm transition-all duration-150 hover:bg-foreground/90 dark:bg-card dark:text-foreground dark:hover:bg-muted sm:h-10 sm:min-h-0 sm:flex-initial"
             >
               {saving ? <Spinner className="mr-2" /> : null}
               Save
@@ -1143,7 +1143,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         <button
                           type="button"
                           onClick={() => setNextAction("")}
-                          className="text-muted-foreground/50 hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-muted-foreground/70 p-0.5 rounded-md hover:bg-muted dark:hover:bg-gray-800 transition-colors shrink-0"
+                          className="text-muted-foreground/50 hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-muted-foreground/70 p-0.5 rounded-md hover:bg-muted dark:hover:bg-foreground/[0.10] transition-colors shrink-0"
                         >
                           <XIcon className="h-3 w-3" />
                         </button>
@@ -1280,7 +1280,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 href={`/repairs/${r.id}`}
                 className="flex items-center gap-3 rounded-xl bg-card dark:bg-card/5 border border-border/60 dark:border-border hover:border-border dark:hover:border-border shadow-sm px-4 py-3 min-w-[220px] transition-all duration-150 group"
               >
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted dark:bg-gray-800 text-xs font-bold text-muted-foreground dark:text-muted-foreground/70 shrink-0">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted dark:bg-foreground/[0.08] text-xs font-bold text-muted-foreground dark:text-muted-foreground/70 shrink-0">
                   {(r.publicCode ?? 'R').slice(0, 2)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -1436,7 +1436,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                             f.severity === "critical"
                               ? "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
                               : f.severity === "minor"
-                              ? "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/70 dark:border-border"
+                              ? "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:border-border"
                               : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
                           }>
                             {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
@@ -1522,7 +1522,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           ? flag.danger
                             ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
                             : "bg-muted/60 text-foreground border-border dark:bg-foreground/[0.05] dark:text-foreground/80 dark:border-border"
-                          : "bg-muted/40 text-muted-foreground/70 border-gray-150 dark:bg-gray-800/50 dark:text-muted-foreground dark:border-border hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:border-gray-250"
+                          : "bg-muted/40 text-muted-foreground/70 border-border/60 dark:bg-foreground/[0.06] dark:text-muted-foreground dark:border-border hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:border-border"
                       }`}
                     >
                       {flag.label}
@@ -1677,7 +1677,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           router.refresh();
                           toast.success("Garage message cleared");
                         }}
-                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-200"
+                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground/90"
                       >
                         Clear
                       </button>
@@ -1704,7 +1704,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     size="sm"
                     disabled={!garageMessage.trim() || sendingMessage}
                     onClick={() => void handleSendGarageMessage()}
-                    className="shrink-0 rounded-xl h-[38px] px-4 text-sm font-medium border-border dark:border-gray-600 text-foreground dark:text-foreground hover:bg-muted dark:hover:bg-card/10"
+                    className="shrink-0 rounded-xl h-[38px] px-4 text-sm font-medium border-border dark:border-border text-foreground dark:text-foreground hover:bg-muted dark:hover:bg-card/10"
                   >
                     {sendingMessage ? (
                       <Spinner className="h-3.5 w-3.5" />
@@ -1867,7 +1867,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <span className="flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" />
                     Timeline
-                    <span className="text-[10px] bg-muted dark:bg-gray-800 text-muted-foreground dark:text-muted-foreground/70 rounded-full px-1.5 py-0.5 font-bold">{job.events.length}</span>
+                    <span className="text-[10px] bg-muted dark:bg-foreground/[0.08] text-muted-foreground dark:text-muted-foreground/70 rounded-full px-1.5 py-0.5 font-bold">{job.events.length}</span>
                   </span>
                   <ChevronDown className="h-3.5 w-3.5 opacity-40" />
                 </summary>
@@ -1876,9 +1876,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {job.events.map((event: any, idx: number) => (
                       <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
                         {idx < job.events.length - 1 && (
-                          <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+                          <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-foreground/[0.10] dark:bg-foreground/[0.10]" />
                         )}
-                        <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-card dark:bg-foreground" />
+                        <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-foreground/20 dark:border-border bg-card dark:bg-foreground" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-1.5 text-xs">
                             <span className="font-medium text-foreground dark:text-foreground">{event.userName ?? "System"}</span>
@@ -2136,7 +2136,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         href={`https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center h-7 px-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        className="inline-flex items-center h-7 px-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-foreground/[0.10] rounded-md transition-colors"
                       >
                         Holded ↗
                       </a>
@@ -2168,7 +2168,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         href={`https://app.holded.com/invoicing/invoice/${job.holdedInvoiceId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center h-7 px-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        className="inline-flex items-center h-7 px-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-foreground/[0.10] rounded-md transition-colors"
                       >
                         Holded ↗
                       </a>
@@ -2348,7 +2348,7 @@ function PhotosSection({
             <Camera className="h-4 w-4" />
             Photos
             {photos.length > 0 && (
-              <span className="text-[10px] bg-muted dark:bg-gray-800 text-muted-foreground dark:text-muted-foreground/70 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
+              <span className="text-[10px] bg-muted dark:bg-foreground/[0.08] text-muted-foreground dark:text-muted-foreground/70 rounded-full px-1.5 py-0.5 font-bold">{photos.length}</span>
             )}
           </span>
           <div className="flex items-center gap-2">
@@ -2367,7 +2367,7 @@ function PhotosSection({
             <button
               onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
               disabled={uploading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border dark:border-border bg-card dark:bg-gray-800 px-2.5 h-7 text-xs font-medium text-muted-foreground dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border dark:border-border bg-card dark:bg-foreground/[0.08] px-2.5 h-7 text-xs font-medium text-muted-foreground dark:text-muted-foreground/50 hover:bg-muted/40 dark:hover:bg-foreground/[0.12] transition-colors disabled:opacity-50"
             >
               {uploading ? (
                 <><RefreshCw className="h-3 w-3 animate-spin" /> Uploading...</>
@@ -2420,7 +2420,7 @@ function PhotosSection({
         </div>
       ) : (
         <div className="text-center py-6">
-          <Camera className="h-8 w-8 text-gray-200 dark:text-foreground/90 mx-auto mb-2" />
+          <Camera className="h-8 w-8 text-foreground/90 dark:text-foreground/90 mx-auto mb-2" />
           <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground">No photos yet</p>
           <p className="text-[10px] text-muted-foreground/50 dark:text-muted-foreground mt-0.5">Photos uploaded from the garage portal will appear here</p>
         </div>
@@ -2452,21 +2452,21 @@ function TimelineCommunicationCard({
   return (
     <div className="bg-card dark:bg-card/[0.03] rounded-2xl shadow-sm border border-border/60 dark:border-border overflow-hidden" ref={communicationRef}>
       <div className="px-6 pt-5 pb-3">
-        <div className="flex items-center gap-1 bg-muted/80 dark:bg-gray-800/50 rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-muted/80 dark:bg-foreground/[0.06] rounded-xl p-1">
           <button
             type="button"
             onClick={() => setTab("comms")}
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-semibold transition-all duration-150",
               tab === "comms"
-                ? "bg-card dark:bg-gray-700 text-foreground dark:text-foreground shadow-sm"
+                ? "bg-card dark:bg-foreground/[0.10] text-foreground dark:text-foreground shadow-sm"
                 : "text-muted-foreground/70 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/50"
             )}
           >
             <MessageSquare className="h-3.5 w-3.5" />
             Customer communication
             {communicationLogs.length > 0 && (
-              <span className="text-[10px] bg-gray-200 dark:bg-gray-600 text-muted-foreground dark:text-muted-foreground/50 rounded-full px-1.5 leading-relaxed">{communicationLogs.length}</span>
+              <span className="text-[10px] bg-foreground/[0.10] dark:bg-foreground/[0.12] text-muted-foreground dark:text-muted-foreground/50 rounded-full px-1.5 leading-relaxed">{communicationLogs.length}</span>
             )}
           </button>
           <button
@@ -2475,14 +2475,14 @@ function TimelineCommunicationCard({
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-semibold transition-all duration-150",
               tab === "timeline"
-                ? "bg-card dark:bg-gray-700 text-foreground dark:text-foreground shadow-sm"
+                ? "bg-card dark:bg-foreground/[0.10] text-foreground dark:text-foreground shadow-sm"
                 : "text-muted-foreground/70 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/50"
             )}
           >
             <Clock className="h-3.5 w-3.5" />
             Timeline
             {events.length > 0 && (
-              <span className="text-[10px] bg-gray-200 dark:bg-gray-600 text-muted-foreground dark:text-muted-foreground/50 rounded-full px-1.5 leading-relaxed">{events.length}</span>
+              <span className="text-[10px] bg-foreground/[0.10] dark:bg-foreground/[0.12] text-muted-foreground dark:text-muted-foreground/50 rounded-full px-1.5 leading-relaxed">{events.length}</span>
             )}
           </button>
         </div>
@@ -2505,9 +2505,9 @@ function TimelineCommunicationCard({
               events.map((event: any, idx: number) => (
                 <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
                   {idx < events.length - 1 && (
-                    <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+                    <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-foreground/[0.10] dark:bg-foreground/[0.10]" />
                   )}
-                  <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-card dark:bg-foreground" />
+                  <div className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-foreground/20 dark:border-border bg-card dark:bg-foreground" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5 text-xs">
                       <span className="font-medium text-foreground dark:text-foreground">{event.userName ?? "System"}</span>
@@ -2933,7 +2933,7 @@ function FinancialWorkflow({
   function sourceBadge(line: EstimateLineItem) {
     if (line.sourceType === "task") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted/60 text-foreground/80 dark:bg-foreground/[0.05] dark:text-foreground/80 font-medium">Workshop</span>;
     if (line.sourceType === "part_request") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400 font-medium">Part</span>;
-    return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70 font-medium">Manual</span>;
+    return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70 font-medium">Manual</span>;
   }
 
   return (
@@ -2950,7 +2950,7 @@ function FinancialWorkflow({
           <div key={s.label} className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
             activeStep > s.step ? "text-emerald-600 dark:text-emerald-400" :
-            activeStep === s.step ? "bg-card dark:bg-gray-800 text-foreground dark:text-foreground shadow-sm" :
+            activeStep === s.step ? "bg-card dark:bg-foreground/[0.08] text-foreground dark:text-foreground shadow-sm" :
             "text-muted-foreground/70 dark:text-muted-foreground"
           )}>
             {activeStep > s.step && <CheckCircle className="h-3 w-3" />}
@@ -3031,7 +3031,7 @@ function FinancialWorkflow({
                 "inline-flex items-center h-6 text-[11px] px-2 rounded-lg font-medium transition-colors",
                 ourCostsView
                   ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
-                  : "text-muted-foreground/70 hover:text-foreground/90 hover:bg-muted dark:text-muted-foreground dark:hover:text-muted-foreground/50 dark:hover:bg-gray-800"
+                  : "text-muted-foreground/70 hover:text-foreground/90 hover:bg-muted dark:text-muted-foreground dark:hover:text-muted-foreground/50 dark:hover:bg-foreground/[0.10]"
               )}
             >
               Everything our costs
@@ -3068,7 +3068,7 @@ function FinancialWorkflow({
                 onClick={() => setPartCategory(null)}
                 className={cn(
                   "inline-flex items-center gap-1 h-6 px-2.5 rounded-lg text-[11px] font-medium transition-colors",
-                  !partCategory ? "bg-foreground text-white dark:bg-muted dark:text-foreground" : "bg-muted text-muted-foreground hover:text-foreground dark:bg-gray-800 dark:text-muted-foreground/70 dark:hover:text-gray-200"
+                  !partCategory ? "bg-foreground text-white dark:bg-muted dark:text-foreground" : "bg-muted text-muted-foreground hover:text-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:hover:text-foreground/90"
                 )}
               >
                 All
@@ -3082,7 +3082,7 @@ function FinancialWorkflow({
                     onClick={() => setPartCategory(partCategory === cat.key ? null : cat.key)}
                     className={cn(
                       "inline-flex items-center gap-1 h-6 px-2.5 rounded-lg text-[11px] font-medium transition-colors",
-                      partCategory === cat.key ? `${cat.color}` : "bg-muted text-muted-foreground hover:text-foreground dark:bg-gray-800 dark:text-muted-foreground/70 dark:hover:text-gray-200"
+                      partCategory === cat.key ? `${cat.color}` : "bg-muted text-muted-foreground hover:text-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:hover:text-foreground/90"
                     )}
                   >
                     <CatIcon className="h-3 w-3" />
@@ -3100,7 +3100,7 @@ function FinancialWorkflow({
                   const markup = p.markupPercent ? parseFloat(p.markupPercent) : settings.defaultMarkup;
                   const sellPrice = baseCost * (1 + markup / 100);
                   return (
-                    <button key={p.id} type="button" onClick={() => addPartLine(p)} className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-card dark:hover:bg-gray-800 transition-colors flex justify-between items-center">
+                    <button key={p.id} type="button" onClick={() => addPartLine(p)} className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-card dark:hover:bg-foreground/[0.10] transition-colors flex justify-between items-center">
                       <span className="truncate">{p.name}{p.partNumber && <span className="text-muted-foreground/70 ml-1">({p.partNumber})</span>}</span>
                       <span className="text-muted-foreground shrink-0 ml-2 tabular-nums">€{sellPrice.toFixed(2)}{baseCost > 0 && <span className="text-[10px] ml-1 text-muted-foreground/70">+{markup}%</span>}</span>
                     </button>
@@ -3126,7 +3126,7 @@ function FinancialWorkflow({
 
             {/* Line item rows */}
             {costLines.map((line) => (
-              <div key={line.id} className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-border px-4 py-3 hover:bg-muted/40/50 dark:hover:bg-gray-800/30 transition-colors">
+              <div key={line.id} className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-border px-4 py-3 hover:bg-muted/40/50 dark:hover:bg-foreground/[0.10]/30 transition-colors">
                 <span className="w-16 shrink-0">{sourceBadge(line)}</span>
                 <Input value={line.description} onChange={(e) => updateCostLine(line.id, "description", e.target.value)} placeholder={line.type === "labour" ? "Labour description" : "Description"} className="h-7 text-xs rounded-lg flex-1 border-border dark:border-border" />
                 <Input type="number" min="0.25" step={line.type === "labour" ? "0.25" : "1"} value={line.quantity} onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)} className="h-7 text-xs rounded-lg w-14 text-center border-border dark:border-border" />
@@ -3238,7 +3238,7 @@ function FinancialWorkflow({
                   return (
                     <div key={d.id} className="flex items-center justify-between gap-2 text-xs text-muted-foreground dark:text-muted-foreground/70 py-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70 font-medium shrink-0">{d.sourceType === "task" ? "Task" : "Part"}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70 font-medium shrink-0">{d.sourceType === "task" ? "Task" : "Part"}</span>
                         <span className="truncate">{sourceLabel}</span>
                       </div>
                       <button

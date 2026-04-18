@@ -138,7 +138,7 @@ export default function LoginPage() {
       <div className="relative min-h-[200px]">
         {/* Stage: pick */}
         <div
-          className={`transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          className={`transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
             stage === "pick"
               ? "opacity-100 translate-y-0 pointer-events-auto"
               : "opacity-0 -translate-y-2 pointer-events-none absolute inset-0"
@@ -176,7 +176,7 @@ export default function LoginPage() {
 
         {/* Stage: password */}
         <div
-          className={`transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          className={`transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
             stage === "password"
               ? "opacity-100 translate-y-0 pointer-events-auto"
               : "opacity-0 translate-y-2 pointer-events-none absolute inset-0"

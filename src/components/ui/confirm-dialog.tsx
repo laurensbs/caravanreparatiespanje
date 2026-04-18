@@ -137,8 +137,9 @@ export function ConfirmDialogHost() {
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               className={cn(
-                "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                "flex h-10 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm tracking-[-0.005em] shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] transition-all duration-150",
+                "hover:border-foreground/20",
+                "focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
               )}
             />
           </div>

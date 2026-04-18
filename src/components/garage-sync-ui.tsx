@@ -394,7 +394,7 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
         {data.counts.readyForCheck > 0 && (
           <Link
             href="/repairs?status=ready_for_check"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-foreground transition-colors"
           >
             <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
             <span className="font-medium tabular-nums">
@@ -408,7 +408,7 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
         {data.counts.blocked > 0 && (
           <Link
             href="/repairs?status=blocked"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-foreground transition-colors"
           >
             <span className="h-2 w-2 rounded-full bg-red-400 shrink-0" />
             <span className="font-medium tabular-nums">
@@ -420,7 +420,7 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
         {data.counts.partsRequested > 0 && (
           <Link
             href="/parts"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-foreground transition-colors"
           >
             <span className="h-2 w-2 rounded-full bg-purple-400 shrink-0" />
             <span className="font-medium tabular-nums">

@@ -84,8 +84,8 @@ function EquipmentRequestForm({
           className={cn(
             "min-h-11 w-full touch-manipulation rounded-xl py-3 text-sm font-semibold transition-all sm:min-h-0 sm:flex-1 sm:py-2.5",
             name.trim() && !pending
-              ? "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-gray-800 dark:hover:bg-muted active:scale-[0.98]"
-              : "bg-gray-200 dark:bg-card/10 text-muted-foreground/70 dark:text-white/20 cursor-not-allowed"
+              ? "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-foreground/90 dark:hover:bg-muted active:scale-[0.98]"
+              : "bg-foreground/[0.10] dark:bg-card/10 text-muted-foreground/70 dark:text-white/20 cursor-not-allowed"
           )}
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Add"}
@@ -166,7 +166,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted"
+          className="inline-flex min-h-11 touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-foreground/90 dark:bg-card dark:text-foreground dark:hover:bg-muted"
         >
           <Plus className="h-4 w-4" /> Add request
         </button>
@@ -191,7 +191,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-card dark:text-foreground dark:hover:bg-muted sm:w-auto sm:py-2.5"
+            className="inline-flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-foreground/90 dark:bg-card dark:text-foreground dark:hover:bg-muted sm:w-auto sm:py-2.5"
           >
             <Plus className="h-4 w-4" /> Add
           </button>
@@ -212,7 +212,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
                 <button
                   type="button"
                   onClick={() => handleCheck(req.id)}
-                  className="group/check flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border-2 border-gray-300 transition-colors hover:border-emerald-400 hover:bg-emerald-50 dark:border-white/20 dark:hover:bg-emerald-500/10 sm:h-8 sm:w-8"
+                  className="group/check flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border-2 border-foreground/20 transition-colors hover:border-emerald-400 hover:bg-emerald-50 dark:border-white/20 dark:hover:bg-emerald-500/10 sm:h-8 sm:w-8"
                   title="Mark as received"
                 >
                   <Check className="h-4 w-4 text-emerald-500 opacity-70 transition-opacity group-hover/check:opacity-100 sm:h-3.5 sm:w-3.5 sm:opacity-0 sm:group-hover/check:opacity-100" />

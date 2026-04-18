@@ -28,7 +28,7 @@ export function PrioritySelect({ value, defaultValue, name, onValueChange, class
         {Object.entries(PRIORITY_LABELS).map(([val, label]) => (
           <SelectItem key={val} value={val}>
             <span className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT_COLORS[val] ?? "bg-gray-400"}`} />
+              <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT_COLORS[val] ?? "bg-muted-foreground/40"}`} />
               {label}
             </span>
           </SelectItem>

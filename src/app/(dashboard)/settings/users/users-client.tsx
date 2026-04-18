@@ -162,7 +162,7 @@ export function UsersClient({ users }: { users: User[] }) {
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/60 dark:border-border">
           <table className="w-full text-left text-[13px]">
-            <thead className="bg-muted/40/60 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground dark:bg-card/[0.03] dark:text-muted-foreground/70">
+            <thead className="bg-muted/40 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground dark:bg-card/[0.03] dark:text-muted-foreground/70">
               <tr>
                 <th className="px-4 py-2.5">Name</th>
                 <th className="hidden px-4 py-2.5 sm:table-cell">Email</th>
@@ -175,7 +175,7 @@ export function UsersClient({ users }: { users: User[] }) {
               {filtered.map((user, idx) => (
                 <tr
                   key={user.id}
-                  className="motion-safe:animate-slide-up transition-colors hover:bg-muted/40/60 dark:hover:bg-card/[0.03]"
+                  className="motion-safe:animate-slide-up transition-colors hover:bg-muted/40 dark:hover:bg-card/[0.03]"
                   style={{ animationDelay: `${idx * 18}ms`, animationFillMode: "backwards" }}
                 >
                   <td className="px-4 py-2.5">
@@ -221,7 +221,7 @@ export function UsersClient({ users }: { users: User[] }) {
                       <span
                         className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          user.active ? "bg-emerald-500" : "bg-gray-400",
+                          user.active ? "bg-emerald-500" : "bg-muted-foreground/40",
                         )}
                       />
                       {user.active ? "Active" : "Inactive"}
@@ -231,7 +231,7 @@ export function UsersClient({ users }: { users: User[] }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 rounded-full px-3 text-[11.5px] text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
+                      className="h-8 rounded-full px-3 text-[11.5px] text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground"
                       onClick={() => toggleActive(user)}
                     >
                       {user.active ? "Deactivate" : "Activate"}

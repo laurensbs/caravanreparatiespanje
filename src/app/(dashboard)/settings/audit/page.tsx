@@ -253,7 +253,7 @@ export default async function AuditLogPage({
                     <TableCell>
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                          ACTION_COLORS[log.action] ?? "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70"
+                          ACTION_COLORS[log.action] ?? "bg-muted text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70"
                         }`}
                       >
                         {log.action}

@@ -117,9 +117,9 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
           {Array.from(byUser.entries()).map(([userId, data]) => (
             <div
               key={userId}
-              className="inline-flex items-center gap-1.5 rounded-full bg-muted dark:bg-gray-800 px-3 py-1 text-xs font-medium text-foreground/90 dark:text-muted-foreground/50"
+              className="inline-flex items-center gap-1.5 rounded-full bg-muted dark:bg-foreground/[0.08] px-3 py-1 text-xs font-medium text-foreground/90 dark:text-muted-foreground/50"
             >
-              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70">
+              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-foreground/[0.10] dark:bg-foreground/[0.10] text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70">
                 {data.name.charAt(0).toUpperCase()}
               </span>
               {data.name.split(" ")[0]} · {formatMinutes(data.rounded)}
@@ -134,9 +134,9 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
           {timeEntries.map((entry) => (
             <div
               key={entry.id}
-              className="group flex items-center gap-3 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 dark:hover:bg-gray-800/50 transition-colors"
+              className="group flex items-center gap-3 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50 transition-colors"
             >
-              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted dark:bg-gray-800 text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70 shrink-0">
+              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted dark:bg-foreground/[0.08] text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70 shrink-0">
                 {(entry.userName ?? "?").charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
@@ -161,7 +161,7 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
                 entry.source === "manual"
                   ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                  : "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70"
+                  : "bg-muted text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70"
               }`}>
                 {entry.source === "manual" ? "manual" : "timer"}
               </span>
@@ -222,7 +222,7 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
             <button
               onClick={handleAdd}
               disabled={!addUserId || !addMinutes || isPending}
-              className="flex-1 text-xs font-medium text-white bg-foreground dark:bg-muted dark:text-foreground rounded-lg py-1.5 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40"
+              className="flex-1 text-xs font-medium text-white bg-foreground dark:bg-muted dark:text-foreground rounded-lg py-1.5 hover:bg-foreground/90 dark:hover:bg-foreground/[0.15] transition-colors disabled:opacity-40"
             >
               Add
             </button>

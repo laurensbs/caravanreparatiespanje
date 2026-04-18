@@ -268,7 +268,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 rounded-l-xl rounded-r-none text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
+                className="h-10 w-10 shrink-0 rounded-l-xl rounded-r-none text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground"
                 onClick={() => navigateWeek(-1)}
                 aria-label={ariaPrevWeek}
               >
@@ -277,7 +277,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
               <button
                 type="button"
                 onClick={goToThisWeek}
-                className="group/today inline-flex h-10 items-center gap-1.5 border-x border-border/60 dark:border-border px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground dark:text-muted-foreground/50 dark:hover:bg-card/[0.04] dark:hover:text-gray-100 touch-manipulation"
+                className="group/today inline-flex h-10 items-center gap-1.5 border-x border-border/60 dark:border-border px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground dark:text-muted-foreground/50 dark:hover:bg-card/[0.04] dark:hover:text-foreground touch-manipulation"
               >
                 <CalendarDays className="h-3.5 w-3.5 text-muted-foreground/70 transition-transform group-hover/today:scale-110 dark:text-muted-foreground" aria-hidden />
                 {t.thisWeek}
@@ -286,7 +286,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 rounded-r-xl rounded-l-none text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
+                className="h-10 w-10 shrink-0 rounded-r-xl rounded-l-none text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground"
                 onClick={() => navigateWeek(1)}
                 aria-label={ariaNextWeek}
               >
@@ -335,7 +335,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
               <Link
                 href="/repairs"
-                className="hidden sm:inline-flex h-10 items-center rounded-xl px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-gray-100"
+                className="hidden sm:inline-flex h-10 items-center rounded-xl px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground"
               >
                 {t.browseWorkOrders} →
               </Link>
@@ -390,7 +390,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 dayIndex={dayIdx}
                 className={cn(
                   dashboardPanelClass,
-                  "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
+                  "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-foreground/20",
                   isToday && "ring-2 ring-foreground/30 dark:ring-foreground/40",
                   isEmpty && "print:hidden",
                 )}
@@ -399,10 +399,10 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 {/* Day header */}
                 <div
                   className={cn(
-                    "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-gray-300",
+                    "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-foreground/20",
                     !isEmpty && "border-b border-border/60 dark:border-border",
                     isToday
-                      ? "bg-muted/60/40 dark:bg-muted/600/[0.06]"
+                      ? "bg-muted/40 dark:bg-foreground/[0.06]"
                       : isEmpty
                         ? "bg-transparent"
                         : "bg-muted/40/50 dark:bg-card/[0.02]",
@@ -420,14 +420,14 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                       {day.getDate()} {t.months[day.getMonth()]}
                     </span>
                     {isToday ? (
-                      <span className="inline-flex items-center rounded-full bg-muted/600/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80">
+                      <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80">
                         Today
                       </span>
                     ) : null}
                     {dayRepairs.length > 0 ? (
                       <Badge
                         variant="secondary"
-                        className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-gray-800 dark:text-foreground/90"
+                        className="h-5 rounded-full px-2 text-[10px] font-semibold print:hidden dark:bg-foreground/[0.08] dark:text-foreground/90"
                       >
                         {dayRepairs.length}
                       </Badge>
@@ -442,7 +442,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground touch-manipulation print:hidden dark:text-muted-foreground/70 dark:hover:bg-card/[0.06] dark:hover:text-gray-100",
+                      "h-8 shrink-0 rounded-lg px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground touch-manipulation print:hidden dark:text-muted-foreground/70 dark:hover:bg-card/[0.06] dark:hover:text-foreground",
                       isEmpty && "opacity-60 group-hover/day:opacity-100",
                     )}
                     onClick={() => openAddDialog(dayIdx)}
@@ -533,7 +533,7 @@ function RepairRow({
   const locDot = getLocationDot(repair.locationId);
   const time = new Date(repair.dueDate);
   const timeStr = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
-  const priorityDot = PRIORITY_COLORS[repair.priority as Priority]?.split(" ")[0] ?? "bg-gray-300";
+  const priorityDot = PRIORITY_COLORS[repair.priority as Priority]?.split(" ")[0] ?? "bg-foreground/30";
 
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } =
     useDraggable({ id: repair.id });

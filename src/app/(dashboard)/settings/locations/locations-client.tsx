@@ -146,7 +146,7 @@ export function LocationsClient({ locations }: { locations: Location[] }) {
             <SettingsTile key={loc.id} index={idx} onClick={() => openEdit(loc)}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-foreground/80 dark:bg-muted/600/10 dark:text-foreground/80">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-foreground/80 dark:bg-foreground/[0.06] dark:text-foreground/80">
                     <MapPin className="h-3.5 w-3.5" />
                   </span>
                   <span className="text-[14px] font-semibold tracking-tight text-foreground dark:text-foreground">

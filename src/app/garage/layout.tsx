@@ -47,7 +47,7 @@ export default async function GarageLayout({
       <Suspense fallback={null}>
         <RouteProgress />
       </Suspense>
-      <div className="flex min-h-screen flex-col bg-gray-950">
+      <div className="flex min-h-screen flex-col bg-background">
         <GarageIdleLock />
         {children}
         <Toaster

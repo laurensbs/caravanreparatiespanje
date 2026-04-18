@@ -235,7 +235,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
       <SettingsPanel className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/600/10 text-foreground/80">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/[0.06] text-foreground/80">
               <FileText className="h-5 w-5" />
             </span>
             <div className="min-w-0">

@@ -118,7 +118,7 @@ export function HoldedManualLinkForm({
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
               detectedKind === "invoice"
-                ? "border-border bg-muted/60 text-foreground dark:border-border/60 dark:bg-muted/600/10 dark:text-foreground/90"
+                ? "border-border bg-muted/60 text-foreground dark:border-border/60 dark:bg-foreground/[0.06] dark:text-foreground/90"
                 : "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800/60 dark:bg-violet-500/10 dark:text-violet-300",
             )}
           >

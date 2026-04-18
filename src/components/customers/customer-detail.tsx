@@ -193,7 +193,7 @@ export function CustomerDetail({
                 className="cursor-pointer"
                 title="Click to toggle type"
               >
-                <span className="inline-flex items-center rounded-full bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+                <span className="inline-flex items-center rounded-full bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 hover:bg-foreground/[0.10] dark:hover:bg-accent transition-colors">
                   {customer.contactType === "business" ? "Business" : "Person"}
                 </span>
               </button>

@@ -93,7 +93,7 @@ export function CustomersTableClient({ customers: initialCustomers, total, filte
           <tr>
             <td colSpan={6} className="py-20 text-center">
               <div className="flex flex-col items-center gap-2">
-                <Wrench className="h-8 w-8 text-gray-200" />
+                <Wrench className="h-8 w-8 text-foreground/90" />
                 <p className="text-sm font-medium text-muted-foreground/70">No contacts found</p>
                 <p className="text-xs text-muted-foreground/70">Try adjusting your search or filters</p>
               </div>

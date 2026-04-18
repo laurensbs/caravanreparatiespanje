@@ -1128,18 +1128,18 @@ const INBOX_TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: 
   follow_up_customer: { icon: Phone, color: "text-teal-600 dark:text-teal-400", bg: "bg-teal-500/10" },
   order_parts: { icon: Package, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
   check_delivery: { icon: Truck, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500/10" },
-  schedule_repair: { icon: Calendar, color: "text-foreground/80", bg: "bg-muted/600/10" },
+  schedule_repair: { icon: Calendar, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   send_quote: { icon: DollarSign, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
   contact_customer: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   custom: { icon: Pencil, color: "text-muted-foreground", bg: "bg-muted" },
 };
 
 const GARAGE_TRIGGER_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  garage_comment: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-muted/600/10" },
+  garage_comment: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   garage_not_done: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500/10" },
   garage_task_suggestion: { icon: Calendar, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
   garage_done: { icon: Check, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
-  garage_feedback: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-muted/600/10" },
+  garage_feedback: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
 };
 
 const INBOX_TYPE_LABELS: Record<string, string> = {
@@ -1221,9 +1221,9 @@ function InboxView({
     return (
       <div className="flex items-center justify-center px-6 py-14">
         <div className="flex gap-1">
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: "0ms" }} />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: "150ms" }} />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: "300ms" }} />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-foreground/30" style={{ animationDelay: "0ms" }} />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-foreground/30" style={{ animationDelay: "150ms" }} />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-foreground/30" style={{ animationDelay: "300ms" }} />
         </div>
       </div>
     );
@@ -1783,7 +1783,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                       className={cn(
                         "ml-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums",
                         tab === "inbox"
-                          ? overdueInboxCount > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-foreground/90"
+                          ? overdueInboxCount > 0 ? "bg-red-500 text-white" : "bg-foreground/[0.10] text-foreground/90"
                           : overdueInboxCount > 0 ? "bg-red-500/90 text-white" : "bg-card/20 text-white",
                       )}
                     >
@@ -1837,7 +1837,7 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                     <span className="text-[12px] font-medium leading-snug text-muted-foreground dark:text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground transition-colors">
                       {faq.question}
                     </span>
-                    <ChevronRight className="h-3 w-3 mt-1 shrink-0 text-gray-200 dark:text-muted-foreground/30 ml-auto" />
+                    <ChevronRight className="h-3 w-3 mt-1 shrink-0 text-foreground/90 dark:text-muted-foreground/30 ml-auto" />
                   </button>
                 ))}
               </div>
@@ -2023,9 +2023,9 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
                     </div>
                     <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-muted/40 dark:bg-muted/60">
                       <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 dark:bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
                       </div>
                     </div>
                   </div>

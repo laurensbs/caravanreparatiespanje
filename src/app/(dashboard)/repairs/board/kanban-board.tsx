@@ -99,7 +99,7 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
     urgent: "bg-red-500",
     high: "bg-orange-500",
     normal: "bg-blue-500",
-    low: "bg-gray-400",
+    low: "bg-muted-foreground/40",
   };
 
   return (

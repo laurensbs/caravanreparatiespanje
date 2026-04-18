@@ -81,7 +81,7 @@ export function PricingSettingsClient({
             <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
               Incl. VAT · {tax}%
             </Label>
-            <div className="flex h-10 items-center justify-between rounded-xl border border-border/60 bg-muted/40/60 px-3 text-[14px] font-semibold tabular-nums text-foreground/90 dark:border-border dark:bg-card/[0.03] dark:text-foreground/90">
+            <div className="flex h-10 items-center justify-between rounded-xl border border-border/60 bg-muted/40 px-3 text-[14px] font-semibold tabular-nums text-foreground/90 dark:border-border dark:bg-card/[0.03] dark:text-foreground/90">
               <span>€{rateInclVat.toFixed(2)}</span>
               <span className="text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 auto

@@ -297,7 +297,7 @@ export function PipelineSummary({ repairs, className }: PipelineSummaryProps) {
   return (
     <div className={cn("space-y-2", className)}>
       {/* Thin progress bar */}
-      <div className="h-2 rounded-full bg-gray-200 dark:bg-muted overflow-hidden">
+      <div className="h-2 rounded-full bg-foreground/[0.10] dark:bg-muted overflow-hidden">
         <div
           className="h-full rounded-full bg-[currentColor] transition-all duration-500"
           style={{ width: `${progressPercent}%` }}

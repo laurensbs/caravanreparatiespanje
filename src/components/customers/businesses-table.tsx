@@ -48,7 +48,7 @@ export function BusinessesTableClient({ suppliers }: { suppliers: Supplier[] }) 
         <tr>
           <td colSpan={6} className="py-20 text-center">
             <div className="flex flex-col items-center gap-2">
-              <Building2 className="h-8 w-8 text-gray-200" />
+              <Building2 className="h-8 w-8 text-foreground/90" />
               <p className="text-sm font-medium text-muted-foreground/70">No businesses found</p>
               <p className="text-xs text-muted-foreground/70">Businesses are synced from Holded</p>
             </div>

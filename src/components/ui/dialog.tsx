@@ -36,7 +36,8 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Base: centered, grid, bordered, subtle entrance anim.
-        "fixed z-50 grid gap-4 border bg-background shadow-2xl duration-200",
+        "fixed z-50 grid gap-4 border border-border/70 bg-card text-card-foreground duration-200",
+        "shadow-[0_24px_60px_-20px_rgba(0,0,0,0.30),0_8px_20px_-12px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.70),0_8px_20px_-12px_rgba(0,0,0,0.55)]",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         // Mobile (<640): full-width bottom sheet that never overflows the viewport.
         "inset-x-0 bottom-0 max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-2xl p-5",
@@ -51,7 +52,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1.5 opacity-60 ring-offset-background transition-all hover:opacity-100 hover:bg-muted active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1.5 text-muted-foreground ring-offset-background transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 disabled:pointer-events-none">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -65,7 +66,7 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 );
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)} {...props} />
+  <div className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2 sm:space-x-0", className)} {...props} />
 );
 
 const DialogTitle = React.forwardRef<

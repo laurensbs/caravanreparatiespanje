@@ -91,7 +91,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
               <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-tight text-foreground dark:text-foreground sm:text-3xl">{unitTitle}</h1>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[13px] text-muted-foreground dark:text-muted-foreground/70">
                 {unit.registration && (
-                  <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground/90 dark:bg-gray-800 dark:text-muted-foreground/50">
+                  <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground/90 dark:bg-foreground/[0.08] dark:text-muted-foreground/50">
                     {unit.registration}
                   </span>
                 )}
@@ -200,7 +200,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
               {editingField !== "notes" && notes && (
                 <button
                   onClick={() => setEditingField("notes")}
-                  className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted dark:hover:bg-gray-800"
+                  className="opacity-0 group-hover/notes:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted dark:hover:bg-foreground/[0.10]"
                   aria-label="Edit notes"
                 >
                   <Pencil className="h-3 w-3 text-muted-foreground/70 dark:text-muted-foreground" />
@@ -218,7 +218,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 </div>
               ) : (
                 <div
-                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-muted/40 dark:hover:bg-gray-800/50 px-3 py-2 -mx-3"
+                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50 px-3 py-2 -mx-3"
                   onClick={() => setEditingField("notes")}
                 >
                   {notes ? (
@@ -247,7 +247,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
 
             {unit.repairJobs.length === 0 ? (
               <div className="px-5 pb-5">
-                <div className="rounded-xl border border-dashed border-border dark:border-border bg-muted/40/60 dark:bg-gray-800/30 py-10 text-center">
+                <div className="rounded-xl border border-dashed border-border dark:border-border bg-muted/40 dark:bg-foreground/[0.05] py-10 text-center">
                   <Wrench className="h-7 w-7 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-2.5" />
                   <p className="text-sm text-muted-foreground/70 dark:text-muted-foreground">No repairs for this unit</p>
                 </div>
@@ -258,7 +258,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 dark:hover:bg-gray-800/40"
+                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/40"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground dark:text-foreground truncate transition-colors group-hover:text-foreground dark:group-hover:text-foreground/80">
@@ -294,12 +294,12 @@ const STATUS_BADGE_COLORS: Partial<Record<RepairStatus, string>> = {
   ready_for_check: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
   rejected: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
   blocked: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
-  no_damage: "bg-muted/40 text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70",
-  archived: "bg-muted/40 text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70",
+  no_damage: "bg-muted/40 text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70",
+  archived: "bg-muted/40 text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70",
 };
 
 function StatusBadge({ status }: { status: RepairStatus }) {
-  const colorClass = STATUS_BADGE_COLORS[status] ?? "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70";
+  const colorClass = STATUS_BADGE_COLORS[status] ?? "bg-muted text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground/70";
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium shrink-0 ${colorClass}`}>
       {STATUS_LABELS[status] ?? status}
@@ -317,14 +317,14 @@ function InlineRow({ icon: Icon, label, value, field, mono, type, nfcPill, editi
 }) {
   const isEditing = editingField === field;
   return (
-    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-border first:border-t-0">
+    <div className="group/row flex items-center justify-between py-3 border-t border-border/60 dark:border-border first:border-t-0">
       <span className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/70 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
       {isEditing ? (
         <div className="flex items-center gap-1.5">
           <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} className={`h-7 w-40 text-sm rounded-lg border-border dark:border-border ${mono ? "font-mono text-xs" : ""}`} autoFocus
             onKeyDown={(e) => { if (e.key === "Enter") onSave(field, value); if (e.key === "Escape") onCancel(); }} />
-          <button onClick={() => onSave(field, value)} disabled={saving} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors"><Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /></button>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" /></button>
+          <button onClick={() => onSave(field, value)} disabled={saving} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-foreground/[0.10] transition-colors"><Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /></button>
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-foreground/[0.10] transition-colors"><X className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" /></button>
         </div>
       ) : (
         <span
@@ -332,7 +332,7 @@ function InlineRow({ icon: Icon, label, value, field, mono, type, nfcPill, editi
           onClick={() => onEdit(field)}
         >
           {nfcPill && value ? (
-            <span className="bg-muted dark:bg-gray-800 text-foreground/90 dark:text-muted-foreground/50 rounded-md px-2 py-0.5 text-xs font-mono">{value}</span>
+            <span className="bg-muted dark:bg-foreground/[0.08] text-foreground/90 dark:text-muted-foreground/50 rounded-md px-2 py-0.5 text-xs font-mono">{value}</span>
           ) : (
             <span className={`text-sm font-medium ${mono ? "font-mono text-xs" : ""}`}>{value || "—"}</span>
           )}
@@ -353,7 +353,7 @@ function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder
 }) {
   const isEditing = editingField === field;
   return (
-    <div className="group/row flex items-center justify-between py-3 border-t border-gray-50 dark:border-border first:border-t-0">
+    <div className="group/row flex items-center justify-between py-3 border-t border-border/60 dark:border-border first:border-t-0">
       <span className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground/70 shrink-0"><Icon className="h-3.5 w-3.5" /> {label}</span>
       {isEditing ? (
         <div className="flex items-center gap-1.5">
@@ -367,7 +367,7 @@ function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder
               ))}
             </SelectContent>
           </Select>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors"><X className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" /></button>
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted dark:hover:bg-foreground/[0.10] transition-colors"><X className="h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground" /></button>
         </div>
       ) : (
         <span

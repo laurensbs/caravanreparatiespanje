@@ -153,7 +153,7 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
                       </span>
                     ))}
                     {repair.workers.length > 5 && (
-                      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-card">
+                      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-foreground/30 dark:bg-foreground/[0.12] text-[10px] font-bold text-white ring-2 ring-white dark:ring-card">
                         +{repair.workers.length - 5}
                       </span>
                     )}

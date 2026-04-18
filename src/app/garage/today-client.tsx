@@ -354,11 +354,11 @@ export function GarageTodayClient({
   }, [allUsers, recentWorkerIds]);
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-gray-950 text-white">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-white">
       {/* Unified sticky shell — keeps top bar, search (mobile), stat strip and
           tab bar stacked together so they can't overlap when the browser
           chrome resizes or the stat row wraps on a phone. */}
-      <div className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-gray-950/90 backdrop-blur-xl">
+      <div className="safe-area-pt sticky top-0 z-30 border-b border-white/[0.06] bg-background/90 backdrop-blur-xl">
         <header className="mx-auto max-w-6xl">
           {/* Row 1: identity + search + refresh */}
           <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
@@ -519,7 +519,7 @@ export function GarageTodayClient({
                     }}
                     className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-all ${
                       active
-                        ? "bg-white text-gray-900 shadow-sm"
+                        ? "bg-white text-foreground shadow-sm"
                         : "text-white/55 hover:text-white"
                     }`}
                   >
@@ -527,7 +527,7 @@ export function GarageTodayClient({
                     {tab.count > 0 ? (
                       <span
                         className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ${
-                          active ? "bg-gray-900 text-white" : "bg-white/10 text-white/50"
+                          active ? "bg-foreground text-white" : "bg-white/10 text-white/50"
                         }`}
                       >
                         {tab.count}
@@ -718,7 +718,7 @@ export function GarageTodayClient({
           onClick={() => setWorkerPickerRepairId(null)}
         >
           <div
-            className="motion-safe:animate-pop-in mx-0 w-full max-w-md rounded-t-3xl border border-white/10 bg-gray-900 p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:mx-4 sm:rounded-2xl sm:pb-5"
+            className="motion-safe:animate-pop-in mx-0 w-full max-w-md rounded-t-3xl border border-white/10 bg-foreground p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:mx-4 sm:rounded-2xl sm:pb-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/10 sm:hidden" />
@@ -1099,13 +1099,13 @@ function JobCard({
                 {repair.workers.slice(0, 3).map((w, i) => (
                   <div
                     key={i}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-950 bg-gradient-to-br from-teal-500/40 to-teal-600/20 text-[10.5px] font-bold text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-stone-950 bg-gradient-to-br from-teal-500/40 to-teal-600/20 text-[10.5px] font-bold text-white"
                   >
                     {w.charAt(0).toUpperCase()}
                   </div>
                 ))}
                 {repair.workers.length > 3 ? (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-950 bg-white/[0.08] text-[10.5px] font-bold text-white/55">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-stone-950 bg-white/[0.08] text-[10.5px] font-bold text-white/55">
                     +{repair.workers.length - 3}
                   </div>
                 ) : null}

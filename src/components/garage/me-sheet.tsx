@@ -68,7 +68,7 @@ export function GarageMeSheet({ open, onClose, users }: Props) {
       onClick={onClose}
     >
       <div
-        className="motion-safe:animate-slide-up mx-0 w-full max-w-md rounded-t-3xl border border-white/10 bg-gray-900 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:mx-4 sm:rounded-2xl sm:pb-4"
+        className="motion-safe:animate-slide-up mx-0 w-full max-w-md rounded-t-3xl border border-white/10 bg-foreground pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:mx-4 sm:rounded-2xl sm:pb-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-2 mt-2 h-1 w-10 rounded-full bg-white/10 sm:hidden" />

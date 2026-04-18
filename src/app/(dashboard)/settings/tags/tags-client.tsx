@@ -166,7 +166,7 @@ export function TagsClient({ tags }: { tags: TagType[] }) {
                     className={cn(
                       "h-8 w-8 rounded-full border transition-all motion-safe:active:scale-90",
                       color === c
-                        ? "scale-110 border-gray-900 ring-2 ring-gray-900/10 dark:border-border/60 dark:ring-white/10"
+                        ? "scale-110 border-foreground ring-2 ring-foreground/10 dark:border-border/60 dark:ring-white/10"
                         : "border-transparent hover:scale-105",
                     )}
                     style={{ backgroundColor: c }}

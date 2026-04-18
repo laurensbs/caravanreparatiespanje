@@ -445,7 +445,7 @@ export function NewRepairDialog({
                                     key={part.id}
                                     type="button"
                                     onClick={() => setSelectedParts((prev) => [...prev, { partId: part.id, name: part.name, partNumber: part.partNumber, quantity: 1 }])}
-                                    className="text-xs px-2.5 py-1 rounded-lg border border-dashed border-gray-300 dark:border-white/15 text-muted-foreground dark:text-foreground/80 hover:border-[currentColor]/40 hover:text-[currentColor] transition-colors"
+                                    className="text-xs px-2.5 py-1 rounded-lg border border-dashed border-foreground/20 dark:border-white/15 text-muted-foreground dark:text-foreground/80 hover:border-[currentColor]/40 hover:text-[currentColor] transition-colors"
                                   >
                                     + {part.name}
                                   </button>

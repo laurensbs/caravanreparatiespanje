@@ -108,7 +108,7 @@ export function AddRepairDialog({ open, onOpenChange, targetDate, lang, onAdded 
                   disabled={isPending}
                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted transition-colors disabled:opacity-50 flex items-start gap-3"
                 >
-                  <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${PRIORITY_COLORS[r.priority as Priority]?.split(" ")[0] ?? "bg-gray-300"}`} />
+                  <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${PRIORITY_COLORS[r.priority as Priority]?.split(" ")[0] ?? "bg-foreground/30"}`} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm truncate">{r.title ?? "—"}</span>

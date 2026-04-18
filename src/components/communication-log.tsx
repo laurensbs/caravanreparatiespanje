@@ -47,7 +47,7 @@ const METHOD_COLORS: Record<string, string> = {
   email: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   in_person: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
   sms: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
-  other: "bg-muted/40 text-muted-foreground dark:bg-muted/400/10 dark:text-muted-foreground/70",
+  other: "bg-muted/40 text-muted-foreground dark:bg-foreground/[0.06] dark:text-muted-foreground/70",
 };
 
 interface CommunicationLog {

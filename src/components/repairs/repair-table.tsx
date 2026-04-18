@@ -217,8 +217,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   }
 
   const STATUS_ACCENT: Record<string, string> = {
-    new: "bg-gray-300 dark:bg-muted/400",
-    todo: "bg-gray-300 dark:bg-muted/400",
+    new: "bg-foreground/30 dark:bg-foreground/30",
+    todo: "bg-foreground/30 dark:bg-foreground/30",
     in_inspection: "bg-foreground/40 dark:bg-foreground/60",
     no_damage: "bg-emerald-300 dark:bg-emerald-400",
     quote_needed: "bg-amber-300 dark:bg-amber-400",
@@ -231,25 +231,25 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
     completed: "bg-emerald-400 dark:bg-emerald-400",
     invoiced: "bg-emerald-300 dark:bg-emerald-400",
     rejected: "bg-red-300 dark:bg-rose-400",
-    archived: "bg-gray-300 dark:bg-slate-600",
+    archived: "bg-foreground/30 dark:bg-foreground/[0.10]",
   };
 
   const STATUS_PILL: Record<string, string> = {
-    new: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-foreground/90",
-    todo: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-foreground/90",
-    in_inspection: "bg-muted/60 text-foreground dark:bg-muted/600/15 dark:text-foreground/90",
+    new: "bg-muted text-muted-foreground dark:bg-foreground/[0.10]/60 dark:text-foreground/90",
+    todo: "bg-muted text-muted-foreground dark:bg-foreground/[0.10]/60 dark:text-foreground/90",
+    in_inspection: "bg-muted/60 text-foreground dark:bg-foreground/[0.10] dark:text-foreground/90",
     no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
     waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
     waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
     waiting_parts: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    scheduled: "bg-muted/60 text-foreground dark:bg-muted/600/15 dark:text-foreground/90",
-    in_progress: "bg-muted/60 text-foreground dark:bg-muted/600/15 dark:text-foreground/90",
+    scheduled: "bg-muted/60 text-foreground dark:bg-foreground/[0.10] dark:text-foreground/90",
+    in_progress: "bg-muted/60 text-foreground dark:bg-foreground/[0.10] dark:text-foreground/90",
     blocked: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
     completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-    archived: "bg-muted text-muted-foreground/70 dark:bg-slate-700/40 dark:text-muted-foreground/70",
+    archived: "bg-muted text-muted-foreground/70 dark:bg-foreground/[0.10]/40 dark:text-muted-foreground/70",
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
@@ -321,7 +321,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                     {job.title || "Unnamed repair"}
                   </p>
                   {job.jobType && job.jobType !== "repair" && (
-                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-muted text-slate-700 dark:bg-muted/400/15 dark:text-foreground/80"}`}>
+                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-muted text-slate-700 dark:bg-foreground/30/15 dark:text-foreground/80"}`}>
                       {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
                     </span>
                   )}
@@ -393,8 +393,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <TableStatusPicker
                 value={job.status}
                 onChange={(val) => quickStatusChange(job.id, val)}
-                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-slate-700/60 text-muted-foreground dark:text-foreground/90"}
-                accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-muted/400"}
+                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-foreground/[0.10]/60 text-muted-foreground dark:text-foreground/90"}
+                accentClass={STATUS_ACCENT[job.status] ?? "bg-foreground/30 dark:bg-foreground/30"}
               />
             );
 
@@ -414,7 +414,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                     }
                   }}
                 >
-                  <div className={`absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-full ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                  <div className={`absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-full ${STATUS_ACCENT[job.status] ?? "bg-foreground/30 dark:bg-foreground/[0.10]"}`} />
                   <div className="relative flex gap-3 pl-2.5">
                     <div className="shrink-0 pt-1" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
@@ -446,7 +446,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                           </p>
                           {job.locationName && (
                             <div className="mt-0.5 flex items-center gap-1.5">
-                              <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                              <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-foreground/30 dark:bg-foreground/[0.10]"}`} />
                               <span className="truncate text-[11px] text-muted-foreground dark:text-muted-foreground/70">{job.locationName}</span>
                             </div>
                           )}
@@ -478,11 +478,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Desktop: wide row */}
                 <div
-                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-border/60/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-muted/40 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-card/[0.03] md:flex ${selected.has(job.id) ? "bg-muted/60/40 ring-1 ring-border/60 dark:bg-muted/600/[0.06] dark:ring-foreground/15" : ""} animate-slide-up`}
+                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-border/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-muted/40 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-card/[0.03] md:flex ${selected.has(job.id) ? "bg-muted/40 ring-1 ring-border/60 dark:bg-foreground/[0.06] dark:ring-foreground/15" : ""} animate-slide-up`}
                   style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                   onClick={goToJob}
                 >
-                  <div className={`absolute bottom-3 left-0 top-3 w-[3px] rounded-full opacity-90 ${STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                  <div className={`absolute bottom-3 left-0 top-3 w-[3px] rounded-full opacity-90 ${STATUS_ACCENT[job.status] ?? "bg-foreground/30 dark:bg-foreground/[0.10]"}`} />
 
                   <div className="ml-1 w-6 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
@@ -512,7 +512,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                     </span>
                     {job.locationName && (
                       <div className="mt-0.5 flex items-center gap-1.5">
-                        <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
+                        <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-foreground/30 dark:bg-foreground/[0.10]"}`} />
                         <span className="truncate text-[11px] text-muted-foreground/70 dark:text-muted-foreground/70">{job.locationName}</span>
                       </div>
                     )}
@@ -603,8 +603,8 @@ function TableStatusPicker({ value, onChange, pillClass, accentClass }: { value:
                     onClick={() => { if (val !== value) onChange(val); setOpen(false); }}
                     className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       active
-                        ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
-                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50"
+                        ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
+                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50"
                     }`}
                   >
                     {STATUS_LABELS[val as RepairStatus]}

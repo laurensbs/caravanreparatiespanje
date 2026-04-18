@@ -106,7 +106,7 @@ export default async function RepairsPage({ searchParams }: Props) {
                   ? "bg-foreground dark:bg-card text-white dark:text-foreground font-medium shadow-sm"
                   : "text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/90 hover:bg-muted dark:hover:bg-card/[0.06]"
               }`}>
-                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-card dark:bg-foreground" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-card dark:bg-foreground" : (dotColor[btn.label] ?? "bg-foreground/30")}`} />
                 {btn.label}
                 <span className={`tabular-nums font-medium ${isActive ? "" : "text-foreground/90 dark:text-foreground/80"}`}>{btn.value}</span>
               </span>

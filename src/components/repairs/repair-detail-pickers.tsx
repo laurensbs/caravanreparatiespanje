@@ -264,8 +264,8 @@ export function JobTypePicker({
                 className={cn(
                   "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   active
-                    ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
-                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50",
+                    ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50",
                 )}
               >
                 <TypeIcon className="h-3.5 w-3.5" />
@@ -302,22 +302,22 @@ const STATUS_GROUPS = [
 ] as const;
 
 const STATUS_DOT_COLORS: Record<string, string> = {
-  new: "bg-gray-400",
-  todo: "bg-gray-400",
+  new: "bg-muted-foreground/40",
+  todo: "bg-muted-foreground/40",
   in_inspection: "bg-blue-500",
   quote_needed: "bg-amber-500",
   waiting_approval: "bg-amber-500",
   waiting_customer: "bg-orange-500",
   waiting_parts: "bg-amber-500",
-  no_damage: "bg-gray-400",
+  no_damage: "bg-muted-foreground/40",
   scheduled: "bg-blue-400",
-  in_progress: "bg-muted/600",
+  in_progress: "bg-foreground/80",
   blocked: "bg-red-500",
   ready_for_check: "bg-amber-500",
   completed: "bg-emerald-500",
   invoiced: "bg-emerald-400",
   rejected: "bg-red-500",
-  archived: "bg-gray-400",
+  archived: "bg-muted-foreground/40",
 };
 
 export function StatusPicker({
@@ -362,11 +362,11 @@ export function StatusPicker({
     <button
       type="button"
       onClick={() => setOpen(!open)}
-      className="flex items-center justify-between w-full h-11 rounded-xl border border-border dark:border-border bg-card dark:bg-card/5 px-3 text-sm font-medium text-foreground dark:text-foreground transition-all hover:border-foreground/20 dark:hover:border-gray-600"
+      className="flex items-center justify-between w-full h-11 rounded-xl border border-border dark:border-border bg-card dark:bg-card/5 px-3 text-sm font-medium text-foreground dark:text-foreground transition-all hover:border-foreground/20 dark:hover:border-foreground/30"
     >
       <span className="flex items-center gap-2">
         <span
-          className={`h-2 w-2 rounded-full ${STATUS_DOT_COLORS[value] ?? "bg-gray-400"}`}
+          className={`h-2 w-2 rounded-full ${STATUS_DOT_COLORS[value] ?? "bg-muted-foreground/40"}`}
         />
         {STATUS_LABELS[value as RepairStatus]}
       </span>
@@ -402,8 +402,8 @@ export function StatusPicker({
                     className={cn(
                       "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                       active
-                        ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
-                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50",
+                        ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
+                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50",
                     )}
                   >
                     {STATUS_LABELS[val as RepairStatus]}
@@ -447,7 +447,7 @@ export function InlinePillPicker({
 
   const badgeColor =
     colorMap[value] ??
-    "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/50 dark:border-border";
+    "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/50 dark:border-border";
 
   return (
     <div className="relative" ref={ref}>
@@ -479,8 +479,8 @@ export function InlinePillPicker({
                 className={cn(
                   "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   active
-                    ? "bg-muted dark:bg-gray-800 text-foreground dark:text-foreground"
-                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-gray-800/50",
+                    ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50",
                 )}
               >
                 {label}

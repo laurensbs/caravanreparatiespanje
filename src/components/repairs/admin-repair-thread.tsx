@@ -103,7 +103,7 @@ export function AdminRepairThread({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:text-muted-foreground/70 dark:hover:bg-card/[0.05] dark:hover:text-gray-200"
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:text-muted-foreground/70 dark:hover:bg-card/[0.05] dark:hover:text-foreground/90"
           >
             {expanded ? (
               <>
@@ -184,7 +184,7 @@ export function AdminRepairThread({
           type="button"
           disabled={!draft.trim() || isPosting}
           onClick={() => void handleSend()}
-          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border dark:border-gray-600 bg-card dark:bg-card/[0.04] px-4 py-2.5 text-sm font-medium text-foreground dark:text-foreground transition-colors hover:bg-muted dark:hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-4 py-2.5 text-sm font-medium text-foreground dark:text-foreground transition-colors hover:bg-muted dark:hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send className="h-3.5 w-3.5 opacity-70" />
           Send

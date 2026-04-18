@@ -98,7 +98,7 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
           key={timer.id}
           className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] min-h-12 px-3 py-2 text-sm text-white/50"
         >
-          <span className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-400 text-xs font-bold text-gray-950 shrink-0">
+          <span className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-400 text-xs font-bold text-stone-950 shrink-0">
             {(timer.userName ?? "?").charAt(0).toUpperCase()}
           </span>
           <span className="truncate max-w-[7rem]">{timer.userName}</span>

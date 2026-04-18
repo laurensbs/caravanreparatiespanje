@@ -423,7 +423,7 @@ export async function createPartCategory(data: { key: string; label: string; ico
       key: data.key.toLowerCase().replace(/[^a-z0-9_-]/g, "_"),
       label: data.label,
       icon: data.icon || "Package",
-      color: data.color || "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
+      color: data.color || "bg-muted/40 text-muted-foreground dark:bg-foreground/[0.06] dark:text-muted-foreground/70",
       sortOrder: 99,
     })
     .returning();

@@ -419,10 +419,10 @@ export function RepairPartsUsed({
                   key={part.id}
                   type="button"
                   onClick={() => selectPart(part)}
-                  className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-gray-50 dark:border-border/50 last:border-b-0 ${
+                  className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-border/60 dark:border-border/50 last:border-b-0 ${
                     highlightIndex === i
                       ? "bg-[currentColor]/5 dark:bg-[currentColor]/10"
-                      : "hover:bg-muted/40 dark:hover:bg-card/[0.04] active:bg-muted/60 dark:active:bg-muted/600/10"
+                      : "hover:bg-muted/40 dark:hover:bg-card/[0.04] active:bg-muted/60 dark:active:bg-foreground/[0.06]"
                   }`}
                   onMouseEnter={() => setHighlightIndex(i)}
                   style={{ minHeight: 56 }}
@@ -484,7 +484,7 @@ export function RepairPartsUsed({
             >
               Use &ldquo;{query.trim()}&rdquo; as custom part
             </button>
-            <span className="text-gray-200 dark:text-foreground/90 text-xs">·</span>
+            <span className="text-foreground/90 dark:text-foreground/90 text-xs">·</span>
             <button
               type="button"
               onClick={addToCatalog}
@@ -563,7 +563,7 @@ export function RepairPartsUsed({
               placeholder="Search parts (name, number, supplier…)"
               disabled={isPending}
               autoFocus
-              className="w-full h-9 pl-9 pr-9 text-xs rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600 transition-all duration-150 disabled:opacity-50"
+              className="w-full h-9 pl-9 pr-9 text-xs rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-foreground/20 focus:border-foreground/20 dark:focus:border-foreground/30 transition-all duration-150 disabled:opacity-50"
             />
             {isPending ? (
               <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
@@ -615,7 +615,7 @@ export function RepairPartsUsed({
                     "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
                     isActive
                       ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
-                      : "bg-muted/40 text-muted-foreground hover:text-foreground/90 dark:bg-gray-800 dark:text-muted-foreground/70 dark:hover:text-gray-200"
+                      : "bg-muted/40 text-muted-foreground hover:text-foreground/90 dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:hover:text-foreground/90"
                   )}
                 >
                   <Icon className="h-2.5 w-2.5" />
@@ -697,21 +697,21 @@ export function RepairPartsUsed({
               value={newPartName}
               onChange={(e) => setNewPartName(e.target.value)}
               placeholder="New part name..."
-              className="flex-1 h-9 px-3 text-xs rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
+              className="flex-1 h-9 px-3 text-xs rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-foreground/20 focus:border-foreground/20 dark:focus:border-foreground/30"
               autoFocus
               onKeyDown={(e) => { if (e.key === "Escape") { setShowNewPart(false); setNewPartName(""); setNewPartCategory(null); } }}
             />
             <button
               type="submit"
               disabled={isPending || !newPartName.trim()}
-              className="h-9 px-3 text-xs font-medium rounded-lg bg-foreground text-white dark:bg-muted dark:text-foreground hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              className="h-9 px-3 text-xs font-medium rounded-lg bg-foreground text-white dark:bg-muted dark:text-foreground hover:bg-foreground/90 dark:hover:bg-foreground/[0.15] disabled:opacity-50 transition-colors"
             >
               Create & Add
             </button>
             <button
               type="button"
               onClick={() => { setShowNewPart(false); setNewPartName(""); setNewPartCategory(null); }}
-              className="h-9 px-2 text-muted-foreground/70 hover:text-muted-foreground rounded-lg hover:bg-muted/40 dark:hover:bg-gray-800 transition-colors"
+              className="h-9 px-2 text-muted-foreground/70 hover:text-muted-foreground rounded-lg hover:bg-muted/40 dark:hover:bg-foreground/[0.10] transition-colors"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -732,7 +732,7 @@ export function RepairPartsUsed({
                     "inline-flex items-center gap-1 h-6 px-2 rounded-md text-[10px] font-medium transition-all duration-150",
                     isActive
                       ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
-                      : "bg-muted/40 text-muted-foreground hover:text-foreground/90 dark:bg-gray-800 dark:text-muted-foreground/70 dark:hover:text-gray-200"
+                      : "bg-muted/40 text-muted-foreground hover:text-foreground/90 dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:hover:text-foreground/90"
                   )}
                 >
                   <Icon className="h-2.5 w-2.5" />
@@ -845,7 +845,7 @@ function PartRequestCard({
                 {pr.partName}
               </p>
               {isCustom && (
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted dark:bg-gray-700 text-muted-foreground dark:text-muted-foreground/70 shrink-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted dark:bg-foreground/[0.10] text-muted-foreground dark:text-muted-foreground/70 shrink-0">
                   Custom
                 </span>
               )}
@@ -948,7 +948,7 @@ const PART_STATUS_COLORS: Record<string, { pill: string; accent: string }> = {
   ordered: { pill: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400", accent: "text-blue-500" },
   shipped: { pill: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400", accent: "text-indigo-500" },
   received: { pill: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400", accent: "text-emerald-500" },
-  cancelled: { pill: "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground", accent: "text-muted-foreground/70" },
+  cancelled: { pill: "bg-muted text-muted-foreground dark:bg-foreground/[0.08] dark:text-muted-foreground", accent: "text-muted-foreground/70" },
 };
 
 function PartStatusPicker({

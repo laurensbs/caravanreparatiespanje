@@ -28,7 +28,7 @@ export default async function PartsPage() {
   const equipmentCount = requests.filter((r) => r.requestType === "equipment").length;
 
   const tabTriggerClass =
-    "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-black/[0.04] dark:text-muted-foreground/70 dark:hover:text-gray-100 dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-gray-100";
+    "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-black/[0.04] dark:text-muted-foreground/70 dark:hover:text-foreground dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-foreground";
 
   return (
     <DashboardPageCanvas>

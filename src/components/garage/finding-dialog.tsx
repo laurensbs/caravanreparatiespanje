@@ -134,7 +134,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
                   onClick={() => setCategory(cat)}
                   className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all active:scale-[0.97] ${
                     category === cat
-                      ? "border-sky-400/40 bg-sky-400/10 ring-1 ring-sky-400/20"
+                      ? "border-teal-400/40 bg-teal-400/10 ring-1 ring-teal-400/20"
                       : "border-white/[0.06] hover:bg-white/[0.04]"
                   }`}
                 >
@@ -223,7 +223,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
             <button
               onClick={handleSubmit}
               disabled={!category || !description.trim() || isPending}
-              className="flex-1 h-12 rounded-xl bg-sky-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
+              className="flex-1 h-12 rounded-xl bg-teal-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
             >
               {isPending
                 ? t("Saving...", "Guardando...", "Opslaan...")

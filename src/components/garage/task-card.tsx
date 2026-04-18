@@ -75,7 +75,7 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
         <div className="flex items-start gap-3">
           <span className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none shrink-0 mt-0.5 ${
             status === "done" ? "bg-emerald-400/10 text-emerald-400" :
-            status === "in_progress" ? "bg-sky-400/10 text-sky-400" :
+            status === "in_progress" ? "bg-teal-400/10 text-teal-400" :
             status === "problem" ? "bg-red-400/10 text-red-400" :
             status === "review" ? "bg-amber-400/10 text-amber-400" :
             "bg-white/[0.06] text-white/30"

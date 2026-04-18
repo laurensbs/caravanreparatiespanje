@@ -311,7 +311,7 @@ const STATUS_DOT_COLORS: Record<string, string> = {
   waiting_parts: "bg-amber-500",
   no_damage: "bg-gray-400",
   scheduled: "bg-blue-400",
-  in_progress: "bg-sky-500",
+  in_progress: "bg-muted/600",
   blocked: "bg-red-500",
   ready_for_check: "bg-amber-500",
   completed: "bg-emerald-500",

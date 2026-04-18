@@ -319,11 +319,11 @@ function FeedbackCard({
     <Card
       className={cn(
         "overflow-hidden rounded-xl border-border/60 transition-all duration-200 hover:border-border hover:shadow-md sm:rounded-2xl",
-        showNewReplyRibbon && "ring-2 ring-cyan-500/25 dark:ring-cyan-400/20",
+        showNewReplyRibbon && "ring-2 ring-amber-500/30 dark:ring-amber-400/25",
       )}
     >
       {showNewReplyRibbon ? (
-        <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-cyan-500/15 to-transparent px-4 py-2 text-xs font-semibold text-cyan-900 dark:from-cyan-500/20 dark:text-cyan-100">
+        <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-amber-500/15 to-transparent px-4 py-2 text-xs font-semibold tracking-[-0.005em] text-amber-900 dark:from-amber-500/20 dark:text-amber-100">
           <span>New reply from the team</span>
         </div>
       ) : null}

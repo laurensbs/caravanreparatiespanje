@@ -51,9 +51,9 @@ interface NewRepairDialogProps {
 
 // Job type visual config
 const JOB_TYPE_CONFIG: Record<JobType, { icon: React.ElementType; color: string; bg: string; descLabel: string; descPlaceholder: string; partsDefault: "expanded" | "collapsed" | "hidden" }> = {
-  repair: { icon: Wrench, color: "text-slate-700", bg: "bg-slate-100 border-slate-200", descLabel: "Issue description", descPlaceholder: "Describe the damage or issue...", partsDefault: "expanded" },
+  repair: { icon: Wrench, color: "text-slate-700", bg: "bg-muted border-slate-200", descLabel: "Issue description", descPlaceholder: "Describe the damage or issue...", partsDefault: "expanded" },
   wax: { icon: Sparkles, color: "text-amber-600", bg: "bg-amber-50 border-amber-200", descLabel: "Work description", descPlaceholder: "Any special instructions for the wax job...", partsDefault: "collapsed" },
-  maintenance: { icon: Settings, color: "text-sky-600", bg: "bg-sky-50 border-sky-200", descLabel: "Work description", descPlaceholder: "Describe the maintenance needed...", partsDefault: "collapsed" },
+  maintenance: { icon: Settings, color: "text-foreground/80", bg: "bg-muted/60 border-border", descLabel: "Work description", descPlaceholder: "Describe the maintenance needed...", partsDefault: "collapsed" },
   inspection: { icon: ClipboardCheck, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", descLabel: "Notes", descPlaceholder: "Inspection notes and observations...", partsDefault: "hidden" },
 };
 
@@ -288,12 +288,12 @@ export function NewRepairDialog({
               <div className="flex items-start justify-between px-7 pt-7 pb-0">
                 <div>
                   <h2 className="text-2xl font-semibold text-foreground dark:text-white">New work order</h2>
-                  <p className="text-sm text-muted-foreground dark:text-slate-400 mt-0.5">Create a new job</p>
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-0.5">Create a new job</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleOpenChange(false)}
-                  className="rounded-lg p-1.5 text-muted-foreground/70 hover:text-muted-foreground dark:text-slate-500 dark:hover:text-slate-300 hover:bg-muted dark:hover:bg-card/5 transition-colors -mt-1 -mr-1"
+                  className="rounded-lg p-1.5 text-muted-foreground/70 hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-foreground/80 hover:bg-muted dark:hover:bg-card/5 transition-colors -mt-1 -mr-1"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -310,7 +310,7 @@ export function NewRepairDialog({
                   <div className="space-y-4">
                     {/* Job Type pills */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Work type</Label>
+                      <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Work type</Label>
                       <div className="flex gap-2">
                         {(Object.entries(JOB_TYPE_LABELS) as [JobType, string][]).map(([val, label]) => {
                           const c = JOB_TYPE_CONFIG[val];
@@ -325,7 +325,7 @@ export function NewRepairDialog({
                                 "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-all",
                                 active
                                   ? `${c.bg} ${c.color} shadow-sm`
-                                  : "border-border dark:border-white/10 text-muted-foreground dark:text-slate-400 hover:border-foreground/20 dark:hover:border-white/20 hover:text-foreground/90 dark:hover:text-slate-300"
+                                  : "border-border dark:border-white/10 text-muted-foreground dark:text-muted-foreground/70 hover:border-foreground/20 dark:hover:border-white/20 hover:text-foreground/90 dark:hover:text-foreground/80"
                               )}
                             >
                               <Icon className="h-3.5 w-3.5" />
@@ -338,7 +338,7 @@ export function NewRepairDialog({
 
                     {/* Title */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">
+                      <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">
                         Title
                       </Label>
                       <Input
@@ -352,7 +352,7 @@ export function NewRepairDialog({
                     {/* Status + Priority + Location */}
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Status</Label>
+                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Status</Label>
                         <Select name="status" defaultValue="todo">
                           <SelectTrigger className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm shadow-none">
                             <SelectValue />
@@ -365,11 +365,11 @@ export function NewRepairDialog({
                         </Select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Priority</Label>
+                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Priority</Label>
                         <PrioritySelect name="priority" defaultValue="normal" className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm shadow-none" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Location</Label>
+                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Location</Label>
                         <LocationSelect name="locationId" locations={locations} className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm shadow-none" />
                       </div>
                     </div>
@@ -382,7 +382,7 @@ export function NewRepairDialog({
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Customer</Label>
+                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Customer</Label>
                         <CustomerSearch
                           customers={customers}
                           value={customerId ?? undefined}
@@ -390,7 +390,7 @@ export function NewRepairDialog({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Unit / Vehicle</Label>
+                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Unit / Vehicle</Label>
                         <UnitSearch
                           units={units}
                           value={unitId ?? undefined}
@@ -408,7 +408,7 @@ export function NewRepairDialog({
                   <div className="space-y-4">
                     {/* Description */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">{config.descLabel}</Label>
+                      <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">{config.descLabel}</Label>
                       <Textarea
                         name="descriptionRaw"
                         placeholder={config.descPlaceholder}
@@ -423,7 +423,7 @@ export function NewRepairDialog({
                         <button
                           type="button"
                           onClick={() => setPartsExpanded(!partsExpanded)}
-                          className="flex items-center gap-2 text-xs font-medium text-muted-foreground dark:text-slate-400 hover:text-foreground/90 dark:hover:text-slate-300 transition-colors"
+                          className="flex items-center gap-2 text-xs font-medium text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/80 transition-colors"
                         >
                           {partsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                           Parts from catalog
@@ -439,13 +439,13 @@ export function NewRepairDialog({
                             {/* Auto-suggested parts */}
                             {suggestedParts.length > 0 && (
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-[11px] text-muted-foreground/70 dark:text-slate-500">Suggested:</span>
+                                <span className="text-[11px] text-muted-foreground/70 dark:text-muted-foreground">Suggested:</span>
                                 {suggestedParts.map((part) => (
                                   <button
                                     key={part.id}
                                     type="button"
                                     onClick={() => setSelectedParts((prev) => [...prev, { partId: part.id, name: part.name, partNumber: part.partNumber, quantity: 1 }])}
-                                    className="text-xs px-2.5 py-1 rounded-lg border border-dashed border-gray-300 dark:border-white/15 text-muted-foreground dark:text-slate-300 hover:border-[currentColor]/40 hover:text-[currentColor] transition-colors"
+                                    className="text-xs px-2.5 py-1 rounded-lg border border-dashed border-gray-300 dark:border-white/15 text-muted-foreground dark:text-foreground/80 hover:border-[currentColor]/40 hover:text-[currentColor] transition-colors"
                                   >
                                     + {part.name}
                                   </button>
@@ -461,7 +461,7 @@ export function NewRepairDialog({
                     <button
                       type="button"
                       onClick={() => setShowAdvanced(!showAdvanced)}
-                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground/70 dark:text-slate-500 hover:text-muted-foreground dark:hover:text-slate-400 transition-colors"
+                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground/70 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70 transition-colors"
                     >
                       {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                       Additional details
@@ -470,7 +470,7 @@ export function NewRepairDialog({
                     {showAdvanced && (
                       <div className="space-y-4 animate-in fade-in-0 slide-in-from-top-1 duration-150">
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Additional parts (free text)</Label>
+                          <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Additional parts (free text)</Label>
                           <Textarea
                             name="partsNeededRaw"
                             placeholder="Any parts not in the catalog..."
@@ -479,7 +479,7 @@ export function NewRepairDialog({
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Internal notes</Label>
+                          <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Internal notes</Label>
                           <Textarea
                             name="notesRaw"
                             placeholder="Notes visible only to staff..."
@@ -489,7 +489,7 @@ export function NewRepairDialog({
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Estimated cost (€)</Label>
+                            <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Estimated cost (€)</Label>
                             <Input
                               name="estimatedCost"
                               type="number"
@@ -499,7 +499,7 @@ export function NewRepairDialog({
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-muted-foreground dark:text-slate-400">Estimated hours</Label>
+                            <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Estimated hours</Label>
                             <Input
                               name="estimatedHours"
                               type="number"
@@ -518,7 +518,7 @@ export function NewRepairDialog({
                     <button
                       type="button"
                       onClick={() => handleOpenChange(false)}
-                      className="text-sm text-muted-foreground dark:text-slate-400 hover:text-foreground/90 dark:hover:text-slate-300 transition-colors font-medium"
+                      className="text-sm text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/80 transition-colors font-medium"
                     >
                       Cancel
                     </button>

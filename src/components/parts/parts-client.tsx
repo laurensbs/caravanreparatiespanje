@@ -599,8 +599,8 @@ function PartForm({
     });
   }
 
-  const fieldInput = "w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-slate-500 px-4 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none";
-  const fieldLabel = "text-sm font-medium text-foreground/90 dark:text-slate-300";
+  const fieldInput = "w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground px-4 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none";
+  const fieldLabel = "text-sm font-medium text-foreground/90 dark:text-foreground/80";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -611,7 +611,7 @@ function PartForm({
             <h2 className="text-xl font-semibold text-foreground dark:text-slate-100 tracking-tight">
               {isEditing ? "Edit part" : "Add part"}
             </h2>
-            <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-1">
               {isEditing ? "Update this part's details" : "Create a new part and sync it to Holded"}
             </p>
           </div>
@@ -689,7 +689,7 @@ function PartForm({
         {!isNaN(ourPrice) && (
           <div className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-white/[0.06] bg-muted/40/50 dark:bg-card/[0.02] px-4 py-3">
             <span className="text-sm font-medium text-foreground dark:text-slate-100">Our Price: €{ourPrice.toFixed(2)}</span>
-            <span className="text-xs text-muted-foreground dark:text-slate-400">({effectiveMarkup}% markup)</span>
+            <span className="text-xs text-muted-foreground dark:text-muted-foreground/70">({effectiveMarkup}% markup)</span>
           </div>
         )}
 
@@ -732,7 +732,7 @@ function PartForm({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Optional internal description"
             rows={3}
-            className="w-full min-h-[96px] text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-slate-500 px-4 py-3 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none resize-none"
+            className="w-full min-h-[96px] text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground px-4 py-3 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none resize-none"
           />
         </div>
       </div>
@@ -740,7 +740,7 @@ function PartForm({
       {/* Footer */}
       <div className="flex flex-col-reverse gap-3 border-t border-border/60 px-6 py-4 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between sm:px-8">
         {!isEditing && (
-          <p className="hidden text-center text-xs text-muted-foreground/70 dark:text-slate-500 sm:block sm:text-left">
+          <p className="hidden text-center text-xs text-muted-foreground/70 dark:text-muted-foreground sm:block sm:text-left">
             New parts are also synced to Holded.
           </p>
         )}

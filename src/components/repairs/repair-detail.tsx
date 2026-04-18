@@ -723,7 +723,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   // Financial stage for badge display (use local invoiceStatus so it matches pills + next action)
   const financialStage = (() => {
     if (invoiceStatus === "paid") return { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" };
-    if (job.holdedInvoiceId) return { label: "Invoiced", color: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800" };
+    if (job.holdedInvoiceId) return { label: "Invoiced", color: "bg-muted/60 text-foreground border-border dark:bg-foreground/[0.05] dark:text-foreground/80 dark:border-border" };
     if (job.holdedQuoteId) return { label: "Quoted", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800" };
     return null;
   })();
@@ -873,7 +873,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     declined: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
                     no_response: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-muted-foreground/70 dark:border-border",
                     reply_not_required:
-                      "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-600",
+                      "bg-muted text-muted-foreground border-slate-200 dark:bg-slate-800/60 dark:text-foreground/80 dark:border-slate-600",
                   }}
                 />
                 <InlinePillPicker
@@ -1284,7 +1284,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   {(r.publicCode ?? 'R').slice(0, 2)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground dark:text-foreground truncate group-hover:text-sky-700 dark:group-hover:text-sky-400 transition-colors">
+                  <p className="text-sm font-medium text-foreground dark:text-foreground truncate group-hover:text-foreground dark:group-hover:text-foreground/80 transition-colors">
                     {r.title ? r.title.slice(0, 35) + (r.title.length > 35 ? '…' : '') : r.publicCode ?? 'Repair'}
                   </p>
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/70 mt-0.5">
@@ -1521,7 +1521,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         flag.value
                           ? flag.danger
                             ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
-                            : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800"
+                            : "bg-muted/60 text-foreground border-border dark:bg-foreground/[0.05] dark:text-foreground/80 dark:border-border"
                           : "bg-muted/40 text-muted-foreground/70 border-gray-150 dark:bg-gray-800/50 dark:text-muted-foreground dark:border-border hover:text-muted-foreground dark:hover:text-muted-foreground/50 hover:border-gray-250"
                       }`}
                     >
@@ -1559,7 +1559,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       value={newFlagName}
                       onChange={(e) => setNewFlagName(e.target.value)}
                       placeholder="New flag..."
-                      className="h-6 w-24 rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2.5 text-[11px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800 focus:border-sky-300 dark:focus:border-sky-700"
+                      className="h-6 w-24 rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2.5 text-[11px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-border dark:focus:ring-foreground/15 focus:border-foreground/20 dark:focus:border-foreground/30"
                       maxLength={50}
                     />
                   </form>
@@ -1931,7 +1931,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.location?.name ? (
                   <span className="font-medium text-foreground dark:text-foreground/90 text-right">{job.location.name}</span>
                 ) : (
-                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic">No info</button>
                 )}
               </div>
               <div className="flex items-start justify-between py-0.5">
@@ -1939,7 +1939,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.unit?.currentPosition ? (
                   <span className="font-mono font-medium text-foreground dark:text-foreground/90 text-right">{job.unit.currentPosition}</span>
                 ) : (
-                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic">No info</button>
                 )}
               </div>
               <div className="flex items-start justify-between py-0.5">
@@ -1947,14 +1947,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.unit?.storageLocation ? (
                   <span className="font-medium text-foreground dark:text-foreground/90 text-right">{job.unit.storageLocation}{job.unit.storageType ? ` (${job.unit.storageType})` : ""}</span>
                 ) : (
-                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic">No info</button>
                 )}
               </div>
               {job.unit ? (
                 <div className="flex items-start justify-between py-0.5">
                   <span className="text-muted-foreground">Unit</span>
                   <span className="flex items-center gap-1.5">
-                    <Link href={`/units/${job.unit.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right transition-all duration-150">
+                    <Link href={`/units/${job.unit.id}`} className="font-medium text-foreground hover:text-foreground dark:hover:text-foreground/90 text-right transition-all duration-150">
                       {[job.unit.brand, job.unit.model].filter(Boolean).join(" ") || "Unit"}{job.unit.registration ? ` · ${job.unit.registration}` : ""}
                     </Link>
                     <button onClick={() => setExpandUnit((v) => !v)} className="p-0.5 rounded hover:bg-muted dark:hover:bg-card/10 transition-all duration-150" title="Edit unit">
@@ -1965,7 +1965,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               ) : (
                 <div className="flex items-start justify-between py-0.5">
                   <span className="text-muted-foreground">Unit</span>
-                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic">No info</button>
+                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic">No info</button>
                 </div>
               )}
               {expandUnit && job.unit && (
@@ -2015,7 +2015,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   size="sm"
                   className={
                     job.customer
-                      ? "w-full h-9 text-xs rounded-xl border-sky-200/80 text-sky-800 hover:bg-sky-50 dark:border-sky-800/60 dark:text-sky-200 dark:hover:bg-sky-950/40"
+                      ? "w-full h-9 text-xs rounded-xl border-border/80 text-foreground hover:bg-muted/60 dark:border-border/60 dark:text-foreground/90 dark:hover:bg-foreground/[0.06]"
                       : "w-full h-9 text-xs rounded-xl"
                   }
                   onClick={() => setShowCustomerLinker(true)}
@@ -2030,7 +2030,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <span className="text-muted-foreground">Contact</span>
                 {job.customer ? (
                   <span className="flex items-center gap-1.5">
-                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 text-right transition-all duration-150">
+                    <Link href={`/customers/${job.customer.id}`} className="font-medium text-foreground hover:text-foreground dark:hover:text-foreground/90 text-right transition-all duration-150">
                       {job.customer.name}
                     </Link>
                     <button onClick={() => setExpandCustomer((v) => !v)} className="p-0.5 rounded hover:bg-muted dark:hover:bg-card/10 transition-all duration-150" title="Edit shared client details (name, phone…)" aria-label="Edit shared client details">
@@ -2041,7 +2041,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <button
                     type="button"
                     onClick={() => setShowCustomerLinker(true)}
-                    className="text-muted-foreground/70 dark:text-muted-foreground hover:text-sky-600 dark:hover:text-sky-400 transition-colors italic"
+                    className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic"
                   >
                     No client linked
                   </button>
@@ -2115,7 +2115,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {job.holdedQuoteId && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Receipt className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+                      <Receipt className="h-3.5 w-3.5 shrink-0 text-foreground/80" />
                       <span className="text-sm font-medium text-foreground dark:text-foreground/90 truncate">
                         {job.status === "rejected" || job.customerResponseStatus === "declined"
                           ? "Rejected Quote"
@@ -2128,7 +2128,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center h-7 px-2 text-[11px] font-medium text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded-md transition-colors"
+                        className="inline-flex items-center h-7 px-2 text-[11px] font-medium text-foreground hover:bg-muted/60 dark:hover:bg-foreground/[0.06] rounded-md transition-colors"
                       >
                         PDF ↗
                       </a>
@@ -2931,7 +2931,7 @@ function FinancialWorkflow({
   const activeStep = isPaid ? 3 : hasInvoice ? 2 : hasQuote ? 1 : 0;
 
   function sourceBadge(line: EstimateLineItem) {
-    if (line.sourceType === "task") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400 font-medium">Workshop</span>;
+    if (line.sourceType === "task") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted/60 text-foreground/80 dark:bg-foreground/[0.05] dark:text-foreground/80 font-medium">Workshop</span>;
     if (line.sourceType === "part_request") return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400 font-medium">Part</span>;
     return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground dark:bg-gray-800 dark:text-muted-foreground/70 font-medium">Manual</span>;
   }
@@ -2961,16 +2961,16 @@ function FinancialWorkflow({
 
       {/* ─── Workshop sync banner ─── */}
       {hasWorkshopPending && (
-        <div className="rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/60 px-4 py-4">
+        <div className="rounded-2xl bg-muted/60 dark:bg-foreground/[0.05] border border-border/60 dark:border-border/60 px-4 py-4">
           <div className="flex items-start gap-3">
-            <div className="p-1.5 rounded-lg bg-sky-100 dark:bg-sky-900/50 shrink-0 mt-0.5">
-              <RefreshCw className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+            <div className="p-1.5 rounded-lg bg-foreground/[0.08] dark:bg-foreground/[0.10] shrink-0 mt-0.5">
+              <RefreshCw className="h-3.5 w-3.5 text-foreground/80" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
+              <p className="text-sm font-semibold text-foreground dark:text-foreground/90">
                 {pendingImportCount} item{pendingImportCount !== 1 ? "s" : ""} available from workshop
               </p>
-              <p className="text-sm text-sky-700 dark:text-sky-400/80 mt-0.5">
+              <p className="text-sm text-foreground/80 mt-0.5">
                 {pendingTasks.length > 0 && `${pendingTasks.length} task${pendingTasks.length !== 1 ? "s" : ""}`}
                 {pendingTasks.length > 0 && pendingParts.length > 0 && ", "}
                 {pendingParts.length > 0 && `${pendingParts.length} part${pendingParts.length !== 1 ? "s" : ""}`}
@@ -3040,13 +3040,13 @@ function FinancialWorkflow({
           <div className="flex items-center gap-1.5">
             {hasWorkshopPending && costLines.length > 0 && (
               <button
-                className="inline-flex items-center gap-1 h-7 text-xs px-2.5 rounded-xl text-sky-600 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/50 transition-colors font-medium"
+                className="inline-flex items-center gap-1 h-7 text-xs px-2.5 rounded-xl text-foreground/80 hover:bg-muted/60 dark:text-foreground/80 dark:hover:bg-foreground/[0.06] transition-colors font-medium"
                 onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
                 disabled={!!loading}
               >
                 {loading === "generate" ? <Spinner className="h-3 w-3" /> : <RefreshCw className="h-3 w-3" />}
                 Sync workshop
-                <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300 text-[9px] font-bold px-1">{pendingImportCount}</span>
+                <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/[0.08] text-foreground dark:bg-foreground/[0.10] dark:text-foreground/90 text-[9px] font-bold px-1">{pendingImportCount}</span>
               </button>
             )}
             {costLines.length > 0 && (
@@ -3225,7 +3225,7 @@ function FinancialWorkflow({
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">Dismissed items</span>
                   <button
-                    className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-medium transition-colors"
+                    className="text-[11px] text-foreground/80 hover:text-foreground font-medium transition-colors"
                     onClick={handleRestoreAll}
                   >
                     Restore all
@@ -3242,7 +3242,7 @@ function FinancialWorkflow({
                         <span className="truncate">{sourceLabel}</span>
                       </div>
                       <button
-                        className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-medium shrink-0 transition-colors"
+                        className="text-[11px] text-foreground/80 hover:text-foreground font-medium shrink-0 transition-colors"
                         onClick={() => handleRestore(d.id)}
                       >
                         Restore

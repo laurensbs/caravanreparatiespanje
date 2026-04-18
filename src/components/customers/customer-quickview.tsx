@@ -616,7 +616,7 @@ function CustomerQuickView({
                                     q.status === 1
                                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                       : isDraft
-                                      ? "bg-slate-50 text-slate-700 border-slate-200"
+                                      ? "bg-muted/40 text-slate-700 border-slate-200"
                                       : "bg-blue-50 text-blue-700 border-blue-200"
                                   }`}
                                 >

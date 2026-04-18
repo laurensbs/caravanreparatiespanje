@@ -108,7 +108,7 @@ export function StatStrip({
     emerald: "text-emerald-600 dark:text-emerald-400",
     amber: "text-amber-600 dark:text-amber-400",
     red: "text-destructive",
-    sky: "text-sky-600 dark:text-sky-400",
+    sky: "text-foreground/80",
     violet: "text-violet-600 dark:text-violet-400",
   };
   return (

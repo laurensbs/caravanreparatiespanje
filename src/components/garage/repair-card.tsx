@@ -32,12 +32,12 @@ const PRIORITY_ACCENT: Record<Priority, { border: string; dot: string }> = {
 };
 
 const WORKER_COLORS = [
-  "bg-blue-500", "bg-violet-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500",
+  "bg-indigo-500", "bg-violet-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-teal-500",
 ];
 
 const JOB_TYPE_BADGE: Record<string, string> = {
   wax: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
-  maintenance: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
+  maintenance: "bg-foreground/[0.06] text-foreground/80 dark:bg-foreground/[0.06]",
   inspection: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
 };
 

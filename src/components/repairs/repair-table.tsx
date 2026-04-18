@@ -182,7 +182,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       return {
         type: "quote",
         label: job.holdedQuoteNum ? `Quote ${job.holdedQuoteNum}` : "Quote",
-        color: "text-sky-700 dark:text-sky-400",
+        color: "text-foreground",
         pdfUrl: `/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`,
         holdedUrl: `https://app.holded.com/invoicing/estimate/${job.holdedQuoteId}`,
         title: "Quote",
@@ -193,7 +193,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       return { type: "warranty", label: "Warranty", color: "text-purple-600 dark:text-purple-400" };
     }
     if (job.invoiceStatus === "no_damage") {
-      return { type: "no-damage", label: "No Damage", color: "text-muted-foreground/70 dark:text-slate-500" };
+      return { type: "no-damage", label: "No Damage", color: "text-muted-foreground/70 dark:text-muted-foreground" };
     }
     if (job.invoiceStatus === "paid") {
       return { type: "paid", label: "Paid", color: "text-emerald-600 dark:text-emerald-400" };
@@ -208,8 +208,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
   function getInitialsColor(name: string): string {
     const colors = [
-      "bg-blue-600", "bg-emerald-600", "bg-amber-600", "bg-rose-600",
-      "bg-purple-600", "bg-cyan-600", "bg-orange-600", "bg-indigo-600",
+      "bg-amber-600", "bg-emerald-600", "bg-rose-600", "bg-violet-600",
+      "bg-orange-600", "bg-indigo-600", "bg-teal-600", "bg-stone-600",
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -217,16 +217,16 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   }
 
   const STATUS_ACCENT: Record<string, string> = {
-    new: "bg-gray-300 dark:bg-slate-500",
-    todo: "bg-gray-300 dark:bg-slate-500",
-    in_inspection: "bg-sky-300 dark:bg-sky-400",
+    new: "bg-gray-300 dark:bg-muted/400",
+    todo: "bg-gray-300 dark:bg-muted/400",
+    in_inspection: "bg-foreground/40 dark:bg-foreground/60",
     no_damage: "bg-emerald-300 dark:bg-emerald-400",
     quote_needed: "bg-amber-300 dark:bg-amber-400",
     waiting_approval: "bg-amber-300 dark:bg-amber-400",
     waiting_customer: "bg-orange-400 dark:bg-orange-400",
     waiting_parts: "bg-amber-400 dark:bg-amber-400",
-    scheduled: "bg-sky-300 dark:bg-sky-400",
-    in_progress: "bg-sky-400 dark:bg-sky-400",
+    scheduled: "bg-foreground/40 dark:bg-foreground/60",
+    in_progress: "bg-foreground/60 dark:bg-foreground/60",
     blocked: "bg-red-400 dark:bg-red-400",
     completed: "bg-emerald-400 dark:bg-emerald-400",
     invoiced: "bg-emerald-300 dark:bg-emerald-400",
@@ -235,21 +235,21 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   };
 
   const STATUS_PILL: Record<string, string> = {
-    new: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-slate-200",
-    todo: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-slate-200",
-    in_inspection: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+    new: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-foreground/90",
+    todo: "bg-muted text-muted-foreground dark:bg-slate-700/60 dark:text-foreground/90",
+    in_inspection: "bg-muted/60 text-foreground dark:bg-muted/600/15 dark:text-foreground/90",
     no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
     waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
     waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
     waiting_parts: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    scheduled: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-    in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+    scheduled: "bg-muted/60 text-foreground dark:bg-muted/600/15 dark:text-foreground/90",
+    in_progress: "bg-muted/60 text-foreground dark:bg-muted/600/15 dark:text-foreground/90",
     blocked: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
     completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-    archived: "bg-muted text-muted-foreground/70 dark:bg-slate-700/40 dark:text-slate-400",
+    archived: "bg-muted text-muted-foreground/70 dark:bg-slate-700/40 dark:text-muted-foreground/70",
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
@@ -274,7 +274,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {/* Column headers */}
-      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-slate-500 select-none">
+      <div className="hidden md:flex items-center gap-5 px-5 pb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground select-none">
         <div className="w-8 shrink-0" />
         <div className="flex-[2] min-w-0 cursor-pointer" onClick={() => handleSort("title")}>
           <span className="inline-flex items-center">Title<SortIcon column="title" /></span>
@@ -299,10 +299,10 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       {/* Repair rows — cards on small screens, table-style row from md */}
       <div className="space-y-2 md:space-y-0">
         {allJobs.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground/70 dark:text-slate-500">
+          <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground/70 dark:text-muted-foreground">
             <ArrowUpDown className="h-8 w-8 opacity-20" />
-            <p className="font-medium text-sm text-muted-foreground dark:text-slate-400">No repair jobs found</p>
-            <p className="text-xs text-muted-foreground/70 dark:text-slate-500">Try adjusting your filters</p>
+            <p className="font-medium text-sm text-muted-foreground dark:text-muted-foreground/70">No repair jobs found</p>
+            <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground">Try adjusting your filters</p>
           </div>
         ) : (
           allJobs.map((job, idx) => {
@@ -321,7 +321,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                     {job.title || "Unnamed repair"}
                   </p>
                   {job.jobType && job.jobType !== "repair" && (
-                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300"}`}>
+                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-muted text-slate-700 dark:bg-muted/400/15 dark:text-foreground/80"}`}>
                       {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
                     </span>
                   )}
@@ -330,11 +330,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                 </div>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   {job.publicCode && (
-                    <span className="font-mono text-[11px] text-muted-foreground/70 dark:text-slate-500">{job.publicCode}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground/70 dark:text-muted-foreground">{job.publicCode}</span>
                   )}
-                  {job.publicCode && job.descriptionRaw && <span className="text-muted-foreground/50 dark:text-slate-600">·</span>}
+                  {job.publicCode && job.descriptionRaw && <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>}
                   {job.descriptionRaw && (
-                    <span className="truncate text-[11px] text-muted-foreground/70 dark:text-slate-500">{job.descriptionRaw.slice(0, 60)}</span>
+                    <span className="truncate text-[11px] text-muted-foreground/70 dark:text-muted-foreground">{job.descriptionRaw.slice(0, 60)}</span>
                   )}
                 </div>
                 {job.tags.length > 0 && (
@@ -357,7 +357,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <>
                 {(() => {
                   const doc = getDocumentInfo(job);
-                  if (!doc) return <span className="block truncate text-[11px] text-muted-foreground/50 dark:text-slate-600">—</span>;
+                  if (!doc) return <span className="block truncate text-[11px] text-muted-foreground/50 dark:text-muted-foreground">—</span>;
                   if (!doc.pdfUrl) {
                     return <span className={`block truncate text-[11px] font-medium ${doc.color}`}>{doc.label}</span>;
                   }
@@ -393,8 +393,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <TableStatusPicker
                 value={job.status}
                 onChange={(val) => quickStatusChange(job.id, val)}
-                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-slate-700/60 text-muted-foreground dark:text-slate-200"}
-                accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-slate-500"}
+                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-slate-700/60 text-muted-foreground dark:text-foreground/90"}
+                accentClass={STATUS_ACCENT[job.status] ?? "bg-gray-300 dark:bg-muted/400"}
               />
             );
 
@@ -402,7 +402,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <Fragment key={job.id}>
                 {/* Phone / small tablet: card */}
                 <div
-                  className={`group relative touch-manipulation rounded-xl border border-border/60/90 bg-card/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-card/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-sky-200 dark:ring-sky-500/25" : ""} animate-slide-up`}
+                  className={`group relative touch-manipulation rounded-xl border border-border/60/90 bg-card/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-card/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-border dark:ring-foreground/20" : ""} animate-slide-up`}
                   style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                   role="button"
                   tabIndex={0}
@@ -440,35 +440,35 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                       )}
                       <div className="grid grid-cols-2 gap-3 border-t border-border/60 pt-3 dark:border-white/[0.06]">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Contact</p>
-                          <p className="mt-1 truncate text-sm font-medium text-foreground dark:text-slate-200">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">Contact</p>
+                          <p className="mt-1 truncate text-sm font-medium text-foreground dark:text-foreground/90">
                             {job.customerName ?? <span className="text-muted-foreground/70">—</span>}
                           </p>
                           {job.locationName && (
                             <div className="mt-0.5 flex items-center gap-1.5">
                               <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
-                              <span className="truncate text-[11px] text-muted-foreground dark:text-slate-400">{job.locationName}</span>
+                              <span className="truncate text-[11px] text-muted-foreground dark:text-muted-foreground/70">{job.locationName}</span>
                             </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Document</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">Document</p>
                           <div className="mt-1">{documentCell}</div>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Planned</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">Planned</p>
                           <div className="mt-1">
                             {job.dueDate ? (
-                              <SmartDate date={job.dueDate} className="text-xs text-muted-foreground dark:text-slate-300" />
+                              <SmartDate date={job.dueDate} className="text-xs text-muted-foreground dark:text-foreground/80" />
                             ) : (
-                              <span className="text-[11px] text-muted-foreground/70 dark:text-slate-600">—</span>
+                              <span className="text-[11px] text-muted-foreground/70 dark:text-muted-foreground">—</span>
                             )}
                           </div>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-slate-500">Updated</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">Updated</p>
                           <div className="mt-1">
-                            <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground dark:text-slate-400" />
+                            <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground dark:text-muted-foreground/70" />
                           </div>
                         </div>
                       </div>
@@ -478,7 +478,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                 {/* Desktop: wide row */}
                 <div
-                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-border/60/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-muted/40 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-card/[0.03] md:flex ${selected.has(job.id) ? "bg-sky-50/40 ring-1 ring-sky-100 dark:bg-sky-500/[0.06] dark:ring-sky-500/20" : ""} animate-slide-up`}
+                  className={`group relative hidden cursor-pointer items-center gap-5 border-b border-border/60/60 px-5 py-5 transition-all duration-150 last:border-b-0 hover:bg-muted/40 active:scale-[0.998] dark:border-white/[0.05] dark:hover:bg-card/[0.03] md:flex ${selected.has(job.id) ? "bg-muted/60/40 ring-1 ring-border/60 dark:bg-muted/600/[0.06] dark:ring-foreground/15" : ""} animate-slide-up`}
                   style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                   onClick={goToJob}
                 >
@@ -507,13 +507,13 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
                   </div>
 
                   <div className="hidden min-w-0 flex-1 md:block">
-                    <span className="block truncate text-sm text-foreground dark:text-slate-200">
-                      {job.customerName ?? <span className="text-muted-foreground/50 dark:text-slate-600">—</span>}
+                    <span className="block truncate text-sm text-foreground dark:text-foreground/90">
+                      {job.customerName ?? <span className="text-muted-foreground/50 dark:text-muted-foreground">—</span>}
                     </span>
                     {job.locationName && (
                       <div className="mt-0.5 flex items-center gap-1.5">
                         <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${LOCATION_COLORS[job.locationName.toLowerCase()] ?? "bg-gray-300 dark:bg-slate-600"}`} />
-                        <span className="truncate text-[11px] text-muted-foreground/70 dark:text-slate-400">{job.locationName}</span>
+                        <span className="truncate text-[11px] text-muted-foreground/70 dark:text-muted-foreground/70">{job.locationName}</span>
                       </div>
                     )}
                   </div>
@@ -524,14 +524,14 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
 
                   <div className="hidden w-24 shrink-0 md:block">
                     {job.dueDate ? (
-                      <SmartDate date={job.dueDate} className="text-xs text-muted-foreground dark:text-slate-300" />
+                      <SmartDate date={job.dueDate} className="text-xs text-muted-foreground dark:text-foreground/80" />
                     ) : (
-                      <span className="text-[11px] text-muted-foreground/50 dark:text-slate-600">—</span>
+                      <span className="text-[11px] text-muted-foreground/50 dark:text-muted-foreground">—</span>
                     )}
                   </div>
 
                   <div className="hidden w-20 shrink-0 text-right md:block">
-                    <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/70 dark:text-slate-400" />
+                    <SmartDate date={job.updatedAt} className="text-[11px] text-muted-foreground/70 dark:text-muted-foreground/70" />
                   </div>
                 </div>
               </Fragment>
@@ -548,7 +548,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
       )}
 
       {!hasMore && allJobs.length > 0 && (
-        <p className="text-center text-[11px] text-muted-foreground/70 dark:text-slate-500 py-4">
+        <p className="text-center text-[11px] text-muted-foreground/70 dark:text-muted-foreground py-4">
           {allJobs.length} repair{allJobs.length !== 1 ? "s" : ""}
         </p>
       )}

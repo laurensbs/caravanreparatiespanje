@@ -122,10 +122,15 @@ for (const target of TARGETS) {
       for (const f of walk(full)) {
         if (isTarget(f)) files.push(f);
       }
-    } else if (isTarget(full)) {
-      files.push(full);
+    } else {
+      if (isTarget(full)) files.push(full);
     }
-  } catch {}
+  } catch (err) {
+    console.warn("skip", target, err.message);
+  }
+}
+if (process.env.DEBUG_MIGRATE) {
+  console.log("files queued:", files.length);
 }
 
 let changed = 0;

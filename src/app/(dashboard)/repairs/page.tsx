@@ -91,8 +91,8 @@ export default async function RepairsPage({ searchParams }: Props) {
             : filters.status === btn.status;
 
           const dotColor: Record<string, string> = {
-            "To Do": "bg-gray-400",
-            "In Progress": "bg-sky-400",
+            "To Do": "bg-muted-foreground/40",
+            "In Progress": "bg-foreground",
             "Waiting Parts": "bg-amber-400",
             "Waiting Customer": "bg-orange-400",
             "Completed": "bg-emerald-400",
@@ -104,11 +104,11 @@ export default async function RepairsPage({ searchParams }: Props) {
               <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs transition-all duration-150 cursor-pointer sm:py-1.5 ${
                 isActive
                   ? "bg-foreground dark:bg-card text-white dark:text-foreground font-medium shadow-sm"
-                  : "text-muted-foreground dark:text-slate-400 hover:text-foreground/90 dark:hover:text-slate-200 hover:bg-muted dark:hover:bg-card/[0.06]"
+                  : "text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/90 hover:bg-muted dark:hover:bg-card/[0.06]"
               }`}>
                 <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isActive ? "bg-card dark:bg-foreground" : (dotColor[btn.label] ?? "bg-gray-300")}`} />
                 {btn.label}
-                <span className={`tabular-nums font-medium ${isActive ? "" : "text-foreground/90 dark:text-slate-300"}`}>{btn.value}</span>
+                <span className={`tabular-nums font-medium ${isActive ? "" : "text-foreground/90 dark:text-foreground/80"}`}>{btn.value}</span>
               </span>
             </Link>
           );

@@ -78,7 +78,7 @@ export function GarageLoginForm() {
       {/* Ambient gradient blobs */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-sky-500/10 blur-3xl"
+        className="pointer-events-none absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-teal-500/10 blur-3xl"
       />
       <div
         aria-hidden

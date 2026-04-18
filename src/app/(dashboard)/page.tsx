@@ -41,7 +41,7 @@ export default async function DashboardPage() {
 
   const quickPills = [
     { label: "To Do", value: stats?.todo ?? 0, href: "/repairs?status=todo", dot: "bg-gray-400" },
-    { label: "In Progress", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-sky-400" },
+    { label: "In Progress", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-foreground" },
     { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts", dot: "bg-amber-400" },
     { label: "Waiting Customer", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer", dot: "bg-orange-400" },
     { label: "Completed", value: stats?.completed ?? 0, href: "/repairs?status=completed", dot: "bg-emerald-400" },
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
                   const statusPill: Record<string, string> = {
                     completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
                     invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-                    in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+                    in_progress: "bg-muted/60 text-foreground dark:bg-muted/600/10 dark:text-foreground/80",
                     waiting_parts: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
                     waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
                     blocked: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
@@ -200,7 +200,7 @@ export default async function DashboardPage() {
                       >
                         <span className="flex items-center gap-2.5 text-sm text-muted-foreground transition-colors group-hover:text-foreground">
                           <span className={`h-2 w-2 rounded-full shrink-0 ${{
-                            "cruïllas": "bg-sky-400",
+                            "cruïllas": "bg-foreground",
                             "peratallada": "bg-amber-400",
                             "sant climent": "bg-emerald-400",
                           }[item.locationName?.toLowerCase() ?? ""] ?? "bg-muted-foreground/30"}`} />
@@ -244,10 +244,10 @@ export default async function DashboardPage() {
                     not_contacted: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
                     no_response: "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground",
                     waiting_response: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-                    contacted: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+                    contacted: "bg-muted/60 text-foreground dark:bg-muted/600/10 dark:text-foreground/80",
                     approved: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
                     declined: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-                    reply_not_required: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300",
+                    reply_not_required: "bg-muted text-muted-foreground dark:bg-slate-800/60 dark:text-foreground/80",
                   };
                   return (
                   <Link

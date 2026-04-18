@@ -35,12 +35,12 @@ import {
 // Location → dot color mapping
 const LOCATION_COLORS: Record<string, string> = {};
 const LOCATION_DOT_PALETTE = [
-  "bg-blue-500", "bg-emerald-500", "bg-amber-500",
-  "bg-purple-500", "bg-rose-500", "bg-cyan-500",
-  "bg-lime-500", "bg-orange-500",
+  "bg-amber-500", "bg-emerald-500", "bg-rose-500",
+  "bg-violet-500", "bg-orange-500", "bg-indigo-500",
+  "bg-teal-500", "bg-stone-500",
 ];
 function getLocationDot(locationId: string | null): string {
-  if (!locationId) return "bg-gray-400";
+  if (!locationId) return "bg-muted-foreground/40";
   if (!LOCATION_COLORS[locationId]) {
     const idx = Object.keys(LOCATION_COLORS).length % LOCATION_DOT_PALETTE.length;
     LOCATION_COLORS[locationId] = LOCATION_DOT_PALETTE[idx];
@@ -391,7 +391,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 className={cn(
                   dashboardPanelClass,
                   "group/day animate-slide-up overflow-hidden transition-all duration-200 print:break-inside-avoid print:border-gray-300",
-                  isToday && "ring-2 ring-sky-500/20 dark:ring-sky-400/25",
+                  isToday && "ring-2 ring-foreground/30 dark:ring-foreground/40",
                   isEmpty && "print:hidden",
                 )}
                 style={{ animationDelay: `${Math.min(dayIdx * 30, 180)}ms`, animationFillMode: "backwards" }}
@@ -402,7 +402,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                     "flex items-center justify-between gap-2 px-4 py-3 transition-colors print:border-gray-300",
                     !isEmpty && "border-b border-border/60 dark:border-border",
                     isToday
-                      ? "bg-sky-50/40 dark:bg-sky-500/[0.06]"
+                      ? "bg-muted/60/40 dark:bg-muted/600/[0.06]"
                       : isEmpty
                         ? "bg-transparent"
                         : "bg-muted/40/50 dark:bg-card/[0.02]",
@@ -420,7 +420,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                       {day.getDate()} {t.months[day.getMonth()]}
                     </span>
                     {isToday ? (
-                      <span className="inline-flex items-center rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                      <span className="inline-flex items-center rounded-full bg-muted/600/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80">
                         Today
                       </span>
                     ) : null}
@@ -509,7 +509,7 @@ function DayDropZone({
       className={cn(
         className,
         isOver &&
-          "outline outline-2 outline-offset-[-2px] outline-sky-500/50 dark:outline-sky-400/60",
+          "outline outline-2 outline-offset-[-2px] outline-foreground/40 dark:outline-foreground/50",
       )}
       style={style}
     >

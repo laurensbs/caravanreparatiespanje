@@ -320,7 +320,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
   if (repair.tyresFlag) flags.push({ key: "tyres", label: t("Tyres", "Neumáticos", "Banden"), color: "bg-white/[0.06] text-white/60" });
   if (repair.lightsFlag) flags.push({ key: "lights", label: t("Lights", "Luces", "Verlichting"), color: "bg-amber-400/10 text-amber-400" });
   if (repair.brakesFlag) flags.push({ key: "brakes", label: t("Brakes", "Frenos", "Remmen"), color: "bg-red-400/10 text-red-400" });
-  if (repair.windowsFlag) flags.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), color: "bg-cyan-400/10 text-cyan-400" });
+  if (repair.windowsFlag) flags.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), color: "bg-teal-400/10 text-teal-400" });
   if (repair.sealsFlag) flags.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), color: "bg-teal-400/10 text-teal-400" });
   if (repair.partsRequiredFlag) flags.push({ key: "parts", label: t("Parts Needed", "Piezas", "Onderdelen Nodig"), color: "bg-orange-400/10 text-orange-400" });
   if (repair.followUpRequiredFlag) flags.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), color: "bg-violet-400/10 text-violet-400" });
@@ -470,7 +470,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               <span
                 className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                   repair.status === "in_progress"
-                    ? "bg-sky-400/10 text-sky-300"
+                    ? "bg-teal-400/10 text-teal-300"
                     : repair.status === "ready_for_check"
                       ? "bg-violet-400/10 text-violet-300"
                       : repair.status === "completed"
@@ -495,7 +495,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                     className={`h-full rounded-full transition-all duration-700 ease-out ${
                       progress === 100
                         ? "bg-emerald-400"
-                        : "bg-gradient-to-r from-sky-400 to-cyan-400"
+                        : "bg-gradient-to-r from-teal-400 to-teal-500"
                     }`}
                     style={{ width: `${progress}%` }}
                   />
@@ -516,15 +516,15 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
           {/* Admin message banner — keeps the latest single message glanceable */}
           {repair.garageAdminMessage && (
-            <div className="motion-safe:animate-slide-up mb-3 rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/[0.08] to-sky-400/[0.04] px-4 py-3.5 shadow-[0_0_0_1px_rgba(56,189,248,0.06)]">
+            <div className="motion-safe:animate-slide-up mb-3 rounded-2xl border border-teal-400/20 bg-gradient-to-br from-teal-400/[0.08] to-teal-400/[0.04] px-4 py-3.5 shadow-[0_0_0_1px_rgba(20,184,166,0.10)]">
               <div className="mb-1 flex items-center gap-2">
                 <span className="relative flex h-5 w-5 items-center justify-center">
                   {!repair.garageAdminMessageReadAt ? (
-                    <span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-sky-400/70" />
+                    <span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-teal-400/70" />
                   ) : null}
-                  <MessageSquare className="relative h-4 w-4 text-sky-300" />
+                  <MessageSquare className="relative h-4 w-4 text-teal-300" />
                 </span>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-sky-300">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-teal-300">
                   {t("Office Message", "Mensaje de Oficina", "Kantoor Bericht")}
                 </h3>
               </div>
@@ -532,7 +532,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 {repair.garageAdminMessage}
               </p>
               {repair.garageAdminMessageAt && (
-                <p className="mt-1.5 text-[11px] text-sky-400/55">
+                <p className="mt-1.5 text-[11px] text-teal-400/55">
                   {new Date(repair.garageAdminMessageAt).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -599,7 +599,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                         key={user.id}
                         className={`inline-flex items-stretch rounded-full overflow-hidden min-h-11 border transition-all ${
                           isActive
-                            ? "border-sky-400/50 bg-sky-400/[0.08] ring-1 ring-sky-400/25"
+                            ? "border-teal-400/50 bg-teal-400/[0.08] ring-1 ring-teal-400/25"
                             : isAssigned
                               ? "border-emerald-400/25 bg-emerald-400/[0.06]"
                               : "border-white/[0.08] bg-white/[0.03]"
@@ -1104,7 +1104,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
                 }}
                 className="flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-sm font-medium text-white/80 active:bg-white/[0.08] transition-all"
               >
-                <span className="flex items-center justify-center h-8 w-8 rounded-full bg-sky-500 text-sm font-bold text-white shrink-0">
+                <span className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-500 text-sm font-bold text-white shrink-0">
                   {(user.name ?? "?").charAt(0).toUpperCase()}
                 </span>
                 {user.name}
@@ -1125,7 +1125,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder={t("Type your message...", "Escribe tu mensaje...", "Typ je bericht...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
               autoFocus
             />
             <div className="flex gap-2">
@@ -1147,7 +1147,7 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               value={notDoneReason}
               onChange={(e) => setNotDoneReason(e.target.value)}
               placeholder={t("Describe the problem...", "Describe el problema...", "Beschrijf het probleem...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
               autoFocus
             />
             <div className="flex gap-2">
@@ -1169,14 +1169,14 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
               value={suggestTitle}
               onChange={(e) => setSuggestTitle(e.target.value)}
               placeholder={t("Task name...", "Nombre de tarea...", "Naam van taak...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
               autoFocus
             />
             <textarea
               value={suggestDesc}
               onChange={(e) => setSuggestDesc(e.target.value)}
               placeholder={t("Description (optional)...", "Descripción (opcional)...", "Beschrijving (optioneel)...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-white placeholder:text-white/30"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
             />
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-11 rounded-xl border-white/[0.1] text-white/70 hover:bg-white/[0.06]">{t("Cancel", "Cancelar", "Annuleren")}</Button>
@@ -1205,7 +1205,7 @@ function InfoRow({ label, value, mono, link, icon }: { label: string; value: str
   return (
     <div className="flex items-center justify-between px-4 py-3">
       <span className="text-sm text-white/30">{label}</span>
-      <span className={`text-sm text-right ${link ? "text-sky-400" : "text-white/80"} ${mono ? "font-mono" : ""} flex items-center gap-1`}>
+      <span className={`text-sm text-right ${link ? "text-teal-400" : "text-white/80"} ${mono ? "font-mono" : ""} flex items-center gap-1`}>
         {icon}
         {value}
       </span>

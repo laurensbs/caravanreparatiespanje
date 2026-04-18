@@ -90,15 +90,15 @@ export function GarageMeSheet({ open, onClose, users }: Props) {
                 onClick={() => pickMe(u)}
                 className={`flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 text-white transition-all active:scale-[0.97] ${
                   active
-                    ? "bg-cyan-500/15 ring-1 ring-cyan-400/40"
+                    ? "bg-teal-500/15 ring-1 ring-teal-400/40"
                     : "bg-white/[0.04] hover:bg-white/[0.07]"
                 }`}
               >
                 <span
                   className={`relative flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white ${
                     active
-                      ? "bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-[0_0_0_3px_rgba(34,211,238,0.25)]"
-                      : "bg-gradient-to-br from-cyan-500/40 to-cyan-600/20"
+                      ? "bg-gradient-to-br from-teal-400 to-teal-600 shadow-[0_0_0_3px_rgba(20,184,166,0.25)]"
+                      : "bg-gradient-to-br from-teal-500/40 to-teal-600/20"
                   }`}
                 >
                   {initials(u.name ?? "?")}

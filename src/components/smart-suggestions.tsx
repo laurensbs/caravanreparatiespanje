@@ -33,7 +33,7 @@ const LEVEL_ICON: Record<SuggestionLevel, ReactNode> = {
 };
 
 const LEVEL_ICON_TONE: Record<SuggestionLevel, string> = {
-  action: "text-sky-500 dark:text-sky-400",
+  action: "text-foreground/80 dark:text-foreground/80",
   warning: "text-amber-500 dark:text-amber-400",
   info: "text-muted-foreground/70 dark:text-muted-foreground",
   success: "text-emerald-500 dark:text-emerald-400",

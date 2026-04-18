@@ -108,10 +108,10 @@ function getStripStyle(updateType: string | null, status: string) {
   }
   if (updateType === "part_requested" || updateType === "task_suggested") {
     return {
-      bg: "bg-sky-50 dark:bg-sky-950/30",
-      border: "border-sky-100 dark:border-sky-800/60",
-      icon: <Package className="h-4 w-4 text-sky-600 dark:text-sky-400" />,
-      iconBg: "bg-sky-100 dark:bg-sky-900/50",
+      bg: "bg-foreground/[0.04] dark:bg-foreground/[0.05]",
+      border: "border-border/60",
+      icon: <Package className="h-4 w-4 text-foreground/80" />,
+      iconBg: "bg-foreground/[0.10]",
     };
   }
   if (
@@ -128,10 +128,10 @@ function getStripStyle(updateType: string | null, status: string) {
     };
   }
   return {
-    bg: "bg-sky-50 dark:bg-sky-950/30",
-    border: "border-sky-100 dark:border-sky-800/60",
-    icon: <Wrench className="h-4 w-4 text-sky-600 dark:text-sky-400" />,
-    iconBg: "bg-sky-100 dark:bg-sky-900/50",
+    bg: "bg-foreground/[0.04] dark:bg-foreground/[0.05]",
+    border: "border-border/60",
+    icon: <Wrench className="h-4 w-4 text-foreground/80" />,
+    iconBg: "bg-foreground/[0.10]",
   };
 }
 
@@ -171,14 +171,14 @@ export function GarageSyncStrip({ syncState }: { syncState: SyncState | null }) 
           {style.icon}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+          <p className="text-sm font-semibold text-foreground truncate">
             {summary}
           </p>
           {time && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {time}
               {syncState.garageUnreadUpdatesCount > 1 && (
-                <span className="ml-2 text-gray-400">
+                <span className="ml-2 text-muted-foreground/70">
                   · {syncState.garageUnreadUpdatesCount} updates
                 </span>
               )}
@@ -186,7 +186,7 @@ export function GarageSyncStrip({ syncState }: { syncState: SyncState | null }) 
           )}
         </div>
         {syncState.garageUnreadUpdatesCount > 0 && (
-          <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-sky-500 text-white text-[11px] font-bold px-1.5">
+          <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-foreground text-background text-[11px] font-bold px-1.5">
             {syncState.garageUnreadUpdatesCount}
           </span>
         )}
@@ -262,7 +262,7 @@ const EVENT_ICON: Record<string, React.ReactNode> = {
 };
 
 const EVENT_DOT_COLOR: Record<string, string> = {
-  status_changed: "text-sky-500",
+  status_changed: "text-foreground/80",
   task_status_changed: "text-emerald-500",
   part_requested: "text-purple-500",
   task_suggested: "text-amber-500",
@@ -272,8 +272,8 @@ const EVENT_DOT_COLOR: Record<string, string> = {
   finding_resolved: "text-emerald-500",
   final_check_passed: "text-emerald-500",
   final_check_failed: "text-red-500",
-  photo_uploaded: "text-sky-400",
-  task_deleted: "text-gray-400",
+  photo_uploaded: "text-foreground/80",
+  task_deleted: "text-muted-foreground/70",
 };
 
 export function GarageActivityTimeline({
@@ -288,19 +288,19 @@ export function GarageActivityTimeline({
   if (events.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border shadow-sm overflow-hidden">
+    <div className="bg-card dark:bg-card rounded-2xl border border-border/60 dark:border-border shadow-sm overflow-hidden">
       <details>
         <summary className="px-5 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground flex items-center gap-2">
-            <Wrench className="h-3.5 w-3.5 text-gray-400" />
+          <h3 className="text-sm font-semibold text-foreground dark:text-foreground flex items-center gap-2">
+            <Wrench className="h-3.5 w-3.5 text-muted-foreground/70" />
             Garage Activity
             {(totalCount ?? events.length) > events.length && (
-              <span className="text-xs font-normal text-gray-400">
+              <span className="text-xs font-normal text-muted-foreground/70">
                 ({events.length} of {totalCount})
               </span>
             )}
           </h3>
-          <ChevronDown className="h-3.5 w-3.5 text-gray-400 opacity-40" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/70 opacity-40" />
         </summary>
       <div className="px-5 pb-5 space-y-0">
         {events.map((event, i) => {
@@ -308,7 +308,7 @@ export function GarageActivityTimeline({
             <Wrench className="h-3.5 w-3.5" />
           );
           const dotColor =
-            EVENT_DOT_COLOR[event.eventType] ?? "text-gray-400";
+            EVENT_DOT_COLOR[event.eventType] ?? "text-muted-foreground/70";
           const name = event.userName?.split(" ")[0] ?? "System";
           const time = format(new Date(event.createdAt), "HH:mm");
           const dateStr = format(new Date(event.createdAt), "d MMM");
@@ -331,16 +331,16 @@ export function GarageActivityTimeline({
                 {icon}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm text-foreground/90 dark:text-muted-foreground/50 leading-snug">
+                  <span className="font-medium text-foreground dark:text-foreground">
                     {name}
                   </span>{" "}
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-muted-foreground dark:text-muted-foreground/70">
                     {message}
                   </span>
                 </p>
               </div>
-              <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums shrink-0 mt-0.5">
+              <span className="text-xs text-muted-foreground/70 dark:text-muted-foreground tabular-nums shrink-0 mt-0.5">
                 {dateStr} · {time}
               </span>
             </div>
@@ -374,7 +374,7 @@ const ATTENTION_TYPE_CHIP: Record<string, string> = {
   blocker_added: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
   issue_reported: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
   urgent_issue: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-  task_suggested: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+  task_suggested: "bg-foreground/[0.06] text-foreground/80",
 };
 
 export function GarageAttentionWidget({ data }: { data: AttentionData }) {
@@ -383,8 +383,8 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
   if (total === 0 && data.items.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border shadow-sm p-6">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+    <div className="bg-card dark:bg-card rounded-2xl border border-border/60 dark:border-border shadow-sm p-6">
+      <h3 className="text-sm font-semibold text-foreground dark:text-foreground mb-4 flex items-center gap-2">
         <Wrench className="h-3.5 w-3.5 text-amber-500" />
         Garage Needs Attention
       </h3>
@@ -394,13 +394,13 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
         {data.counts.readyForCheck > 0 && (
           <Link
             href="/repairs?status=ready_for_check"
-            className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-colors"
           >
             <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
             <span className="font-medium tabular-nums">
               {data.counts.readyForCheck}
             </span>
-            <span className="text-gray-400 dark:text-gray-500">
+            <span className="text-muted-foreground/70 dark:text-muted-foreground">
               ready for check
             </span>
           </Link>
@@ -408,25 +408,25 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
         {data.counts.blocked > 0 && (
           <Link
             href="/repairs?status=blocked"
-            className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-colors"
           >
             <span className="h-2 w-2 rounded-full bg-red-400 shrink-0" />
             <span className="font-medium tabular-nums">
               {data.counts.blocked}
             </span>
-            <span className="text-gray-400 dark:text-gray-500">blocked</span>
+            <span className="text-muted-foreground/70 dark:text-muted-foreground">blocked</span>
           </Link>
         )}
         {data.counts.partsRequested > 0 && (
           <Link
             href="/parts"
-            className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/50 hover:text-foreground dark:hover:text-gray-100 transition-colors"
           >
             <span className="h-2 w-2 rounded-full bg-purple-400 shrink-0" />
             <span className="font-medium tabular-nums">
               {data.counts.partsRequested}
             </span>
-            <span className="text-gray-400 dark:text-gray-500">
+            <span className="text-muted-foreground/70 dark:text-muted-foreground">
               parts requested
             </span>
           </Link>
@@ -450,19 +450,19 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
                 : item.status === "blocked"
                   ? ATTENTION_TYPE_CHIP.job_blocked
                   : (ATTENTION_TYPE_CHIP[item.garageLastUpdateType ?? ""] ??
-                    "bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground");
+                    "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground");
 
             return (
               <Link
                 key={item.id}
                 href={`/repairs/${item.id}`}
-                className="flex items-center justify-between rounded-xl px-2 py-2.5 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-accent group"
+                className="flex items-center justify-between rounded-xl px-2 py-2.5 transition-all duration-150 hover:bg-muted/40 dark:hover:bg-accent group"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-foreground truncate group-hover:text-[#0CC0DF] transition-colors">
+                  <p className="text-sm font-medium text-foreground truncate transition-colors">
                     {item.title || item.customerName || "Unnamed"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground/70 mt-0.5">
                     {item.publicCode}
                     {item.lastUpdatedByName && (
                       <span>
@@ -479,7 +479,7 @@ export function GarageAttentionWidget({ data }: { data: AttentionData }) {
                     {chipLabel}
                   </span>
                   {item.garageUnreadUpdatesCount > 0 && (
-                    <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-sky-500 text-white text-[10px] font-bold px-1">
+                    <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-foreground text-white text-[10px] font-bold px-1">
                       {item.garageUnreadUpdatesCount}
                     </span>
                   )}
@@ -527,7 +527,7 @@ const SYNC_CHIP_CONFIG: Record<
   },
   task_suggested: {
     label: "Task suggested",
-    cls: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+    cls: "bg-foreground/[0.06] text-foreground/80",
   },
 };
 
@@ -565,7 +565,7 @@ export function GarageSyncChip({
           {config.label}
         </span>
         {unreadCount > 0 && (
-          <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-sky-500 text-white text-[9px] font-bold px-0.5">
+          <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-foreground text-white text-[9px] font-bold px-0.5">
             {unreadCount}
           </span>
         )}
@@ -576,9 +576,9 @@ export function GarageSyncChip({
   // Generic "Garage update" with unread dot
   if (unreadCount > 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-foreground/[0.06] text-foreground/80">
         Garage update
-        <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-sky-500 text-white text-[9px] font-bold px-0.5">
+        <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-foreground text-white text-[9px] font-bold px-0.5">
           {unreadCount}
         </span>
       </span>

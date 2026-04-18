@@ -194,23 +194,30 @@ export const STATUS_LABELS: Record<RepairStatus, string> = {
   archived: "Archived",
 };
 
+/**
+ * Status pills are intentionally low-saturation. We avoid cyan / pure blue
+ * brand tints — instead we use neutral foreground washes for "neutral"
+ * states (new / todo / in_inspection / scheduled / in_progress) and reserve
+ * tinted backgrounds for states the operator should actually notice
+ * (waiting, blocked, completed, rejected). Keeps the dashboard quiet.
+ */
 export const STATUS_COLORS: Record<RepairStatus, string> = {
-  new: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-  todo: "bg-slate-50 text-slate-500 dark:bg-slate-500/10 dark:text-slate-400",
-  in_inspection: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
-  no_damage: "bg-lime-50 text-lime-600 dark:bg-lime-500/10 dark:text-lime-400",
-  quote_needed: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-  waiting_approval: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400",
-  waiting_customer: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
-  waiting_parts: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
-  scheduled: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
-  in_progress: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-  blocked: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-  ready_for_check: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-  completed: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-  invoiced: "bg-teal-50 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400",
-  rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
-  archived: "bg-gray-50 text-gray-400 dark:bg-gray-500/10 dark:text-gray-500",
+  new: "bg-foreground/[0.06] text-foreground/80 dark:bg-foreground/[0.08]",
+  todo: "bg-foreground/[0.05] text-muted-foreground dark:bg-foreground/[0.06]",
+  in_inspection: "bg-foreground/[0.06] text-foreground/80 dark:bg-foreground/[0.08]",
+  no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  waiting_customer: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+  waiting_parts: "bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300",
+  scheduled: "bg-foreground/[0.06] text-foreground/80 dark:bg-foreground/[0.08]",
+  in_progress: "bg-foreground text-background dark:bg-foreground dark:text-background",
+  blocked: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+  ready_for_check: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  rejected: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",
+  archived: "bg-muted text-muted-foreground/70",
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
@@ -341,7 +348,7 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
 export const JOB_TYPE_COLORS: Record<JobType, string> = {
   repair: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
   wax: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  maintenance: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  maintenance: "bg-foreground/[0.06] text-foreground/80",
   inspection: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
 };
 

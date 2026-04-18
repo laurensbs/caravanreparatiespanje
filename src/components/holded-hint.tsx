@@ -12,13 +12,13 @@ interface HoldedHintProps {
 // calm instead of flashing amber banners across every list.
 const DOT_STYLES = {
   info: "bg-emerald-400",
-  sync: "bg-sky-500",
+  sync: "bg-muted/600",
   readonly: "bg-amber-400",
 };
 
 const ICON_STYLES = {
   info: "text-emerald-500",
-  sync: "text-sky-500",
+  sync: "text-foreground/80",
   readonly: "text-amber-500",
 };
 

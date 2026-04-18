@@ -146,7 +146,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         </HoldedHint>
       ) : (
         <HoldedHint variant="sync">
-          Contacts with the <span className="inline-flex items-center text-sky-600"><ExternalLink className="h-2.5 w-2.5 mx-0.5" /></span> icon are linked to Holded. Editing their phone, email, or address will update in Holded too.
+          Contacts with the <span className="inline-flex items-center text-foreground/80"><ExternalLink className="h-2.5 w-2.5 mx-0.5" /></span> icon are linked to Holded. Editing their phone, email, or address will update in Holded too.
         </HoldedHint>
       )}
 

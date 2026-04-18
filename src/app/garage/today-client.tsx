@@ -375,11 +375,11 @@ export function GarageTodayClient({
               <span
                 className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-bold text-white ${
                   me
-                    ? "bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-[0_0_0_2px_rgba(34,211,238,0.25)]"
-                    : "bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 ring-1 ring-cyan-400/20"
+                    ? "bg-gradient-to-br from-teal-400 to-teal-600 shadow-[0_0_0_2px_rgba(20,184,166,0.25)]"
+                    : "bg-gradient-to-br from-teal-500/30 to-teal-400/10 ring-1 ring-teal-400/20"
                 }`}
               >
-                {me ? initials(me.name) : <Wrench className="h-4 w-4 text-cyan-200" />}
+                {me ? initials(me.name) : <Wrench className="h-4 w-4 text-teal-200" />}
                 {me ? (
                   <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-gray-950" />
                 ) : null}
@@ -776,7 +776,7 @@ export function GarageTodayClient({
                   }}
                   className="flex flex-col items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-4 text-white transition-all active:scale-[0.97] hover:bg-white/[0.08] disabled:opacity-50"
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 text-base font-bold text-white">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-teal-500/40 to-teal-600/20 text-base font-bold text-white">
                     {(user.name ?? "?").charAt(0).toUpperCase()}
                   </span>
                   <span className="max-w-full truncate text-[13px] font-semibold">
@@ -863,7 +863,7 @@ function StatPill({
     emerald: "text-emerald-300 ring-emerald-400/20 bg-emerald-500/[0.07]",
     red: "text-red-300 ring-red-400/25 bg-red-500/[0.08]",
     amber: "text-amber-300 ring-amber-400/25 bg-amber-500/[0.07]",
-    sky: "text-sky-300 ring-sky-400/25 bg-sky-500/[0.07]",
+    sky: "text-teal-300 ring-teal-400/25 bg-teal-500/[0.07]",
     violet: "text-violet-300 ring-violet-400/25 bg-violet-500/[0.07]",
     muted: "text-white/55 ring-white/10 bg-white/[0.04]",
   };
@@ -889,8 +889,8 @@ const STATUS_DOT: Record<string, string> = {
   todo: "bg-white/25",
   new: "bg-white/25",
   scheduled: "bg-white/25",
-  in_progress: "bg-sky-400",
-  in_inspection: "bg-sky-400",
+  in_progress: "bg-teal-400",
+  in_inspection: "bg-teal-400",
   waiting_parts: "bg-amber-400",
   waiting_customer: "bg-amber-400",
   blocked: "bg-red-400",
@@ -975,9 +975,9 @@ function JobCard({
       }}
       className={`motion-safe:animate-slide-up rounded-2xl border transition-all ${
         hasTimer
-          ? "border-sky-400/25 bg-sky-400/[0.06] shadow-[0_0_0_1px_rgba(56,189,248,0.08)]"
+          ? "border-teal-400/25 bg-teal-400/[0.06] shadow-[0_0_0_1px_rgba(20,184,166,0.10)]"
           : hasUnreadMessage
-            ? "border-sky-400/15 bg-white/[0.03]"
+            ? "border-teal-400/15 bg-white/[0.03]"
             : "border-white/[0.06] bg-white/[0.03] hover:border-white/[0.1] hover:bg-white/[0.04]"
       }`}
     >
@@ -1008,17 +1008,17 @@ function JobCard({
 
             <div className="ml-auto flex items-center gap-1.5">
               {hasTimer ? (
-                <span className="flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-sky-300 ring-1 ring-sky-400/30">
+                <span className="flex items-center gap-1 rounded-full bg-teal-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-teal-300 ring-1 ring-teal-400/30">
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400/60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-400" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400/60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-400" />
                   </span>
                   <Timer className="h-3 w-3" />
                 </span>
               ) : null}
               {hasUnreadMessage ? (
                 <span
-                  className="flex items-center text-sky-300"
+                  className="flex items-center text-teal-300"
                   title={t("Office message", "Mensaje de oficina", "Bericht van kantoor")}
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -1072,7 +1072,7 @@ function JobCard({
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                   <div
                     className={`h-full rounded-full transition-all duration-700 ease-out ${
-                      progress === 100 ? "bg-emerald-400" : "bg-gradient-to-r from-sky-400 to-cyan-400"
+                      progress === 100 ? "bg-emerald-400" : "bg-gradient-to-r from-teal-400 to-teal-500"
                     }`}
                     style={{ width: `${progress}%` }}
                   />
@@ -1099,7 +1099,7 @@ function JobCard({
                 {repair.workers.slice(0, 3).map((w, i) => (
                   <div
                     key={i}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-950 bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 text-[10.5px] font-bold text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-950 bg-gradient-to-br from-teal-500/40 to-teal-600/20 text-[10.5px] font-bold text-white"
                   >
                     {w.charAt(0).toUpperCase()}
                   </div>
@@ -1231,9 +1231,9 @@ function JobCard({
           <button
             type="button"
             onClick={() => onQuickStart(me.id)}
-            className="group flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-sky-400/25 bg-sky-500/[0.08] px-4 text-sm font-bold text-sky-200 transition-all active:scale-[0.98] hover:bg-sky-500/[0.15]"
+            className="group flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-teal-400/25 bg-teal-500/[0.08] px-4 text-sm font-bold text-teal-200 transition-all active:scale-[0.98] hover:bg-teal-500/[0.15]"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 text-[13px] font-bold text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-teal-600 text-[13px] font-bold text-white">
               {me.name.charAt(0).toUpperCase()}
             </span>
             <span className="tracking-tight">
@@ -1256,10 +1256,10 @@ function JobCard({
                 key={user.id}
                 type="button"
                 onClick={() => onQuickStart(user.id)}
-                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-sky-400/25 bg-sky-500/[0.08] px-3 text-base font-bold text-sky-200 transition-all active:scale-[0.97] hover:bg-sky-500/[0.15]"
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-teal-400/25 bg-teal-500/[0.08] px-3 text-base font-bold text-teal-200 transition-all active:scale-[0.97] hover:bg-teal-500/[0.15]"
                 title={`${t("Start timer for", "Iniciar temporizador para", "Start timer voor")} ${user.name ?? ""}`}
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 text-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-teal-500/40 to-teal-600/20 text-sm">
                   {(user.name ?? "?").charAt(0).toUpperCase()}
                 </span>
                 <span className="max-w-[100px] truncate text-[13px] font-semibold">
@@ -1313,8 +1313,8 @@ function EmptyState({
 }) {
   return (
     <div className="motion-safe:animate-fade-in flex flex-col items-center justify-center px-6 py-20 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-cyan-500/15 to-cyan-400/5">
-        <Wrench className="h-7 w-7 text-cyan-300/60" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-teal-500/15 to-teal-400/5">
+        <Wrench className="h-7 w-7 text-teal-300/60" />
       </div>
       <h2 className="mb-1 text-lg font-semibold text-white/90">
         {t("No work scheduled", "Sin trabajos programados", "Geen werk gepland")}

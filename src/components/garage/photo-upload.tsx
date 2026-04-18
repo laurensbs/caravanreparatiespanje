@@ -338,7 +338,7 @@ function PhotoSourceSheet({
             onClick={onCamera}
             className="flex flex-col items-center gap-2 rounded-2xl bg-white/[0.04] px-3 py-5 text-white transition-all active:scale-[0.97] hover:bg-white/[0.07]"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/20 text-teal-300">
               <Camera className="h-5 w-5" />
             </span>
             <span className="text-[13px] font-semibold">{t("Camera", "Cámara", "Camera")}</span>

@@ -98,7 +98,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 {unit.customer && (
                   <>
                     {unit.registration && <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>}
-                    <Link href={`/customers/${unit.customer.id}`} className="text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 transition-colors">
+                    <Link href={`/customers/${unit.customer.id}`} className="text-foreground hover:text-foreground dark:hover:text-foreground/90 transition-colors">
                       {unit.customer.name}
                     </Link>
                   </>
@@ -183,7 +183,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
               <InlineSelectRow icon={Warehouse} label="Type" value={storageType} field="storageType"
                 options={["Inside", "Outside"]} placeholder="Inside / Outside"
                 editingField={editingField} saving={isPending} onChange={setStorageType} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)}
-                chip={storageType === "Inside" ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400" : storageType === "Outside" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" : undefined} />
+                chip={storageType === "Inside" ? "bg-muted/60 text-foreground dark:bg-foreground/[0.05] dark:text-foreground/80" : storageType === "Outside" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" : undefined} />
               <InlineRow icon={Navigation} label="Position" value={currentPosition} field="currentPosition"
                 editingField={editingField} saving={isPending} onChange={setCurrentPosition} onSave={saveField} onEdit={setEditingField} onCancel={() => setEditingField(null)} />
               <InlineRow icon={Tag} label="NFC Tag" value={nfcTag} field="nfcTag" mono nfcPill
@@ -261,7 +261,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                     className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 dark:hover:bg-gray-800/40"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground dark:text-foreground truncate transition-colors group-hover:text-sky-700 dark:group-hover:text-sky-400">
+                      <p className="text-sm font-medium text-foreground dark:text-foreground truncate transition-colors group-hover:text-foreground dark:group-hover:text-foreground/80">
                         {job.title || "Unnamed"}
                       </p>
                       <p className="mt-0.5 font-mono text-[11px] text-muted-foreground/70 dark:text-muted-foreground">{job.publicCode}</p>
@@ -287,8 +287,8 @@ const STATUS_BADGE_COLORS: Partial<Record<RepairStatus, string>> = {
   waiting_approval: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
   waiting_customer: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
   waiting_parts: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
-  in_progress: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
-  scheduled: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
+  in_progress: "bg-muted/60 text-foreground dark:bg-foreground/[0.05] dark:text-foreground/80",
+  scheduled: "bg-muted/60 text-foreground dark:bg-foreground/[0.05] dark:text-foreground/80",
   quote_needed: "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
   in_inspection: "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
   ready_for_check: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
@@ -328,7 +328,7 @@ function InlineRow({ icon: Icon, label, value, field, mono, type, nfcPill, editi
         </div>
       ) : (
         <span
-          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "text-foreground dark:text-foreground hover:text-sky-700 dark:hover:text-sky-400" : "text-muted-foreground/50 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70"}`}
+          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "text-foreground dark:text-foreground hover:text-foreground dark:hover:text-foreground/80" : "text-muted-foreground/50 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70"}`}
           onClick={() => onEdit(field)}
         >
           {nfcPill && value ? (
@@ -371,7 +371,7 @@ function InlineSelectRow({ icon: Icon, label, value, field, options, placeholder
         </div>
       ) : (
         <span
-          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "hover:text-sky-700 dark:hover:text-sky-400" : "text-muted-foreground/50 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70"}`}
+          className={`flex items-center gap-1.5 cursor-pointer transition-colors ${value ? "hover:text-foreground dark:hover:text-foreground/80" : "text-muted-foreground/50 dark:text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/70"}`}
           onClick={() => onEdit(field)}
         >
           {chip && value ? (

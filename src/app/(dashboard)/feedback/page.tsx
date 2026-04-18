@@ -26,7 +26,7 @@ export default async function FeedbackPage() {
             <span className="tabular-nums">{items.length} total</span>
             {open > 0 ? <span className="text-amber-600 dark:text-amber-400">{open} open</span> : null}
             {inProgress > 0 ? (
-              <span className="text-sky-600 dark:text-sky-400">{inProgress} in progress</span>
+              <span className="text-foreground/80">{inProgress} in progress</span>
             ) : null}
           </>
         }

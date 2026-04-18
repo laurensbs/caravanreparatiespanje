@@ -99,7 +99,7 @@ function StatTile({
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted dark:bg-card/[0.06]">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-500 transition-[width] duration-700 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-foreground/70 to-foreground transition-[width] duration-700 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -235,7 +235,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
       <SettingsPanel className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/600/10 text-foreground/80">
               <FileText className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -353,7 +353,7 @@ export function HoldedSyncClient({ configured, syncStatus }: Props) {
                   className={cn(
                     "mt-0.5 text-[20px] font-semibold tabular-nums text-foreground dark:text-foreground",
                     s.tone === "emerald" && "text-emerald-600 dark:text-emerald-400",
-                    s.tone === "sky" && "text-sky-600 dark:text-sky-400",
+                    s.tone === "sky" && "text-foreground/80",
                   )}
                 >
                   {s.value}

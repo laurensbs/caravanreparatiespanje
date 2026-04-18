@@ -20,6 +20,6 @@ export const sonnerToastOptions: NonNullable<ToasterProps["toastOptions"]> = {
     success: "!border-emerald-500/40",
     error: "!border-destructive/50",
     warning: "!border-amber-500/40",
-    info: "!border-sky-500/40",
+    info: "!border-foreground/30",
   },
 };

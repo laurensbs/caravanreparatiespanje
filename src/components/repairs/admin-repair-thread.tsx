@@ -149,7 +149,7 @@ export function AdminRepairThread({
                     className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                       fromGarage
                         ? "rounded-tl-sm bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200 dark:bg-emerald-400/[0.08] dark:text-emerald-100 dark:ring-emerald-400/15"
-                        : "rounded-tr-sm bg-sky-50 text-sky-900 ring-1 ring-sky-200 dark:bg-sky-400/[0.08] dark:text-sky-100 dark:ring-sky-400/15"
+                        : "rounded-tr-sm bg-muted/60 text-foreground ring-1 ring-border dark:bg-foreground/60/[0.08] dark:text-foreground dark:ring-border"
                     }`}
                   >
                     <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed">

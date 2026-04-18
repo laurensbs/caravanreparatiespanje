@@ -123,7 +123,7 @@ export function GarageRepairThread({
     <section className="motion-safe:animate-slide-up mb-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5">
       <header className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-sky-300/80" />
+          <MessageSquare className="h-4 w-4 text-teal-300/80" />
           <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/55">
             {t("Office conversation", "Conversación oficina", "Gesprek met kantoor")}
           </h3>
@@ -194,7 +194,7 @@ export function GarageRepairThread({
                     className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                       fromGarage
                         ? "rounded-tr-sm bg-emerald-400/[0.08] text-white/90 ring-1 ring-emerald-400/15"
-                        : "rounded-tl-sm bg-sky-400/[0.08] text-white/90 ring-1 ring-sky-400/15"
+                        : "rounded-tl-sm bg-teal-400/[0.08] text-white/90 ring-1 ring-teal-400/15"
                     }`}
                   >
                     <p className="whitespace-pre-wrap text-[13px] leading-relaxed">
@@ -251,7 +251,7 @@ export function GarageRepairThread({
             type="button"
             disabled={!draft.trim() || isPosting}
             onClick={() => void handleSend()}
-            className="flex h-auto shrink-0 items-center justify-center gap-1.5 self-stretch rounded-xl bg-sky-500/15 px-4 text-[13px] font-semibold text-sky-200 ring-1 ring-sky-400/30 transition-all active:scale-[0.97] hover:bg-sky-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-auto shrink-0 items-center justify-center gap-1.5 self-stretch rounded-xl bg-teal-500/15 px-4 text-[13px] font-semibold text-teal-200 ring-1 ring-teal-400/30 transition-all active:scale-[0.97] hover:bg-teal-500/25 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
             <span className="hidden sm:inline">

@@ -6,7 +6,7 @@ import type { UnitType } from "@/types";
 import { UNIT_TYPE_LABELS } from "@/types";
 
 const pill: Record<UnitType, string> = {
-  caravan: "border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  caravan: "border-border bg-muted/600/10 text-foreground",
   trailer: "border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-300",
   camper: "border-violet-500/25 bg-violet-500/10 text-violet-800 dark:text-violet-300",
   unknown: "border-border bg-muted text-muted-foreground",

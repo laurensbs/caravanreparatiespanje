@@ -1128,18 +1128,18 @@ const INBOX_TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: 
   follow_up_customer: { icon: Phone, color: "text-teal-600 dark:text-teal-400", bg: "bg-teal-500/10" },
   order_parts: { icon: Package, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
   check_delivery: { icon: Truck, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500/10" },
-  schedule_repair: { icon: Calendar, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  schedule_repair: { icon: Calendar, color: "text-foreground/80", bg: "bg-muted/600/10" },
   send_quote: { icon: DollarSign, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
-  contact_customer: { icon: MessageSquare, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-500/10" },
+  contact_customer: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-foreground/[0.06]" },
   custom: { icon: Pencil, color: "text-muted-foreground", bg: "bg-muted" },
 };
 
 const GARAGE_TRIGGER_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  garage_comment: { icon: MessageSquare, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  garage_comment: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-muted/600/10" },
   garage_not_done: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500/10" },
   garage_task_suggestion: { icon: Calendar, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
   garage_done: { icon: Check, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
-  garage_feedback: { icon: MessageSquare, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10" },
+  garage_feedback: { icon: MessageSquare, color: "text-foreground/80", bg: "bg-muted/600/10" },
 };
 
 const INBOX_TYPE_LABELS: Record<string, string> = {
@@ -1290,7 +1290,7 @@ function InboxView({
                     ) : null}
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                       {reply.publicCode ? (
-                        <span className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400">
+                        <span className="font-mono text-[11px] font-medium tabular-nums text-foreground/80">
                           {reply.publicCode}
                           {reply.customerName ? ` · ${reply.customerName}` : ""}
                         </span>
@@ -1362,7 +1362,7 @@ function InboxView({
                 ) : null}
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                   {item.publicCode && (
-                    <span className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400">
+                    <span className="font-mono text-[11px] font-medium tabular-nums text-foreground/80">
                       {item.publicCode}
                       {item.customerName ? ` · ${item.customerName}` : ""}
                     </span>
@@ -1705,31 +1705,31 @@ export function SmartAssistant({ page, pathname, context }: SmartAssistantProps)
           )}
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          {/* Header — brand gradient, calmer than solid flat cyan */}
-          <div className="px-4 pt-3 pb-2.5 border-b border-white/10 shrink-0 bg-gradient-to-br from-cyan-600/95 via-teal-700/90 to-slate-800">
+          {/* Header — neutral foreground panel, no more cyan brand. */}
+          <div className="shrink-0 border-b border-border/60 bg-foreground px-4 pb-2.5 pt-3 text-background">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 {selectedCategory ? (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-white/80 hover:text-white hover:bg-card/10 shrink-0"
+                    className="h-6 w-6 shrink-0 text-background/80 hover:bg-background/10 hover:text-background"
                     onClick={() => setSelectedCategory(null)}
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-card/15">
-                    <Sparkles className="h-3.5 w-3.5 text-white" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-background/10">
+                    <Sparkles className="h-3.5 w-3.5 text-background" />
                   </div>
                 )}
                 <div>
-                  <h3 className="text-[13px] font-semibold text-white">
+                  <h3 className="text-[13px] font-semibold tracking-[-0.01em] text-background">
                     {selectedCategory
                       ? CATEGORY_CONFIG[selectedCategory].label
                       : tab === "inbox" ? "Inbox" : "Assistant"}
                   </h3>
-                  <p className="text-[10px] text-white/65 line-clamp-2 leading-snug">
+                  <p className="line-clamp-2 text-[10px] leading-snug text-background/65">
                     {selectedCategory
                       ? FAQ_ITEMS.filter((f) => f.category === selectedCategory).length + " questions"
                       : tab === "inbox"

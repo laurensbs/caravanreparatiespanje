@@ -27,6 +27,21 @@ import {
 } from "@/components/settings/settings-primitives";
 import { cn } from "@/lib/utils";
 
+const AVATAR_GRADIENTS = [
+  "from-amber-500 to-orange-500",
+  "from-emerald-500 to-teal-600",
+  "from-rose-500 to-pink-500",
+  "from-violet-500 to-fuchsia-500",
+  "from-indigo-500 to-blue-600",
+  "from-stone-500 to-stone-700",
+];
+function avatarGradient(name: string | undefined | null): string {
+  const key = (name ?? "").trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
+}
+
 interface User {
   id: string;
   name: string;
@@ -37,11 +52,11 @@ interface User {
 }
 
 const ROLE_PILL: Record<User["role"], string> = {
-  admin: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-  manager: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-  technician: "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
-  staff: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-  viewer: "bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70",
+  admin: "bg-foreground text-background",
+  manager: "bg-foreground/[0.08] text-foreground",
+  technician: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+  staff: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  viewer: "bg-muted text-muted-foreground",
 };
 
 export function UsersClient({ users }: { users: User[] }) {
@@ -165,7 +180,10 @@ export function UsersClient({ users }: { users: User[] }) {
                 >
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-[11px] font-semibold text-white shadow-sm">
+                      <span className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br text-[11px] font-semibold text-white shadow-sm",
+                        avatarGradient(user.name),
+                      )}>
                         {user.name?.charAt(0)?.toUpperCase() ?? "?"}
                       </span>
                       <div className="min-w-0">

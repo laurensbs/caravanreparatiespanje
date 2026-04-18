@@ -86,7 +86,7 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
           type="button"
           onClick={handleStart}
           disabled={isPending}
-          className="inline-flex items-center gap-2.5 rounded-xl bg-sky-400/10 border border-sky-400/20 min-h-12 px-4 py-2.5 text-base font-semibold text-sky-400 transition-all active:scale-[0.97] disabled:opacity-50"
+          className="inline-flex items-center gap-2.5 rounded-xl bg-teal-400/10 border border-teal-400/20 min-h-12 px-4 py-2.5 text-base font-semibold text-teal-400 transition-all active:scale-[0.97] disabled:opacity-50"
         >
           <Play className="h-5 w-5 fill-current shrink-0" />
           {t("Start", "Iniciar", "Start")}
@@ -98,7 +98,7 @@ export function GarageTimer({ repairJobId, currentUserId, currentUserName, activ
           key={timer.id}
           className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] min-h-12 px-3 py-2 text-sm text-white/50"
         >
-          <span className="flex items-center justify-center h-8 w-8 rounded-full bg-sky-400 text-xs font-bold text-gray-950 shrink-0">
+          <span className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-400 text-xs font-bold text-gray-950 shrink-0">
             {(timer.userName ?? "?").charAt(0).toUpperCase()}
           </span>
           <span className="truncate max-w-[7rem]">{timer.userName}</span>

@@ -42,25 +42,25 @@ export function FeedbackProductUpdates({ openRequestCount, doneRequestCount }: F
       className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
       aria-labelledby="product-updates-heading"
     >
-      <div className="relative border-b border-border/40 bg-gradient-to-br from-[currentColor]/12 via-indigo-500/[0.08] to-transparent px-4 py-6 sm:px-6 sm:py-8 dark:from-[currentColor]/10 dark:via-indigo-500/[0.12] dark:to-transparent">
+      <div className="relative border-b border-border/40 bg-gradient-to-br from-foreground/[0.04] via-amber-500/[0.04] to-transparent px-4 py-6 sm:px-6 sm:py-8">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-25"
           style={{
             backgroundImage:
-              "radial-gradient(900px 280px at 20% -20%, rgba(12,192,223,0.25), transparent 55%), radial-gradient(700px 240px at 90% 0%, rgba(99,102,241,0.2), transparent 50%)",
+              "radial-gradient(900px 280px at 20% -20%, oklch(0.20 0.005 75 / 0.18), transparent 55%), radial-gradient(700px 240px at 90% 0%, oklch(0.72 0.13 60 / 0.16), transparent 50%)",
           }}
         />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-900/70 dark:text-cyan-200/80">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
               Product
             </p>
-            <h2 id="product-updates-heading" className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h2 id="product-updates-heading" className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground sm:text-3xl">
               What&apos;s new
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
               Shipped improvements in plain language. Scroll the timeline below for older updates. Your own requests are in{" "}
-              <Link href="#feedback-queue" className="font-medium text-cyan-700 underline-offset-4 hover:underline dark:text-cyan-300">
+              <Link href="#feedback-queue" className="font-medium text-foreground underline-offset-4 hover:underline">
                 Open requests
               </Link>
               .
@@ -68,8 +68,8 @@ export function FeedbackProductUpdates({ openRequestCount, doneRequestCount }: F
           </div>
 
           <div className="grid w-full max-w-md grid-cols-3 gap-2 sm:max-w-lg sm:gap-3 lg:w-auto lg:max-w-none lg:shrink-0">
-            <MetricTile icon={Inbox} label="Open requests" value={openRequestCount} tone="cyan" delay="0ms" />
-            <MetricTile icon={Check} label="Resolved" value={doneRequestCount} tone="indigo" delay="45ms" />
+            <MetricTile icon={Inbox} label="Open requests" value={openRequestCount} tone="primary" delay="0ms" />
+            <MetricTile icon={Check} label="Resolved" value={doneRequestCount} tone="accent" delay="45ms" />
             <MetricTile icon={Rocket} label="Shipped bullets" value={bulletTotal} tone="slate" delay="90ms" />
           </div>
         </div>
@@ -81,7 +81,7 @@ export function FeedbackProductUpdates({ openRequestCount, doneRequestCount }: F
           style={{ animationDelay: "60ms", animationFillMode: "backwards" }}
         >
           <div className="mb-4 flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/5 text-cyan-700 shadow-sm dark:from-cyan-400/20 dark:to-cyan-500/5 dark:text-cyan-200">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-sm">
               <History className="h-5 w-5" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -124,7 +124,7 @@ export function FeedbackProductUpdates({ openRequestCount, doneRequestCount }: F
           </div>
 
           <div className="mt-4 flex items-start gap-2 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2.5 text-xs text-muted-foreground">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" aria-hidden />
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
             <p>
               Missing something? Start a{" "}
               <Link href="#feedback-queue" className="font-medium text-foreground underline-offset-2 hover:underline">
@@ -178,30 +178,30 @@ function MetricTile({
   icon: typeof Inbox;
   label: string;
   value: number;
-  tone: "cyan" | "indigo" | "slate";
+  tone: "primary" | "accent" | "slate";
   delay: string;
 }) {
   return (
     <div
       className={cn(
-        "animate-scale-in rounded-xl border border-white/60 bg-card/80 px-2.5 py-3 text-center shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-card/[0.06]",
-        tone === "cyan" && "ring-1 ring-cyan-500/10",
-        tone === "indigo" && "ring-1 ring-indigo-500/10",
-        tone === "slate" && "ring-1 ring-black/5 dark:ring-white/10",
+        "animate-scale-in rounded-xl border border-border/60 bg-card/80 px-2.5 py-3 text-center shadow-sm backdrop-blur-sm",
+        tone === "primary" && "ring-1 ring-foreground/10",
+        tone === "accent" && "ring-1 ring-amber-500/15",
+        tone === "slate" && "ring-1 ring-foreground/[0.04]",
       )}
       style={{ animationDelay: delay, animationFillMode: "backwards" }}
     >
       <Icon
         className={cn(
           "mx-auto mb-1 h-4 w-4",
-          tone === "cyan" && "text-cyan-600 dark:text-cyan-400",
-          tone === "indigo" && "text-indigo-600 dark:text-indigo-400",
+          tone === "primary" && "text-foreground/80",
+          tone === "accent" && "text-amber-600 dark:text-amber-400",
           tone === "slate" && "text-muted-foreground",
         )}
         aria-hidden
       />
-      <p className="font-mono text-2xl font-bold tabular-nums tracking-tight text-foreground">{value}</p>
-      <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="font-mono text-2xl font-bold tabular-nums tracking-[-0.01em] text-foreground">{value}</p>
+      <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
     </div>
   );
 }

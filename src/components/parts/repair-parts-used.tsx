@@ -422,7 +422,7 @@ export function RepairPartsUsed({
                   className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-gray-50 dark:border-border/50 last:border-b-0 ${
                     highlightIndex === i
                       ? "bg-[currentColor]/5 dark:bg-[currentColor]/10"
-                      : "hover:bg-muted/40 dark:hover:bg-card/[0.04] active:bg-sky-50 dark:active:bg-sky-500/10"
+                      : "hover:bg-muted/40 dark:hover:bg-card/[0.04] active:bg-muted/60 dark:active:bg-muted/600/10"
                   }`}
                   onMouseEnter={() => setHighlightIndex(i)}
                   style={{ minHeight: 56 }}
@@ -644,7 +644,7 @@ export function RepairPartsUsed({
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Category name..."
-                  className="h-6 w-28 rounded-md border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-[10px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
+                  className="h-6 w-28 rounded-md border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-[10px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-border dark:focus:ring-foreground/15"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Escape") { setShowNewCategory(false); setNewCategoryName(""); } }}
                 />
@@ -747,7 +747,7 @@ export function RepairPartsUsed({
                   value={newPartCategoryName}
                   onChange={(e) => setNewPartCategoryName(e.target.value)}
                   placeholder="Category name..."
-                  className="h-6 w-28 rounded-md border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-[10px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-800"
+                  className="h-6 w-28 rounded-md border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-[10px] placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-border dark:focus:ring-foreground/15"
                   autoFocus
                   onKeyDown={async (e) => {
                     if (e.key === "Escape") { setShowNewPartCategory(false); setNewPartCategoryName(""); }

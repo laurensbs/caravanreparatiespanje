@@ -38,12 +38,12 @@ interface HeaderProps {
  * login account tiles for visual continuity.
  */
 const AVATAR_GRADIENTS = [
-  "from-sky-500 to-cyan-500",
-  "from-violet-500 to-fuchsia-500",
-  "from-emerald-500 to-teal-500",
   "from-amber-500 to-orange-500",
+  "from-emerald-500 to-teal-600",
   "from-rose-500 to-pink-500",
-  "from-indigo-500 to-blue-500",
+  "from-violet-500 to-fuchsia-500",
+  "from-indigo-500 to-blue-600",
+  "from-stone-500 to-stone-700",
 ];
 function avatarGradient(name: string | undefined | null): string {
   const key = (name ?? "").trim().toLowerCase();

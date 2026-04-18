@@ -12,14 +12,14 @@ import type { ToasterProps } from "sonner";
 export const sonnerToastOptions: NonNullable<ToasterProps["toastOptions"]> = {
   classNames: {
     toast:
-      "group rounded-xl border shadow-lg !p-4 !gap-3 !border-zinc-200 !bg-white !text-zinc-900 dark:!border-gray-800 dark:!bg-gray-900 dark:!text-gray-100",
-    title: "!text-sm !font-semibold !text-zinc-900 dark:!text-gray-100",
-    description: "!text-xs !leading-relaxed !text-zinc-600 dark:!text-gray-400",
+      "group rounded-xl border !p-4 !gap-3 !border-border/70 !bg-card !text-foreground shadow-[0_10px_30px_-12px_rgba(0,0,0,0.18),0_2px_6px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.55)]",
+    title: "!text-sm !font-semibold !tracking-[-0.01em] !text-foreground",
+    description: "!text-xs !leading-relaxed !text-muted-foreground",
     closeButton:
-      "!left-auto !right-2 !top-3 !border-0 !bg-transparent !text-zinc-500 hover:!bg-zinc-100 dark:!text-gray-400 dark:hover:!bg-white/[0.06]",
-    success: "!border-emerald-500/50 !bg-white dark:!bg-gray-900",
-    error: "!border-red-500/50 !bg-white dark:!bg-gray-900",
-    warning: "!border-amber-500/50 !bg-white dark:!bg-gray-900",
-    info: "!border-sky-500/50 !bg-white dark:!bg-gray-900",
+      "!left-auto !right-2 !top-3 !border-0 !bg-transparent !text-muted-foreground hover:!bg-muted",
+    success: "!border-emerald-500/40",
+    error: "!border-destructive/50",
+    warning: "!border-amber-500/40",
+    info: "!border-sky-500/40",
   },
 };

@@ -76,20 +76,46 @@
     }
   }
 
-  /* Custom scrollbar */
+  /* Custom scrollbar — thin, warm, fades on hover. Tracks the palette so
+     it never flashes a cold purple-grey against the warm stone surfaces. */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.75 0.01 260);
-    border-radius: 3px;
+    background: oklch(0.85 0.005 75 / 0.6);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.60 0.02 260);
+    background: oklch(0.65 0.008 75 / 0.8);
+    background-clip: padding-box;
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.85 0.005 75 / 0.6) transparent;
+  }
+
+  /* Selection — quiet amber tint matching --color-ring, never blue. */
+  ::selection {
+    background: oklch(0.92 0.08 60 / 0.45);
+    color: var(--color-foreground);
+  }
+
+  /* Honour the OS-level reduced-motion preference for everyone — no
+     spinning settings cog, no shimmer skeletons, no slide-ups. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   .dark {
@@ -119,10 +145,19 @@
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    background: oklch(0.35 0.015 260);
+    background: oklch(0.32 0.005 75 / 0.7);
+    background-clip: padding-box;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.45 0.02 260);
+    background: oklch(0.45 0.006 75 / 0.85);
+    background-clip: padding-box;
+  }
+  .dark * {
+    scrollbar-color: oklch(0.32 0.005 75 / 0.7) transparent;
+  }
+  .dark ::selection {
+    background: oklch(0.78 0.12 60 / 0.35);
+    color: var(--color-foreground);
   }
 }
 
@@ -138,11 +173,25 @@
   }
   .glass {
     background: oklch(1 0 0 / 0.7);
-    backdrop-filter: blur(12px) saturate(1.5);
-    -webkit-backdrop-filter: blur(12px) saturate(1.5);
+    backdrop-filter: blur(14px) saturate(1.6);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6);
+    border: 1px solid oklch(0 0 0 / 0.04);
   }
   .dark .glass {
-    background: oklch(0.16 0.02 260 / 0.7);
+    background: oklch(0.18 0.005 75 / 0.7);
+    border-color: oklch(1 0 0 / 0.04);
+  }
+
+  /* Premium "lift on hover" — used by interactive cards/tiles. */
+  .hover-lift {
+    @apply transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)];
+  }
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -8px oklch(0 0 0 / 0.18);
+  }
+  .dark .hover-lift:hover {
+    box-shadow: 0 8px 24px -8px oklch(0 0 0 / 0.55);
   }
 
   /* Staggered table row entrance */

@@ -3,8 +3,9 @@
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { garageLogin } from "@/actions/garage-auth";
+import Image from "next/image";
 import { useLanguage } from "@/components/garage/language-toggle";
-import { Delete, Wrench } from "lucide-react";
+import { Delete } from "lucide-react";
 
 const PIN_LENGTH = 4;
 
@@ -114,10 +115,17 @@ export function GarageLoginForm() {
       <div className="relative flex w-full max-w-sm flex-col items-center justify-center gap-8 px-5 py-8 sm:max-w-[380px] sm:gap-10 sm:py-10">
         {/* ── Branding + PIN dots ─────────────────────────────────────── */}
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 sm:h-20 sm:w-20 sm:rounded-3xl">
-            <Wrench className="h-8 w-8 text-white/80 sm:h-10 sm:w-10" />
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] sm:h-20 sm:w-20 sm:rounded-3xl">
+            <Image
+              src="/favicon.png"
+              alt="Reparatie Panel"
+              width={48}
+              height={48}
+              className="h-9 w-9 object-contain invert sm:h-11 sm:w-11"
+              priority
+            />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-white/90 sm:text-2xl">
+          <h1 className="text-xl font-semibold tracking-[-0.02em] text-white/95 sm:text-2xl">
             {t("Garage Portal", "Portal del Taller", "Garage Portaal")}
           </h1>
           <p className="mt-1.5 text-sm text-white/40 sm:text-base">

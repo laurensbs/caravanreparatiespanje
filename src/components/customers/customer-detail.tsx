@@ -219,8 +219,19 @@ export function CustomerDetail({
             )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground/70 hover:text-red-500 hover:bg-red-50 transition-colors" onClick={() => setDeleteOpen(true)}>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm">
+            <Link href={`/repairs/new?customerId=${customer.id}`}>
+              <Plus className="h-3.5 w-3.5" />
+              Nieuwe reparatie
+            </Link>
+          </Button>
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeleteOpen(true)}
+            aria-label="Delete customer"
+            title="Delete customer"
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Hash, Truck, Calendar, Wrench, StickyNote,
-  MapPin, Ruler, Warehouse, Navigation, Tag, Pencil, Check, X,
+  MapPin, Ruler, Warehouse, Navigation, Tag, Pencil, Check, X, Plus,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -132,6 +132,17 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
               </div>
             </div>
           </div>
+          {/* Quick action: nieuwe reparatie voor deze unit (pre-vult de
+              owner als bekend zodat het formulier in 1 klik dichter bij
+              klaar staat). */}
+          {unit.customer ? (
+            <Button asChild size="sm" className="shrink-0">
+              <Link href={`/repairs/new?customerId=${unit.customer.id}`}>
+                <Plus className="h-3.5 w-3.5" />
+                Nieuwe reparatie
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
 

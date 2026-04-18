@@ -53,7 +53,7 @@ export async function updateUser(
   id: string,
   data: { name?: string; email?: string; role?: "admin" | "manager" | "staff" | "technician" | "viewer"; active?: boolean; password?: string }
 ) {
-  const session = await requireRole("admin");
+  await requireRole("admin");
 
   const updateData: Record<string, unknown> = {};
   if (data.name !== undefined) updateData.name = data.name;
@@ -64,5 +64,37 @@ export async function updateUser(
 
   await db.update(users).set(updateData).where(eq(users.id, id));
   await createAuditLog("update", "user", id, { fields: Object.keys(updateData) });
+  revalidatePath("/settings/users");
+}
+
+/**
+ * Soft-disable a user. We never hard-delete the row because audit_logs,
+ * repair_jobs, and similar tables foreign-key into users — wiping a row
+ * would orphan history. `active=false` revokes login (auth.ts already
+ * checks `user.active`) without losing the trail.
+ */
+export async function deactivateUser(id: string) {
+  await requireRole("admin");
+  await db.update(users).set({ active: false }).where(eq(users.id, id));
+  await createAuditLog("update", "user", id, { fields: ["active"], to: false });
+  revalidatePath("/settings/users");
+}
+
+export async function activateUser(id: string) {
+  await requireRole("admin");
+  await db.update(users).set({ active: true }).where(eq(users.id, id));
+  await createAuditLog("update", "user", id, { fields: ["active"], to: true });
+  revalidatePath("/settings/users");
+}
+
+/** Force a password reset by setting a new bcrypt hash. */
+export async function resetUserPassword(id: string, newPassword: string) {
+  await requireRole("admin");
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Wachtwoord moet minimaal 6 tekens zijn.");
+  }
+  const hashed = await hash(newPassword, 12);
+  await db.update(users).set({ passwordHash: hashed }).where(eq(users.id, id));
+  await createAuditLog("update", "user", id, { fields: ["passwordHash"], reason: "admin_reset" });
   revalidatePath("/settings/users");
 }

@@ -18,8 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Users, Search } from "lucide-react";
-import { createUser, updateUser } from "@/actions/users";
+import { Plus, Users, Search, MoreHorizontal, KeyRound, Power, PowerOff } from "lucide-react";
+import { createUser, updateUser, deactivateUser, activateUser, resetUserPassword } from "@/actions/users";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
 import {
   SettingsPanel,
   SettingsSectionHeader,
@@ -96,8 +105,34 @@ export function UsersClient({ users }: { users: User[] }) {
   };
 
   const toggleActive = async (user: User) => {
-    await updateUser(user.id, { active: !user.active });
+    if (user.active) {
+      const ok = await confirmDialog({
+        title: `Deactiveer ${user.name}?`,
+        description: "Deze gebruiker kan niet meer inloggen totdat je het account weer activeert. Bestaande historie blijft staan.",
+        tone: "destructive",
+        confirmLabel: "Deactiveer",
+      });
+      if (!ok) return;
+      await deactivateUser(user.id);
+      toast.success(`${user.name} is gedeactiveerd`);
+    } else {
+      await activateUser(user.id);
+      toast.success(`${user.name} is geactiveerd`);
+    }
     router.refresh();
+  };
+
+  const handleResetPassword = async (user: User) => {
+    const newPw = window.prompt(
+      `Nieuw wachtwoord voor ${user.name}? Minimaal 6 tekens.`,
+    );
+    if (!newPw) return;
+    try {
+      await resetUserPassword(user.id, newPw);
+      toast.success(`Wachtwoord van ${user.name} gereset`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kon wachtwoord niet wijzigen");
+    }
   };
 
   const activeCount = users.filter((u) => u.active).length;
@@ -228,14 +263,32 @@ export function UsersClient({ users }: { users: User[] }) {
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 rounded-full px-3 text-[11.5px] text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground"
-                      onClick={() => toggleActive(user)}
-                    >
-                      {user.active ? "Deactivate" : "Activate"}
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          aria-label={`Acties voor ${user.name}`}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
+                          <KeyRound className="h-4 w-4" />
+                          Reset wachtwoord
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onSelect={() => toggleActive(user)}
+                          className={user.active ? "text-destructive focus:text-destructive" : ""}
+                        >
+                          {user.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                          {user.active ? "Deactiveer account" : "Activeer account"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}

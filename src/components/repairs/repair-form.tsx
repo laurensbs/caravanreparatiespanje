@@ -34,13 +34,15 @@ interface RepairFormProps {
   customers: { id: string; name: string }[];
   partsCatalog?: CatalogPart[];
   partCategories?: PartCategory[];
+  /** Optional pre-selected customer id (e.g. via /repairs/new?customerId=…) */
+  defaultCustomerId?: string | null;
 }
 
-export function RepairForm({ locations, customers, partsCatalog = [], partCategories = [] }: RepairFormProps) {
+export function RepairForm({ locations, customers, partsCatalog = [], partCategories = [], defaultCustomerId = null }: RepairFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(defaultCustomerId);
   const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

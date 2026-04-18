@@ -10,7 +10,7 @@ import { autoGenerateReminder } from "./reminders";
 import { clearGarageAttention } from "./garage-sync";
 import { syncCustomerToHolded } from "./holded";
 import { generatePublicCode } from "@/lib/utils";
-import { eq, desc, asc, ilike, or, and, sql, count, inArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
+import { eq, desc, asc, ilike, or, and, sql, count, inArray, notInArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type RepairJobRow = InferSelectModel<typeof repairJobs>;
@@ -108,6 +108,10 @@ export type RepairFilters = {
   archived?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** Quick due-window preset: 'today' | 'week' | 'overdue' | 'unscheduled' */
+  dueWithin?: string;
+  /** When set, restrict to jobs assigned to the given user. */
+  mine?: string;
   sort?: string;
   dir?: string;
   page?: number;
@@ -203,6 +207,36 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     const to = new Date(filters.dateTo);
     to.setDate(to.getDate() + 1);
     conditions.push(lte(repairJobs.createdAt, to));
+  }
+
+  if (filters.dueWithin) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setDate(endOfToday.getDate() + 1);
+    if (filters.dueWithin === "today") {
+      conditions.push(gte(repairJobs.dueDate, startOfToday));
+      conditions.push(lte(repairJobs.dueDate, endOfToday));
+    } else if (filters.dueWithin === "week") {
+      const endOfWeek = new Date(startOfToday);
+      endOfWeek.setDate(endOfWeek.getDate() + 7);
+      conditions.push(gte(repairJobs.dueDate, startOfToday));
+      conditions.push(lte(repairJobs.dueDate, endOfWeek));
+    } else if (filters.dueWithin === "overdue") {
+      conditions.push(lte(repairJobs.dueDate, startOfToday));
+      conditions.push(isNotNull(repairJobs.dueDate));
+      // Overdue is only relevant for non-finalised jobs.
+      conditions.push(notInArray(repairJobs.status, ["completed", "invoiced", "archived", "rejected"]));
+    } else if (filters.dueWithin === "unscheduled") {
+      conditions.push(isNull(repairJobs.dueDate));
+    }
+  }
+
+  if (filters.mine === "1") {
+    const session = await requireAuth();
+    if (session.user.id) {
+      conditions.push(eq(repairJobs.assignedUserId, session.user.id));
+    }
   }
 
   if (filters.jobType) {

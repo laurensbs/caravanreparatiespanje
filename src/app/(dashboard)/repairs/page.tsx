@@ -28,6 +28,8 @@ export default async function RepairsPage({ searchParams }: Props) {
     archived: params.archived,
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,
+    dueWithin: params.dueWithin,
+    mine: params.mine,
     sort: params.sort,
     dir: params.dir,
     page: params.page ? parseInt(params.page) : 1,
@@ -80,7 +82,41 @@ export default async function RepairsPage({ searchParams }: Props) {
         actions={<NewRepairDialog locations={filteredLocations} />}
       />
 
-      {/* Quick filters — horizontal scroll on narrow screens */}
+      {/* Focus presets — drop the user straight into the most relevant
+          slice without thinking about filters. Highlight the active
+          preset; clicking the active one clears it. */}
+      <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+        {([
+          { key: "today", label: "Vandaag", href: "/repairs?dueWithin=today" },
+          { key: "week", label: "Deze week", href: "/repairs?dueWithin=week" },
+          { key: "overdue", label: "Te laat", href: "/repairs?dueWithin=overdue", tone: "destructive" as const },
+          { key: "unscheduled", label: "Geen datum", href: "/repairs?dueWithin=unscheduled" },
+          { key: "mine", label: "Mijn werk", href: "/repairs?mine=1" },
+        ] as const).map((focus) => {
+          const isActive = focus.key === "mine" ? filters.mine === "1" : filters.dueWithin === focus.key;
+          const target = isActive ? "/repairs" : focus.href;
+          const isDestructive = "tone" in focus && focus.tone === "destructive";
+          return (
+            <Link key={focus.key} href={target} className="shrink-0 snap-start touch-manipulation">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-medium tracking-[-0.005em] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px ${
+                  isActive
+                    ? isDestructive
+                      ? "border-red-300 bg-red-50 text-red-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.10)] dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
+                      : "border-foreground/20 bg-foreground text-background shadow-[0_2px_8px_-2px_rgba(0,0,0,0.18)]"
+                    : isDestructive
+                      ? "border-border/60 bg-card text-red-700/80 hover:border-red-300/60 hover:text-red-700 dark:text-red-300/80 dark:hover:text-red-300"
+                      : "border-border/60 bg-card text-muted-foreground hover:border-foreground/15 hover:text-foreground"
+                }`}
+              >
+                {focus.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Status / priority quick filters — horizontal scroll on narrow screens */}
       <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 pt-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {quickButtons.map((btn) => {
           const href = btn.priority

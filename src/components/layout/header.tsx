@@ -31,6 +31,27 @@ interface HeaderProps {
   feedbackUnreadReplyCount?: number;
 }
 
+/**
+ * Stable per-user avatar gradient. Same input always returns the same
+ * gradient classes, so each admin gets a consistent colour across the
+ * app (header, dropdowns, login). Picked from the same palette as the
+ * login account tiles for visual continuity.
+ */
+const AVATAR_GRADIENTS = [
+  "from-sky-500 to-cyan-500",
+  "from-violet-500 to-fuchsia-500",
+  "from-emerald-500 to-teal-500",
+  "from-amber-500 to-orange-500",
+  "from-rose-500 to-pink-500",
+  "from-indigo-500 to-blue-500",
+];
+function avatarGradient(name: string | undefined | null): string {
+  const key = (name ?? "").trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
+}
+
 function HeaderIconLink({
   href,
   title,
@@ -57,8 +78,8 @@ function HeaderIconLink({
           href={href}
           aria-label={showBadge ? `${title}, ${badgeCount} unread` : title}
           className={cn(
-            "group inline-flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100",
-            isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100"
+            "group inline-flex items-center justify-center text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.96]",
+            isActive && "bg-foreground/[0.06] text-foreground"
           )}
         >
           {children}
@@ -100,18 +121,18 @@ function HeaderIconButton({
         onClick={onClick}
         aria-label={ariaLabel ?? (showBadge ? `${title}, ${badgeCount} pending` : title)}
         className={cn(
-          "group relative h-9 w-9 shrink-0 touch-manipulation rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-100 sm:h-8 sm:w-8",
-          isActive && "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-gray-100",
+          "group relative h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.96] sm:h-8 sm:w-8",
+          isActive && "bg-foreground/[0.06] text-foreground",
         )}
       >
         {children}
         {showBadge ? (
           <span
             className={cn(
-              "absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums ring-2 ring-white dark:ring-gray-950",
+              "absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums ring-2 ring-background",
               badgeTone === "red"
-                ? "bg-red-500 text-white"
-                : "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900",
+                ? "bg-destructive text-destructive-foreground"
+                : "bg-foreground text-background",
             )}
           >
             {badgeCount! > 9 ? "9+" : badgeCount}
@@ -145,7 +166,7 @@ export function Header({
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center gap-2 border-b border-gray-100 bg-white/80 px-2.5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:border-gray-800/80 dark:bg-gray-950/70 dark:supports-[backdrop-filter]:bg-gray-950/60 sm:gap-3 sm:px-5">
+      <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center gap-2 border-b border-border/60 bg-background/75 px-2.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:gap-3 sm:px-5">
         <Button
           type="button"
           variant="ghost"
@@ -163,11 +184,11 @@ export function Header({
             onClick={() =>
               document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
             }
-            className="group group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/60 px-3 text-sm text-gray-500 shadow-[inset_0_0_0_1px_rgba(15,23,42,0)] transition-all hover:border-gray-200 hover:bg-white hover:text-gray-900 focus-visible:border-gray-300 focus-visible:bg-white focus-visible:outline-none dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-white/[0.06] dark:hover:text-gray-100 sm:max-w-sm lg:max-w-md"
+            className="group group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0)] transition-all hover:border-foreground/15 hover:bg-card hover:text-foreground focus-visible:border-ring focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:max-w-sm lg:max-w-md"
           >
             <Search className="icon-pop h-3.5 w-3.5 shrink-0 opacity-70 transition-all group-hover/search:opacity-100" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal">Search work, customers, units…</span>
-            <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-medium text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 sm:inline-flex">
+            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal tracking-[-0.005em]">Zoek work orders, klanten, units…</span>
+            <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground shadow-[0_1px_0_0_rgba(0,0,0,0.04)] sm:inline-flex">
               ⌘K
             </kbd>
           </button>
@@ -203,7 +224,7 @@ export function Header({
             <Trash2 className="icon-wiggle h-4 w-4" />
           </HeaderIconLink>
 
-          <span className="mx-1.5 hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block" aria-hidden />
+          <span className="mx-1.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
 
           <HoverHint label="Toggle theme" side="bottom">
             <span className="inline-flex">
@@ -217,29 +238,46 @@ export function Header({
             </HeaderIconLink>
           ) : null}
 
-          <span className="mx-1.5 hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block" aria-hidden />
+          <span className="mx-1.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="group/avatar h-9 gap-2 rounded-full px-1 pr-2.5 touch-manipulation transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                className="group/avatar h-9 gap-2 rounded-full px-1 pr-2.5 touch-manipulation transition-colors hover:bg-foreground/[0.05]"
                 aria-label={`Account menu for ${userName}`}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-[11px] font-semibold text-white ring-1 ring-white/40 shadow-sm dark:ring-white/10">
+                <span
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br text-[11px] font-semibold text-white ring-1 ring-white/40 shadow-sm dark:ring-white/10",
+                    avatarGradient(userName),
+                  )}
+                >
                   {userName?.charAt(0)?.toUpperCase() ?? "U"}
                 </span>
-                <span className="hidden max-w-[120px] truncate text-[13px] font-medium text-gray-700 group-hover/avatar:text-gray-900 dark:text-gray-300 dark:group-hover/avatar:text-gray-100 md:inline">
+                <span className="hidden max-w-[120px] truncate text-[13px] font-medium tracking-[-0.005em] text-foreground/80 group-hover/avatar:text-foreground md:inline">
                   {userName}
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60 rounded-xl p-1.5">
+            <DropdownMenuContent align="end" className="w-64 rounded-xl p-1.5">
               <DropdownMenuLabel className="rounded-lg px-2 py-2">
-                <p className="text-sm font-semibold leading-tight">{userName}</p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">{userEmail}</p>
-                <Badge variant="secondary" className="mt-1.5 h-4 rounded-full px-1.5 text-[10px] font-medium">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br text-sm font-semibold text-white shadow-sm",
+                      avatarGradient(userName),
+                    )}
+                  >
+                    {userName?.charAt(0)?.toUpperCase() ?? "U"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold leading-tight tracking-[-0.01em]">{userName}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{userEmail}</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="mt-2 h-4 rounded-full px-1.5 text-[10px] font-medium uppercase tracking-wider">
                   {userRole}
                 </Badge>
               </DropdownMenuLabel>

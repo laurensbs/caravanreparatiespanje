@@ -121,7 +121,7 @@ export function RouteProgress() {
       }}
     >
       <div
-        className="h-full origin-left bg-gradient-to-r from-cyan-400 via-sky-500 to-cyan-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]"
+        className="h-full origin-left bg-gradient-to-r from-foreground/80 via-foreground to-foreground/80 shadow-[0_0_10px_rgba(0,0,0,0.25)] dark:shadow-[0_0_10px_rgba(255,255,255,0.35)]"
         style={{
           transform: `scaleX(${progress / 100})`,
           transition:

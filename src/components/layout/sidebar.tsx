@@ -150,19 +150,24 @@ export function Sidebar({ userRole }: SidebarProps) {
         title={item.label}
         {...linkProps}
         className={cn(
-          "group relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
-          effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+          "group relative flex items-center rounded-lg text-[13px] font-medium tracking-[-0.005em] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2",
           isActive
-            ? "bg-white text-gray-900 shadow-sm shadow-black/5 dark:bg-white/[0.08] dark:text-gray-50 dark:shadow-none dark:ring-1 dark:ring-white/[0.06]"
-            : "text-gray-500 hover:bg-white/60 hover:text-gray-900 active:scale-[0.98] dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-100",
+            ? "bg-card text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.06),0_1px_0_0_rgba(255,255,255,0.6)_inset] dark:bg-white/[0.06] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] dark:ring-1 dark:ring-white/[0.04]"
+            : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground active:scale-[0.98] dark:hover:bg-white/[0.04]",
         )}
       >
+        {/* Active indicator: subtle vertical bar that slides in. */}
+        {isActive && !effectiveCollapsed && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1/2 h-4 w-[3px] -translate-x-1.5 -translate-y-1/2 rounded-full bg-foreground/80 dark:bg-white/70"
+          />
+        )}
         <span
           className={cn(
             "icon-pop shrink-0 transition-colors",
-            isActive
-              ? "text-gray-900 dark:text-gray-50"
-              : "text-gray-400 group-hover:text-gray-700 dark:text-gray-500 dark:group-hover:text-gray-200",
+            isActive ? "text-foreground" : "text-muted-foreground/80 group-hover:text-foreground",
           )}
         >
           {item.icon}
@@ -174,7 +179,7 @@ export function Sidebar({ userRole }: SidebarProps) {
           </span>
         )}
         {effectiveCollapsed && isLg && (
-          <span className="pointer-events-none absolute left-full z-50 ml-3 -translate-x-1 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all delay-75 duration-150 group-hover:translate-x-0 group-hover:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+          <span className="pointer-events-none absolute left-full z-50 ml-3 -translate-x-1 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] ring-1 ring-foreground/10 transition-all delay-75 duration-150 group-hover:translate-x-0 group-hover:opacity-100">
             {item.label}
           </span>
         )}
@@ -188,7 +193,7 @@ export function Sidebar({ userRole }: SidebarProps) {
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-[35] bg-black/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-[35] bg-foreground/30 backdrop-blur-[6px] lg:hidden animate-[fadeIn_220ms_ease-out]"
           onClick={() => setMobileOpen(false)}
         />
       ) : null}
@@ -199,16 +204,16 @@ export function Sidebar({ userRole }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen flex-col bg-[#EDEEF0] transition-[transform,width,box-shadow,background-color] duration-300 ease-in-out dark:bg-gray-950",
+          "fixed left-0 top-0 z-40 flex h-screen flex-col bg-secondary/80 backdrop-blur-md transition-[transform,width,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] dark:bg-sidebar/95 border-r border-border/50",
           mobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full",
           "lg:translate-x-0",
           effectiveCollapsed ? "w-60 lg:w-[60px]" : "w-60 lg:w-60",
-          effectiveCollapsed ? "lg:shadow-none" : "lg:shadow-xl lg:shadow-black/8 dark:lg:shadow-black/40",
+          effectiveCollapsed ? "lg:shadow-none" : "lg:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.18)] dark:lg:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]",
         )}
       >
         <div
           className={cn(
-            "flex items-center justify-center border-b border-gray-200 transition-all duration-300 dark:border-white/[0.06]",
+            "flex items-center justify-center border-b border-border/50 transition-all duration-300",
             effectiveCollapsed ? "h-16 px-2 lg:h-16" : "h-28 px-4 sm:h-32 lg:h-36",
           )}
         >
@@ -244,7 +249,7 @@ export function Sidebar({ userRole }: SidebarProps) {
                   {showGroup && (
                     <p
                       className={cn(
-                        "mb-1.5 mt-4 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500",
+                        "mb-1.5 mt-4 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/60",
                         effectiveCollapsed ? "hidden" : "",
                       )}
                     >
@@ -260,7 +265,7 @@ export function Sidebar({ userRole }: SidebarProps) {
 
         <div
           className={cn(
-            "space-y-0.5 border-t border-gray-200 py-2 dark:border-white/[0.06]",
+            "space-y-0.5 border-t border-border/50 py-2",
             effectiveCollapsed ? "px-1.5 lg:px-1.5" : "px-3",
           )}
         >
@@ -272,8 +277,8 @@ export function Sidebar({ userRole }: SidebarProps) {
               type="button"
               onClick={() => setCollapsed(!collapsed)}
               className={cn(
-                "flex w-full items-center rounded-lg text-gray-400 transition-all hover:bg-white/60 hover:text-gray-700 dark:text-gray-500 dark:hover:bg-white/[0.04] dark:hover:text-gray-200",
-                effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5",
+                "flex w-full items-center rounded-lg text-muted-foreground/80 transition-all hover:bg-foreground/[0.04] hover:text-foreground active:scale-[0.98]",
+                effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2",
               )}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -290,7 +295,7 @@ export function Sidebar({ userRole }: SidebarProps) {
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-gray-500 transition-all hover:bg-white/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-100"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-muted-foreground transition-all hover:bg-foreground/[0.04] hover:text-foreground"
             >
               <ChevronsLeft className="h-4 w-4" />
               Close menu

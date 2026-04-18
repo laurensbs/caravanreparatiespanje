@@ -12,7 +12,8 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-lg bg-gray-100 dark:bg-white/[0.05]",
+        "relative overflow-hidden rounded-lg bg-muted/70",
+        "before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.6s_ease-in-out_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/[0.06] before:to-transparent",
         className,
       )}
       {...props}
@@ -49,13 +50,13 @@ export function DashboardListSkeleton({
       ) : null}
 
       {showStats ? (
-        <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-gray-100 shadow-sm dark:border-gray-800 sm:grid-cols-4">
+        <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
               className={cn(
                 "flex flex-col gap-2 px-5 py-4",
-                i > 0 && "sm:border-l border-gray-100 dark:border-gray-800",
+                i > 0 && "sm:border-l border-border/60",
                 i >= 2 && "border-t sm:border-t-0",
                 i === 1 && "border-l",
               )}
@@ -67,11 +68,11 @@ export function DashboardListSkeleton({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm dark:border-gray-800">
-        <div className="border-b border-gray-100 bg-gray-50/60 px-5 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+        <div className="border-b border-border/60 bg-muted/40 px-5 py-3">
           <Skeleton className="h-3 w-32 rounded-full" />
         </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="divide-y divide-border/50">
           {Array.from({ length: rowCount }).map((_, i) => (
             <div
               key={i}

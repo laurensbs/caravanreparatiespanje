@@ -3,17 +3,8 @@
 import { useState, useRef, useCallback, useEffect, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getUnits } from "@/actions/units";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, X, Truck, Loader2 } from "lucide-react";
-import { UnitDialog } from "./unit-dialog";
+import { Search, X, Truck, Loader2, ChevronRight } from "lucide-react";
 import { NewUnitDialog } from "./new-unit-dialog";
 import { UnitTypeIconBadge } from "./unit-type-icon";
 import { UNIT_TYPE_LABELS } from "@/types";
@@ -51,6 +42,7 @@ interface UnitsClientProps {
   page: number;
   limit: number;
   currentQ?: string;
+  /** Kept on the props for back-compat with the page; ignored. */
   currentTagId?: string;
   currentDateFrom?: string;
   currentDateTo?: string;
@@ -58,11 +50,10 @@ interface UnitsClientProps {
   customers?: { id: string; name: string }[];
 }
 
-export function UnitsClient({ units: initialUnits, total, page, limit, currentQ, currentTagId, currentDateFrom, currentDateTo, allTags, customers = [] }: UnitsClientProps) {
+export function UnitsClient({ units: initialUnits, total, limit, currentQ, customers = [] }: UnitsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(currentQ ?? "");
-  const [selectedUnit, setSelectedUnit] = useState<UnitRow | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Infinite scroll state
@@ -79,7 +70,7 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
     setHasMore(initialUnits.length < total);
   }, [initialUnits, total]);
 
-  const filters = { q: currentQ, tagId: currentTagId, dateFrom: currentDateFrom, dateTo: currentDateTo, limit };
+  const filters = { q: currentQ, limit };
 
   const loadMore = useCallback(() => {
     if (scrollLoading || !hasMore) return;
@@ -151,69 +142,30 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
         actions={<NewUnitDialog customers={customers} />}
       />
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-4 shadow-sm lg:flex-row lg:flex-wrap lg:items-end">
-        <div className="relative min-w-0 flex-1 lg:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search license plate, brand, model…"
-              className="h-11 w-full touch-manipulation rounded-xl border-border bg-background pl-10 pr-3 text-sm"
-              value={searchInput}
-              onChange={handleSearchChange}
-            />
-          </div>
-
-        {allTags.length > 0 && (
-          <Select
-            value={currentTagId ?? "all"}
-            onValueChange={(v) => updateParams({ tagId: v === "all" ? undefined : v })}
-          >
-            <SelectTrigger className="h-11 w-full touch-manipulation rounded-xl border-border bg-background text-sm lg:w-48">
-              <SelectValue placeholder="Tag" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tags</SelectItem>
-              {allTags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id}>
-                  <span className="flex items-center gap-1.5">
-                    {tag.color && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />}
-                    {tag.name}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
-          <Input
-            type="date"
-            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
-            value={currentDateFrom ?? ""}
-            onChange={(e) => updateParams({ dateFrom: e.target.value || undefined })}
-            aria-label="Registered from"
-          />
-          <Input
-            type="date"
-            className="h-11 min-w-0 touch-manipulation rounded-xl border-border bg-background text-sm sm:w-[9.5rem]"
-            value={currentDateTo ?? ""}
-            onChange={(e) => updateParams({ dateTo: e.target.value || undefined })}
-            aria-label="Registered to"
-          />
-        </div>
-
-        {(currentQ || currentTagId || currentDateFrom || currentDateTo) && (
-          <Button
+      {/* Search bar — only filter that meaningfully helps for a 1k+
+          unit fleet. Date filters and tags were dropped: nobody filters
+          a vehicle by the day it was registered, and tags on units are
+          rarely set in practice. */}
+      <div className="relative max-w-lg">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search license plate, brand, model or owner…"
+          className="h-11 w-full touch-manipulation rounded-xl bg-card pl-10 pr-10 text-sm"
+          value={searchInput}
+          onChange={handleSearchChange}
+        />
+        {searchInput && (
+          <button
             type="button"
-            variant="outline"
-            className="h-11 touch-manipulation gap-2 sm:h-10"
             onClick={() => {
               setSearchInput("");
-              router.push("/units");
+              updateParams({ q: undefined });
             }}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
           >
-            <X className="h-4 w-4" /> Clear filters
-          </Button>
+            <X className="h-3.5 w-3.5" />
+          </button>
         )}
       </div>
 
@@ -235,13 +187,13 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
                   key={u.id}
                   role="button"
                   tabIndex={0}
-                  className="flex cursor-pointer touch-manipulation flex-col gap-3 px-4 py-4 transition-colors animate-slide-up hover:bg-muted/45 active:bg-muted/60 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-3.5"
-                  style={{ animationDelay: `${idx * 20}ms`, animationFillMode: "backwards" }}
-                  onClick={() => setSelectedUnit(u)}
+                  className="group flex cursor-pointer touch-manipulation flex-col gap-3 px-4 py-4 transition-all duration-150 animate-slide-up hover:bg-muted/50 active:bg-muted/70 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-3.5"
+                  style={{ animationDelay: `${Math.min(idx, 20) * 18}ms`, animationFillMode: "backwards" }}
+                  onClick={() => router.push(`/units/${u.id}`)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      setSelectedUnit(u);
+                      router.push(`/units/${u.id}`);
                     }
                   }}
                 >
@@ -264,10 +216,11 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
                       )}
                     </div>
                   </div>
-                  <div className="flex shrink-0 justify-end border-t border-border/50 pt-2 sm:border-0 sm:pt-0 sm:pl-2">
-                    <span className="truncate text-right text-sm text-muted-foreground sm:max-w-[14rem] lg:max-w-[22rem]">
+                  <div className="flex shrink-0 items-center gap-2 border-t border-border/50 pt-2 sm:border-0 sm:pt-0 sm:pl-2">
+                    <span className="ml-auto truncate text-right text-sm text-muted-foreground sm:max-w-[14rem] lg:max-w-[22rem]">
                       {u.customerName ?? <span className="text-muted-foreground/50">No owner</span>}
                     </span>
+                    <ChevronRight className="hidden h-4 w-4 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground sm:inline-block" />
                   </div>
                 </div>
               ))}
@@ -288,15 +241,6 @@ export function UnitsClient({ units: initialUnits, total, page, limit, currentQ,
         )}
       </div>
 
-      {/* Unit detail popup */}
-      {selectedUnit && (
-        <UnitDialog
-          unit={selectedUnit}
-          open={!!selectedUnit}
-          onOpenChange={(open) => { if (!open) setSelectedUnit(null); }}
-          allTags={allTags}
-        />
-      )}
     </div>
     </DashboardPageCanvas>
   );

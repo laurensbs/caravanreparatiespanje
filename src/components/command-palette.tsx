@@ -262,8 +262,13 @@ export function CommandPalette() {
             !loading &&
             results.length === 0 &&
             filteredActions.length === 0 && (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                No results found for &ldquo;{query}&rdquo;
+              <div className="px-6 py-10 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  Geen resultaten voor <span className="font-mono">&ldquo;{query}&rdquo;</span>
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Probeer een ander woord, of zoek op klantnaam, plaats, of public code.
+                </p>
               </div>
             )}
         </div>

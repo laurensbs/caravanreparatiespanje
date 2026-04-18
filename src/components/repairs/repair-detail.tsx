@@ -760,8 +760,44 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   })();
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] dark:bg-background animate-fade-in">
-      <div className="mx-auto max-w-7xl space-y-6 px-3 py-4 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
+    <div className="min-h-screen bg-background animate-fade-in">
+      {/* ── Sticky context strip ───────────────────────────────────────
+          Stays just under the global header on scroll. Gives the user
+          a permanent "where am I" — breadcrumb path, public code,
+          status pill, and a way back. */}
+      <div className="sticky top-0 z-20 -mx-3 mb-2 border-b border-border/60 bg-background/85 px-3 py-2 backdrop-blur-md md:-mx-4 md:px-4 lg:-mx-8 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[12px]">
+            <Link
+              href={backTo ?? "/repairs"}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              <span className="hidden sm:inline">Repairs</span>
+            </Link>
+            <span aria-hidden className="text-muted-foreground/40">/</span>
+            <span className="truncate font-mono tabular-nums text-foreground/90">{job.publicCode ?? "—"}</span>
+            {job.customer?.name ? (
+              <>
+                <span aria-hidden className="text-muted-foreground/40 hidden sm:inline">·</span>
+                <span className="hidden truncate text-muted-foreground sm:inline">{job.customer.name}</span>
+              </>
+            ) : null}
+          </nav>
+          <div className="flex shrink-0 items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]",
+                STATUS_COLORS[job.status as RepairStatus] ?? "bg-muted text-muted-foreground",
+              )}
+            >
+              {STATUS_LABELS[job.status as RepairStatus] ?? job.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl space-y-6 px-3 py-4 sm:space-y-8 sm:px-6 sm:py-6 lg:px-8">
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           HEADER

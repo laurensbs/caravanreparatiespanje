@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, LogOut, Check } from "lucide-react";
-import { hapticTap, hapticSuccess } from "@/lib/haptic";
+import { Globe, LogOut, Check, Volume2, VolumeX } from "lucide-react";
+import { hapticTap, hapticSuccess, getHapticSoundEnabled, setHapticSoundEnabled } from "@/lib/haptic";
 import { useLanguage, type Language } from "@/components/garage/language-toggle";
 import { useGarageMe, initials, type GarageMe } from "@/lib/garage-me";
 import { garageLock } from "@/actions/garage-auth";
@@ -33,6 +33,11 @@ export function GarageMeSheet({ open, onClose, users }: Props) {
   const router = useRouter();
   const { t, lang, setGarageLangByUser } = useLanguage();
   const { me, setMe, clear } = useGarageMe();
+  const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    if (open) setSoundOn(getHapticSoundEnabled());
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -145,6 +150,36 @@ export function GarageMeSheet({ open, onClose, users }: Props) {
               );
             })}
           </div>
+        </div>
+
+        {/* Sound toggle */}
+        <div className="px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !soundOn;
+              setSoundOn(next);
+              setHapticSoundEnabled(next);
+              if (next) hapticTap();
+            }}
+            className="flex w-full items-center justify-between rounded-xl bg-white/[0.04] px-3.5 py-3 text-sm text-white/85 transition-all active:scale-[0.98]"
+          >
+            <span className="flex items-center gap-2.5">
+              {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-white/40" />}
+              {t("Sound feedback", "Sonido", "Geluid")}
+            </span>
+            <span
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                soundOn ? "bg-white/80" : "bg-white/15"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-stone-950 transition-transform ${
+                  soundOn ? "translate-x-[18px]" : "translate-x-[2px]"
+                }`}
+              />
+            </span>
+          </button>
         </div>
 
         {/* Actions */}

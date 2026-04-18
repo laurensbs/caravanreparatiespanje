@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { completeFinalCheck, failFinalCheck } from "@/actions/garage";
+import { hapticSuccess, hapticTap } from "@/lib/haptic";
 
 interface FinalCheckProps {
   repairJobId: string;
@@ -26,6 +27,7 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
   function handlePass() {
     startTransition(async () => {
       await completeFinalCheck(repairJobId, notes || undefined);
+      hapticSuccess();
       resetAndClose();
       onComplete();
     });
@@ -35,6 +37,7 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
     if (!notes.trim()) return;
     startTransition(async () => {
       await failFinalCheck(repairJobId, notes);
+      hapticTap();
       resetAndClose();
       onComplete();
     });

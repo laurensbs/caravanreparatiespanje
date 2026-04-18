@@ -1,7 +1,40 @@
 /**
  * Haptic feedback + subtle audio feedback for native-app feel.
  * Uses navigator.vibrate() on supported devices and short AudioContext beeps as fallback.
+ *
+ * Sound output is opt-out: respect a "haptic.sound.enabled" key in
+ * localStorage (default: true). The garage settings sheet exposes a
+ * toggle. Vibration is always enabled because it's already silent.
+ *
+ * Also respects prefers-reduced-motion — if the user signals they want
+ * less motion / stimulus, we mute the audio fallback automatically.
  */
+
+const SOUND_KEY = "haptic.sound.enabled";
+
+function soundEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
+  try {
+    const v = window.localStorage.getItem(SOUND_KEY);
+    return v === null ? true : v === "true";
+  } catch {
+    return true;
+  }
+}
+
+export function setHapticSoundEnabled(enabled: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SOUND_KEY, String(enabled));
+  } catch {
+    // ignore quota errors
+  }
+}
+
+export function getHapticSoundEnabled(): boolean {
+  return soundEnabled();
+}
 
 let audioCtx: AudioContext | null = null;
 
@@ -18,6 +51,7 @@ function getAudioCtx(): AudioContext | null {
 }
 
 function playTone(frequency: number, duration: number, volume = 0.08) {
+  if (!soundEnabled()) return;
   const ctx = getAudioCtx();
   if (!ctx) return;
   // Resume context if suspended (autoplay policy)

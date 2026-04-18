@@ -7,9 +7,10 @@ import { GarageAttentionWidget } from "@/components/garage-sync-ui";
 import { getLocations } from "@/actions/locations";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
 import {
-  Wrench, AlertTriangle, ArrowRight, PhoneOff,
+  Wrench, AlertTriangle, ArrowRight, PhoneOff, Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
 import { STATUS_LABELS, CUSTOMER_RESPONSE_LABELS } from "@/types";
 import type { RepairStatus, CustomerResponseStatus } from "@/types";
 import { SmartDate } from "@/components/ui/smart-date";
@@ -100,14 +101,12 @@ export default async function DashboardPage() {
           </div>
           <div className="px-5 pb-5 sm:px-6 sm:pb-6">
             {recentJobs.length === 0 ? (
-              <div className="py-16 text-center">
-                <Wrench className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-                <p className="text-sm font-medium text-muted-foreground">No repair jobs yet</p>
-                <Link href="/repairs/new" className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-foreground underline-offset-4 hover:underline">
-                  Create your first repair job
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
+              <EmptyState
+                icon={Wrench}
+                title="Nog geen reparaties"
+                description="Voeg je eerste work order toe om hier activiteit te zien."
+                action={{ label: "Nieuwe reparatie", href: "/repairs/new", icon: Plus }}
+              />
             ) : (
               <div className="space-y-1">
                 {recentJobs.map((job) => {

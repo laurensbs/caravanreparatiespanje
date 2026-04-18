@@ -33,7 +33,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
+    // 30 minutes idle timeout: cookie verloopt 30 min na de laatste activiteit.
+    // updateAge: 0 dwingt NextAuth om de cookie bij elke request te verlengen
+    // (sliding window), zodat actief werk niet ineens wordt afgebroken.
+    maxAge: 30 * 60,
+    updateAge: 0,
   },
   providers: [
     Credentials({

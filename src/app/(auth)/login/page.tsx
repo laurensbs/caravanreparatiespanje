@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Wrench } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -66,10 +67,15 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-md px-6">
       <div className="mb-10 flex flex-col items-center text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-          <Wrench className="h-6 w-6" />
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Caravan Repairs</h1>
+        <Image
+          src="/favicon.png"
+          alt="Reparatie Panel"
+          width={180}
+          height={130}
+          className="mb-4 object-contain dark:invert"
+          priority
+        />
+        <h1 className="text-2xl font-semibold tracking-tight">Reparatie Panel</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {selected ? `Welkom terug, ${selected.name}` : "Kies je account om door te gaan"}
         </p>

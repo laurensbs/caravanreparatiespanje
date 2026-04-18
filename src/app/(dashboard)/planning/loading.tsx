@@ -32,7 +32,7 @@ export default function PlanningLoading() {
             className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm opacity-0 animate-fade-in dark:border-border dark:bg-card/[0.03]"
             style={{ animationDelay: `${i * 50}ms`, animationFillMode: "forwards" }}
           >
-            <div className="flex items-center justify-between border-b border-border/60 bg-muted/40/50 px-4 py-3 dark:border-border dark:bg-card/[0.02]">
+            <div className="flex items-center justify-between border-b border-border/60 bg-muted/40 px-4 py-3 dark:border-border dark:bg-card/[0.02]">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-16" />
             </div>

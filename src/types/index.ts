@@ -228,7 +228,7 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
 };
 
 export const PRIORITY_COLORS: Record<Priority, string> = {
-  low: "bg-slate-50 text-muted-foreground dark:bg-slate-500/10 dark:text-slate-400",
+  low: "bg-muted/40 text-muted-foreground dark:bg-foreground/[0.06] dark:text-muted-foreground",
   normal: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   high: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
   urgent: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
@@ -264,7 +264,7 @@ export const TASK_STATUS_LABELS: Record<RepairTaskStatus, string> = {
 };
 
 export const TASK_STATUS_COLORS: Record<RepairTaskStatus, string> = {
-  pending: "bg-slate-50 text-muted-foreground dark:bg-slate-500/10 dark:text-slate-400",
+  pending: "bg-muted/40 text-muted-foreground dark:bg-foreground/[0.06] dark:text-muted-foreground",
   in_progress: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   done: "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
   problem: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
@@ -346,7 +346,7 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
 };
 
 export const JOB_TYPE_COLORS: Record<JobType, string> = {
-  repair: "bg-muted text-slate-700 dark:bg-slate-500/15 dark:text-foreground/80",
+  repair: "bg-muted text-foreground/80 dark:bg-foreground/[0.08] dark:text-foreground/80",
   wax: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
   maintenance: "bg-foreground/[0.06] text-foreground/80",
   inspection: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",

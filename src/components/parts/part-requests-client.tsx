@@ -86,7 +86,7 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
   if (partReqs.length === 0) {
     return (
       <>
-        <div className="rounded-2xl border border-dashed border-border dark:border-white/10 py-16 text-center">
+        <div className="rounded-2xl border border-dashed border-border dark:border-border py-16 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted dark:bg-card/[0.06]">
             <Package className="h-5 w-5 text-muted-foreground/70 dark:text-white/30" />
           </div>
@@ -143,7 +143,7 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-border dark:border-white/10 py-12 text-center text-sm text-muted-foreground dark:text-white/30">
+        <div className="rounded-2xl border border-border dark:border-border py-12 text-center text-sm text-muted-foreground dark:text-white/30">
           No {filter === "pending" ? "pending" : filter === "ordered" ? "ordered" : filter === "done" ? "received" : ""} requests
         </div>
       ) : (
@@ -329,7 +329,7 @@ export function AddRequestDialog({ open, onClose, requestType }: {
               Repair Job
             </label>
             {selectedRepair ? (
-              <div className="flex items-center justify-between rounded-xl border border-border dark:border-white/10 bg-muted/40 dark:bg-card/[0.04] px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-border dark:border-border bg-muted/40 dark:bg-card/[0.04] px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
@@ -361,14 +361,14 @@ export function AddRequestDialog({ open, onClose, requestType }: {
                   value={repairQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search by ref, customer, plate..."
-                  className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card pl-10 pr-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+                  className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card pl-10 pr-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-border dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
                   autoFocus
                 />
                 {searching && (
                   <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 animate-spin" />
                 )}
                 {repairResults.length > 0 && (
-                  <div className="absolute z-10 mt-1.5 w-full rounded-xl border border-border dark:border-white/10 bg-card dark:bg-foreground shadow-xl max-h-52 overflow-y-auto">
+                  <div className="absolute z-10 mt-1.5 w-full rounded-xl border border-border dark:border-border bg-card dark:bg-foreground shadow-xl max-h-52 overflow-y-auto">
                     {repairResults.map((r) => (
                       <button
                         type="button"
@@ -401,7 +401,7 @@ export function AddRequestDialog({ open, onClose, requestType }: {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={requestType === "equipment" ? "e.g. Heat gun, Rivet tool..." : "e.g. Brake pads, Window seal..."}
-              className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+              className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-border dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
             />
           </div>
 
@@ -415,7 +415,7 @@ export function AddRequestDialog({ open, onClose, requestType }: {
                   min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm tabular-nums transition-all focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+                  className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm tabular-nums transition-all focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-border dark:bg-card/[0.04] dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
                 />
               </div>
             )}
@@ -425,18 +425,18 @@ export function AddRequestDialog({ open, onClose, requestType }: {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional details..."
-                className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+                className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-border dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col-reverse gap-2 border-t border-border/60 bg-muted/40/50 px-6 py-4 dark:border-white/[0.06] dark:bg-card/[0.02] sm:flex-row sm:gap-3">
+        <div className="flex flex-col-reverse gap-2 border-t border-border/60 bg-muted/40 px-6 py-4 dark:border-white/[0.06] dark:bg-card/[0.02] sm:flex-row sm:gap-3">
           <button
             type="button"
             onClick={handleClose}
-            className="min-h-11 w-full touch-manipulation rounded-xl border border-border bg-card py-3 text-sm font-semibold text-foreground/90 transition-colors hover:bg-muted/40 dark:border-white/10 dark:bg-card/[0.06] dark:text-white/60 dark:hover:bg-card/10 sm:min-h-0 sm:flex-1"
+            className="min-h-11 w-full touch-manipulation rounded-xl border border-border bg-card py-3 text-sm font-semibold text-foreground/90 transition-colors hover:bg-muted/40 dark:border-border dark:bg-card/[0.06] dark:text-white/60 dark:hover:bg-card/10 sm:min-h-0 sm:flex-1"
           >
             Cancel
           </button>

@@ -4,17 +4,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  // Base: Mollie-style pill with subtle tactile feedback. Uses `active:scale`
-  // so every button feels alive under a click/tap, while `transition-all`
-  // picks up both the color and transform tween cleanly. Focus ring uses the
-  // brand ring color (cyan) set in globals.css.
-  // Note: on hover, any child `<svg>` with `.btn-arrow` slides slightly in the
-  // direction of travel. This gives buttons with a trailing arrow / leading
-  // chevron that classic "respond to your cursor" feel, without needing every
-  // button to opt into a `group` utility (which would clash with cards).
-  // Premium tactile pill — Stripe/Linear style. Slightly tighter radius,
-  // crisp focus ring in the new amber accent, and a gentle 1px lift on
-  // hover so the surface feels carved instead of stamped.
+  // Premium tactile pill — Stripe/Linear style. Tight radius, the amber
+  // ring (--color-ring) on focus, and a gentle 1px lift on hover so the
+  // surface feels carved instead of stamped. Trailing/leading arrow svgs
+  // marked with `.btn-arrow-right` / `.btn-arrow-left` slide in the
+  // direction of travel on hover — no need to opt into `group` per call site.
   "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-[13px] font-medium tracking-[-0.005em] transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:transition-transform hover:[&_svg.btn-arrow-right]:translate-x-0.5 hover:[&_svg.btn-arrow-left]:-translate-x-0.5",
   {
     variants: {

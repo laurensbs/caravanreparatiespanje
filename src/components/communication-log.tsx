@@ -237,7 +237,7 @@ export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props
           {logs.map((log) => (
             <div
               key={log.id}
-              className="flex gap-3 rounded-xl border border-border/60 dark:border-border bg-muted/40/50 dark:bg-foreground/30 p-3 text-sm"
+              className="flex gap-3 rounded-xl border border-border/60 dark:border-border bg-muted/40 dark:bg-foreground/30 p-3 text-sm"
             >
               <div className="shrink-0 mt-0.5">
                 <Badge

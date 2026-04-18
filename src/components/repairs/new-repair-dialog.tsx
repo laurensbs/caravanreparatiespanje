@@ -51,7 +51,7 @@ interface NewRepairDialogProps {
 
 // Job type visual config
 const JOB_TYPE_CONFIG: Record<JobType, { icon: React.ElementType; color: string; bg: string; descLabel: string; descPlaceholder: string; partsDefault: "expanded" | "collapsed" | "hidden" }> = {
-  repair: { icon: Wrench, color: "text-slate-700", bg: "bg-muted border-slate-200", descLabel: "Issue description", descPlaceholder: "Describe the damage or issue...", partsDefault: "expanded" },
+  repair: { icon: Wrench, color: "text-foreground/80", bg: "bg-muted border-border", descLabel: "Issue description", descPlaceholder: "Describe the damage or issue...", partsDefault: "expanded" },
   wax: { icon: Sparkles, color: "text-amber-600", bg: "bg-amber-50 border-amber-200", descLabel: "Work description", descPlaceholder: "Any special instructions for the wax job...", partsDefault: "collapsed" },
   maintenance: { icon: Settings, color: "text-foreground/80", bg: "bg-muted/60 border-border", descLabel: "Work description", descPlaceholder: "Describe the maintenance needed...", partsDefault: "collapsed" },
   inspection: { icon: ClipboardCheck, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", descLabel: "Notes", descPlaceholder: "Inspection notes and observations...", partsDefault: "hidden" },
@@ -282,7 +282,7 @@ export function NewRepairDialog({
 
           {/* Modal */}
           <div className="relative z-10 w-full max-w-2xl mx-4 animate-in fade-in-0 zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
-            <div className="bg-card dark:bg-[#0F172A] rounded-2xl border border-border/60 dark:border-white/10 shadow-2xl max-h-[82vh] flex flex-col">
+            <div className="bg-card dark:bg-card rounded-2xl border border-border/60 dark:border-border shadow-2xl max-h-[82vh] flex flex-col">
 
               {/* Header */}
               <div className="flex items-start justify-between px-7 pt-7 pb-0">
@@ -325,7 +325,7 @@ export function NewRepairDialog({
                                 "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-all",
                                 active
                                   ? `${c.bg} ${c.color} shadow-sm`
-                                  : "border-border dark:border-white/10 text-muted-foreground dark:text-muted-foreground/70 hover:border-foreground/20 dark:hover:border-white/20 hover:text-foreground/90 dark:hover:text-foreground/80"
+                                  : "border-border dark:border-border text-muted-foreground dark:text-muted-foreground/70 hover:border-foreground/20 dark:hover:border-white/20 hover:text-foreground/90 dark:hover:text-foreground/80"
                               )}
                             >
                               <Icon className="h-3.5 w-3.5" />
@@ -345,7 +345,7 @@ export function NewRepairDialog({
                         ref={titleRef}
                         name="title"
                         placeholder={jobType === "wax" ? "e.g. Full wax treatment" : jobType === "inspection" ? "e.g. Annual inspection" : "Brief summary of the work"}
-                        className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm px-4 shadow-none focus:ring-[currentColor]/20 focus:border-[currentColor]/40"
+                        className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 shadow-none focus:ring-ring/30 focus:border-ring"
                       />
                     </div>
 
@@ -354,7 +354,7 @@ export function NewRepairDialog({
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Status</Label>
                         <Select name="status" defaultValue="todo">
-                          <SelectTrigger className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm shadow-none">
+                          <SelectTrigger className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -366,11 +366,11 @@ export function NewRepairDialog({
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Priority</Label>
-                        <PrioritySelect name="priority" defaultValue="normal" className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm shadow-none" />
+                        <PrioritySelect name="priority" defaultValue="normal" className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none" />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Location</Label>
-                        <LocationSelect name="locationId" locations={locations} className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm shadow-none" />
+                        <LocationSelect name="locationId" locations={locations} className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none" />
                       </div>
                     </div>
                   </div>
@@ -413,7 +413,7 @@ export function NewRepairDialog({
                         name="descriptionRaw"
                         placeholder={config.descPlaceholder}
                         rows={3}
-                        className="rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm px-4 py-3 min-h-[100px] shadow-none resize-none focus:ring-[currentColor]/20 focus:border-[currentColor]/40"
+                        className="rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 py-3 min-h-[100px] shadow-none resize-none focus:ring-ring/30 focus:border-ring"
                       />
                     </div>
 
@@ -428,7 +428,7 @@ export function NewRepairDialog({
                           {partsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                           Parts from catalog
                           {selectedParts.length > 0 && (
-                            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-[currentColor]/10 text-[currentColor] text-[10px] font-semibold">{selectedParts.length}</span>
+                            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-foreground/[0.06] text-foreground text-[10px] font-semibold">{selectedParts.length}</span>
                           )}
                         </button>
 
@@ -445,7 +445,7 @@ export function NewRepairDialog({
                                     key={part.id}
                                     type="button"
                                     onClick={() => setSelectedParts((prev) => [...prev, { partId: part.id, name: part.name, partNumber: part.partNumber, quantity: 1 }])}
-                                    className="text-xs px-2.5 py-1 rounded-lg border border-dashed border-foreground/20 dark:border-white/15 text-muted-foreground dark:text-foreground/80 hover:border-[currentColor]/40 hover:text-[currentColor] transition-colors"
+                                    className="text-xs px-2.5 py-1 rounded-lg border border-dashed border-foreground/20 dark:border-white/15 text-muted-foreground dark:text-foreground/80 hover:border-foreground/30 hover:text-foreground transition-colors"
                                   >
                                     + {part.name}
                                   </button>
@@ -475,7 +475,7 @@ export function NewRepairDialog({
                             name="partsNeededRaw"
                             placeholder="Any parts not in the catalog..."
                             rows={2}
-                            className="rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm px-4 py-3 shadow-none resize-none focus:ring-[currentColor]/20 focus:border-[currentColor]/40"
+                            className="rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 py-3 shadow-none resize-none focus:ring-ring/30 focus:border-ring"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -484,7 +484,7 @@ export function NewRepairDialog({
                             name="notesRaw"
                             placeholder="Notes visible only to staff..."
                             rows={2}
-                            className="rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm px-4 py-3 shadow-none resize-none focus:ring-[currentColor]/20 focus:border-[currentColor]/40"
+                            className="rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 py-3 shadow-none resize-none focus:ring-ring/30 focus:border-ring"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -495,7 +495,7 @@ export function NewRepairDialog({
                               type="number"
                               step="0.01"
                               placeholder="0.00"
-                              className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm px-4 shadow-none focus:ring-[currentColor]/20 focus:border-[currentColor]/40"
+                              className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 shadow-none focus:ring-ring/30 focus:border-ring"
                             />
                           </div>
                           <div className="space-y-1.5">
@@ -505,7 +505,7 @@ export function NewRepairDialog({
                               type="number"
                               step="0.25"
                               placeholder="0"
-                              className="h-11 rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-sm px-4 shadow-none focus:ring-[currentColor]/20 focus:border-[currentColor]/40"
+                              className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 shadow-none focus:ring-ring/30 focus:border-ring"
                             />
                           </div>
                         </div>
@@ -525,7 +525,7 @@ export function NewRepairDialog({
                     <Button
                       type="submit"
                       disabled={saving}
-                      className="h-10 rounded-xl px-5 text-sm font-medium bg-[currentColor] hover:bg-[#0ab3d0] text-white shadow-sm"
+                      className="h-10 rounded-xl px-5 text-sm font-medium bg-foreground hover:bg-foreground/90 text-background shadow-sm transition-all duration-150 hover:-translate-y-px"
                     >
                       {saving ? (
                         <>

@@ -218,7 +218,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                 </div>
               ) : (
                 <div
-                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50 px-3 py-2 -mx-3"
+                  className="mt-1 rounded-xl cursor-pointer transition-colors hover:bg-muted/40 dark:hover:bg-foreground/[0.05] px-3 py-2 -mx-3"
                   onClick={() => setEditingField("notes")}
                 >
                   {notes ? (
@@ -258,7 +258,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
                   <Link
                     key={job.id}
                     href={`/repairs/${job.id}`}
-                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/40"
+                    className="group flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 dark:hover:bg-foreground/[0.04]"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground dark:text-foreground truncate transition-colors group-hover:text-foreground dark:group-hover:text-foreground/80">

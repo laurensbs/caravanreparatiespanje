@@ -265,7 +265,7 @@ export function JobTypePicker({
                   "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   active
                     ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
-                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50",
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.05]",
                 )}
               >
                 <TypeIcon className="h-3.5 w-3.5" />
@@ -403,7 +403,7 @@ export function StatusPicker({
                       "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                       active
                         ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
-                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50",
+                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.05]",
                     )}
                   >
                     {STATUS_LABELS[val as RepairStatus]}
@@ -480,7 +480,7 @@ export function InlinePillPicker({
                   "flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   active
                     ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
-                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50",
+                    : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.05]",
                 )}
               >
                 {label}

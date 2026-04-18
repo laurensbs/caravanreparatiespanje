@@ -35,6 +35,15 @@ export default async function DashboardLayout({
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>
+        {/* Skip link — invisible until focused, jumps over the chrome
+            for keyboard users. Uses the amber focus ring + foreground
+            pill so it matches the rest of the panel when revealed. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-foreground focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-background focus:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.30)] focus:ring-2 focus:ring-ring/40 focus:outline-none"
+        >
+          Skip to content
+        </a>
         <div className="flex min-h-screen">
           <Sidebar userRole={session.user.role as UserRole} />
           <DashboardContent>
@@ -45,7 +54,9 @@ export default async function DashboardLayout({
               feedbackUnreadReplyCount={feedbackUnreadReplyCount}
             />
             <main
-              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 animate-fade-in"
+              id="main-content"
+              tabIndex={-1}
+              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 animate-fade-in focus:outline-none"
               style={{
                 paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
               }}

@@ -106,7 +106,7 @@ export function HoldedManualLinkForm({
     <div
       id={id}
       className={cn(
-        "rounded-xl border border-dashed border-border bg-muted/40/80 dark:border-border dark:bg-card/[0.03]",
+        "rounded-xl border border-dashed border-border bg-muted/50 dark:border-border dark:bg-card/[0.03]",
         pad,
         className,
       )}

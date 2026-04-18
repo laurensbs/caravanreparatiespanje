@@ -57,7 +57,7 @@ export default async function PartsPage() {
         <Tabs defaultValue="catalog" className="w-full">
           <TabsList
             className={cn(
-              "inline-flex h-auto w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-border/60 bg-muted/40/80 p-1 sm:w-auto",
+              "inline-flex h-auto w-full flex-nowrap gap-1 overflow-x-auto rounded-xl border border-border/60 bg-muted/50 p-1 sm:w-auto",
               "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-border dark:bg-card/[0.04]"
             )}
           >

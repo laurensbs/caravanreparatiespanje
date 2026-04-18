@@ -318,7 +318,7 @@ export function CustomerDetail({
                 href={`https://app.holded.com/contacts/${customer.holdedContactId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 hover:text-[currentColor] transition-colors rounded-xl border border-dashed border-border dark:border-border py-2.5 hover:border-[currentColor]/30 hover:bg-muted/40 dark:hover:bg-accent"
+                className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 hover:text-foreground transition-colors rounded-xl border border-dashed border-border dark:border-border py-2.5 hover:border-foreground/20 hover:bg-muted/40 dark:hover:bg-accent"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 View in Holded
@@ -359,7 +359,7 @@ export function CustomerDetail({
 
               {/* Add new unit form */}
               {addingUnit && (
-                <div className="mb-3 border border-border/60 dark:border-border rounded-xl p-3 bg-muted/40/50 dark:bg-muted/50 space-y-2">
+                <div className="mb-3 border border-border/60 dark:border-border rounded-xl p-3 bg-muted/40 dark:bg-muted/50 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px]">License Plate</Label>
@@ -417,7 +417,7 @@ export function CustomerDetail({
                 <div className="space-y-1.5">
                   {customer.units.map((unit: any) => (
                     editingUnitId === unit.id ? (
-                      <div key={unit.id} className="border border-border/60 dark:border-border rounded-xl p-3 bg-muted/40/50 dark:bg-muted/50 space-y-2">
+                      <div key={unit.id} className="border border-border/60 dark:border-border rounded-xl p-3 bg-muted/40 dark:bg-muted/50 space-y-2">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <Label className="text-[10px]">License Plate</Label>
@@ -553,7 +553,7 @@ export function CustomerDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={`Quote PDF${job.holdedQuoteNum ? ` ${job.holdedQuoteNum}` : ""}`}
-                            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-[currentColor] hover:bg-muted dark:hover:bg-accent"
+                            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted dark:hover:bg-accent"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <FileText className="h-3.5 w-3.5" />
@@ -565,7 +565,7 @@ export function CustomerDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={`Invoice PDF${job.holdedInvoiceNum ? ` ${job.holdedInvoiceNum}` : ""}`}
-                            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-[currentColor] hover:bg-muted dark:hover:bg-accent"
+                            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted dark:hover:bg-accent"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Receipt className="h-3.5 w-3.5" />
@@ -902,7 +902,7 @@ function InlineField({
       <div className="flex items-center gap-1.5 min-w-0">
         {value ? (
           href ? (
-            <a href={href} className="font-medium text-foreground hover:text-[currentColor] truncate max-w-[200px]" onClick={(e) => e.stopPropagation()}>{value}</a>
+            <a href={href} className="font-medium text-foreground hover:text-foreground truncate max-w-[200px]" onClick={(e) => e.stopPropagation()}>{value}</a>
           ) : (
             <span className="font-medium text-foreground truncate max-w-[200px]">{value}</span>
           )

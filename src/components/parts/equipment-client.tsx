@@ -37,7 +37,7 @@ function EquipmentRequestForm({
   onSubmit: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-border dark:border-white/10 bg-card dark:bg-card/[0.02] p-5 space-y-4">
+    <div className="rounded-2xl border border-border dark:border-border bg-card dark:bg-card/[0.02] p-5 space-y-4">
       <div>
         <label className="text-[13px] font-semibold text-foreground/90 dark:text-white/60 mb-2 block">
           What do you need?
@@ -46,7 +46,7 @@ function EquipmentRequestForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Heat gun, Rivet tool, Sealant..."
-          className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+          className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-border dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
           autoFocus
           onKeyDown={(e) => {
             if (e.key === "Enter" && name.trim()) onSubmit();
@@ -62,7 +62,7 @@ function EquipmentRequestForm({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Optional details..."
-          className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
+          className="h-11 w-full touch-manipulation rounded-xl border border-border bg-card px-4 text-sm transition-all placeholder:text-muted-foreground/70 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-border dark:bg-card/[0.04] dark:placeholder:text-white/20 dark:focus:border-blue-500/40 dark:focus:ring-blue-500/20 sm:h-auto sm:py-3"
           onKeyDown={(e) => {
             if (e.key === "Enter" && name.trim()) onSubmit();
             if (e.key === "Escape") onCancel();
@@ -73,7 +73,7 @@ function EquipmentRequestForm({
         <button
           type="button"
           onClick={onCancel}
-          className="min-h-11 w-full touch-manipulation rounded-xl border border-border bg-card py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/40 dark:border-white/10 dark:bg-card/[0.06] dark:text-white/50 dark:hover:bg-card/10 sm:min-h-0 sm:flex-1 sm:py-2.5"
+          className="min-h-11 w-full touch-manipulation rounded-xl border border-border bg-card py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/40 dark:border-border dark:bg-card/[0.06] dark:text-white/50 dark:hover:bg-card/10 sm:min-h-0 sm:flex-1 sm:py-2.5"
         >
           Cancel
         </button>
@@ -158,7 +158,7 @@ export function EquipmentClient({ requests }: { requests: EquipmentRequest[] }) 
     }
 
     return (
-      <div className="rounded-2xl border border-dashed border-border dark:border-white/10 py-16 text-center">
+      <div className="rounded-2xl border border-dashed border-border dark:border-border py-16 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted dark:bg-card/[0.06]">
           <Wrench className="h-5 w-5 text-muted-foreground/70 dark:text-white/30" />
         </div>

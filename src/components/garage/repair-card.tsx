@@ -25,7 +25,7 @@ interface RepairCardProps {
 }
 
 const PRIORITY_ACCENT: Record<Priority, { border: string; dot: string }> = {
-  low: { border: "border-l-slate-200 dark:border-l-slate-700", dot: "" },
+  low: { border: "border-l-border dark:border-l-border", dot: "" },
   normal: { border: "border-l-blue-400", dot: "" },
   high: { border: "border-l-orange-400", dot: "bg-orange-400" },
   urgent: { border: "border-l-red-500", dot: "bg-red-500 animate-pulse" },
@@ -160,7 +160,7 @@ export function RepairCard({ repair }: { repair: RepairCardProps }) {
                   </div>
                 ) : repair.assignedUserName ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-slate-400 text-[10px] font-bold text-white">
+                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-stone-600 text-[10px] font-bold text-white">
                       {repair.assignedUserName.charAt(0).toUpperCase()}
                     </span>
                     <span className="text-xs text-muted-foreground truncate">{repair.assignedUserName}</span>

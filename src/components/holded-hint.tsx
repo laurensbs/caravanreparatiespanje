@@ -25,7 +25,7 @@ const ICON_STYLES = {
 export function HoldedHint({ children, variant = "info", className }: HoldedHintProps) {
   return (
     <div
-      className={`flex items-start gap-2.5 rounded-xl border border-border/60 bg-muted/40/70 px-3.5 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground dark:border-border dark:bg-card/[0.03] dark:text-muted-foreground/50 ${className ?? ""}`}
+      className={`flex items-start gap-2.5 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground dark:border-border dark:bg-card/[0.03] dark:text-muted-foreground/50 ${className ?? ""}`}
     >
       <span className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
         <span className={`absolute inset-0 rounded-full opacity-20 ${DOT_STYLES[variant]}`} />

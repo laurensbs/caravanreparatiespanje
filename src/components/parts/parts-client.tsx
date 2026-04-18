@@ -302,7 +302,7 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
               Add Part
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[min(92vh,900px)] gap-0 border-border/60 p-0 dark:border-white/10 sm:max-w-2xl">
+          <DialogContent className="max-h-[min(92vh,900px)] gap-0 border-border/60 p-0 dark:border-border sm:max-w-2xl">
             <PartForm
               part={editingPart}
               suppliers={suppliers}
@@ -599,7 +599,7 @@ function PartForm({
     });
   }
 
-  const fieldInput = "w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground px-4 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none";
+  const fieldInput = "w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground px-4 focus:ring-2 focus:ring-ring/30 focus:border-ring transition-all duration-150 shadow-none";
   const fieldLabel = "text-sm font-medium text-foreground/90 dark:text-foreground/80";
 
   return (
@@ -608,7 +608,7 @@ function PartForm({
       <div className="px-6 pt-6 pb-4 sm:px-8 sm:pt-8">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-foreground dark:text-slate-100 tracking-tight">
+            <h2 className="text-xl font-semibold text-foreground dark:text-foreground tracking-tight">
               {isEditing ? "Edit part" : "Add part"}
             </h2>
             <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-1">
@@ -687,8 +687,8 @@ function PartForm({
 
         {/* Calculated price */}
         {!isNaN(ourPrice) && (
-          <div className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-white/[0.06] bg-muted/40/50 dark:bg-card/[0.02] px-4 py-3">
-            <span className="text-sm font-medium text-foreground dark:text-slate-100">Our Price: €{ourPrice.toFixed(2)}</span>
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-white/[0.06] bg-muted/40 dark:bg-card/[0.02] px-4 py-3">
+            <span className="text-sm font-medium text-foreground dark:text-foreground">Our Price: €{ourPrice.toFixed(2)}</span>
             <span className="text-xs text-muted-foreground dark:text-muted-foreground/70">({effectiveMarkup}% markup)</span>
           </div>
         )}
@@ -732,7 +732,7 @@ function PartForm({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Optional internal description"
             rows={3}
-            className="w-full min-h-[96px] text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground px-4 py-3 focus:ring-2 focus:ring-[currentColor]/15 focus:border-[currentColor]/40 transition-all duration-150 shadow-none resize-none"
+            className="w-full min-h-[96px] text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground px-4 py-3 focus:ring-2 focus:ring-ring/30 focus:border-ring transition-all duration-150 shadow-none resize-none"
           />
         </div>
       </div>

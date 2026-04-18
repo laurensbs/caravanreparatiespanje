@@ -405,7 +405,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                       ? "bg-muted/40 dark:bg-foreground/[0.06]"
                       : isEmpty
                         ? "bg-transparent"
-                        : "bg-muted/40/50 dark:bg-card/[0.02]",
+                        : "bg-muted/40 dark:bg-card/[0.02]",
                   )}
                 >
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
@@ -543,7 +543,7 @@ function RepairRow({
       ref={setNodeRef}
       className={cn(
         "group relative flex min-h-[3.25rem] items-start gap-3 px-4 py-3.5 transition-all duration-150 print:min-h-0 print:py-2",
-        "hover:bg-muted/40/90 dark:hover:bg-card/[0.04]",
+        "hover:bg-muted/50 dark:hover:bg-card/[0.04]",
         isDragging && "opacity-40",
       )}
     >

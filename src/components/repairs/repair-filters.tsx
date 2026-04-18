@@ -156,7 +156,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70 dark:text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search work orders..."
-            className="w-full pl-10 pr-4 h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:ring-1 focus:ring-[currentColor]/40 focus:border-[currentColor]/40 shadow-none"
+            className="w-full pl-10 pr-4 h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:ring-1 focus:ring-ring/40 focus:border-ring shadow-none"
             value={searchInput}
             onChange={handleSearchChange}
           />
@@ -167,7 +167,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           value={currentFilters.status ?? "all"}
           onValueChange={(val) => updateFilter("status", val)}
         >
-          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-foreground/90 sm:w-[140px]">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none dark:border-border dark:bg-card dark:text-foreground/90 sm:w-[140px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -183,7 +183,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           value={currentFilters.jobType ?? "all"}
           onValueChange={(val) => updateFilter("jobType", val)}
         >
-          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none dark:border-white/10 dark:bg-[#0F172A] dark:text-foreground/90 sm:w-[130px]">
+          <SelectTrigger className="h-11 w-full min-w-0 touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none dark:border-border dark:bg-card dark:text-foreground/90 sm:w-[130px]">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -201,14 +201,14 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
               type="button"
               className={`inline-flex h-11 min-h-11 w-full touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium transition-all duration-150 sm:w-auto ${
                 advancedCount > 0
-                  ? "border-[currentColor]/30 bg-[currentColor]/5 text-foreground dark:text-slate-100 dark:border-[currentColor]/20 dark:bg-[currentColor]/10"
-                  : "border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/80 hover:bg-muted/40 dark:hover:bg-card/[0.04]"
+                  ? "border-foreground/20 bg-foreground/[0.04] text-foreground dark:text-foreground dark:border-foreground/15 dark:bg-foreground/[0.06]"
+                  : "border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/80 hover:bg-muted/40 dark:hover:bg-card/[0.04]"
               }`}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filters
               {advancedCount > 0 && (
-                <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-[11px] font-semibold rounded-full bg-[currentColor] text-white">
+                <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-[11px] font-semibold rounded-full bg-foreground text-background">
                   {advancedCount}
                 </span>
               )}
@@ -217,11 +217,11 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
           <PopoverContent
             align="end"
             sideOffset={10}
-            className="z-40 max-h-[min(85dvh,640px)] w-[min(calc(100vw-1.5rem),720px)] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-border/60 bg-card p-0 shadow-xl dark:border-white/10 dark:bg-[#0F172A] dark:shadow-black/50 sm:max-w-none"
+            className="z-40 max-h-[min(85dvh,640px)] w-[min(calc(100vw-1.5rem),720px)] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-border/60 bg-card p-0 shadow-xl dark:border-border dark:bg-card dark:shadow-black/50 sm:max-w-none"
           >
             {/* Panel header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/60 dark:border-white/[0.06]">
-              <h3 className="text-[13px] font-semibold text-foreground dark:text-slate-100 tracking-tight">Advanced Filters</h3>
+              <h3 className="text-[13px] font-semibold text-foreground dark:text-foreground tracking-tight">Advanced Filters</h3>
               {advancedCount > 0 && (
                 <button
                   onClick={() => {
@@ -249,7 +249,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                     value={currentFilters.priority ?? "all"}
                     onValueChange={(val) => updateFilter("priority", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none">
                       <SelectValue placeholder="All priorities" />
                     </SelectTrigger>
                     <SelectContent>
@@ -268,7 +268,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                     value={currentFilters.locationId ?? "all"}
                     onValueChange={(val) => updateFilter("locationId", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none">
                       <SelectValue placeholder="All locations" />
                     </SelectTrigger>
                     <SelectContent>
@@ -293,7 +293,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                     value={currentFilters.invoiceStatus ?? "all"}
                     onValueChange={(val) => updateFilter("invoiceStatus", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none">
                       <SelectValue placeholder="All invoices" />
                     </SelectTrigger>
                     <SelectContent>
@@ -313,7 +313,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                     value={currentFilters.customerResponseStatus ?? "all"}
                     onValueChange={(val) => updateFilter("customerResponseStatus", val)}
                   >
-                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none">
+                    <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none">
                       <SelectValue placeholder="All responses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -338,7 +338,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                       value={currentFilters.tagId ?? "all"}
                       onValueChange={(val) => updateFilter("tagId", val)}
                     >
-                      <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none">
+                      <SelectTrigger className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none">
                         <SelectValue placeholder="All tags" />
                       </SelectTrigger>
                       <SelectContent>
@@ -363,7 +363,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                       <span className="text-[11px] text-muted-foreground/70 dark:text-muted-foreground">From</span>
                       <Input
                         type="date"
-                        className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none"
+                        className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none"
                         value={currentFilters.dateFrom ?? ""}
                         onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
                       />
@@ -373,7 +373,7 @@ export function RepairFiltersBar({ locations, currentFilters, allTags = [], data
                       <span className="text-[11px] text-muted-foreground/70 dark:text-muted-foreground">To</span>
                       <Input
                         type="date"
-                        className="w-full h-11 text-sm rounded-xl border-border dark:border-white/10 bg-card dark:bg-[#0F172A] text-foreground/90 dark:text-foreground/90 shadow-none"
+                        className="w-full h-11 text-sm rounded-xl border-border dark:border-border bg-card dark:bg-card text-foreground/90 dark:text-foreground/90 shadow-none"
                         value={currentFilters.dateTo ?? ""}
                         onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
                       />

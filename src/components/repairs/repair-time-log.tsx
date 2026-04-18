@@ -134,7 +134,7 @@ export function RepairTimeLog({ repairJobId, timeEntries, activeTimers, activeUs
           {timeEntries.map((entry) => (
             <div
               key={entry.id}
-              className="group flex items-center gap-3 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50 transition-colors"
+              className="group flex items-center gap-3 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 dark:hover:bg-foreground/[0.05] transition-colors"
             >
               <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted dark:bg-foreground/[0.08] text-[10px] font-bold text-muted-foreground dark:text-muted-foreground/70 shrink-0">
                 {(entry.userName ?? "?").charAt(0).toUpperCase()}

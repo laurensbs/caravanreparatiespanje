@@ -155,7 +155,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         <div className="max-h-[min(70vh,calc(100vh-14rem))] overflow-auto overscroll-contain sm:max-h-[calc(100vh-16rem)]">
           <table className="w-full min-w-[44rem]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-border/60 bg-muted/40/90 backdrop-blur-sm dark:border-border dark:bg-card/[0.04]">
+              <tr className="border-b border-border/60 bg-muted/50 backdrop-blur-sm dark:border-border dark:bg-card/[0.04]">
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground/70 sm:px-5 dark:text-muted-foreground">Name</th>
                 {isBusiness ? (
                   <>

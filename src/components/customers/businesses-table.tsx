@@ -65,7 +65,7 @@ export function BusinessesTableClient({ suppliers }: { suppliers: Supplier[] }) 
             <td className="px-5 py-3.5 text-sm text-muted-foreground hidden md:table-cell">{s.email || <span className="text-muted-foreground/50">—</span>}</td>
             <td className="px-5 py-3.5 text-sm text-muted-foreground hidden md:table-cell">
               {s.website ? (
-                <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-[currentColor] hover:underline truncate max-w-[200px] inline-block">
+                <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline truncate max-w-[200px] inline-block">
                   {s.website.replace(/^https?:\/\//, "")}
                 </a>
               ) : <span className="text-muted-foreground/50">—</span>}

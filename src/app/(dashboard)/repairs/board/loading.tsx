@@ -24,7 +24,7 @@ export default function BoardLoading() {
         {columns.map((c, col) => (
           <div
             key={c}
-            className="min-w-[260px] flex-1 rounded-2xl border border-border/60 bg-muted/40/40 p-3 dark:border-border dark:bg-card/[0.02]"
+            className="min-w-[260px] flex-1 rounded-2xl border border-border/60 bg-muted/30 p-3 dark:border-border dark:bg-card/[0.02]"
             style={{ animationDelay: `${col * 60}ms` }}
           >
             <div className="mb-3 flex items-center justify-between">

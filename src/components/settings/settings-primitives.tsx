@@ -89,7 +89,7 @@ export function SettingsEmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/40/40 px-6 py-14 text-center dark:border-border dark:bg-card/[0.02]",
+        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-14 text-center dark:border-border dark:bg-card/[0.02]",
         className,
       )}
     >

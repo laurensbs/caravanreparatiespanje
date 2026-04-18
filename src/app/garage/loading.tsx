@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function GarageLoading() {
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 px-3 pb-20 pt-4 text-white animate-fade-in sm:px-5 sm:pt-5">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-stone-950 via-stone-950 to-stone-900 px-3 pb-20 pt-4 text-white animate-fade-in sm:px-5 sm:pt-5">
       <div className="mx-auto max-w-4xl space-y-4">
         <header className="flex items-center justify-between">
           <div className="space-y-2">

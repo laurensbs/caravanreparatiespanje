@@ -1,6 +1,6 @@
 export default function GarageRepairDetailLoading() {
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 px-3 pb-24 pt-4 text-white animate-fade-in sm:px-5 sm:pt-5">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-stone-950 via-stone-950 to-stone-900 px-3 pb-24 pt-4 text-white animate-fade-in sm:px-5 sm:pt-5">
       <div className="mx-auto max-w-2xl space-y-4">
         <header className="flex items-center justify-between">
           <div className="h-9 w-9 animate-pulse rounded-full bg-white/10" />

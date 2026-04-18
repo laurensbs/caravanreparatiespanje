@@ -372,7 +372,7 @@ export function RepairPartsUsed({
         zIndex: 9999,
       }}
     >
-      <div className="bg-card dark:bg-[#0F172A] rounded-2xl border border-border/60 dark:border-border shadow-xl overflow-hidden max-h-[360px] flex flex-col">
+      <div className="bg-card dark:bg-card rounded-2xl border border-border/60 dark:border-border shadow-xl overflow-hidden max-h-[360px] flex flex-col">
         {/* Loading */}
         {isSearching && results.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground/70">
@@ -421,7 +421,7 @@ export function RepairPartsUsed({
                   onClick={() => selectPart(part)}
                   className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition-colors duration-100 border-b border-border/60 dark:border-border/50 last:border-b-0 ${
                     highlightIndex === i
-                      ? "bg-[currentColor]/5 dark:bg-[currentColor]/10"
+                      ? "bg-foreground/[0.04] dark:bg-foreground/[0.06]"
                       : "hover:bg-muted/40 dark:hover:bg-card/[0.04] active:bg-muted/60 dark:active:bg-foreground/[0.06]"
                   }`}
                   onMouseEnter={() => setHighlightIndex(i)}
@@ -470,14 +470,14 @@ export function RepairPartsUsed({
 
         {/* Custom part actions */}
         {showCustomOption && (
-          <div className="border-t border-border/60 dark:border-border/50 px-4 py-2.5 flex items-center gap-3 bg-muted/40/50 dark:bg-card/[0.02]">
+          <div className="border-t border-border/60 dark:border-border/50 px-4 py-2.5 flex items-center gap-3 bg-muted/40 dark:bg-card/[0.02]">
             <button
               type="button"
               onClick={addCustomPart}
               disabled={isPending}
               className={`text-xs font-medium disabled:opacity-50 transition-colors ${
                 highlightIndex === results.length
-                  ? "text-[currentColor]"
+                  ? "text-foreground"
                   : "text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50"
               }`}
               onMouseEnter={() => setHighlightIndex(results.length)}
@@ -832,7 +832,7 @@ function PartRequestCard({
     <div
       className={`rounded-xl border transition-all duration-150 ${
         pr.status === "cancelled"
-          ? "border-border/60 dark:border-border bg-muted/40/50 dark:bg-card/[0.01] opacity-60"
+          ? "border-border/60 dark:border-border bg-muted/40 dark:bg-card/[0.01] opacity-60"
           : "border-border/60 dark:border-border bg-card dark:bg-card/[0.03] hover:border-border dark:hover:border-border"
       }`}
     >

@@ -235,8 +235,8 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
   };
 
   const STATUS_PILL: Record<string, string> = {
-    new: "bg-muted text-muted-foreground dark:bg-foreground/[0.10]/60 dark:text-foreground/90",
-    todo: "bg-muted text-muted-foreground dark:bg-foreground/[0.10]/60 dark:text-foreground/90",
+    new: "bg-muted text-muted-foreground dark:bg-foreground/[0.06] dark:text-foreground/90",
+    todo: "bg-muted text-muted-foreground dark:bg-foreground/[0.06] dark:text-foreground/90",
     in_inspection: "bg-muted/60 text-foreground dark:bg-foreground/[0.10] dark:text-foreground/90",
     no_damage: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     quote_needed: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
@@ -249,7 +249,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
     completed: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     invoiced: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     rejected: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-    archived: "bg-muted text-muted-foreground/70 dark:bg-foreground/[0.10]/40 dark:text-muted-foreground/70",
+    archived: "bg-muted text-muted-foreground/70 dark:bg-foreground/[0.04] dark:text-muted-foreground/70",
   };
 
   async function quickStatusChange(jobId: string, newStatus: string) {
@@ -317,11 +317,11 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
             const titleBlock = (
               <>
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-[15px] font-medium text-foreground transition-colors group-hover:text-[currentColor] dark:text-slate-100">
+                  <p className="truncate text-[15px] font-medium text-foreground transition-colors dark:text-foreground">
                     {job.title || "Unnamed repair"}
                   </p>
                   {job.jobType && job.jobType !== "repair" && (
-                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-muted text-slate-700 dark:bg-foreground/30/15 dark:text-foreground/80"}`}>
+                    <span className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${JOB_TYPE_COLORS[job.jobType as JobType] ?? "bg-muted text-foreground/80 dark:bg-foreground/[0.10] dark:text-foreground/80"}`}>
                       {JOB_TYPE_LABELS[job.jobType as JobType] ?? job.jobType}
                     </span>
                   )}
@@ -393,7 +393,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <TableStatusPicker
                 value={job.status}
                 onChange={(val) => quickStatusChange(job.id, val)}
-                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-foreground/[0.10]/60 text-muted-foreground dark:text-foreground/90"}
+                pillClass={STATUS_PILL[job.status as RepairStatus] ?? "bg-muted dark:bg-foreground/[0.06] text-muted-foreground dark:text-foreground/90"}
                 accentClass={STATUS_ACCENT[job.status] ?? "bg-foreground/30 dark:bg-foreground/30"}
               />
             );
@@ -402,7 +402,7 @@ export function RepairTable({ jobs: initialJobs, total, filters }: RepairTablePr
               <Fragment key={job.id}>
                 {/* Phone / small tablet: card */}
                 <div
-                  className={`group relative touch-manipulation rounded-xl border border-border/60/90 bg-card/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-card/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-border dark:ring-foreground/20" : ""} animate-slide-up`}
+                  className={`group relative touch-manipulation rounded-xl border border-border bg-card/95 p-4 shadow-sm transition-all active:scale-[0.99] dark:border-white/[0.08] dark:bg-card/[0.03] md:hidden ${selected.has(job.id) ? "ring-2 ring-border dark:ring-foreground/20" : ""} animate-slide-up`}
                   style={{ animationDelay: `${Math.min(idx, 20) * 20}ms`, animationFillMode: "backwards" }}
                   role="button"
                   tabIndex={0}
@@ -604,7 +604,7 @@ function TableStatusPicker({ value, onChange, pillClass, accentClass }: { value:
                     className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       active
                         ? "bg-muted dark:bg-foreground/[0.08] text-foreground dark:text-foreground"
-                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.10]/50"
+                        : "text-muted-foreground dark:text-muted-foreground/70 hover:bg-muted/40 dark:hover:bg-foreground/[0.05]"
                     }`}
                   >
                     {STATUS_LABELS[val as RepairStatus]}

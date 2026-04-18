@@ -86,7 +86,7 @@ export function AdminRepairThread({
   const hiddenCount = Math.max(0, messages.length - visible.length);
 
   return (
-    <section className="rounded-xl bg-muted/40/80 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
+    <section className="rounded-xl bg-muted/50 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
       <header className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-3.5 w-3.5 text-muted-foreground dark:text-muted-foreground/70" />
@@ -178,7 +178,7 @@ export function AdminRepairThread({
           }}
           rows={2}
           placeholder="Reply to garage… (⌘/Ctrl + Enter to send)"
-          className="flex-1 min-w-0 resize-none rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gray-300/70 dark:focus:ring-gray-600"
+          className="flex-1 min-w-0 resize-none rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-ring/40"
         />
         <button
           type="button"

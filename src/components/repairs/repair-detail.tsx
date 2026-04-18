@@ -234,7 +234,7 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
         className={cn(
           "inline-flex items-center gap-1.5 h-8 text-sm px-3.5 rounded-xl font-medium shadow-sm transition-colors",
           isActive
-            ? "bg-[currentColor]/10 text-[currentColor]"
+            ? "bg-foreground/[0.06] text-foreground"
             : "bg-foreground dark:bg-card text-white dark:text-foreground hover:bg-foreground/90 dark:hover:bg-muted"
         )}
       >
@@ -873,7 +873,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     declined: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
                     no_response: "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-muted-foreground/70 dark:border-border",
                     reply_not_required:
-                      "bg-muted text-muted-foreground border-slate-200 dark:bg-foreground/[0.08] dark:text-foreground/80 dark:border-slate-600",
+                      "bg-muted text-muted-foreground border-border dark:bg-foreground/[0.08] dark:text-foreground/80 dark:border-border",
                   }}
                 />
                 <InlinePillPicker
@@ -1121,7 +1121,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
                           : ["completed", "invoiced"].includes(status)
                             ? "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400"
-                            : "bg-[currentColor]/10 text-[currentColor]"
+                            : "bg-foreground/[0.06] text-foreground"
                     )}
                   >
                     {nextActionContext.icon === "search" && <Search className="h-4 w-4" />}
@@ -1640,7 +1640,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               {timeEntries.length > 0 && (
                 <>
                 <div className="border-t border-border/60 dark:border-border" />
-                <div className="rounded-xl bg-muted/40/80 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
+                <div className="rounded-xl bg-muted/50 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold mb-3">Time Log</p>
                   <RepairTimeLog
                     repairJobId={job.id}
@@ -1656,7 +1656,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               <AdminRepairThread repairJobId={job.id} onChange={() => router.refresh()} />
 
               {/* ── Send Direct Message to Garage (legacy banner) ── */}
-              <div className="rounded-xl bg-muted/40/50 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
+              <div className="rounded-xl bg-muted/40 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold mb-2">
                   Pin a single banner message
                 </p>
@@ -1690,7 +1690,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     value={garageMessage}
                     onChange={(e) => setGarageMessage(e.target.value)}
                     placeholder="Type a message for the garage team…"
-                    className="flex-1 min-w-0 rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gray-300/70 dark:focus:ring-gray-600"
+                    className="flex-1 min-w-0 rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-ring/40"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -2978,7 +2978,7 @@ function FinancialWorkflow({
               </p>
             </div>
             <button
-              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[currentColor] text-white text-sm font-medium shadow-sm hover:bg-[#0bb0cc] transition-colors disabled:opacity-50"
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-foreground text-background text-sm font-medium shadow-sm hover:bg-foreground/90 hover:-translate-y-px transition-all duration-150 disabled:opacity-50 disabled:hover:translate-y-0"
               onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
               disabled={!!loading}
             >
@@ -3060,7 +3060,7 @@ function FinancialWorkflow({
         </div>
 
         {showPartPicker && (
-          <div className="mb-4 border border-border dark:border-border rounded-2xl p-3 bg-muted/40/50 dark:bg-foreground/30">
+          <div className="mb-4 border border-border dark:border-border rounded-2xl p-3 bg-muted/40 dark:bg-foreground/30">
             <Input placeholder="Search parts..." value={partSearch} onChange={(e) => setPartSearch(e.target.value)} className="h-8 text-sm rounded-xl mb-2" autoFocus />
             <div className="flex flex-wrap gap-1 mb-2">
               <button
@@ -3126,7 +3126,7 @@ function FinancialWorkflow({
 
             {/* Line item rows */}
             {costLines.map((line) => (
-              <div key={line.id} className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-border px-4 py-3 hover:bg-muted/40/50 dark:hover:bg-foreground/[0.10]/30 transition-colors">
+              <div key={line.id} className="flex items-center gap-2 rounded-xl border border-border/60 dark:border-border px-4 py-3 hover:bg-muted/40 dark:hover:bg-foreground/[0.03] transition-colors">
                 <span className="w-16 shrink-0">{sourceBadge(line)}</span>
                 <Input value={line.description} onChange={(e) => updateCostLine(line.id, "description", e.target.value)} placeholder={line.type === "labour" ? "Labour description" : "Description"} className="h-7 text-xs rounded-lg flex-1 border-border dark:border-border" />
                 <Input type="number" min="0.25" step={line.type === "labour" ? "0.25" : "1"} value={line.quantity} onChange={(e) => updateCostLine(line.id, "quantity", parseFloat(e.target.value) || 1)} className="h-7 text-xs rounded-lg w-14 text-center border-border dark:border-border" />
@@ -3184,7 +3184,7 @@ function FinancialWorkflow({
           </div>
         ) : (
           /* ─── Empty state ─── */
-          <div className="rounded-2xl border border-border/60 dark:border-border bg-muted/40/40 dark:bg-foreground/20 py-10 text-center">
+          <div className="rounded-2xl border border-border/60 dark:border-border bg-muted/30 dark:bg-foreground/20 py-10 text-center">
             <Receipt className="h-8 w-8 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/70">No line items yet</p>
             <p className="text-sm text-muted-foreground/70 dark:text-muted-foreground mt-1 max-w-xs mx-auto">
@@ -3193,7 +3193,7 @@ function FinancialWorkflow({
             <div className="flex items-center justify-center gap-2 mt-4">
               {hasWorkshopPending && (
                 <button
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[currentColor] text-white text-sm font-medium shadow-sm hover:bg-[#0bb0cc] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-foreground text-background text-sm font-medium shadow-sm hover:bg-foreground/90 hover:-translate-y-px transition-all duration-150 disabled:opacity-50 disabled:hover:translate-y-0"
                   onClick={() => handleAction("generate", async () => { await handleGenerateFromWork(); })}
                   disabled={!!loading}
                 >
@@ -3221,7 +3221,7 @@ function FinancialWorkflow({
               {dismissedCount} workshop item{dismissedCount !== 1 ? "s" : ""} hidden {showDismissed ? "▴" : "▾"}
             </button>
             {showDismissed && (
-              <div className="mt-2 rounded-xl border border-border/60 dark:border-border bg-muted/40/50 dark:bg-foreground/30 p-3 space-y-1.5">
+              <div className="mt-2 rounded-xl border border-border/60 dark:border-border bg-muted/40 dark:bg-foreground/30 p-3 space-y-1.5">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">Dismissed items</span>
                   <button
@@ -3263,7 +3263,7 @@ function FinancialWorkflow({
           <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Quote</h3>
           {hasQuote && (
             <div className="flex items-center gap-2">
-              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[currentColor] hover:underline">
+              <a href={`/api/holded/pdf?type=estimate&id=${job.holdedQuoteId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-foreground hover:underline">
                 {job.holdedQuoteNum} ↗
               </a>
               {quoteSent ? (
@@ -3340,7 +3340,7 @@ function FinancialWorkflow({
           <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Invoice</h3>
           {hasInvoice && (
             <div className="flex items-center gap-2">
-              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[currentColor] hover:underline">
+              <a href={`/api/holded/pdf?type=invoice&id=${job.holdedInvoiceId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-foreground hover:underline">
                 {job.holdedInvoiceNum} ↗
               </a>
               {invoiceSent ? (

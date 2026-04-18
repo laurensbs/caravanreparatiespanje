@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PRIORITY_LABELS } from "@/types";
 
 const PRIORITY_DOT_COLORS: Record<string, string> = {
-  low: "bg-slate-400",
+  low: "bg-muted-foreground/40",
   normal: "bg-blue-500",
   high: "bg-orange-500",
   urgent: "bg-red-500",

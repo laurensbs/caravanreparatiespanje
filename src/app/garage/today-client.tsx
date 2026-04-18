@@ -446,7 +446,7 @@ export function GarageTodayClient({
               <StatPill
                 tone="emerald"
                 icon={<Wrench className="h-3.5 w-3.5" />}
-                label={t("Active now", "Activos ahora", "Nu actief")}
+                label={t("Active now", "Activos ahora", "Active now")}
                 value={counts.in_progress}
                 onClick={() => {
                   hapticTap();
@@ -756,12 +756,12 @@ export function GarageTodayClient({
                         }
                         await startTimer(repairId, user.id);
                         rememberWorker(user.id);
-                        const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
+                        const workerName = user.name ?? t("Unknown", "Desconocido", "Unknown");
                         toast.success(
                           `${t("Timer started for", "Temporizador iniciado para", "Timer gestart voor")} ${workerName}`,
                         );
                       } catch (e) {
-                        const workerName = user.name ?? t("Unknown", "Desconocido", "Onbekend");
+                        const workerName = user.name ?? t("Unknown", "Desconocido", "Unknown");
                         if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
                           toast.message(garageTimerBlockedReason(pickedRepair.status, t));
                         } else {
@@ -829,7 +829,7 @@ function SearchField({
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder={t("Search registration, customer…", "Buscar matrícula, cliente…", "Zoek kenteken, klant…")}
+        placeholder={t("Search registration, customer…", "Buscar matrícula, cliente…", "Search kenteken, klant…")}
         className="h-10 w-full rounded-xl border border-white/[0.06] bg-white/[0.05] pl-9 pr-9 text-sm text-white placeholder:text-white/25 transition-all focus:border-white/15 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-white/10"
       />
       {search ? (
@@ -1048,7 +1048,7 @@ function JobCard({
               <MapPin className="h-3 w-3 shrink-0 text-white/40" />
               <span className="truncate">
                 {repair.unitStorageLocation ||
-                  t("Unknown location", "Ubicación desconocida", "Onbekende locatie")}
+                  t("Unknown location", "Ubicación desconocida", "Unknowne locatie")}
                 {repair.unitCurrentPosition
                   ? ` · ${repair.unitCurrentPosition}`
                   : ""}

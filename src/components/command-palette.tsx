@@ -336,10 +336,10 @@ export function CommandPalette() {
             filteredActions.length === 0 && (
               <div className="px-6 py-10 text-center">
                 <p className="text-sm font-medium text-foreground">
-                  Geen resultaten voor <span className="font-mono">&ldquo;{query}&rdquo;</span>
+                  No results voor <span className="font-mono">&ldquo;{query}&rdquo;</span>
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Probeer een ander woord, of zoek op klantnaam, plaats, of public code.
+                  Try a different word, or search by customer, city, or public code.
                 </p>
               </div>
             )}

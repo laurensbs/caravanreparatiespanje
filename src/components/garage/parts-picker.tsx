@@ -542,7 +542,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
           placeholder={t(
             "Search parts (name, number, supplier…)",
             "Buscar piezas (nombre, número, proveedor…)",
-            "Zoek onderdelen (naam, nummer, leverancier…)"
+            "Search onderdelen (naam, nummer, leverancier…)"
           )}
           disabled={isPending}
           className="w-full h-14 pl-12 pr-12 rounded-2xl border border-white/[0.08] bg-white/[0.04] text-base text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all duration-150 disabled:opacity-50"

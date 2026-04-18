@@ -375,15 +375,15 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
             <div className="rounded-2xl border border-border/60 bg-card">
               <EmptyState
                 icon={hasActiveFilters ? FilterX : Receipt}
-                title={hasActiveFilters ? "Geen facturen voor deze filters" : "Nog geen facturen"}
+                title={hasActiveFilters ? "No invoices match these filters" : "No invoices yet"}
                 description={
                   hasActiveFilters
-                    ? "Probeer minder filters of een andere periode."
-                    : "Zodra een reparatie afgerond wordt, komt de factuur hier te staan."
+                    ? "Try fewer filters or a different period."
+                    : "Invoices appear here once a repair is completed."
                 }
                 action={
                   hasActiveFilters
-                    ? { label: "Filters wissen", onClick: clearFilters, icon: X }
+                    ? { label: "Clear filters", onClick: clearFilters, icon: X }
                     : undefined
                 }
               />

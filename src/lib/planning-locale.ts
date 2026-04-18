@@ -118,7 +118,7 @@ const nl: PlanningStrings = {
   noRepairsScheduled: "Geen reparaties ingepland",
   unscheduled: "Niet ingepland",
   scheduled: "Ingepland",
-  searching: "Zoeken…",
+  searching: "Searchen…",
   customer: "Klant",
   location: "Locatie",
   priority: "Prioriteit",

@@ -319,7 +319,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">
-                      {lang === "nl" ? "Alle locaties" : lang === "es" ? "Todas las ubicaciones" : "All locations"}
+                      {lang === "nl" ? "All locations" : lang === "es" ? "Todas las ubicaciones" : "All locations"}
                     </SelectItem>
                     {locations.map((l) => (
                       <SelectItem key={l.id} value={l.id}>

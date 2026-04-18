@@ -340,7 +340,7 @@ export function NewRepairDialog({
                     <div className="space-y-1.5">
                       <Label
                         required
-                        hint="kort en duidelijk"
+                        hint="short and clear"
                         className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70"
                       >
                         Title
@@ -413,7 +413,7 @@ export function NewRepairDialog({
                     {/* Description */}
                     <div className="space-y-1.5">
                       <Label
-                        hint="omschrijf het probleem"
+                        hint="describe the issue"
                         className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70"
                       >
                         {config.descLabel}

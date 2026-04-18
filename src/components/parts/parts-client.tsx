@@ -332,24 +332,24 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
             icon={search || activeCategory ? FilterX : Package}
             title={
               search || activeCategory
-                ? "Geen onderdelen voor deze filters"
-                : "Nog geen onderdelen"
+                ? "No parts match these filters"
+                : "No parts yet"
             }
             description={
               search || activeCategory
-                ? "Probeer een andere zoekterm of categorie."
-                : "Voeg je eerste onderdeel toe om voorraad en prijzen te beheren."
+                ? "Try a different search or category."
+                : "Add your first part to manage stock and prices."
             }
             action={
               search || activeCategory
                 ? {
-                    label: "Filters wissen",
+                    label: "Clear filters",
                     onClick: () => {
                       setSearch("");
                       setActiveCategory(null);
                     },
                   }
-                : { label: "Nieuw onderdeel", onClick: openCreate, icon: Plus }
+                : { label: "New part", onClick: openCreate, icon: Plus }
             }
           />
         </Card>

@@ -134,7 +134,7 @@ export function SearchableSelect({
               <span className="text-muted-foreground">{emptyLabel}</span>
             </button>
             {filtered.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground py-3 text-center">Geen resultaten</p>
+              <p className="text-[11px] text-muted-foreground py-3 text-center">No results</p>
             ) : (
               filtered.slice(0, 50).map((option) => (
                 <button

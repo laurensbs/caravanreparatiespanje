@@ -139,7 +139,7 @@ export function UnitDetailClient({ unit: initialUnit, allTags = [] }: Props) {
             <Button asChild size="sm" className="shrink-0">
               <Link href={`/repairs/new?customerId=${unit.customer.id}`}>
                 <Plus className="h-3.5 w-3.5" />
-                Nieuwe reparatie
+                New repair
               </Link>
             </Button>
           ) : null}

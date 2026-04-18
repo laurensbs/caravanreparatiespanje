@@ -28,7 +28,7 @@ export function ThemeToggle() {
       size="icon"
       className="group relative h-8 w-8 shrink-0 touch-manipulation overflow-hidden rounded-full text-muted-foreground transition-all duration-200 hover:bg-foreground/[0.06] hover:text-foreground active:scale-90"
       onClick={toggle}
-      aria-label={isDark ? "Schakel naar lichte modus" : "Schakel naar donkere modus"}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Light mode" : "Dark mode"}
     >
       {/* Render a placeholder during the first paint to avoid hydration

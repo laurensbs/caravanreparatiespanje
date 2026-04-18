@@ -37,7 +37,7 @@ export default function GarageError({
           onClick={reset}
           className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-semibold text-stone-950 transition-all active:scale-[0.97]"
         >
-          Probeer opnieuw
+          Try again
         </button>
       </div>
     </div>

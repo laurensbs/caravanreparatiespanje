@@ -37,7 +37,7 @@ const REASON_ES: Record<BlockerReason, string> = {
 const REASON_NL: Record<BlockerReason, string> = {
   waiting_parts: "Wachten op Onderdelen",
   waiting_customer: "Wachten op Klant",
-  unknown_issue: "Onbekend Probleem",
+  unknown_issue: "Unknown Probleem",
   no_time: "Geen Tijd",
   missing_info: "Ontbrekende Info",
   other: "Anders",

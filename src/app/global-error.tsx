@@ -47,7 +47,7 @@ export default function GlobalError({
               letterSpacing: "-0.02em",
             }}
           >
-            App kon niet starten
+            App failed to start
           </h1>
           <p
             style={{
@@ -57,7 +57,7 @@ export default function GlobalError({
               color: "#57534e",
             }}
           >
-            Probeer de pagina opnieuw te laden. Lukt dat niet, neem contact op.
+            Try reloading the page. If that doesn't work, contact support.
           </p>
           <button
             onClick={reset}
@@ -74,7 +74,7 @@ export default function GlobalError({
               boxShadow: "0 1px 2px rgba(0,0,0,0.10)",
             }}
           >
-            Probeer opnieuw
+            Try again
           </button>
         </div>
       </body>

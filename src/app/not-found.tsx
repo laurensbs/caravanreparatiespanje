@@ -4,7 +4,7 @@ import { ArrowLeft, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "Niet gevonden",
+  title: "Not found",
 };
 
 export default function NotFound() {
@@ -26,7 +26,7 @@ export default function NotFound() {
           404
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
-          Pagina niet gevonden
+          Page not found
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           De link bestaat niet meer, of je hebt geen toegang. Geen zorgen — niets
@@ -36,13 +36,13 @@ export default function NotFound() {
           <Button asChild>
             <Link href="/">
               <Home className="h-3.5 w-3.5" />
-              Terug naar dashboard
+              Back to dashboard
             </Link>
           </Button>
           <Button variant="ghost" asChild>
             <Link href="/repairs">
               <ArrowLeft className="btn-arrow-left h-3.5 w-3.5" />
-              Bekijk work orders
+              View work orders
             </Link>
           </Button>
         </div>

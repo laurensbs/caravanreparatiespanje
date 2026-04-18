@@ -21,7 +21,7 @@ function dayLabel(d: Date, lang: "en" | "es" | "nl") {
   const today = new Date();
   const isSameDay = d.toDateString() === today.toDateString();
   if (isSameDay) {
-    return lang === "es" ? "Hoy" : lang === "nl" ? "Vandaag" : "Today";
+    return lang === "es" ? "Hoy" : lang === "nl" ? "Today" : "Today";
   }
   return d.toLocaleDateString(
     lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-GB",

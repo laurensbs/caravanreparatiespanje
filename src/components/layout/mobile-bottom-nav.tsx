@@ -53,7 +53,7 @@ export function MobileBottomNav() {
 
         <BottomTab
           href="#"
-          label="Zoek"
+          label="Search"
           icon={<Search className="h-[18px] w-[18px]" />}
           onClick={(e) => {
             e.preventDefault();
@@ -68,7 +68,7 @@ export function MobileBottomNav() {
           className={cn(
             "relative -mt-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-foreground text-background shadow-[0_8px_24px_-8px_rgba(0,0,0,0.30)] transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-105 active:scale-90",
           )}
-          aria-label="Nieuwe reparatie"
+          aria-label="New repair"
         >
           <Plus className="h-5 w-5" />
         </Link>

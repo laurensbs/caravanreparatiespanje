@@ -149,17 +149,17 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
             icon={Package}
             title={
               filter === "pending"
-                ? "Geen openstaande aanvragen"
+                ? "No open requests"
                 : filter === "ordered"
-                  ? "Geen besteldebestellingen open"
+                  ? "No open orders"
                   : filter === "done"
-                    ? "Nog geen ontvangsten"
-                    : "Geen aanvragen"
+                    ? "No receipts yet"
+                    : "No requests"
             }
             description={
               filter === "pending"
-                ? "Aanvragen vanuit de werkplaats verschijnen hier."
-                : "Probeer een andere filter."
+                ? "Requests from the workshop will appear here."
+                : "Try a different filter."
             }
           />
         </div>

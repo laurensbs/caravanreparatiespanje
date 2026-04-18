@@ -43,12 +43,12 @@ function statusFor(lastSeen: Date | null): {
   text: string;
 } {
   if (!lastSeen) {
-    return { label: "Nog nooit ingelogd", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
+    return { label: "Never signed in", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
   }
   const minutes = (Date.now() - lastSeen.getTime()) / 60_000;
-  if (minutes < 10) return { label: "Nu actief", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" };
+  if (minutes < 10) return { label: "Active now", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" };
   if (minutes < 60 * 24) return { label: "Recent", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
-  return { label: "Langer geleden", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
+  return { label: "Longer ago", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
 }
 
 export default async function ActivityPage() {
@@ -115,19 +115,19 @@ export default async function ActivityPage() {
         <SettingsSectionHeader
           icon={Activity}
           title="Workspace activity"
-          description="Wie heeft wanneer ingelogd. Alleen jij ziet deze pagina."
+          description="Who signed in when. Only you can see this page."
         />
         <div className="grid grid-cols-3 divide-x divide-border/60 overflow-hidden rounded-xl border border-border/60 bg-muted/30">
           <div className="flex flex-col gap-0.5 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Totaal logins</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Total logins</p>
             <p className="text-xl font-semibold tabular-nums tracking-[-0.01em]">{stats?.total ?? 0}</p>
           </div>
           <div className="flex flex-col gap-0.5 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Laatste 24u</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Last 24h</p>
             <p className="text-xl font-semibold tabular-nums tracking-[-0.01em]">{stats?.last24h ?? 0}</p>
           </div>
           <div className="flex flex-col gap-0.5 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Laatste 7d</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Last 7d</p>
             <p className="text-xl font-semibold tabular-nums tracking-[-0.01em]">{stats?.last7d ?? 0}</p>
           </div>
         </div>
@@ -135,16 +135,16 @@ export default async function ActivityPage() {
 
       <SettingsPanel padded={false} className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
-          <h3 className="text-sm font-semibold tracking-[-0.01em]">Per gebruiker</h3>
+          <h3 className="text-sm font-semibold tracking-[-0.01em]">Per user</h3>
           <span className="text-[11px] text-muted-foreground">
-            {usersWithLogins.length} {usersWithLogins.length === 1 ? "gebruiker" : "gebruikers"}
+            {usersWithLogins.length} {usersWithLogins.length === 1 ? "user" : "users"}
           </span>
         </div>
         {usersWithLogins.length === 0 ? (
           <EmptyState
             icon={Activity}
-            title="Geen gebruikers"
-            description="Voeg eerst gebruikers toe in Settings → Users."
+            title="Geen users"
+            description="Voeg eerst users toe in Settings → Users."
           />
         ) : (
           <ul className="divide-y divide-border/50">
@@ -174,7 +174,7 @@ export default async function ActivityPage() {
                       ) : null}
                       {!u.active ? (
                         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Inactief
+                          Inactive
                         </span>
                       ) : null}
                     </div>
@@ -204,15 +204,15 @@ export default async function ActivityPage() {
         <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
           <h3 className="flex items-center gap-1.5 text-sm font-semibold tracking-[-0.01em]">
             <Clock className="h-3.5 w-3.5 text-muted-foreground/70" />
-            Laatste 25 logins
+            Last 25 sign-ins
           </h3>
           <span className="text-[11px] text-muted-foreground">timeline</span>
         </div>
         {recentLogins.length === 0 ? (
           <EmptyState
             icon={Clock}
-            title="Nog geen login events"
-            description="Zodra iemand inlogt verschijnt het hier."
+            title="No sign-in events yet"
+            description="As soon as someone signs in it will appear here."
           />
         ) : (
           <ul className="divide-y divide-border/50">
@@ -227,8 +227,8 @@ export default async function ActivityPage() {
                   {(log.userName ?? "?").charAt(0).toUpperCase()}
                 </span>
                 <p className="min-w-0 flex-1 truncate text-[13px] text-foreground/90">
-                  <span className="font-medium">{log.userName ?? "Onbekend"}</span>{" "}
-                  <span className="text-muted-foreground">heeft ingelogd</span>
+                  <span className="font-medium">{log.userName ?? "Unknown"}</span>{" "}
+                  <span className="text-muted-foreground">signed in</span>
                 </p>
                 <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
                   {format(new Date(log.createdAt), "dd MMM HH:mm")}

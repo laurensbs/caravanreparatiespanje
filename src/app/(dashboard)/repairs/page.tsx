@@ -87,11 +87,11 @@ export default async function RepairsPage({ searchParams }: Props) {
           preset; clicking the active one clears it. */}
       <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {([
-          { key: "today", label: "Vandaag", href: "/repairs?dueWithin=today" },
-          { key: "week", label: "Deze week", href: "/repairs?dueWithin=week" },
-          { key: "overdue", label: "Te laat", href: "/repairs?dueWithin=overdue", tone: "destructive" as const },
-          { key: "unscheduled", label: "Geen datum", href: "/repairs?dueWithin=unscheduled" },
-          { key: "mine", label: "Mijn werk", href: "/repairs?mine=1" },
+          { key: "today", label: "Today", href: "/repairs?dueWithin=today" },
+          { key: "week", label: "This week", href: "/repairs?dueWithin=week" },
+          { key: "overdue", label: "Overdue", href: "/repairs?dueWithin=overdue", tone: "destructive" as const },
+          { key: "unscheduled", label: "No date", href: "/repairs?dueWithin=unscheduled" },
+          { key: "mine", label: "My work", href: "/repairs?mine=1" },
         ] as const).map((focus) => {
           const isActive = focus.key === "mine" ? filters.mine === "1" : filters.dueWithin === focus.key;
           const target = isActive ? "/repairs" : focus.href;

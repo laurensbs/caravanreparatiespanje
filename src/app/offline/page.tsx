@@ -19,7 +19,7 @@ export default function OfflinePage() {
           Offline
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
-          Geen verbinding
+          Offline
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Je werk wordt lokaal bewaard en gesynchroniseerd zodra je weer online

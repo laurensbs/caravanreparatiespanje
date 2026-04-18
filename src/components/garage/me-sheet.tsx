@@ -166,7 +166,7 @@ export function GarageMeSheet({ open, onClose, users }: Props) {
           >
             <span className="flex items-center gap-2.5">
               {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-white/40" />}
-              {t("Sound feedback", "Sonido", "Geluid")}
+              {t("Sound feedback", "Sonido", "Sound")}
             </span>
             <span
               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${

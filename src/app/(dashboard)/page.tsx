@@ -73,9 +73,9 @@ export default async function DashboardPage() {
 
   const briefingTotal = briefingItems.reduce((acc, x) => acc + x.value, 0);
   const briefingHeadline = briefingTotal === 0
-    ? "Alles loopt — niets vraagt vandaag actie."
+    ? "All clear — nothing needs you today."
     : briefingItems.length === 1
-      ? `${briefingItems[0].value} ${briefingItems[0].label.toLowerCase()} vandaag.`
+      ? `${briefingItems[0].value} ${briefingItems[0].label.toLowerCase()} today.`
       : `${briefingTotal} item${briefingTotal !== 1 ? "s" : ""} vragen je aandacht.`;
 
   return (
@@ -180,9 +180,9 @@ export default async function DashboardPage() {
             {recentJobs.length === 0 ? (
               <EmptyState
                 icon={Wrench}
-                title="Nog geen reparaties"
-                description="Voeg je eerste work order toe om hier activiteit te zien."
-                action={{ label: "Nieuwe reparatie", href: "/repairs/new", icon: Plus }}
+                title="No repairs yet"
+                description="Add your first work order to see activity here."
+                action={{ label: "New repair", href: "/repairs/new", icon: Plus }}
               />
             ) : (
               <div className="space-y-1">

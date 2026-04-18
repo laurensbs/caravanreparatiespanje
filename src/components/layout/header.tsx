@@ -187,7 +187,7 @@ export function Header({
             className="group group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0)] transition-all hover:border-foreground/15 hover:bg-card hover:text-foreground focus-visible:border-ring focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:max-w-sm lg:max-w-md"
           >
             <Search className="icon-pop h-3.5 w-3.5 shrink-0 opacity-70 transition-all group-hover/search:opacity-100" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal tracking-[-0.005em]">Zoek work orders, klanten, units…</span>
+            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal tracking-[-0.005em]">Search work orders, klanten, units…</span>
             <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground shadow-[0_1px_0_0_rgba(0,0,0,0.04)] sm:inline-flex">
               ⌘K
             </kbd>

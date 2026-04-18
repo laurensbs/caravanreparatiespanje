@@ -89,7 +89,7 @@ export function buildRepairFolderPath(opts: {
   repairCode?: string | null;
 }): string {
   const root = process.env.ONEDRIVE_ROOT_FOLDER ?? "Reparaties";
-  const customer = sanitizeName(opts.customerName || "Onbekend");
+  const customer = sanitizeName(opts.customerName || "Unknown");
 
   const parts: string[] = [];
   if (opts.unitRegistration) parts.push(sanitizeName(opts.unitRegistration));

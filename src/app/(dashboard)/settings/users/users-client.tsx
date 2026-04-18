@@ -107,31 +107,31 @@ export function UsersClient({ users }: { users: User[] }) {
   const toggleActive = async (user: User) => {
     if (user.active) {
       const ok = await confirmDialog({
-        title: `Deactiveer ${user.name}?`,
-        description: "Deze gebruiker kan niet meer inloggen totdat je het account weer activeert. Bestaande historie blijft staan.",
+        title: `Deactivate ${user.name}?`,
+        description: "This user will no longer be able to sign in until you re-enable their account. History is preserved.",
         tone: "destructive",
-        confirmLabel: "Deactiveer",
+        confirmLabel: "Deactivate",
       });
       if (!ok) return;
       await deactivateUser(user.id);
-      toast.success(`${user.name} is gedeactiveerd`);
+      toast.success(`${user.name} deactivated`);
     } else {
       await activateUser(user.id);
-      toast.success(`${user.name} is geactiveerd`);
+      toast.success(`${user.name} activated`);
     }
     router.refresh();
   };
 
   const handleResetPassword = async (user: User) => {
     const newPw = window.prompt(
-      `Nieuw wachtwoord voor ${user.name}? Minimaal 6 tekens.`,
+      `New password for ${user.name}? Minimum 6 characters.`,
     );
     if (!newPw) return;
     try {
       await resetUserPassword(user.id, newPw);
-      toast.success(`Wachtwoord van ${user.name} gereset`);
+      toast.success(`Password for ${user.name} reset`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Kon wachtwoord niet wijzigen");
+      toast.error(err instanceof Error ? err.message : "Could not change password");
     }
   };
 
@@ -269,7 +269,7 @@ export function UsersClient({ users }: { users: User[] }) {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          aria-label={`Acties voor ${user.name}`}
+                          aria-label={`Actions for ${user.name}`}
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -277,7 +277,7 @@ export function UsersClient({ users }: { users: User[] }) {
                       <DropdownMenuContent align="end" className="w-52">
                         <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
                           <KeyRound className="h-4 w-4" />
-                          Reset wachtwoord
+                          Reset password
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -285,7 +285,7 @@ export function UsersClient({ users }: { users: User[] }) {
                           className={user.active ? "text-destructive focus:text-destructive" : ""}
                         >
                           {user.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                          {user.active ? "Deactiveer account" : "Activeer account"}
+                          {user.active ? "Deactivate account" : "Activate account"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

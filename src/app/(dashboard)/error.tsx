@@ -29,7 +29,7 @@ export default function DashboardError({
           <AlertTriangle className="h-5 w-5" />
         </span>
         <h2 className="mt-3 text-lg font-semibold tracking-[-0.01em]">
-          Dit blok kon niet laden
+          This block couldn't load
         </h2>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           Geen zorgen — de rest van de app werkt nog. Klik om dit deel opnieuw
@@ -43,7 +43,7 @@ export default function DashboardError({
         <div className="mt-5">
           <Button onClick={reset}>
             <RefreshCcw className="h-3.5 w-3.5" />
-            Probeer opnieuw
+            Try again
           </Button>
         </div>
       </div>

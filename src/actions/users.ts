@@ -91,7 +91,7 @@ export async function activateUser(id: string) {
 export async function resetUserPassword(id: string, newPassword: string) {
   await requireRole("admin");
   if (!newPassword || newPassword.length < 6) {
-    throw new Error("Wachtwoord moet minimaal 6 tekens zijn.");
+    throw new Error("Password must be at least 6 characters.");
   }
   const hashed = await hash(newPassword, 12);
   await db.update(users).set({ passwordHash: hashed }).where(eq(users.id, id));

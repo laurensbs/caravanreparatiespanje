@@ -40,13 +40,13 @@ export default function GlobalRouteError({
           className="mx-auto mb-5 object-contain opacity-80 dark:invert"
         />
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-destructive/80">
-          Er ging iets mis
+          Something went wrong
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
-          Onverwachte fout
+          Unexpected error
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          We zijn op de hoogte. Probeer het opnieuw — vaak helpt dat al.
+          We've been notified. Try again — that often works.
         </p>
         {error.digest ? (
           <p className="mt-3 inline-block rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
@@ -56,12 +56,12 @@ export default function GlobalRouteError({
         <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
           <Button onClick={reset}>
             <RefreshCcw className="h-3.5 w-3.5" />
-            Probeer opnieuw
+            Try again
           </Button>
           <Button variant="ghost" asChild>
             <Link href="/">
               <Home className="h-3.5 w-3.5" />
-              Naar dashboard
+              Go to dashboard
             </Link>
           </Button>
         </div>

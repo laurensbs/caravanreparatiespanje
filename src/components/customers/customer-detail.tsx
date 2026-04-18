@@ -223,7 +223,7 @@ export function CustomerDetail({
           <Button asChild size="sm">
             <Link href={`/repairs/new?customerId=${customer.id}`}>
               <Plus className="h-3.5 w-3.5" />
-              Nieuwe reparatie
+              New repair
             </Link>
           </Button>
           <button

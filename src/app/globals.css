@@ -3,30 +3,35 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Modern blue-gray palette with depth */
-  --color-background: oklch(0.975 0.003 260);
-  --color-foreground: oklch(0.13 0.02 260);
-  --color-card: oklch(0.995 0.001 260);
-  --color-card-foreground: oklch(0.13 0.02 260);
-  --color-popover: oklch(0.995 0.001 260);
-  --color-popover-foreground: oklch(0.13 0.02 260);
-  /* Brand primary: cyan-600 (matches sidebar logo, sync chips, feedback hero) */
-  --color-primary: oklch(0.70 0.15 220);
-  --color-primary-foreground: oklch(0.99 0.002 260);
-  --color-secondary: oklch(0.94 0.008 260);
-  --color-secondary-foreground: oklch(0.20 0.02 260);
-  --color-muted: oklch(0.94 0.008 260);
-  --color-muted-foreground: oklch(0.40 0.02 260);
-  --color-accent: oklch(0.93 0.012 260);
-  --color-accent-foreground: oklch(0.20 0.02 260);
-  --color-destructive: oklch(0.50 0.22 25);
+  /* Monochrome warm palette (stone) with deep black CTAs and a quiet amber
+     accent for focus rings, links and the occasional badge. Inspired by
+     Stripe Atlas / Notion / Linear: very little colour noise, the content
+     is the hero. Hue 75 = warm/neutral; chroma stays near 0 so cards feel
+     like paper, not painted. */
+  --color-background: oklch(0.985 0.002 75);
+  --color-foreground: oklch(0.18 0.005 75);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.18 0.005 75);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.18 0.005 75);
+  /* Primary = near-black for premium CTAs (Stripe-style). */
+  --color-primary: oklch(0.22 0.005 75);
+  --color-primary-foreground: oklch(0.985 0.002 75);
+  --color-secondary: oklch(0.955 0.004 75);
+  --color-secondary-foreground: oklch(0.25 0.005 75);
+  --color-muted: oklch(0.955 0.004 75);
+  --color-muted-foreground: oklch(0.50 0.008 75);
+  --color-accent: oklch(0.94 0.006 75);
+  --color-accent-foreground: oklch(0.22 0.005 75);
+  --color-destructive: oklch(0.52 0.21 25);
   --color-destructive-foreground: oklch(0.99 0 0);
-  --color-border: oklch(0.85 0.01 260);
-  --color-input: oklch(0.85 0.01 260);
-  --color-ring: oklch(0.70 0.15 220);
-  --color-sidebar: oklch(0.16 0.025 260);
-  --color-sidebar-foreground: oklch(0.85 0.01 260);
-  --color-sidebar-accent: oklch(0.24 0.03 260);
+  --color-border: oklch(0.91 0.004 75);
+  --color-input: oklch(0.91 0.004 75);
+  /* Quiet amber accent — only used for focus rings, links and badges. */
+  --color-ring: oklch(0.72 0.13 60);
+  --color-sidebar: oklch(0.16 0.005 75);
+  --color-sidebar-foreground: oklch(0.86 0.005 75);
+  --color-sidebar-accent: oklch(0.23 0.006 75);
   --radius: 0.625rem;
   --font-sans: var(--font-geist-sans, "Geist", ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-geist-mono, "Geist Mono", ui-monospace, SFMono-Regular, monospace);
@@ -88,29 +93,29 @@
   }
 
   .dark {
-    --color-background: oklch(0.12 0.015 260);
-    --color-foreground: oklch(0.95 0.005 260);
-    --color-card: oklch(0.16 0.02 260);
-    --color-card-foreground: oklch(0.95 0.005 260);
-    --color-popover: oklch(0.16 0.02 260);
-    --color-popover-foreground: oklch(0.95 0.005 260);
-    /* Brand primary dark: a touch brighter cyan so buttons pop on dark panels */
-    --color-primary: oklch(0.75 0.14 220);
-    --color-primary-foreground: oklch(0.14 0.02 260);
-    --color-secondary: oklch(0.20 0.015 260);
-    --color-secondary-foreground: oklch(0.88 0.008 260);
-    --color-muted: oklch(0.20 0.015 260);
-    --color-muted-foreground: oklch(0.60 0.015 260);
-    --color-accent: oklch(0.22 0.02 260);
-    --color-accent-foreground: oklch(0.88 0.008 260);
-    --color-destructive: oklch(0.55 0.22 25);
+    --color-background: oklch(0.14 0.004 75);
+    --color-foreground: oklch(0.96 0.003 75);
+    --color-card: oklch(0.18 0.005 75);
+    --color-card-foreground: oklch(0.96 0.003 75);
+    --color-popover: oklch(0.18 0.005 75);
+    --color-popover-foreground: oklch(0.96 0.003 75);
+    /* On dark, primary inverts: paper-white CTA on near-black surface. */
+    --color-primary: oklch(0.96 0.003 75);
+    --color-primary-foreground: oklch(0.18 0.005 75);
+    --color-secondary: oklch(0.22 0.005 75);
+    --color-secondary-foreground: oklch(0.90 0.004 75);
+    --color-muted: oklch(0.22 0.005 75);
+    --color-muted-foreground: oklch(0.62 0.006 75);
+    --color-accent: oklch(0.24 0.006 75);
+    --color-accent-foreground: oklch(0.90 0.004 75);
+    --color-destructive: oklch(0.58 0.21 25);
     --color-destructive-foreground: oklch(0.99 0 0);
-    --color-border: oklch(0.22 0.015 260);
-    --color-input: oklch(0.22 0.015 260);
-    --color-ring: oklch(0.75 0.14 220);
-    --color-sidebar: oklch(0.10 0.02 260);
-    --color-sidebar-foreground: oklch(0.80 0.01 260);
-    --color-sidebar-accent: oklch(0.18 0.025 260);
+    --color-border: oklch(0.24 0.005 75);
+    --color-input: oklch(0.24 0.005 75);
+    --color-ring: oklch(0.78 0.12 60);
+    --color-sidebar: oklch(0.10 0.004 75);
+    --color-sidebar-foreground: oklch(0.82 0.005 75);
+    --color-sidebar-accent: oklch(0.18 0.006 75);
   }
 
   .dark ::-webkit-scrollbar-thumb {

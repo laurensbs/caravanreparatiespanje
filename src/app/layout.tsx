@@ -51,6 +51,20 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
+      <head>
+        {/*
+          Inline theme bootstrap: runs before React hydration so we never
+          flash light-mode for dark users (or vice versa). Reads the
+          "theme" key from localStorage, falls back to OS preference,
+          and toggles `.dark` on <html> immediately. Kept tiny and
+          dependency-free on purpose.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased font-sans">
         <ThemeProvider>{children}</ThemeProvider>
       </body>

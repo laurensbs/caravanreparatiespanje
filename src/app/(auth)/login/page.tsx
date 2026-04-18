@@ -93,9 +93,11 @@ export default function LoginPage() {
   return (
     <div className="relative w-full max-w-md px-6">
       {/* Theme toggle pinned to the top-right of the viewport, not the
-          card, so it never overlaps the form on small screens. */}
+          card, so it never overlaps the form on small screens. The
+          ThemeToggle button already provides its own hover state +
+          icon crossfade — we just give it a glassy capsule frame. */}
       <div className="fixed right-4 top-4 z-30">
-        <div className="rounded-full border border-border/60 bg-card/70 p-0.5 shadow-sm backdrop-blur-md">
+        <div className="rounded-full border border-border/60 bg-card/80 p-1 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] backdrop-blur-md transition-all duration-200 hover:border-foreground/20 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.15)] dark:bg-card/60 dark:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.40)]">
           <ThemeToggle />
         </div>
       </div>
@@ -151,7 +153,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => pickAccount(acc)}
                 style={{ animationDelay: `${i * 70}ms` }}
-                className="group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card p-4 opacity-0 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_1px_0_0_rgba(255,255,255,0.6)_inset] animate-[fadeUp_450ms_ease-[cubic-bezier(0.16,1,0.3,1)]_forwards] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]"
+                className="login-tile group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_1px_0_0_rgba(255,255,255,0.6)_inset] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]"
               >
                 {/* Top accent line in account colour, fades in on hover. */}
                 <span
@@ -330,6 +332,14 @@ export default function LoginPage() {
       </div>
 
       <style jsx global>{`
+        /* Account tile entrance — declared explicitly so we don't depend
+           on Tailwind JIT parsing nested arbitrary values like
+           animate-[fadeUp_450ms_ease-[cubic-bezier(...)]_forwards] which
+           it silently drops, leaving the tiles permanently invisible. */
+        .login-tile {
+          opacity: 0;
+          animation: fadeUp 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }

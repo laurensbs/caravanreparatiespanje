@@ -11,6 +11,7 @@ import { AssistantShell } from "@/components/assistant-shell";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { PageTransition } from "@/components/layout/page-transition";
 import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import type { UserRole } from "@/types";
@@ -57,12 +58,14 @@ export default async function DashboardLayout({
             <main
               id="main-content"
               tabIndex={-1}
-              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 animate-fade-in focus:outline-none"
+              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 focus:outline-none"
               style={{
                 paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
               }}
             >
-              {children}
+              <Suspense fallback={null}>
+                <PageTransition>{children}</PageTransition>
+              </Suspense>
             </main>
             <Toaster
               theme="system"

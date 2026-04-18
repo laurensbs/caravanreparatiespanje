@@ -9,7 +9,10 @@ const buttonVariants = cva(
   // surface feels carved instead of stamped. Trailing/leading arrow svgs
   // marked with `.btn-arrow-right` / `.btn-arrow-left` slide in the
   // direction of travel on hover — no need to opt into `group` per call site.
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-[13px] font-medium tracking-[-0.005em] transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:transition-transform hover:[&_svg.btn-arrow-right]:translate-x-0.5 hover:[&_svg.btn-arrow-left]:-translate-x-0.5",
+  // Spring-style press: cubic-bezier(0.34,1.56,0.64,1) gives the small
+  // overshoot on release so taps feel physical instead of digital.
+  // Hover lifts 1px on solid variants (handled per-variant).
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-[13px] font-medium tracking-[-0.005em] transition-[transform,background-color,border-color,box-shadow,color] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.96] active:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:transition-transform hover:[&_svg.btn-arrow-right]:translate-x-0.5 hover:[&_svg.btn-arrow-left]:-translate-x-0.5",
   {
     variants: {
       variant: {

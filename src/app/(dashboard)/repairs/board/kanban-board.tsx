@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import type { RepairStatus } from "@/types";
 import { toast } from "sonner";
-import { toastWithUndo } from "@/lib/toast-undo";
+import { toastWithUndo } from "@/lib/undo-toast";
 import { updateRepairJob } from "@/actions/repairs";
 
 interface Job {
@@ -133,15 +133,15 @@ export function KanbanBoard({ jobs }: { jobs: Job[] }) {
           router.refresh();
           return;
         }
-        toastWithUndo({
-          message: "Status updated",
-          description: `${job.publicCode ?? job.title ?? "Job"} → ${STATUS_LABELS[newStatus]}`,
-          undo: async () => {
+        toastWithUndo(
+          "Status updated",
+          async () => {
             const undoRes = await updateRepairJob(jobId, { status: previousStatus });
             if (!undoRes.ok) throw new Error(undoRes.message);
             router.refresh();
           },
-        });
+          { description: `${job.publicCode ?? job.title ?? "Job"} → ${STATUS_LABELS[newStatus]}` },
+        );
         router.refresh();
       });
     },

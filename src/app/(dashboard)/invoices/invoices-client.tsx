@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2 } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2, FilterX } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
@@ -371,16 +372,21 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
           />
 
           {filtered.length === 0 ? (
-            <div className="rounded-xl border bg-card py-14 text-center">
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <Receipt className="h-10 w-10 opacity-20" />
-                <p className="font-medium text-sm">{hasActiveFilters ? "No invoices match filters" : "No invoices found"}</p>
-                {hasActiveFilters && (
-                  <Button variant="outline" className="mt-2 touch-manipulation" onClick={clearFilters}>
-                    Clear filters
-                  </Button>
-                )}
-              </div>
+            <div className="rounded-2xl border border-border/60 bg-card">
+              <EmptyState
+                icon={hasActiveFilters ? FilterX : Receipt}
+                title={hasActiveFilters ? "Geen facturen voor deze filters" : "Nog geen facturen"}
+                description={
+                  hasActiveFilters
+                    ? "Probeer minder filters of een andere periode."
+                    : "Zodra een reparatie afgerond wordt, komt de factuur hier te staan."
+                }
+                action={
+                  hasActiveFilters
+                    ? { label: "Filters wissen", onClick: clearFilters, icon: X }
+                    : undefined
+                }
+              />
             </div>
           ) : (
             <>

@@ -9,6 +9,7 @@ import { searchRepairJobsForPicker } from "@/actions/repairs";
 import { Check, Package, Plus, Search, Loader2, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_DOT: Record<string, string> = {
   requested: "bg-amber-400",
@@ -143,8 +144,24 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-border dark:border-border py-12 text-center text-sm text-muted-foreground dark:text-white/30">
-          No {filter === "pending" ? "pending" : filter === "ordered" ? "ordered" : filter === "done" ? "received" : ""} requests
+        <div className="rounded-2xl border border-border/60 bg-card">
+          <EmptyState
+            icon={Package}
+            title={
+              filter === "pending"
+                ? "Geen openstaande aanvragen"
+                : filter === "ordered"
+                  ? "Geen besteldebestellingen open"
+                  : filter === "done"
+                    ? "Nog geen ontvangsten"
+                    : "Geen aanvragen"
+            }
+            description={
+              filter === "pending"
+                ? "Aanvragen vanuit de werkplaats verschijnen hier."
+                : "Probeer een andere filter."
+            }
+          />
         </div>
       ) : (
         <div className="space-y-2">

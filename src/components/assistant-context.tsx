@@ -8,7 +8,7 @@ import {
   dismissReminder as dismissReminderAction,
   reopenReminder as reopenReminderAction,
 } from "@/actions/reminders";
-import { toastWithUndo } from "@/lib/toast-undo";
+import { toastWithUndo } from "@/lib/undo-toast";
 import {
   getUnreadGarageRepliesSummary,
   markGarageRepliesRead,
@@ -179,10 +179,9 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       setInboxTotalCount((c) => Math.max(0, c - 1));
       try {
         await completeReminderAction(id);
-        toastWithUndo({
-          message: "Marked done",
-          description: snapshot?.title,
-          undo: async () => {
+        toastWithUndo(
+          "Marked done",
+          async () => {
             await reopenReminderAction(id);
             if (snapshot) {
               setInboxItems((prev) => [snapshot, ...prev]);
@@ -190,7 +189,8 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
             }
             void refreshBadge();
           },
-        });
+          { description: snapshot?.title },
+        );
       } finally {
         void refreshBadge();
       }
@@ -205,10 +205,9 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       setInboxTotalCount((c) => Math.max(0, c - 1));
       try {
         await dismissReminderAction(id);
-        toastWithUndo({
-          message: "Dismissed",
-          description: snapshot?.title,
-          undo: async () => {
+        toastWithUndo(
+          "Dismissed",
+          async () => {
             await reopenReminderAction(id);
             if (snapshot) {
               setInboxItems((prev) => [snapshot, ...prev]);
@@ -216,7 +215,8 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
             }
             void refreshBadge();
           },
-        });
+          { description: snapshot?.title },
+        );
       } finally {
         void refreshBadge();
       }

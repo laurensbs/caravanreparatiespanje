@@ -27,11 +27,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Plus, Pencil, Trash2, ExternalLink, Search,
   Zap, Wrench, SquareStack, Paintbrush, Droplets,
   Snowflake, Warehouse, Truck, Sparkles, Hammer,
-  Package, Home, AlertTriangle, CheckCircle,
+  Package, Home, AlertTriangle, CheckCircle, FilterX,
 } from "lucide-react";
 import { createPart, updatePart, deletePart, createPartCategory, deletePartCategory } from "@/actions/parts";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -326,10 +327,31 @@ export function PartsClient({ parts, suppliers, categories, defaultMarkup = 25 }
       </p>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {search || activeCategory ? "No parts match your filters." : "No parts in catalog yet."}
-          </CardContent>
+        <Card className="rounded-2xl border-border/60">
+          <EmptyState
+            icon={search || activeCategory ? FilterX : Package}
+            title={
+              search || activeCategory
+                ? "Geen onderdelen voor deze filters"
+                : "Nog geen onderdelen"
+            }
+            description={
+              search || activeCategory
+                ? "Probeer een andere zoekterm of categorie."
+                : "Voeg je eerste onderdeel toe om voorraad en prijzen te beheren."
+            }
+            action={
+              search || activeCategory
+                ? {
+                    label: "Filters wissen",
+                    onClick: () => {
+                      setSearch("");
+                      setActiveCategory(null);
+                    },
+                  }
+                : { label: "Nieuw onderdeel", onClick: openCreate, icon: Plus }
+            }
+          />
         </Card>
       ) : (
         <>

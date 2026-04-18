@@ -24,7 +24,6 @@ import {
   Sparkles,
   Trash2,
   Wrench,
-  X as XIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -35,6 +34,7 @@ import { JOB_TYPE_COLORS, JOB_TYPE_LABELS, STATUS_COLORS, STATUS_LABELS } from "
 import type { JobType, RepairStatus } from "@/types";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { toast } from "sonner";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 
 // ─── Photo card with hover actions + lightbox ─────────────────────────────
 
@@ -101,24 +101,11 @@ export function PhotoCard({
       </div>
 
       {expanded && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setExpanded(false)}
-        >
-          <button
-            className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-card/10 text-white hover:bg-card/20 transition-colors"
-            onClick={() => setExpanded(false)}
-          >
-            <XIcon className="h-5 w-5" />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={photo.url}
-            alt={photo.caption || ""}
-            className="max-w-full max-h-full object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+        <ImageLightbox
+          images={[{ src: photo.url, alt: photo.caption ?? undefined }]}
+          index={0}
+          onClose={() => setExpanded(false)}
+        />
       )}
     </>
   );

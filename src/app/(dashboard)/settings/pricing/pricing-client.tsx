@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { NumberInput } from "@/components/ui/number-input";
 import { Save, DollarSign, Percent, Receipt, Check } from "lucide-react";
 import { updateAppSetting } from "@/actions/settings";
 import { toast } from "sonner";
@@ -101,18 +102,14 @@ export function PricingSettingsClient({
           <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
             Markup %
           </Label>
-          <div className="relative max-w-xs">
-            <Input
-              type="number"
-              step="1"
-              min="0"
+          <div className="max-w-xs">
+            <NumberInput
+              step={1}
+              min={0}
               value={defaultMarkup}
-              onChange={(e) => setDefaultMarkup(e.target.value)}
-              className="h-10 rounded-xl pr-8 text-[14px] tabular-nums"
+              onChange={(n) => setDefaultMarkup(String(n))}
+              className="text-[14px]"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/70">
-              %
-            </span>
           </div>
           <p className="text-[12px] text-muted-foreground dark:text-muted-foreground/70">
             A part costing €100 sells at{" "}
@@ -133,18 +130,15 @@ export function PricingSettingsClient({
           <Label className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
             Tax %
           </Label>
-          <div className="relative max-w-xs">
-            <Input
-              type="number"
-              step="1"
-              min="0"
+          <div className="max-w-xs">
+            <NumberInput
+              step={1}
+              min={0}
+              max={100}
               value={defaultTax}
-              onChange={(e) => setDefaultTax(e.target.value)}
-              className="h-10 rounded-xl pr-8 text-[14px] tabular-nums"
+              onChange={(n) => setDefaultTax(String(n))}
+              className="text-[14px]"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/70">
-              %
-            </span>
           </div>
         </div>
       </SettingsPanel>

@@ -30,27 +30,43 @@ interface NavItem {
   bottom?: boolean;
   external?: boolean;
   group?: string;
+  /** Key into SidebarCounts — drives the count badge on the right of the row. */
+  countKey?: "workOrdersOpen" | "planning" | "contacts" | "units" | "parts" | "invoices";
+  /** Key into SidebarCounts that, if > 0, shows a small attention dot
+   *  (currently only used for urgent work orders). */
+  attentionKey?: "workOrdersUrgent";
 }
 
 const navItems: NavItem[] = [
   // OPERATIONS
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" />, group: "Operations" },
-  { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations" },
-  { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations" },
+  { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations", countKey: "workOrdersOpen", attentionKey: "workOrdersUrgent" },
+  { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations", countKey: "planning" },
   { label: "Garage", href: "/api/garage-reset", icon: <Warehouse className="h-[18px] w-[18px]" />, group: "Operations" },
   // DATA
-  { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data" },
-  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data" },
-  { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data" },
+  { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data", countKey: "contacts" },
+  { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data", countKey: "units" },
+  { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data", countKey: "parts" },
   // FINANCE
-  { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
+  { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance", countKey: "invoices" },
 ];
+
+export type SidebarCounts = {
+  workOrdersOpen: number;
+  workOrdersUrgent: number;
+  planning: number;
+  contacts: number;
+  units: number;
+  parts: number;
+  invoices: number;
+};
 
 interface SidebarProps {
   userRole: UserRole;
+  counts?: SidebarCounts;
 }
 
-export function Sidebar({ userRole }: SidebarProps) {
+export function Sidebar({ userRole, counts }: SidebarProps) {
   const pathname = usePathname();
   const { collapsed, setCollapsed, mobileOpen, setMobileOpen } = useSidebar();
   const [isLg, setIsLg] = useState(true);
@@ -144,6 +160,10 @@ export function Sidebar({ userRole }: SidebarProps) {
 
     const linkProps = item.external ? { target: "_blank", rel: "noopener" } : {};
 
+    const count = item.countKey && counts ? counts[item.countKey] : undefined;
+    const attention = item.attentionKey && counts ? counts[item.attentionKey] : 0;
+    const showCount = typeof count === "number" && count > 0;
+
     return (
       <Link
         href={item.href}
@@ -166,21 +186,52 @@ export function Sidebar({ userRole }: SidebarProps) {
         )}
         <span
           className={cn(
-            "icon-pop shrink-0 transition-colors",
+            "icon-pop relative shrink-0 transition-colors",
             isActive ? "text-foreground" : "text-muted-foreground/80 group-hover:text-foreground",
           )}
         >
           {item.icon}
+          {/* Attention dot — small red signal in the icon corner when
+              urgent items exist. Visible in both expanded and collapsed
+              modes; that's the whole point of a status indicator. */}
+          {attention > 0 && (
+            <span
+              aria-hidden
+              className="absolute -right-0.5 -top-0.5 flex h-2 w-2 items-center justify-center"
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/70" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-card dark:ring-sidebar" />
+            </span>
+          )}
         </span>
         {!effectiveCollapsed && (
-          <span className="flex items-center gap-1.5">
-            {item.label}
-            {item.external && <ExternalLink className="h-3 w-3 opacity-50" />}
-          </span>
+          <>
+            <span className="flex items-center gap-1.5">
+              {item.label}
+              {item.external && <ExternalLink className="h-3 w-3 opacity-50" />}
+            </span>
+            {showCount && (
+              <span
+                className={cn(
+                  "ml-auto inline-flex h-4 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-colors",
+                  isActive
+                    ? "bg-foreground/[0.08] text-foreground/80"
+                    : "bg-foreground/[0.05] text-muted-foreground group-hover:bg-foreground/[0.08] group-hover:text-foreground/80",
+                )}
+              >
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
+          </>
         )}
         {effectiveCollapsed && isLg && (
-          <span className="pointer-events-none absolute left-full z-50 ml-3 -translate-x-1 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] ring-1 ring-foreground/10 transition-all delay-75 duration-150 group-hover:translate-x-0 group-hover:opacity-100">
+          <span className="pointer-events-none absolute left-full z-50 ml-3 inline-flex items-center gap-1.5 -translate-x-1 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] ring-1 ring-foreground/10 transition-all delay-75 duration-150 group-hover:translate-x-0 group-hover:opacity-100">
             {item.label}
+            {showCount && (
+              <span className="rounded-full bg-background/15 px-1.5 py-0 font-mono text-[10px] tabular-nums">
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
           </span>
         )}
       </Link>

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { getUnreadFeedbackReplyCount } from "@/actions/feedback";
+import { getSidebarCounts } from "@/actions/sidebar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
@@ -27,9 +28,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const feedbackUnreadReplyCount = session.user.id
-    ? await getUnreadFeedbackReplyCount(session.user.id)
-    : 0;
+  const [feedbackUnreadReplyCount, sidebarCounts] = await Promise.all([
+    session.user.id ? getUnreadFeedbackReplyCount(session.user.id) : Promise.resolve(0),
+    getSidebarCounts().catch(() => null),
+  ]);
 
   return (
     <SidebarProvider>
@@ -47,7 +49,7 @@ export default async function DashboardLayout({
           Skip to content
         </a>
         <div className="flex min-h-screen">
-          <Sidebar userRole={session.user.role as UserRole} />
+          <Sidebar userRole={session.user.role as UserRole} counts={sidebarCounts ?? undefined} />
           <DashboardContent>
             <Header
               userName={session.user.name}

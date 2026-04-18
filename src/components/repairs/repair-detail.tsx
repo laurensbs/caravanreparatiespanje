@@ -2564,18 +2564,18 @@ function PhotosSection({
   jobId: string;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Get the OneDrive folder URL from the first photo that has it
   const onedriveFolderUrl = photos.find(p => p.onedriveFolderUrl)?.onedriveFolderUrl;
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  async function uploadFiles(files: File[]) {
+    if (files.length === 0) return;
     setUploading(true);
     let successCount = 0;
-    for (const file of Array.from(files)) {
+    for (const file of files) {
       try {
         const formData = new FormData();
         formData.append("file", file);
@@ -2594,15 +2594,80 @@ function PhotosSection({
       }
     }
     if (successCount > 0) {
-      toast.success(`${successCount} photo${successCount > 1 ? "s" : ""} uploaded to OneDrive`);
+      toast.success(`${successCount} foto${successCount > 1 ? "'s" : ""} geüpload`);
       router.refresh();
     }
     setUploading(false);
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    await uploadFiles(Array.from(files));
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  // Drag-drop on the whole photos panel
+  function onDragOver(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    setDragActive(true);
+  }
+  function onDragLeave(e: React.DragEvent) {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragActive(false);
+  }
+  async function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    await uploadFiles(files);
+  }
+
+  // Paste from clipboard (Cmd+V with image data)
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      if (!e.clipboardData) return;
+      // Don't capture paste events that target a real text input
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+      const files: File[] = [];
+      for (const item of e.clipboardData.items) {
+        if (item.kind === "file") {
+          const f = item.getAsFile();
+          if (f && f.type.startsWith("image/")) files.push(f);
+        }
+      }
+      if (files.length > 0) {
+        e.preventDefault();
+        void uploadFiles(files);
+      }
+    }
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
+
   return (
-    <div className="bg-card dark:bg-card/[0.03] rounded-2xl shadow-sm border border-border/60 dark:border-border overflow-hidden">
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-200 dark:bg-card/[0.03]",
+        dragActive && "border-foreground/40 ring-4 ring-foreground/15 scale-[1.005]",
+      )}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {dragActive && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-foreground/[0.04] backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-foreground/30 bg-card px-6 py-4 shadow-lg">
+            <Camera className="h-6 w-6 text-foreground/60" />
+            <p className="text-sm font-medium tracking-[-0.005em] text-foreground">Drop foto&apos;s om te uploaden</p>
+          </div>
+        </div>
+      )}
       <details open={photos.length > 0}>
         <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150">
           <span className="flex items-center gap-2">
@@ -2680,10 +2745,12 @@ function PhotosSection({
           })()}
         </div>
       ) : (
-        <div className="text-center py-6">
-          <Camera className="h-8 w-8 text-foreground/90 dark:text-foreground/90 mx-auto mb-2" />
-          <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground">No photos yet</p>
-          <p className="text-[10px] text-muted-foreground/50 dark:text-muted-foreground mt-0.5">Photos uploaded from the garage portal will appear here</p>
+        <div className="py-8 text-center">
+          <Camera className="mx-auto mb-2 h-8 w-8 text-foreground/40" />
+          <p className="text-xs text-muted-foreground">Nog geen foto&apos;s</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+            Sleep foto&apos;s hierop, plak met <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">⌘V</kbd>, of klik <strong>Upload</strong>.
+          </p>
         </div>
       )}
 

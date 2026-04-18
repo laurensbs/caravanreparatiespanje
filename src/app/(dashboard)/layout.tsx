@@ -13,6 +13,7 @@ import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PageTransition } from "@/components/layout/page-transition";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import type { UserRole } from "@/types";
@@ -60,15 +61,13 @@ export default async function DashboardLayout({
             <main
               id="main-content"
               tabIndex={-1}
-              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 focus:outline-none"
-              style={{
-                paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
-              }}
+              className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 md:p-4 focus:outline-none [padding-bottom:max(5.5rem,calc(0.75rem+env(safe-area-inset-bottom)))] lg:[padding-bottom:max(0.75rem,env(safe-area-inset-bottom))]"
             >
               <Suspense fallback={null}>
                 <PageTransition>{children}</PageTransition>
               </Suspense>
             </main>
+            <MobileBottomNav />
             <Toaster
               theme="system"
               position="bottom-right"

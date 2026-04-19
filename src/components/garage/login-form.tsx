@@ -11,7 +11,7 @@ const PIN_LENGTH = 4;
 
 export function GarageLoginForm() {
   const router = useRouter();
-  const { t, lang, setGarageLangByUser } = useLanguage();
+  const { t, deviceLang, setDeviceLang } = useLanguage();
   const [digits, setDigits] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
@@ -91,9 +91,9 @@ export function GarageLoginForm() {
           <button
             key={l.code}
             type="button"
-            onClick={() => setGarageLangByUser(l.code, null)}
+            onClick={() => setDeviceLang(l.code)}
             className={`h-10 w-10 rounded-full text-base flex items-center justify-center transition-all ${
-              lang === l.code
+              deviceLang === l.code
                 ? "bg-white/20 ring-1 ring-white/40"
                 : "bg-white/5 hover:bg-white/10"
             }`}

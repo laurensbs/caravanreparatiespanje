@@ -36,18 +36,6 @@ type LanguageContextValue = {
     es?: string | null,
     nl?: string | null,
   ) => string;
-
-  // ── Backward-compatible aliases for the old call sites that still
-  // live in today-client.tsx, detail-client.tsx, login-form.tsx and
-  // me-sheet.tsx. These are removed in step 2/4 of the overhaul once
-  // those screens are rewritten. Until then, treat them as the device
-  // language so behaviour is identical to before.
-  /** @deprecated use `deviceLang` */
-  lang: Language;
-  /** @deprecated use `setDeviceLang` */
-  setLang: (l: Language) => void;
-  /** @deprecated repairJobId is ignored — flag now sets the iPad-wide language. */
-  setGarageLangByUser: (l: Language, repairJobId: string | null) => void;
 };
 
 const STORAGE_KEY = "garage-device-lang";
@@ -58,9 +46,6 @@ const LanguageContext = createContext<LanguageContextValue>({
   setDeviceLang: () => {},
   t: (en) => en,
   tFor: (_a, en) => en,
-  lang: DEFAULT_LANG,
-  setLang: () => {},
-  setGarageLangByUser: () => {},
 });
 
 export function useLanguage() {
@@ -120,17 +105,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <LanguageContext.Provider
-      value={{
-        deviceLang,
-        setDeviceLang,
-        t,
-        tFor,
-        lang: deviceLang,
-        setLang: setDeviceLang,
-        setGarageLangByUser: (l) => setDeviceLang(l),
-      }}
-    >
+    <LanguageContext.Provider value={{ deviceLang, setDeviceLang, t, tFor }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -777,6 +777,10 @@ export const partRequests = pgTable(
       onDelete: "set null",
     }),
     requestType: requestTypeEnum("request_type").notNull().default("part"),
+    // Set when an admin clicks "Chased" on a stale request. Used by
+    // the dashboard widget to hide the row for 24h after a chase, so
+    // the same item doesn't keep nagging the same person all day.
+    lastChasedAt: timestamp("last_chased_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

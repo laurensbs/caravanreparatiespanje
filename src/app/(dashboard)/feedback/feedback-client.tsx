@@ -135,56 +135,118 @@ export function FeedbackClient({
   const openItems = items.filter((i) => i.status === "open" || i.status === "in_progress");
   const closedItems = items.filter((i) => i.status === "done" || i.status === "dismissed");
 
+  // One panel with two segments instead of two stacked cards. When
+  // there are no open items, default the user to "Resolved" so the
+  // page doesn't open on an empty state — they came here to see what
+  // is going on, not to be greeted by a void.
+  const [tab, setTab] = useState<"open" | "resolved">(
+    openItems.length === 0 && closedItems.length > 0 ? "resolved" : "open",
+  );
+  const visibleItems = tab === "open" ? openItems : closedItems;
+
   return (
-    <div className="animate-fade-in space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+    <div className="animate-fade-in space-y-6 px-4 py-5 sm:space-y-7 sm:px-6 sm:py-6">
       {/* 1. Hero + changelog (what shipped, no roadmap noise) */}
       <FeedbackProductUpdates
         openRequestCount={openItems.length}
         doneRequestCount={closedItems.length}
       />
 
-      {/* 2. Open requests — the team’s outstanding asks */}
+      {/* 2. Requests — single panel, segmented Open / Resolved */}
       <section
         id="feedback-queue"
         className="animate-slide-up scroll-mt-6"
         style={{ animationDelay: "60ms", animationFillMode: "backwards" }}
       >
         <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.10)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_24px_48px_-24px_rgba(0,0,0,0.6)]">
-          <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-3 border-b border-border/50 bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
             <div className="min-w-0">
-              <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground">Open requests</h2>
-              <p className="text-xs text-muted-foreground">Wat we nog op de planning hebben staan.</p>
+              <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground">
+                Requests
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                What the team has asked for, and what we&apos;ve closed out.
+              </p>
             </div>
-            <Badge variant="secondary" className="w-fit shrink-0 rounded-full px-2.5 tabular-nums">
-              {openItems.length} open
-            </Badge>
+
+            {/* Segmented control. Counts live inside the segment so the
+                user immediately reads "Open 0 · Resolved 12" without a
+                second pass to a separate badge. */}
+            <div
+              role="tablist"
+              aria-label="Filter requests"
+              className="inline-flex w-full shrink-0 items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1 backdrop-blur-md sm:w-auto"
+            >
+              {(
+                [
+                  { id: "open" as const, label: "Open", count: openItems.length },
+                  { id: "resolved" as const, label: "Resolved", count: closedItems.length },
+                ]
+              ).map((seg) => {
+                const active = tab === seg.id;
+                return (
+                  <button
+                    key={seg.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setTab(seg.id)}
+                    className={cn(
+                      "flex flex-1 touch-manipulation items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all sm:flex-none",
+                      active
+                        ? "bg-foreground text-background shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <span>{seg.label}</span>
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums",
+                        active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {seg.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
           <div className="space-y-3 p-4 sm:p-5">
-            {openItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/15 py-16 text-center">
-                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-foreground/[0.06] to-transparent text-muted-foreground ring-1 ring-border/60">
-                  <Inbox className="h-6 w-6 opacity-70" aria-hidden />
+            {visibleItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/15 py-12 text-center">
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-foreground/[0.06] to-transparent text-muted-foreground ring-1 ring-border/60">
+                  <Inbox className="h-5 w-5 opacity-70" aria-hidden />
                 </div>
                 <div className="max-w-sm space-y-1 px-2">
-                  <p className="text-sm font-medium text-foreground">Niks openstaand</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {tab === "open" ? "Nothing open" : "Nothing here yet"}
+                  </p>
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Goed bezig — alles is afgehandeld. Onderaan deze pagina kun je een{" "}
-                    <a
-                      href="#feedback-form"
-                      className="font-medium text-foreground underline-offset-4 hover:underline"
-                    >
-                      nieuw idee
-                    </a>{" "}
-                    insturen.
+                    {tab === "open" ? (
+                      <>
+                        All caught up. Submit a{" "}
+                        <a
+                          href="#feedback-form"
+                          className="font-medium text-foreground underline-offset-4 hover:underline"
+                        >
+                          new request
+                        </a>{" "}
+                        at the bottom of the page.
+                      </>
+                    ) : (
+                      <>Closed requests will show up here.</>
+                    )}
                   </p>
                 </div>
               </div>
             ) : (
-              openItems.map((item, i) => (
+              visibleItems.map((item, i) => (
                 <div
                   key={item.id}
                   className="animate-slide-up"
-                  style={{ animationDelay: `${80 + i * 35}ms`, animationFillMode: "backwards" }}
+                  style={{ animationDelay: `${60 + i * 30}ms`, animationFillMode: "backwards" }}
                 >
                   <FeedbackCard
                     item={item}
@@ -202,51 +264,13 @@ export function FeedbackClient({
         </div>
       </section>
 
-      {/* 3. Resolved — collapsible feel, lower visual weight */}
-      {closedItems.length > 0 && (
-        <section
-          className="animate-slide-up"
-          style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
-        >
-          <div className="overflow-hidden rounded-3xl border border-border/50 bg-muted/[0.25] dark:bg-card/[0.4]">
-            <div className="flex flex-col gap-1 border-b border-border/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-              <div>
-                <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground/90">Resolved</h2>
-                <p className="text-xs text-muted-foreground">Eerder afgehandeld of weggestuurd.</p>
-              </div>
-              <Badge
-                variant="outline"
-                className="w-fit shrink-0 rounded-full px-2.5 tabular-nums text-muted-foreground"
-              >
-                {closedItems.length} total
-              </Badge>
-            </div>
-            <div className="divide-y divide-border/40 p-2 sm:p-3">
-              {closedItems.map((item) => (
-                <div key={item.id} className="p-2 sm:p-2.5">
-                  <FeedbackCard
-                    item={item}
-                    isAdmin={isAdmin}
-                    isOwner={item.userId === currentUserId}
-                    highlightTeamReply={initialUnreadReplyIds.has(item.id)}
-                    onStatusChange={handleStatusChange}
-                    onDelete={handleDelete}
-                    isPending={isPending}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 4. New request — bottom of the page on purpose. After scrolling
+      {/* 3. New request — bottom of the page on purpose. After scrolling
             through what shipped + what is open, the user has the full
             picture; only then ask them what is missing. */}
       <section
         id="feedback-form"
         className="animate-slide-up scroll-mt-6"
-        style={{ animationDelay: "180ms", animationFillMode: "backwards" }}
+        style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
       >
         <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-amber-500/[0.04] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.12)] dark:from-card dark:to-amber-500/[0.06] sm:p-7">
           <div
@@ -259,10 +283,10 @@ export function FeedbackClient({
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground">
-                Iets dat beter kan?
+                Anything we should improve?
               </h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Tip ons aan. Eén regel is genoeg — wij vragen door als het nodig is.
+                Tip us off. One line is enough — we&apos;ll follow up if we need more.
               </p>
             </div>
             {!showForm ? (
@@ -272,7 +296,7 @@ export function FeedbackClient({
                 className="h-10 shrink-0 touch-manipulation gap-2 rounded-xl bg-foreground px-4 text-background shadow-sm transition-all hover:-translate-y-0.5 hover:bg-foreground/90 hover:shadow-md active:scale-[0.98] sm:h-9"
               >
                 <MessageSquarePlus className="h-4 w-4" aria-hidden />
-                Nieuw idee
+                New request
               </Button>
             ) : null}
           </div>
@@ -283,7 +307,7 @@ export function FeedbackClient({
               className="animate-slide-up relative mt-5 space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4 backdrop-blur-md sm:p-5"
             >
               <Input
-                placeholder="Korte titel (bv. ‘zoek op kenteken’)"
+                placeholder="Short title (e.g. 'search by license plate')"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -291,7 +315,7 @@ export function FeedbackClient({
                 className="h-11 touch-manipulation rounded-xl text-base sm:text-sm"
               />
               <Textarea
-                placeholder="Beschrijving (optioneel) — leg uit wat je bedoelt…"
+                placeholder="Description (optional) — explain what you mean…"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
@@ -304,7 +328,7 @@ export function FeedbackClient({
                   className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto"
                   onClick={() => setShowForm(false)}
                 >
-                  Annuleren
+                  Cancel
                 </Button>
                 <Button
                   type="submit"
@@ -312,7 +336,7 @@ export function FeedbackClient({
                   className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto"
                 >
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-                  Versturen
+                  Send
                 </Button>
               </div>
             </form>

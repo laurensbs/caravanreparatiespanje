@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Wrench, X, Send } from "lucide-react";
+import { Wrench, X, Send, Package } from "lucide-react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { createToolRequest } from "@/actions/tool-requests";
+import { createPartRequestFromGarage } from "@/actions/parts";
 import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
 import { uploadVoiceNote } from "@/lib/upload-voice-note";
 
@@ -38,6 +39,11 @@ export function ToolRequestSheet({
   repairOptions: RepairOption[];
 }) {
   const { t } = useLanguage();
+  // Tool = generic workshop ask (impact driver, sealant gun, ladder…).
+  // Part = consumable that has to land on a specific repair (M6 nuts,
+  // window seal, brake disc). The split routes the request to the
+  // right inbox: Equipment tab vs Part requests tab + the repair page.
+  const [kind, setKind] = useState<"tool" | "part">("tool");
   const [description, setDescription] = useState("");
   const [repairJobId, setRepairJobId] = useState<string | null>(null);
   const [voiceClip, setVoiceClip] = useState<VoiceClip | null>(null);
@@ -47,6 +53,7 @@ export function ToolRequestSheet({
   useEffect(() => {
     // Reset on close so the next opener gets a clean slate.
     if (!open) {
+      setKind("tool");
       setDescription("");
       setRepairJobId(null);
       setVoiceClip(null);
@@ -87,32 +94,78 @@ export function ToolRequestSheet({
       return;
     }
 
+    // Parts must land on a specific repair — otherwise the office
+    // can't act on them and they pollute the inbox.
+    if (kind === "part" && !repairJobId) {
+      toast.error(
+        t(
+          "Pick the repair this part is for.",
+          "Elige la reparación para esta pieza.",
+          "Kies voor welke klus deze onderdeel is.",
+        ),
+      );
+      return;
+    }
+
+    // Parts need a typed name — a voice-only "I need something" request
+    // is too vague to add as a part_request line.
+    if (kind === "part" && !desc) {
+      toast.error(
+        t(
+          "Type the part name.",
+          "Escribe el nombre de la pieza.",
+          "Typ de naam van het onderdeel.",
+        ),
+      );
+      return;
+    }
+
     hapticTap();
     startTransition(async () => {
       try {
-        // Voice-only requests still need a description for the inbox; we
-        // fall back to a short marker the office sees as "(voice note)".
-        const finalDesc = desc || t("(voice note)", "(nota de voz)", "(spraakbericht)");
-        const created = await createToolRequest({
-          description: finalDesc,
-          repairJobId,
-        });
-        if (voiceClip) {
-          await uploadVoiceNote({
-            clip: voiceClip,
-            ownerType: "tool_request",
-            ownerId: created.id,
+        if (kind === "tool") {
+          // Voice-only requests still need a description for the inbox; we
+          // fall back to a short marker the office sees as "(voice note)".
+          const finalDesc =
+            desc || t("(voice note)", "(nota de voz)", "(spraakbericht)");
+          const created = await createToolRequest({
+            description: finalDesc,
             repairJobId,
           });
+          if (voiceClip) {
+            await uploadVoiceNote({
+              clip: voiceClip,
+              ownerType: "tool_request",
+              ownerId: created.id,
+              repairJobId,
+            });
+          }
+          hapticSuccess();
+          toast.success(
+            t("Sent to office.", "Enviado a oficina.", "Verstuurd naar kantoor."),
+          );
+        } else {
+          const created = await createPartRequestFromGarage({
+            partName: desc,
+            repairJobId: repairJobId!,
+          });
+          if (voiceClip) {
+            await uploadVoiceNote({
+              clip: voiceClip,
+              ownerType: "tool_request",
+              ownerId: created.id,
+              repairJobId,
+            });
+          }
+          hapticSuccess();
+          toast.success(
+            t(
+              "Added to repair.",
+              "Añadido a la reparación.",
+              "Toegevoegd aan klus.",
+            ),
+          );
         }
-        hapticSuccess();
-        toast.success(
-          t(
-            "Sent to office — they'll bring it.",
-            "Enviado a oficina — lo traen.",
-            "Verstuurd naar kantoor — ze brengen het.",
-          ),
-        );
         onSent?.();
         onClose();
       } catch (err) {
@@ -135,19 +188,37 @@ export function ToolRequestSheet({
       >
         {/* Header */}
         <header className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300">
-            <Wrench className="h-5 w-5" />
+          <span
+            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+              kind === "tool"
+                ? "bg-amber-500/15 text-amber-300"
+                : "bg-sky-500/15 text-sky-300"
+            }`}
+          >
+            {kind === "tool" ? (
+              <Wrench className="h-5 w-5" />
+            ) : (
+              <Package className="h-5 w-5" />
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-bold text-white">
-              {t("Need a tool", "Necesito herramienta", "Gereedschap nodig")}
+              {kind === "tool"
+                ? t("Need a tool", "Necesito herramienta", "Gereedschap nodig")
+                : t("Need a part", "Necesito una pieza", "Onderdeel nodig")}
             </h3>
             <p className="text-xs text-white/50">
-              {t(
-                "The office sees this immediately.",
-                "La oficina lo ve al instante.",
-                "Het kantoor ziet dit meteen.",
-              )}
+              {kind === "tool"
+                ? t(
+                    "The office sees this immediately.",
+                    "La oficina lo ve al instante.",
+                    "Het kantoor ziet dit meteen.",
+                  )
+                : t(
+                    "Goes onto the repair so the office can order it.",
+                    "Va a la reparación para que la oficina la pida.",
+                    "Komt op de klus zodat kantoor het kan bestellen.",
+                  )}
             </p>
           </div>
           <button
@@ -162,17 +233,72 @@ export function ToolRequestSheet({
 
         {/* Body */}
         <div className="flex max-h-[75vh] flex-col gap-3 overflow-y-auto p-5">
+          {/* Type toggle — Tool vs Part. Shown above the input so the
+              worker mentally categorises the request before typing. */}
+          <div
+            role="tablist"
+            aria-label={t("Request type", "Tipo de solicitud", "Type aanvraag")}
+            className="grid grid-cols-2 gap-1 rounded-xl bg-white/[0.04] p-1 ring-1 ring-white/[0.06]"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={kind === "tool"}
+              onClick={() => {
+                hapticTap();
+                setKind("tool");
+              }}
+              className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
+                kind === "tool"
+                  ? "bg-amber-400 text-stone-950 shadow-sm"
+                  : "text-white/70 hover:bg-white/[0.05] hover:text-white"
+              }`}
+            >
+              <Wrench className="h-4 w-4" />
+              {t("Tool", "Herramienta", "Gereedschap")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={kind === "part"}
+              onClick={() => {
+                hapticTap();
+                setKind("part");
+              }}
+              className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
+                kind === "part"
+                  ? "bg-sky-400 text-stone-950 shadow-sm"
+                  : "text-white/70 hover:bg-white/[0.05] hover:text-white"
+              }`}
+            >
+              <Package className="h-4 w-4" />
+              {t("Part", "Pieza", "Onderdeel")}
+            </button>
+          </div>
+
           <textarea
             autoFocus
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder={t(
-              "What do you need? (e.g. 18V impact, M6 nuts, RTV silicone)",
-              "¿Qué necesitas? (p.ej. impacto 18V, tuercas M6, silicona)",
-              "Wat heb je nodig? (bv. slagschroevendraaier, M6 moeren, kit)",
-            )}
-            className="w-full rounded-xl bg-white/[0.06] p-3 text-base text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+            placeholder={
+              kind === "tool"
+                ? t(
+                    "What tool do you need? (e.g. 18V impact, ladder, sealant gun)",
+                    "¿Qué herramienta necesitas? (p.ej. impacto 18V, escalera, pistola)",
+                    "Welk gereedschap heb je nodig? (bv. slagschroevendraaier, ladder)",
+                  )
+                : t(
+                    "Which part? (e.g. M6 nuts, window seal, brake disc)",
+                    "¿Qué pieza? (p.ej. tuercas M6, junta, disco de freno)",
+                    "Welk onderdeel? (bv. M6 moeren, raamrubber, remschijf)",
+                  )
+            }
+            className={`w-full rounded-xl bg-white/[0.06] p-3 text-base text-white placeholder:text-white/30 focus:outline-none focus:ring-2 ${
+              kind === "tool"
+                ? "focus:ring-amber-400/30"
+                : "focus:ring-sky-400/30"
+            }`}
           />
 
           <VoiceRecorder
@@ -182,10 +308,30 @@ export function ToolRequestSheet({
           />
 
           {repairOptions.length > 0 ? (
-            <div className="rounded-xl bg-white/[0.04] p-2 ring-1 ring-white/[0.06]">
+            <div
+              className={`rounded-xl bg-white/[0.04] p-2 ring-1 ${
+                kind === "part" && !repairJobId
+                  ? "ring-sky-400/40"
+                  : "ring-white/[0.06]"
+              }`}
+            >
               <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
-                  {t("Link to repair (optional)", "Vincular reparación (opcional)", "Koppel aan klus (optioneel)")}
+                <p
+                  className={`text-[11px] font-semibold uppercase tracking-wider ${
+                    kind === "part" ? "text-sky-200/80" : "text-white/50"
+                  }`}
+                >
+                  {kind === "part"
+                    ? t(
+                        "Pick the repair (required)",
+                        "Elige la reparación (obligatorio)",
+                        "Kies de klus (verplicht)",
+                      )
+                    : t(
+                        "Link to repair (optional)",
+                        "Vincular reparación (opcional)",
+                        "Koppel aan klus (optioneel)",
+                      )}
                 </p>
                 {repairJobId ? (
                   <button
@@ -264,7 +410,11 @@ export function ToolRequestSheet({
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-amber-400 text-sm font-bold text-stone-950 shadow-md hover:bg-amber-300 active:scale-[0.97] disabled:opacity-50"
+            className={`inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-stone-950 shadow-md active:scale-[0.97] disabled:opacity-50 ${
+              kind === "tool"
+                ? "bg-amber-400 hover:bg-amber-300"
+                : "bg-sky-400 hover:bg-sky-300"
+            }`}
           >
             <Send className="h-4 w-4" />
             {t("Send", "Enviar", "Verstuur")}

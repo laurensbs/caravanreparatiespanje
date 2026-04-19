@@ -4,12 +4,31 @@ import { useState, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { updatePartRequestStatus, createPartRequest } from "@/actions/parts";
+import {
+  updatePartRequestStatus,
+  createPartRequest,
+  markPartRequestChased,
+  unmarkPartRequestChased,
+} from "@/actions/parts";
 import { searchRepairJobsForPicker } from "@/actions/repairs";
-import { Check, Package, Plus, Search, Loader2, X, ArrowRight } from "lucide-react";
+import {
+  Check,
+  Package,
+  Plus,
+  Search,
+  Loader2,
+  X,
+  ArrowRight,
+  Clock,
+  PhoneCall,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  getPartRequestAging,
+  formatAgeShort,
+} from "@/lib/part-request-aging";
 
 const STATUS_DOT: Record<string, string> = {
   requested: "bg-amber-400",
@@ -28,6 +47,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const FILTERS = [
+  { key: "stale", label: "Stale" },
   { key: "pending", label: "Pending" },
   { key: "ordered", label: "Ordered" },
   { key: "done", label: "Received" },
@@ -48,38 +68,101 @@ interface PartRequest {
   jobTitle: string | null;
   jobRef: string | null;
   requestType: string;
+  // Aging fields. `getPartRequests` now returns these; older callers
+  // that hand-construct rows can leave them undefined and the helper
+  // will treat the row as fresh.
+  createdAt?: Date | string | null;
+  expectedDelivery?: Date | string | null;
+  lastChasedAt?: Date | string | null;
 }
 
 export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<Filter>("pending");
   const [pending, startTransition] = useTransition();
   const [showAdd, setShowAdd] = useState(false);
 
-  const partReqs = requests.filter(r => r.requestType !== "equipment");
+  const partReqs = requests.filter((r) => r.requestType !== "equipment");
+
+  // Annotate every row with aging info once so the chip, filter and
+  // sort all read from the same numbers.
+  const decorated = partReqs.map((r) => ({
+    req: r,
+    aging: getPartRequestAging({
+      status: r.status,
+      createdAt: r.createdAt ?? new Date(),
+      expectedDelivery: r.expectedDelivery,
+      lastChasedAt: r.lastChasedAt,
+    }),
+  }));
 
   const counts = {
-    pending: partReqs.filter(r => r.status === "requested").length,
-    ordered: partReqs.filter(r => ["ordered", "shipped"].includes(r.status)).length,
-    done: partReqs.filter(r => r.status === "received").length,
+    stale: decorated.filter((d) => d.aging.needsChase).length,
+    pending: partReqs.filter((r) => r.status === "requested").length,
+    ordered: partReqs.filter((r) => ["ordered", "shipped"].includes(r.status))
+      .length,
+    done: partReqs.filter((r) => r.status === "received").length,
     all: partReqs.length,
   };
 
-  const filtered = partReqs.filter(r => {
-    if (filter === "pending") return r.status === "requested";
-    if (filter === "ordered") return ["ordered", "shipped"].includes(r.status);
-    if (filter === "done") return r.status === "received";
-    return r.status !== "cancelled";
-  });
+  // Default tab: open on Stale if there's anything stale, otherwise
+  // Pending — that way you land on what actually needs your attention.
+  const [filter, setFilter] = useState<Filter>(() =>
+    counts.stale > 0 ? "stale" : "pending",
+  );
 
-  function handleStatusChange(id: string, newStatus: "requested" | "ordered" | "shipped" | "received") {
+  const filtered = decorated
+    .filter(({ req, aging }) => {
+      if (filter === "stale") return aging.needsChase;
+      if (filter === "pending") return req.status === "requested";
+      if (filter === "ordered")
+        return ["ordered", "shipped"].includes(req.status);
+      if (filter === "done") return req.status === "received";
+      return req.status !== "cancelled";
+    })
+    // Worst-offender first inside Stale; oldest-first elsewhere so you
+    // always work the queue from the top.
+    .sort((a, b) => {
+      if (filter === "stale") {
+        if (a.aging.severity !== b.aging.severity) {
+          return a.aging.severity === "danger" ? -1 : 1;
+        }
+        return b.aging.daysOld - a.aging.daysOld;
+      }
+      const aT = new Date(a.req.createdAt ?? 0).getTime();
+      const bT = new Date(b.req.createdAt ?? 0).getTime();
+      return aT - bT;
+    });
+
+  function handleStatusChange(
+    id: string,
+    newStatus: "requested" | "ordered" | "shipped" | "received",
+  ) {
     startTransition(async () => {
       try {
         await updatePartRequestStatus(id, newStatus);
         router.refresh();
-        toast.success(newStatus === "received" ? "Marked as received" : `Status → ${newStatus}`);
+        toast.success(
+          newStatus === "received" ? "Marked as received" : `Status → ${newStatus}`,
+        );
       } catch {
         toast.error("Failed to update status");
+      }
+    });
+  }
+
+  function handleChase(id: string, alreadyChased: boolean) {
+    startTransition(async () => {
+      try {
+        if (alreadyChased) {
+          await unmarkPartRequestChased(id);
+          toast.success("Chase reset");
+        } else {
+          await markPartRequestChased(id);
+          toast.success("Marked as chased — hidden for 24h");
+        }
+        router.refresh();
+      } catch {
+        toast.error("Failed to update");
       }
     });
   }
@@ -124,10 +207,16 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
             >
               {f.label}
               {counts[f.key] > 0 && (
-                <span className={cn(
-                  "ml-1.5 text-[11px] tabular-nums",
-                  filter === f.key ? "text-muted-foreground/70 dark:text-white/40" : "text-muted-foreground/70/60 dark:text-white/20"
-                )}>
+                <span
+                  className={cn(
+                    "ml-1.5 rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums",
+                    f.key === "stale"
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                      : filter === f.key
+                        ? "bg-muted text-muted-foreground"
+                        : "text-muted-foreground/60 dark:text-white/20",
+                  )}
+                >
                   {counts[f.key]}
                 </span>
               )}
@@ -148,29 +237,38 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
           <EmptyState
             icon={Package}
             title={
-              filter === "pending"
-                ? "No open requests"
-                : filter === "ordered"
-                  ? "No open orders"
-                  : filter === "done"
-                    ? "No receipts yet"
-                    : "No requests"
+              filter === "stale"
+                ? "Nothing to chase"
+                : filter === "pending"
+                  ? "No open requests"
+                  : filter === "ordered"
+                    ? "No open orders"
+                    : filter === "done"
+                      ? "No receipts yet"
+                      : "No requests"
             }
             description={
-              filter === "pending"
-                ? "Requests from the workshop will appear here."
-                : "Try a different filter."
+              filter === "stale"
+                ? "All requests are fresh or recently chased."
+                : filter === "pending"
+                  ? "Requests from the workshop will appear here."
+                  : "Try a different filter."
             }
           />
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((req) => (
+          {filtered.map(({ req, aging }) => (
             <div
               key={req.id}
               className={cn(
-                "group rounded-xl border border-border bg-card p-4 transition-all dark:border-white/[0.08] dark:bg-card/[0.02]",
-                pending && "opacity-50"
+                "group rounded-xl border bg-card p-4 transition-all dark:bg-card/[0.02]",
+                aging.severity === "danger"
+                  ? "border-red-200 dark:border-red-500/25"
+                  : aging.severity === "warn"
+                    ? "border-amber-200 dark:border-amber-500/25"
+                    : "border-border dark:border-white/[0.08]",
+                pending && "opacity-50",
               )}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-3">
@@ -209,37 +307,83 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
 
                 {/* Content */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className={cn("font-semibold text-[15px]", req.status === "received" ? "line-through text-muted-foreground/70 dark:text-white/30" : "text-foreground dark:text-white")}>
+                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "text-[15px] font-semibold",
+                        req.status === "received"
+                          ? "text-muted-foreground/70 line-through dark:text-white/30"
+                          : "text-foreground dark:text-white",
+                      )}
+                    >
                       {req.partName ?? "—"}
                     </span>
                     {req.quantity > 1 && (
-                      <span className="text-xs tabular-nums text-muted-foreground/70 dark:text-white/30 font-medium">×{req.quantity}</span>
+                      <span className="text-xs font-medium tabular-nums text-muted-foreground/70 dark:text-white/30">
+                        ×{req.quantity}
+                      </span>
+                    )}
+                    {aging.isOpen && (
+                      <AgingChip aging={aging} />
+                    )}
+                    {aging.chaseCooldownActive && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground"
+                        title="Chased recently — hidden from dashboard for 24h"
+                      >
+                        <PhoneCall className="h-3 w-3" /> chased
+                      </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Link
                       href={`/repairs/${req.repairJobId}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       {req.jobRef || "—"}
                       <ArrowRight className="h-3 w-3" />
                     </Link>
                     {req.jobTitle && (
-                      <span className="max-w-full truncate text-xs text-muted-foreground/70 dark:text-white/25 sm:max-w-[240px]">{req.jobTitle}</span>
+                      <span className="max-w-full truncate text-xs text-muted-foreground/70 dark:text-white/25 sm:max-w-[240px]">
+                        {req.jobTitle}
+                      </span>
                     )}
                   </div>
                   {req.notes && (
-                    <p className="text-xs text-muted-foreground/70 dark:text-white/25 mt-1 leading-relaxed">{req.notes}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground/70 dark:text-white/25">
+                      {req.notes}
+                    </p>
                   )}
                 </div>
 
-                {/* Status pill — desktop */}
-                <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
-                  <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[req.status])} />
-                  <span className="text-xs font-medium text-muted-foreground dark:text-white/40">
-                    {STATUS_LABEL[req.status] ?? req.status}
-                  </span>
+                {/* Right side: status pill + chase button (desktop) */}
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden items-center gap-1.5 sm:flex">
+                    <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[req.status])} />
+                    <span className="text-xs font-medium text-muted-foreground dark:text-white/40">
+                      {STATUS_LABEL[req.status] ?? req.status}
+                    </span>
+                  </div>
+                  {aging.isOpen && (aging.isStale || aging.isOverdue) && (
+                    <button
+                      type="button"
+                      onClick={() => handleChase(req.id, aging.chaseCooldownActive)}
+                      className={cn(
+                        "inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition-colors active:scale-95",
+                        aging.chaseCooldownActive
+                          ? "bg-muted text-muted-foreground hover:bg-muted/70"
+                          : "bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-300",
+                      )}
+                      title={
+                        aging.chaseCooldownActive
+                          ? "Reset chase (will reappear in widget)"
+                          : "Mark as chased — hide from dashboard for 24h"
+                      }
+                    >
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      {aging.chaseCooldownActive ? "Reset" : "Chased"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -248,6 +392,41 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
       )}
       <AddRequestDialog open={showAdd} onClose={() => setShowAdd(false)} requestType="part" />
     </div>
+  );
+}
+
+/* ─── Aging chip ─── */
+
+function AgingChip({
+  aging,
+}: {
+  aging: ReturnType<typeof getPartRequestAging>;
+}) {
+  const tone =
+    aging.severity === "danger"
+      ? "bg-red-500/15 text-red-700 dark:text-red-300"
+      : aging.severity === "warn"
+        ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+        : "bg-muted text-muted-foreground";
+  const label = aging.isOverdue
+    ? "overdue"
+    : formatAgeShort(aging.daysOld, aging.isOpen);
+  if (!label) return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide",
+        tone,
+      )}
+      title={
+        aging.isOverdue
+          ? "Past expected delivery date"
+          : `${aging.daysOld} day(s) since request`
+      }
+    >
+      <Clock className="h-3 w-3" />
+      {label}
+    </span>
   );
 }
 

@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { suppliers, parts, partRequests, repairJobs, partCategories } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
-import { eq, desc, sql, asc, and, ne } from "drizzle-orm";
+import { eq, desc, sql, asc, and, ne, inArray } from "drizzle-orm";
+import { customers, units } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit";
 
@@ -212,6 +213,8 @@ export async function getPartRequests(repairJobId?: string) {
       jobRef: repairJobs.publicCode,
       stockQuantity: parts.stockQuantity,
       requestType: partRequests.requestType,
+      createdAt: partRequests.createdAt,
+      lastChasedAt: partRequests.lastChasedAt,
     })
     .from(partRequests)
     .leftJoin(parts, eq(partRequests.partId, parts.id))
@@ -219,6 +222,164 @@ export async function getPartRequests(repairJobId?: string) {
     .leftJoin(repairJobs, eq(partRequests.repairJobId, repairJobs.id))
     .where(repairJobId ? eq(partRequests.repairJobId, repairJobId) : undefined)
     .orderBy(desc(partRequests.createdAt));
+}
+
+/**
+ * Admin: I just chased the supplier (called/emailed). Hide this row
+ * from the dashboard widget for 24h. Idempotent — safe to spam-click.
+ */
+export async function markPartRequestChased(id: string) {
+  await requireRole("staff");
+  await db
+    .update(partRequests)
+    .set({ lastChasedAt: new Date(), updatedAt: new Date() })
+    .where(eq(partRequests.id, id));
+  try {
+    revalidatePath("/parts");
+    revalidatePath("/dashboard");
+  } catch {
+    // best-effort
+  }
+}
+
+/** Reset the chase cooldown — useful if you marked it by accident. */
+export async function unmarkPartRequestChased(id: string) {
+  await requireRole("staff");
+  await db
+    .update(partRequests)
+    .set({ lastChasedAt: null, updatedAt: new Date() })
+    .where(eq(partRequests.id, id));
+  try {
+    revalidatePath("/parts");
+    revalidatePath("/dashboard");
+  } catch {
+    // best-effort
+  }
+}
+
+/**
+ * Lightweight list used by the dashboard "Parts to chase" widget.
+ * Returns only rows that actually need attention right now: open
+ * status, either stale (>=3d) or past their expected_delivery, AND
+ * not chased in the last 24h. Sorted oldest first so the worst
+ * offender sits at the top.
+ */
+export type PartsToChaseRow = {
+  id: string;
+  partName: string;
+  status: string;
+  quantity: number;
+  createdAt: Date;
+  expectedDelivery: Date | null;
+  lastChasedAt: Date | null;
+  supplierName: string | null;
+  supplierId: string | null;
+  repairJobId: string | null;
+  jobRef: string | null;
+  jobTitle: string | null;
+  customerName: string | null;
+  unitRegistration: string | null;
+};
+
+export async function listPartsToChase(): Promise<PartsToChaseRow[]> {
+  await requireAuth();
+
+  // Pull all open requests; filter via the shared aging helper in JS.
+  // The set is small (open requests at any time is double-digits), so
+  // we trade one extra fetch for shared logic + zero schema-coupling.
+  const rows = await db
+    .select({
+      id: partRequests.id,
+      partName: partRequests.partName,
+      status: partRequests.status,
+      quantity: partRequests.quantity,
+      createdAt: partRequests.createdAt,
+      expectedDelivery: partRequests.expectedDelivery,
+      lastChasedAt: partRequests.lastChasedAt,
+      supplierName: suppliers.name,
+      supplierId: partRequests.supplierId,
+      repairJobId: partRequests.repairJobId,
+      jobRef: repairJobs.publicCode,
+      jobTitle: repairJobs.title,
+    })
+    .from(partRequests)
+    .leftJoin(suppliers, eq(partRequests.supplierId, suppliers.id))
+    .leftJoin(repairJobs, eq(partRequests.repairJobId, repairJobs.id))
+    .where(
+      and(
+        ne(partRequests.requestType, "equipment"),
+        sql`${partRequests.status} IN ('requested', 'ordered', 'shipped')`,
+      ),
+    )
+    .orderBy(asc(partRequests.createdAt));
+
+  // Pull customer + unit per repair in one go, mapping by repair id.
+  const repairIds = Array.from(
+    new Set(rows.map((r) => r.repairJobId).filter((x): x is string => !!x)),
+  );
+
+  let metaByRepair = new Map<
+    string,
+    { customerName: string | null; unitRegistration: string | null }
+  >();
+  if (repairIds.length > 0) {
+    const meta = await db
+      .select({
+        id: repairJobs.id,
+        customerName: customers.name,
+        unitRegistration: units.registration,
+      })
+      .from(repairJobs)
+      .leftJoin(customers, eq(customers.id, repairJobs.customerId))
+      .leftJoin(units, eq(units.id, repairJobs.unitId))
+      .where(inArray(repairJobs.id, repairIds));
+    metaByRepair = new Map(
+      meta.map((r) => [
+        r.id,
+        {
+          customerName: r.customerName,
+          unitRegistration: r.unitRegistration,
+        },
+      ]),
+    );
+  }
+
+  const { getPartRequestAging } = await import("@/lib/part-request-aging");
+  const now = new Date();
+
+  return rows
+    .map((r) => {
+      const aging = getPartRequestAging(
+        {
+          status: r.status,
+          createdAt: r.createdAt,
+          expectedDelivery: r.expectedDelivery,
+          lastChasedAt: r.lastChasedAt,
+        },
+        now,
+      );
+      return { row: r, aging };
+    })
+    .filter(({ aging }) => aging.needsChase)
+    .map(({ row }) => {
+      const meta = row.repairJobId ? metaByRepair.get(row.repairJobId) : null;
+      return {
+        id: row.id,
+        partName: row.partName,
+        status: row.status,
+        quantity: row.quantity,
+        createdAt: row.createdAt,
+        expectedDelivery: row.expectedDelivery,
+        lastChasedAt: row.lastChasedAt,
+        supplierName: row.supplierName,
+        supplierId: row.supplierId,
+        repairJobId: row.repairJobId,
+        jobRef: row.jobRef,
+        jobTitle: row.jobTitle,
+        customerName: meta?.customerName ?? null,
+        unitRegistration: meta?.unitRegistration ?? null,
+      };
+    });
 }
 
 export async function createPartRequest(data: {
@@ -301,6 +462,67 @@ export async function createPartRequest(data: {
   }
 
   return request;
+}
+
+/**
+ * Garage iPad → "I need this part for repair X". Mirrors
+ * createPartRequest but goes through garage-auth (the iPad has no
+ * NextAuth session, only the shared garage_auth cookie). A repair link
+ * is required because a stray part with no job is useless to the
+ * office. Returns the new row id so the caller can attach a voice note.
+ */
+export async function createPartRequestFromGarage(input: {
+  partName: string;
+  repairJobId: string;
+  quantity?: number;
+  notes?: string | null;
+}): Promise<{ id: string }> {
+  await requireAnyAuth();
+  const partName = input.partName.trim();
+  if (!partName) throw new Error("Part name is required");
+  if (!input.repairJobId) throw new Error("Repair job is required for parts");
+
+  const qty = input.quantity ?? 1;
+
+  const [row] = await db
+    .insert(partRequests)
+    .values({
+      repairJobId: input.repairJobId,
+      partName,
+      quantity: qty,
+      status: "requested",
+      notes: input.notes ?? null,
+      requestType: "part",
+    })
+    .returning({ id: partRequests.id });
+
+  // Mirror admin createPartRequest: bump the repair to waiting_parts
+  // when it's in a workable status, so the dashboard correctly shows
+  // it as blocked on parts.
+  try {
+    const [job] = await db
+      .select({ status: repairJobs.status })
+      .from(repairJobs)
+      .where(eq(repairJobs.id, input.repairJobId));
+    if (job && ["new", "todo", "scheduled", "in_progress"].includes(job.status)) {
+      await db
+        .update(repairJobs)
+        .set({ status: "waiting_parts", updatedAt: new Date() })
+        .where(eq(repairJobs.id, input.repairJobId));
+    }
+  } catch {
+    // best-effort
+  }
+
+  try {
+    revalidatePath(`/repairs/${input.repairJobId}`);
+    revalidatePath("/parts");
+    revalidatePath("/dashboard");
+  } catch {
+    // best-effort
+  }
+
+  return { id: row.id };
 }
 
 export async function updatePartRequestStatus(

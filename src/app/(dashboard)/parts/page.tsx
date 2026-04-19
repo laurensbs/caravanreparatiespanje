@@ -1,10 +1,11 @@
 import { getParts, getSuppliers, getPartRequests, getPartCategories } from "@/actions/parts";
 import { getAppSettings } from "@/actions/settings";
+import { listToolRequests } from "@/actions/tool-requests";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PartsClient } from "@/components/parts/parts-client";
 import { SuppliersClient } from "@/components/parts/suppliers-client";
 import { PartRequestsClient } from "@/components/parts/part-requests-client";
-import { EquipmentClient } from "@/components/parts/equipment-client";
+import { EquipmentInboxClient } from "@/components/parts/equipment-inbox-client";
 import { Package, ClipboardList, Wrench, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -14,17 +15,22 @@ import {
 } from "@/components/layout/dashboard-surface";
 
 export default async function PartsPage() {
-  const [parts, suppliers, requests, settings, categories] = await Promise.all([
-    getParts(),
-    getSuppliers(),
-    getPartRequests(),
-    getAppSettings(),
-    getPartCategories(),
-  ]);
+  const [parts, suppliers, requests, settings, categories, toolRequests] =
+    await Promise.all([
+      getParts(),
+      getSuppliers(),
+      getPartRequests(),
+      getAppSettings(),
+      getPartCategories(),
+      // Equipment / tool / "hand needed" asks coming from the garage iPad.
+      // Pull all statuses so the Resolved tab works; the segment count
+      // below uses only the open ones for the badge.
+      listToolRequests("all").catch(() => []),
+    ]);
 
   const defaultMarkup = parseFloat(settings.default_markup_percent ?? "25");
   const partRequestCount = requests.filter((r) => r.requestType !== "equipment").length;
-  const equipmentCount = requests.filter((r) => r.requestType === "equipment").length;
+  const equipmentOpenCount = toolRequests.filter((r) => r.status === "open").length;
   // Low + out of stock combined for the catalog tab badge.
   const lowStockTotal = parts.filter(
     (p) => p.minStockLevel > 0 && p.stockQuantity <= p.minStockLevel,
@@ -45,8 +51,13 @@ export default async function PartsPage() {
                 <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{parts.length}</span> parts
               </span>
               <span>
-                <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{partRequestCount}</span> requests
+                <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{partRequestCount}</span> part requests
               </span>
+              {equipmentOpenCount > 0 ? (
+                <span className="text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums">{equipmentOpenCount}</span> equipment
+                </span>
+              ) : null}
               <span>
                 <span className="tabular-nums text-foreground/90 dark:text-foreground/90">{suppliers.length}</span> suppliers
               </span>
@@ -94,8 +105,15 @@ export default async function PartsPage() {
               <Wrench className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">
                 Equipment
-                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70">
-                  {equipmentCount}
+                <span
+                  className={cn(
+                    "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                    equipmentOpenCount > 0
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+                      : "bg-muted text-muted-foreground dark:bg-card/[0.06] dark:text-muted-foreground/70",
+                  )}
+                >
+                  {equipmentOpenCount}
                 </span>
               </span>
             </TabsTrigger>
@@ -119,7 +137,7 @@ export default async function PartsPage() {
           </TabsContent>
 
           <TabsContent value="equipment" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>
-            <EquipmentClient requests={requests.filter((r) => r.requestType === "equipment")} />
+            <EquipmentInboxClient initialRows={toolRequests} />
           </TabsContent>
 
           <TabsContent value="suppliers" className={cn("mt-5 focus-visible:outline-none", dashboardPanelClass, "p-4 sm:p-6")}>

@@ -12,8 +12,11 @@ export default async function FeedbackPage() {
   if (!session?.user) redirect("/login");
 
   const items = await getFeedback();
-  const open = items.filter((i) => i.status === "open").length;
-  const inProgress = items.filter((i) => i.status === "in_progress").length;
+  const openCount = items.filter((i) => i.status === "open").length;
+  const inProgressCount = items.filter((i) => i.status === "in_progress").length;
+  const resolvedCount = items.filter(
+    (i) => i.status === "done" || i.status === "dismissed",
+  ).length;
 
   return (
     <DashboardPageCanvas>
@@ -24,9 +27,14 @@ export default async function FeedbackPage() {
         metadata={
           <>
             <span className="tabular-nums">{items.length} total</span>
-            {open > 0 ? <span className="text-amber-600 dark:text-amber-400">{open} open</span> : null}
-            {inProgress > 0 ? (
-              <span className="text-foreground/80">{inProgress} in progress</span>
+            {openCount > 0 ? (
+              <span className="text-amber-600 dark:text-amber-400">{openCount} open</span>
+            ) : null}
+            {inProgressCount > 0 ? (
+              <span className="text-foreground/80">{inProgressCount} in progress</span>
+            ) : null}
+            {resolvedCount > 0 ? (
+              <span className="text-muted-foreground">{resolvedCount} resolved</span>
             ) : null}
           </>
         }

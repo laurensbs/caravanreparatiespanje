@@ -2,11 +2,13 @@ import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/
 import { getGarageAttentionItems } from "@/actions/garage-sync";
 import { listToolRequests } from "@/actions/tool-requests";
 import { listWorkshopPresence } from "@/actions/workshop-presence";
+import { listPartsToChase } from "@/actions/parts";
 import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
 import { PipelineSummary } from "@/components/repair-progress";
 import { GarageAttentionWidget } from "@/components/garage-sync-ui";
 import { ToolRequestsWidget } from "@/components/dashboard/tool-requests-widget";
 import { WorkshopPresenceWidget } from "@/components/dashboard/workshop-presence-widget";
+import { PartsToChaseWidget } from "@/components/dashboard/parts-to-chase-widget";
 
 import { getLocations } from "@/actions/locations";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
@@ -31,7 +33,7 @@ export default async function DashboardPage() {
   // The dashboard used to eagerly SELECT every customer, unit, part, and
   // part category only to hand them to the NewRepairDialog. The dialog
   // now lazy-loads those lists on first open, so this page stays lean.
-  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, dashboardSuggestions, garageAttention, toolRequests, workshopPresence] =
+  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, dashboardSuggestions, garageAttention, toolRequests, workshopPresence, partsToChase] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
@@ -42,6 +44,9 @@ export default async function DashboardPage() {
       // env, fall back to an empty list so the dashboard still renders.
       listToolRequests("open").catch(() => []),
       listWorkshopPresence().catch(() => []),
+      // Same defence — listPartsToChase reads `last_chased_at` which only
+      // exists after migration 0029.
+      listPartsToChase().catch(() => []),
     ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -150,6 +155,10 @@ export default async function DashboardPage() {
 
           {/* Workshop tool requests — live inbox from the iPad */}
           <ToolRequestsWidget initialRows={toolRequests} />
+
+          {/* Parts to chase — open part_requests sitting too long
+              or past their expected delivery date */}
+          <PartsToChaseWidget initialRows={partsToChase} />
 
           {/* Garage Needs Attention */}
           <GarageAttentionWidget data={garageAttention} />

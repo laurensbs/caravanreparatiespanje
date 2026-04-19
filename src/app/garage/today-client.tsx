@@ -456,11 +456,15 @@ export function GarageTodayClient({
               setToolSheetOpen(true);
             }}
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-amber-500/15 px-3 text-sm font-semibold text-amber-200 ring-1 ring-amber-400/25 hover:bg-amber-500/25 active:scale-[0.97]"
-            aria-label={t("Need a tool", "Necesito herramienta", "Gereedschap nodig")}
+            aria-label={t(
+              "Need a tool or part",
+              "Necesito herramienta o pieza",
+              "Gereedschap of onderdeel nodig",
+            )}
           >
             <Wrench className="h-4 w-4" />
             <span className="hidden sm:inline">
-              {t("Tool", "Herramienta", "Gereedschap")}
+              {t("Tool / part", "Herramienta / pieza", "Gereedschap / onderdeel")}
             </span>
           </button>
 

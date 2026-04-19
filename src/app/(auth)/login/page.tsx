@@ -265,6 +265,24 @@ export default function LoginPage() {
               onSubmit={handleSubmit}
               className={`space-y-4 ${shake ? "animate-[shake_0.45s_ease-in-out]" : ""}`}
             >
+              {/* Hidden but real username field. Browsers (Safari, Chrome,
+                  iOS Keychain, 1Password) only offer to save credentials
+                  when they can pair a username input with the password
+                  input inside the same <form>. We pin the actual login
+                  identifier here so "remember password" works on every
+                  account, including the worker accounts whose name is
+                  not shown anywhere visible. */}
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                value={selected.email}
+                readOnly
+                aria-hidden
+                tabIndex={-1}
+                className="sr-only"
+              />
+
               <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
                 <div className="relative">
                   <div
@@ -301,6 +319,7 @@ export default function LoginPage() {
                   <Input
                     ref={passwordRef}
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Password"
                     value={password}
@@ -386,6 +405,20 @@ export default function LoginPage() {
               onSubmit={handleSetupSubmit}
               className={`space-y-4 ${shake ? "animate-[shake_0.45s_ease-in-out]" : ""}`}
             >
+              {/* Same hidden username field as the password form so the
+                  browser pairs the new password with this account when
+                  it offers "Save password?". */}
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                value={selected.email}
+                readOnly
+                aria-hidden
+                tabIndex={-1}
+                className="sr-only"
+              />
+
               <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
                 <div className="relative">
                   <div
@@ -425,6 +458,7 @@ export default function LoginPage() {
                   <Input
                     ref={newPasswordRef}
                     id="new-password"
+                    name="new-password"
                     type={showNewPassword ? "text" : "password"}
                     placeholder="New password"
                     value={newPassword}
@@ -459,6 +493,7 @@ export default function LoginPage() {
                 <div className="relative">
                   <Input
                     id="confirm-password"
+                    name="confirm-password"
                     type={showNewPassword ? "text" : "password"}
                     placeholder="Confirm password"
                     value={confirmPassword}

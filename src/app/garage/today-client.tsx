@@ -163,12 +163,6 @@ const STATUS_DOT: Record<string, string> = {
   new: "bg-sky-400",
 };
 
-const PRIORITY_RING: Record<string, string> = {
-  urgent: "ring-rose-400/40",
-  high: "ring-amber-400/30",
-  normal: "ring-white/[0.06]",
-  low: "ring-white/[0.04]",
-};
 
 export function GarageTodayClient({
   repairs: serverRepairs,
@@ -612,8 +606,9 @@ export function GarageTodayClient({
           );
         })()}
 
-        {/* Live ticker */}
-        {(totalActiveTimers > 0 || unreadAdminMessages > 0 || stats.urgentCount > 0) ? (
+        {/* Live ticker — admin-only signals (urgency, etc) intentionally
+            stay on the office dashboard, not here. */}
+        {(totalActiveTimers > 0 || unreadAdminMessages > 0) ? (
           <div className="flex items-center gap-2 overflow-x-auto border-t border-white/[0.04] px-4 py-2 text-xs text-white/60 sm:px-6">
             {totalActiveTimers > 0 ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-300">
@@ -634,12 +629,6 @@ export function GarageTodayClient({
                 <MessageSquare className="h-3 w-3" />
                 {unreadAdminMessages}{" "}
                 {t("from office", "de oficina", "van kantoor")}
-              </span>
-            ) : null}
-            {stats.urgentCount > 0 ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-300">
-                <AlertTriangle className="h-3 w-3" />
-                {stats.urgentCount} {t("urgent", "urgente", "spoed")}
               </span>
             ) : null}
           </div>
@@ -776,7 +765,7 @@ function JobCard({
 
   return (
     <article
-      className={`tap-press group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset hover:bg-white/[0.05] ${PRIORITY_RING[repair.priority] ?? "ring-white/[0.06]"}`}
+      className="tap-press group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset ring-white/[0.06] hover:bg-white/[0.05]"
     >
       {/* ── Header row: status, code, chevron ─────────────────────── */}
       <button
@@ -793,15 +782,9 @@ function JobCard({
             <span className="font-mono text-sm font-bold tracking-wide text-white">
               {repair.unitRegistration ?? repair.publicCode ?? "—"}
             </span>
-            {repair.priority === "urgent" ? (
-              <span className="rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-300">
-                {t("Urgent", "Urgente", "Spoed")}
-              </span>
-            ) : repair.priority === "high" ? (
-              <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                {t("High", "Alta", "Hoog")}
-              </span>
-            ) : null}
+            {/* Priority badges intentionally hidden for the garage view —
+                "urgent / high" is admin-only triage. Workers should treat
+                the queue as one shared list and start whatever is next. */}
             {repair.garageAdminMessage && !repair.garageAdminMessageReadAt ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-300">
                 <MessageSquare className="h-2.5 w-2.5" /> {t("Note", "Nota", "Bericht")}

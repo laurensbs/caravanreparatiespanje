@@ -1,8 +1,10 @@
 import { getDashboardStats, getFollowUpItems, getDashboardSuggestions } from "@/actions/repairs";
 import { getGarageAttentionItems } from "@/actions/garage-sync";
+import { listToolRequests } from "@/actions/tool-requests";
 import { DashboardSuggestions } from "@/components/dashboard/dashboard-suggestions";
 import { PipelineSummary } from "@/components/repair-progress";
 import { GarageAttentionWidget } from "@/components/garage-sync-ui";
+import { ToolRequestsWidget } from "@/components/dashboard/tool-requests-widget";
 
 import { getLocations } from "@/actions/locations";
 import { NewRepairDialog } from "@/components/repairs/new-repair-dialog";
@@ -27,13 +29,16 @@ export default async function DashboardPage() {
   // The dashboard used to eagerly SELECT every customer, unit, part, and
   // part category only to hand them to the NewRepairDialog. The dialog
   // now lazy-loads those lists on first open, so this page stays lean.
-  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, dashboardSuggestions, garageAttention] =
+  const [{ stats, recentJobs, jobsByLocation, pipelineJobs }, followUps, locationsList, dashboardSuggestions, garageAttention, toolRequests] =
     await Promise.all([
       getDashboardStats(),
       getFollowUpItems(),
       getLocations(),
       getDashboardSuggestions(),
       getGarageAttentionItems(),
+      // Best-effort: if the tool_requests table isn't migrated yet on this
+      // env, fall back to an empty list so the dashboard still renders.
+      listToolRequests("open").catch(() => []),
     ]);
 
   const filteredLocations = locationsList.filter(l =>
@@ -137,6 +142,9 @@ export default async function DashboardPage() {
 
         {/* Right Column */}
         <div className="space-y-6">
+          {/* Workshop tool requests — live inbox from the iPad */}
+          <ToolRequestsWidget initialRows={toolRequests} />
+
           {/* Garage Needs Attention */}
           <GarageAttentionWidget data={garageAttention} />
 

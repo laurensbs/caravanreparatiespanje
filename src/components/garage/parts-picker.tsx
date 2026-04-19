@@ -280,7 +280,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
         zIndex: 9999,
       }}
     >
-      <div className="bg-foreground rounded-2xl border border-white/[0.08] shadow-xl overflow-hidden max-h-[50vh] flex flex-col">
+      <div className="bg-stone-900 rounded-2xl border border-white/[0.08] shadow-xl overflow-hidden max-h-[50vh] flex flex-col">
         {isSearching && results.length === 0 ? (
           <div className="flex items-center justify-center gap-3 py-10 text-white/30">
             <Loader2 className="h-5 w-5 animate-spin" />

@@ -1778,3 +1778,98 @@ export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOOL REQUESTS — garage workers ask the office for a tool / part / supply
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// The shared iPad has a "Need a tool?" button on the today screen. Workers
+// type (or speak) a short request — optionally tied to a specific repair job.
+// Admin sees an inbox in the dashboard and ticks them off as they're handled.
+// Kept intentionally simple: one free-text field, three states, no catalog.
+
+export const toolRequestStatusEnum = pgEnum("tool_request_status", [
+  "open",
+  "resolved",
+  "cancelled",
+]);
+
+export const toolRequests = pgTable(
+  "tool_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id").references(() => repairJobs.id, {
+      onDelete: "set null",
+    }),
+    requestedByUserId: uuid("requested_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    requestedByLabel: varchar("requested_by_label", { length: 80 }),
+    description: text("description").notNull(),
+    status: toolRequestStatusEnum("status").notNull().default("open"),
+    resolvedByUserId: uuid("resolved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolutionNote: text("resolution_note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("tool_requests_status_idx").on(table.status, table.createdAt),
+    index("tool_requests_job_idx").on(table.repairJobId),
+  ],
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VOICE NOTES — short audio recordings attached to comments / blockers /
+// findings / tool-requests. Workers can speak instead of typing on a tablet
+// keyboard with gloves on. Admin plays them back inline.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// We use a polymorphic owner_type / owner_id pattern instead of adding an
+// `audio_url` column to four different tables. Audio is stored next to the
+// repair photos in OneDrive and served through a proxy route, mirroring the
+// pattern in src/app/api/photos.
+
+export const voiceNoteOwnerTypeEnum = pgEnum("voice_note_owner_type", [
+  "comment",
+  "blocker",
+  "finding",
+  "tool_request",
+  "repair_message",
+]);
+
+export const voiceNotes = pgTable(
+  "voice_notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id").references(() => repairJobs.id, {
+      onDelete: "cascade",
+    }),
+    ownerType: voiceNoteOwnerTypeEnum("owner_type").notNull(),
+    ownerId: uuid("owner_id").notNull(),
+    durationSeconds: integer("duration_seconds").notNull().default(0),
+    mimeType: varchar("mime_type", { length: 80 }).notNull(),
+    url: text("url").notNull(),
+    onedrivePath: text("onedrive_path"),
+    onedriveFolderUrl: text("onedrive_folder_url"),
+    onedriveItemId: text("onedrive_item_id"),
+    transcript: text("transcript"),
+    uploadedByUserId: uuid("uploaded_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    uploadedByLabel: varchar("uploaded_by_label", { length: 80 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("voice_notes_owner_idx").on(table.ownerType, table.ownerId),
+    index("voice_notes_job_idx").on(table.repairJobId),
+  ],
+);

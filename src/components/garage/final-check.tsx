@@ -51,7 +51,7 @@ export function FinalCheckDialog({ repairJobId, open, onClose, onComplete }: Fin
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && resetAndClose()}>
-      <DialogContent className="max-w-md bg-foreground border-white/[0.08] text-white">
+      <DialogContent className="max-w-md !bg-stone-900 border-white/[0.08] text-white shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg text-white">
             {t("Final Check", "Control Final", "Natest")}

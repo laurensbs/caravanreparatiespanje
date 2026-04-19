@@ -40,6 +40,7 @@ import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { GarageRepairThread } from "@/components/garage/repair-thread";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
+import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   addGarageComment,
@@ -303,6 +304,7 @@ export function GarageRepairDetailClient({
   const [showBlocker, setShowBlocker] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [commentVoice, setCommentVoice] = useState<VoiceClip | null>(null);
   const [suggestTitle, setSuggestTitle] = useState("");
   const [suggestDesc, setSuggestDesc] = useState("");
   const [notDoneReason, setNotDoneReason] = useState("");
@@ -430,11 +432,66 @@ export function GarageRepairDetailClient({
     });
   }
 
+  /**
+   * Upload a voice clip and link it to a freshly-created owner row.
+   * Best-effort: if the audio upload fails the comment / blocker / finding
+   * itself still landed, so we toast a soft warning rather than rolling back.
+   */
+  async function uploadVoiceFor(
+    ownerType: "comment" | "blocker" | "finding",
+    ownerId: string,
+    clip: VoiceClip,
+  ) {
+    const ext = clip.mimeType.includes("mp4")
+      ? "m4a"
+      : clip.mimeType.includes("webm")
+        ? "webm"
+        : "audio";
+    const fd = new FormData();
+    fd.append(
+      "file",
+      new File([clip.blob], `${ownerType}-${ownerId}.${ext}`, {
+        type: clip.mimeType,
+      }),
+    );
+    fd.append("ownerType", ownerType);
+    fd.append("ownerId", ownerId);
+    fd.append("durationSeconds", String(clip.durationSeconds));
+    fd.append("repairJobId", repair.id);
+    try {
+      const res = await fetch("/api/garage/voice-notes/upload", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) {
+        const err = await res.text().catch(() => "");
+        console.warn("voice upload failed", err);
+        toast.warning(
+          t(
+            "Saved without voice — recording failed to upload.",
+            "Guardado sin voz — error al subir.",
+            "Opgeslagen zonder spraak — uploaden mislukt.",
+          ),
+        );
+      }
+    } catch (err) {
+      console.warn("voice upload threw", err);
+    }
+  }
+
   async function handleAddComment() {
-    if (!commentText.trim()) return;
+    const hasText = commentText.trim().length > 0;
+    if (!hasText && !commentVoice) return;
     startTransition(async () => {
-      await addGarageComment(repair.id, commentText);
+      const finalText = hasText
+        ? commentText
+        : t("(voice note)", "(nota de voz)", "(spraakbericht)");
+      const result = await addGarageComment(repair.id, finalText);
+      if (commentVoice && result?.id) {
+        await uploadVoiceFor("comment", result.id, commentVoice);
+      }
       setCommentText("");
+      setCommentVoice(null);
       setShowCommentSheet(false);
       toast.success(t("Comment added", "Comentario añadido", "Opmerking toegevoegd"));
       router.refresh();
@@ -496,11 +553,11 @@ export function GarageRepairDetailClient({
         className="sticky top-0 z-30 border-b border-white/[0.06] bg-stone-950/90 backdrop-blur-xl"
         style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
       >
-        <div className="mx-auto flex max-w-3xl items-center gap-1 px-3 py-2 sm:px-5">
+        <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-2.5 sm:px-5">
           <button
             type="button"
             onClick={() => router.push("/garage")}
-            className="-ml-2 inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm font-medium text-white/60 hover:bg-white/[0.06] active:bg-white/[0.12]"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-white/[0.08] px-3 text-sm font-semibold text-white ring-1 ring-white/[0.08] hover:bg-white/[0.12] active:scale-[0.97]"
           >
             <ChevronLeft className="h-5 w-5" />
             {t("Back", "Atrás", "Terug")}
@@ -510,7 +567,7 @@ export function GarageRepairDetailClient({
           <button
             type="button"
             onClick={handleRefresh}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:bg-white/[0.12]"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 ring-1 ring-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97]"
             aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
           >
             <RefreshCw className="h-4 w-4" />
@@ -889,11 +946,15 @@ export function GarageRepairDetailClient({
             </button>
           )}
 
-          {/* ── Conversation thread ─────────────────────────── */}
+          {/* ── Conversation thread ─────────────────────────────────
+               Collapsed by default — workers asked us to put doing-work
+               sections first. Office messages still surface as a hero
+               card above; this section is the full back-and-forth log.
+             ────────────────────────────────────────────────────────── */}
           <Section
             icon={<MessageSquare className="h-4 w-4" />}
             title={t("Conversation", "Conversación", "Gesprek")}
-            defaultOpen
+            defaultOpen={false}
           >
             <GarageRepairThread repairJobId={repair.id} t={t} lang={deviceLang} />
           </Section>
@@ -1103,19 +1164,24 @@ export function GarageRepairDetailClient({
             placeholder={t("Type your comment…", "Escribe…", "Typ je opmerking…")}
             className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
           />
+          <VoiceRecorder
+            value={commentVoice}
+            onChange={setCommentVoice}
+            t={t}
+          />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setShowCommentSheet(false)}
-              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/70 hover:bg-white/[0.1]"
+              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/80 hover:bg-white/[0.1] active:scale-[0.97]"
             >
               {t("Cancel", "Cancelar", "Annuleer")}
             </button>
             <button
               type="button"
               onClick={handleAddComment}
-              disabled={isPending || !commentText.trim()}
-              className="h-12 flex-1 rounded-xl bg-emerald-500 text-sm font-bold text-white hover:bg-emerald-500/90 disabled:opacity-50"
+              disabled={isPending || (!commentText.trim() && !commentVoice)}
+              className="h-12 flex-1 rounded-xl bg-emerald-500 text-sm font-bold text-white hover:bg-emerald-500/90 active:scale-[0.97] disabled:opacity-50"
             >
               {t("Send", "Enviar", "Verzenden")}
             </button>

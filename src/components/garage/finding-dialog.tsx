@@ -115,7 +115,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-foreground border-white/[0.08] text-white">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto !bg-stone-900 border-white/[0.08] text-white shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg text-white">
             🔍 {t("Add Finding", "Añadir Hallazgo", "Bevinding Toevoegen")}

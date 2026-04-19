@@ -21,6 +21,7 @@ import {
   MessageSquare,
   MapPin,
   X,
+  Wrench,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
@@ -29,6 +30,7 @@ import { startTimer, stopTimer } from "@/actions/time-entries";
 import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
+import { ToolRequestSheet } from "@/components/garage/tool-request-sheet";
 
 /* ─────────────────────────────────────────────────────────────────────────
    Today screen — shared garage iPad
@@ -196,6 +198,9 @@ export function GarageTodayClient({
     repairId: string;
     repairTitle: string;
   } | null>(null);
+
+  /* Tool request sheet — global "need a tool / part / supply" button. */
+  const [toolSheetOpen, setToolSheetOpen] = useState(false);
 
   const [, startActionTransition] = useTransition();
 
@@ -401,6 +406,21 @@ export function GarageTodayClient({
             </h1>
           </div>
 
+          <button
+            type="button"
+            onClick={() => {
+              hapticTap();
+              setToolSheetOpen(true);
+            }}
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-amber-500/15 px-3 text-sm font-semibold text-amber-200 ring-1 ring-amber-400/25 hover:bg-amber-500/25 active:scale-[0.97]"
+            aria-label={t("Need a tool", "Necesito herramienta", "Gereedschap nodig")}
+          >
+            <Wrench className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {t("Tool", "Herramienta", "Gereedschap")}
+            </span>
+          </button>
+
           <LanguageToggle />
 
           <button
@@ -564,6 +584,23 @@ export function GarageTodayClient({
         workers={allUsers}
         title={t("Who's starting?", "¿Quién empieza?", "Wie begint?")}
         subtitle={pickerState?.repairTitle}
+      />
+
+      {/* ── Tool request sheet (global) ───────────────────────────── */}
+      <ToolRequestSheet
+        open={toolSheetOpen}
+        onClose={() => setToolSheetOpen(false)}
+        onSent={() => router.refresh()}
+        repairOptions={repairs.map((r) => ({
+          id: r.id,
+          label:
+            r.unitRegistration ||
+            r.publicCode ||
+            r.title ||
+            r.customerName ||
+            "—",
+          sublabel: r.title ?? r.customerName ?? null,
+        }))}
       />
     </div>
   );

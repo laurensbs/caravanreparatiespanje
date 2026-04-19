@@ -76,7 +76,7 @@ export function BlockerDialog({ open, onClose, repairJobId, onComplete }: Blocke
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
-      <DialogContent className="max-w-md bg-foreground border-white/[0.08] text-white">
+      <DialogContent className="max-w-md !bg-stone-900 border-white/[0.08] text-white shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg text-white">
             🚫 {t("Report Blocker", "Reportar Bloqueo", "Blokkade Melden")}

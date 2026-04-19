@@ -708,21 +708,25 @@ async function autoUpdateRepairStatus(repairJobId: string) {
 export async function addGarageComment(repairJobId: string, summary: string) {
   const ctx = await requireAnyAuth();
 
-  await db.insert(communicationLogs).values({
-    repairJobId,
-    userId: ctx.userId,
-    contactMethod: "in_person",
-    direction: "inbound",
-    contactPerson: ctx.userName ?? "Garage",
-    summary,
-  });
+  // Capture the inserted id so callers can attach a voice note (or any
+  // other side artefact) to this exact comment row.
+  const [inserted] = await db
+    .insert(communicationLogs)
+    .values({
+      repairJobId,
+      userId: ctx.userId,
+      contactMethod: "in_person",
+      direction: "inbound",
+      contactPerson: ctx.userName ?? "Garage",
+      summary,
+    })
+    .returning({ id: communicationLogs.id });
 
   await db
     .update(repairJobs)
     .set({ lastContactAt: new Date(), updatedAt: new Date() })
     .where(eq(repairJobs.id, repairJobId));
 
-  // Notify office
   const [jobInfo] = await db
     .select({ publicCode: repairJobs.publicCode })
     .from(repairJobs)
@@ -736,7 +740,7 @@ export async function addGarageComment(repairJobId: string, summary: string) {
 
   await recordGarageUpdate(repairJobId, "note_added", ctx.userId);
 
-  return { success: true };
+  return { success: true, id: inserted.id };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

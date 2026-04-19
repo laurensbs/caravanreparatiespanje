@@ -7,10 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { addFinding } from "@/actions/garage";
 import type { FindingCategory, FindingSeverity } from "@/types";
 import { FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS } from "@/types";
+import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
+import { uploadVoiceNote } from "@/lib/upload-voice-note";
 
 const CATEGORIES: FindingCategory[] = [
   "tyres", "lighting", "brakes", "windows", "water_damage", "seals",
@@ -87,6 +90,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
   const [description, setDescription] = useState("");
   const [requiresFollowUp, setRequiresFollowUp] = useState(false);
   const [requiresCustomerApproval, setRequiresCustomerApproval] = useState(false);
+  const [voice, setVoice] = useState<VoiceClip | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function reset() {
@@ -95,18 +99,36 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
     setDescription("");
     setRequiresFollowUp(false);
     setRequiresCustomerApproval(false);
+    setVoice(null);
   }
 
   function handleSubmit() {
     if (!category || !description.trim()) return;
     startTransition(async () => {
-      await addFinding(repairJobId, {
+      const finding = await addFinding(repairJobId, {
         category,
         description: description.trim(),
         severity,
         requiresFollowUp,
         requiresCustomerApproval,
       });
+      if (voice && finding?.id) {
+        const ok = await uploadVoiceNote({
+          clip: voice,
+          ownerType: "finding",
+          ownerId: finding.id,
+          repairJobId,
+        });
+        if (!ok) {
+          toast.warning(
+            t(
+              "Saved without voice — recording failed to upload.",
+              "Guardado sin voz — error al subir.",
+              "Opgeslagen zonder spraak — uploaden mislukt.",
+            ),
+          );
+        }
+      }
       reset();
       onComplete();
       onClose();
@@ -161,6 +183,9 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
               )}
               className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
             />
+            <div className="mt-2">
+              <VoiceRecorder value={voice} onChange={setVoice} t={t} />
+            </div>
           </div>
 
           <div>

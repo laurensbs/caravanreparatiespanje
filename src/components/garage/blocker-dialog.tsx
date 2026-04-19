@@ -7,10 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { addBlocker } from "@/actions/garage";
 import type { BlockerReason } from "@/types";
 import { BLOCKER_REASON_LABELS } from "@/types";
+import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
+import { uploadVoiceNote } from "@/lib/upload-voice-note";
 
 const REASONS: BlockerReason[] = [
   "waiting_parts", "waiting_customer", "unknown_issue", "no_time", "missing_info", "other",
@@ -54,20 +57,39 @@ export function BlockerDialog({ open, onClose, repairJobId, onComplete }: Blocke
   const { t } = useLanguage();
   const [reason, setReason] = useState<BlockerReason | null>(null);
   const [description, setDescription] = useState("");
+  const [voice, setVoice] = useState<VoiceClip | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function reset() {
     setReason(null);
     setDescription("");
+    setVoice(null);
   }
 
   function handleSubmit() {
     if (!reason) return;
     startTransition(async () => {
-      await addBlocker(repairJobId, {
+      const blocker = await addBlocker(repairJobId, {
         reason,
         description: description.trim() || undefined,
       });
+      if (voice && blocker?.id) {
+        const ok = await uploadVoiceNote({
+          clip: voice,
+          ownerType: "blocker",
+          ownerId: blocker.id,
+          repairJobId,
+        });
+        if (!ok) {
+          toast.warning(
+            t(
+              "Saved without voice — recording failed to upload.",
+              "Guardado sin voz — error al subir.",
+              "Opgeslagen zonder spraak — uploaden mislukt.",
+            ),
+          );
+        }
+      }
       reset();
       onComplete();
       onClose();
@@ -117,6 +139,8 @@ export function BlockerDialog({ open, onClose, repairJobId, onComplete }: Blocke
             )}
             className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
           />
+
+          <VoiceRecorder value={voice} onChange={setVoice} t={t} />
 
           <div className="flex gap-2">
             <button

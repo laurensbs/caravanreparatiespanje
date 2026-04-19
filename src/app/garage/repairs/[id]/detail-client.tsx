@@ -29,6 +29,7 @@ import {
   Info,
   Flag,
   Sparkles,
+  HandHelping,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { TaskCard } from "@/components/garage/task-card";
@@ -36,11 +37,13 @@ import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
+import { HandNeededSheet } from "@/components/garage/hand-needed-sheet";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { GarageRepairThread } from "@/components/garage/repair-thread";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
+import { uploadVoiceNote } from "@/lib/upload-voice-note";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   addGarageComment,
@@ -302,6 +305,7 @@ export function GarageRepairDetailClient({
   const [showNotDoneSheet, setShowNotDoneSheet] = useState(false);
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
+  const [showHandNeeded, setShowHandNeeded] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [commentVoice, setCommentVoice] = useState<VoiceClip | null>(null);
@@ -432,53 +436,6 @@ export function GarageRepairDetailClient({
     });
   }
 
-  /**
-   * Upload a voice clip and link it to a freshly-created owner row.
-   * Best-effort: if the audio upload fails the comment / blocker / finding
-   * itself still landed, so we toast a soft warning rather than rolling back.
-   */
-  async function uploadVoiceFor(
-    ownerType: "comment" | "blocker" | "finding",
-    ownerId: string,
-    clip: VoiceClip,
-  ) {
-    const ext = clip.mimeType.includes("mp4")
-      ? "m4a"
-      : clip.mimeType.includes("webm")
-        ? "webm"
-        : "audio";
-    const fd = new FormData();
-    fd.append(
-      "file",
-      new File([clip.blob], `${ownerType}-${ownerId}.${ext}`, {
-        type: clip.mimeType,
-      }),
-    );
-    fd.append("ownerType", ownerType);
-    fd.append("ownerId", ownerId);
-    fd.append("durationSeconds", String(clip.durationSeconds));
-    fd.append("repairJobId", repair.id);
-    try {
-      const res = await fetch("/api/garage/voice-notes/upload", {
-        method: "POST",
-        body: fd,
-      });
-      if (!res.ok) {
-        const err = await res.text().catch(() => "");
-        console.warn("voice upload failed", err);
-        toast.warning(
-          t(
-            "Saved without voice — recording failed to upload.",
-            "Guardado sin voz — error al subir.",
-            "Opgeslagen zonder spraak — uploaden mislukt.",
-          ),
-        );
-      }
-    } catch (err) {
-      console.warn("voice upload threw", err);
-    }
-  }
-
   async function handleAddComment() {
     const hasText = commentText.trim().length > 0;
     if (!hasText && !commentVoice) return;
@@ -488,7 +445,21 @@ export function GarageRepairDetailClient({
         : t("(voice note)", "(nota de voz)", "(spraakbericht)");
       const result = await addGarageComment(repair.id, finalText);
       if (commentVoice && result?.id) {
-        await uploadVoiceFor("comment", result.id, commentVoice);
+        const ok = await uploadVoiceNote({
+          clip: commentVoice,
+          ownerType: "comment",
+          ownerId: result.id,
+          repairJobId: repair.id,
+        });
+        if (!ok) {
+          toast.warning(
+            t(
+              "Saved without voice — recording failed to upload.",
+              "Guardado sin voz — error al subir.",
+              "Opgeslagen zonder spraak — uploaden mislukt.",
+            ),
+          );
+        }
       }
       setCommentText("");
       setCommentVoice(null);
@@ -1093,6 +1064,15 @@ export function GarageRepairDetailClient({
             </button>
             <button
               type="button"
+              onClick={() => setShowHandNeeded(true)}
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 active:scale-[0.97]"
+              aria-label={t("Hand needed", "Necesito ayuda", "Hulp nodig")}
+              title={t("Hand needed", "Necesito ayuda", "Hulp nodig")}
+            >
+              <HandHelping className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
               onClick={() => setShowBlocker(true)}
               className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 active:scale-[0.97]"
               aria-label={t("Block", "Bloquear", "Blokkeer")}
@@ -1141,6 +1121,14 @@ export function GarageRepairDetailClient({
           onComplete={handleRefresh}
         />
       ) : null}
+
+      <HandNeededSheet
+        open={showHandNeeded}
+        onClose={() => setShowHandNeeded(false)}
+        onSent={handleRefresh}
+        repairJobId={repair.id}
+        repairLabel={repair.title ?? repair.publicCode ?? undefined}
+      />
 
       {showBlocker ? (
         <BlockerDialog

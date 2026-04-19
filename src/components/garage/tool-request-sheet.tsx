@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/garage/language-toggle";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import { createToolRequest } from "@/actions/tool-requests";
 import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
+import { uploadVoiceNote } from "@/lib/upload-voice-note";
 
 /* ─────────────────────────────────────────────────────────────────────
    "Need a tool / part / supply" sheet
@@ -97,33 +98,12 @@ export function ToolRequestSheet({
           repairJobId,
         });
         if (voiceClip) {
-          const fd = new FormData();
-          // MediaRecorder Blobs need a filename for FormData on some Safari
-          // versions; pick a simple one with the right extension.
-          const ext = voiceClip.mimeType.includes("mp4")
-            ? "m4a"
-            : voiceClip.mimeType.includes("webm")
-              ? "webm"
-              : "audio";
-          fd.append(
-            "file",
-            new File([voiceClip.blob], `tool-${created.id}.${ext}`, {
-              type: voiceClip.mimeType,
-            }),
-          );
-          fd.append("ownerType", "tool_request");
-          fd.append("ownerId", created.id);
-          fd.append("durationSeconds", String(voiceClip.durationSeconds));
-          if (repairJobId) fd.append("repairJobId", repairJobId);
-          const res = await fetch("/api/garage/voice-notes/upload", {
-            method: "POST",
-            body: fd,
+          await uploadVoiceNote({
+            clip: voiceClip,
+            ownerType: "tool_request",
+            ownerId: created.id,
+            repairJobId,
           });
-          if (!res.ok) {
-            // Don't block the request; the text-only part already landed.
-            const err = await res.text().catch(() => "");
-            console.warn("voice note upload failed", err);
-          }
         }
         hapticSuccess();
         toast.success(

@@ -3,13 +3,16 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Wrench, Check, X, Play, Pause, Loader2, RefreshCw } from "lucide-react";
+import { Wrench, Check, X, Loader2, RefreshCw } from "lucide-react";
 import {
   listToolRequests,
   resolveToolRequest,
   cancelToolRequest,
   type ToolRequestRow,
 } from "@/actions/tool-requests";
+import { VoicePlayer } from "@/components/voice-player";
+
+export { VoicePlayer };
 
 /**
  * Live inbox widget for "garage needs a tool" requests. Shown on the
@@ -192,61 +195,3 @@ export function ToolRequestsWidget({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Inline voice playback control
-   ─────────────────────────────────────────────────────────────────── */
-
-function fmtSec(s: number): string {
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${String(r).padStart(2, "0")}`;
-}
-
-export function VoicePlayer({
-  url,
-  durationSeconds,
-}: {
-  url: string;
-  durationSeconds: number;
-}) {
-  const [playing, setPlaying] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    const el = new Audio(url);
-    el.preload = "metadata";
-    el.onended = () => setPlaying(false);
-    el.onpause = () => setPlaying(false);
-    el.onplay = () => setPlaying(true);
-    setAudio(el);
-    return () => {
-      el.pause();
-      el.src = "";
-    };
-  }, [url]);
-
-  function toggle() {
-    if (!audio) return;
-    if (playing) {
-      audio.pause();
-    } else {
-      audio.play().catch(() => setPlaying(false));
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      className="inline-flex h-8 items-center gap-2 rounded-lg bg-muted px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted/80 active:scale-95"
-    >
-      {playing ? (
-        <Pause className="h-3 w-3 fill-current" />
-      ) : (
-        <Play className="ml-0.5 h-3 w-3 fill-current" />
-      )}
-      <span className="font-mono tabular-nums">{fmtSec(durationSeconds)}</span>
-      <span className="text-muted-foreground">voice</span>
-    </button>
-  );
-}

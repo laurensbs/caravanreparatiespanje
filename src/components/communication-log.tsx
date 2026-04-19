@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { addCommunicationLog } from "@/actions/communications";
 import { format } from "date-fns";
+import { VoicePlayer } from "@/components/voice-player";
 
 const METHOD_ICONS: Record<string, React.ReactNode> = {
   phone: <Phone className="h-3.5 w-3.5" />,
@@ -64,6 +65,11 @@ interface Props {
   repairJobId: string;
   logs: CommunicationLog[];
   customerName?: string;
+  /** Voice notes attached to garage comments, keyed by log id. */
+  voiceNotesByOwner?: Record<
+    string,
+    Array<{ id: string; durationSeconds: number; url: string }>
+  >;
 }
 
 function toLocalDatetime(d: Date) {
@@ -71,7 +77,7 @@ function toLocalDatetime(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props) {
+export function CommunicationLogPanel({ repairJobId, logs, customerName, voiceNotesByOwner = {} }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -262,6 +268,13 @@ export function CommunicationLogPanel({ repairJobId, logs, customerName }: Props
                   )}
                 </div>
                 <p className="text-muted-foreground">{log.summary}</p>
+                {voiceNotesByOwner[log.id]?.length ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {voiceNotesByOwner[log.id].map((vn) => (
+                      <VoicePlayer key={vn.id} url={vn.url} durationSeconds={vn.durationSeconds} size="sm" />
+                    ))}
+                  </div>
+                ) : null}
                 {log.outcome && (
                   <p className="text-xs text-primary mt-1">
                     Outcome: {log.outcome}

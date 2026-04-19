@@ -25,6 +25,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { SmartDate } from "@/components/ui/smart-date";
 import { CommunicationLogPanel } from "@/components/communication-log";
+import { VoicePlayer } from "@/components/voice-player";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
 import {
@@ -174,6 +175,8 @@ interface RepairDetailProps {
   activeTimers?: any[];
   syncState?: any;
   garageActivity?: any[];
+  /** Voice notes attached to comments / blockers / findings, keyed by owner id. */
+  voiceNotesByOwner?: Record<string, Array<{ id: string; ownerType: string; ownerId: string; durationSeconds: number; url: string; uploadedByLabel: string | null; createdAt: Date | string }>>;
   /** Manager+ — show “link existing Holded document” in Financial */
   canLinkHoldedDocuments?: boolean;
 }
@@ -271,7 +274,7 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
   );
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [], canLinkHoldedDocuments = false }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [], voiceNotesByOwner = {}, canLinkHoldedDocuments = false }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -1412,6 +1415,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       {b.description && (
                         <p className="text-sm text-red-600/70 dark:text-red-400/70 mt-0.5">{b.description}</p>
                       )}
+                      {voiceNotesByOwner[b.id]?.length ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {voiceNotesByOwner[b.id].map((vn) => (
+                            <VoicePlayer key={vn.id} url={vn.url} durationSeconds={vn.durationSeconds} size="sm" />
+                          ))}
+                        </div>
+                      ) : null}
                       <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/70 mt-1">
                         {b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}
                       </p>
@@ -1470,6 +1480,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-1">{f.description}</p>
+                        {voiceNotesByOwner[f.id]?.length ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {voiceNotesByOwner[f.id].map((vn) => (
+                              <VoicePlayer key={vn.id} url={vn.url} durationSeconds={vn.durationSeconds} size="sm" />
+                            ))}
+                          </div>
+                        ) : null}
                         <p className="text-[11px] text-muted-foreground/70 dark:text-muted-foreground mt-1">
                           {f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}
                         </p>
@@ -2075,6 +2092,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   repairJobId={job.id}
                   logs={communicationLogs}
                   customerName={job.customer?.name}
+                  voiceNotesByOwner={voiceNotesByOwner}
                 />
               </div>
           </div>
@@ -2478,12 +2496,14 @@ function TimelineCommunicationCard({
   communicationLogs,
   customerName,
   communicationRef,
+  voiceNotesByOwner = {},
 }: {
   events: any[];
   repairJobId: string;
   communicationLogs: any[];
   customerName?: string;
   communicationRef: React.RefObject<HTMLDivElement | null>;
+  voiceNotesByOwner?: Record<string, Array<{ id: string; durationSeconds: number; url: string }>>;
 }) {
   const [tab, setTab] = useState<"timeline" | "comms">("comms");
   return (
@@ -2530,6 +2550,7 @@ function TimelineCommunicationCard({
             repairJobId={repairJobId}
             logs={communicationLogs}
             customerName={customerName}
+            voiceNotesByOwner={voiceNotesByOwner}
           />
         ) : (
           <div className="space-y-0">

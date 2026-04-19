@@ -191,6 +191,33 @@ export function GarageTodayClient({
   const [tab, setTab] = useState<FilterTab>("active");
   const [search, setSearch] = useState("");
 
+  /* "My day" filter — when set, only show repairs where this worker is
+     active right now (lopende timer) or assigned (in r.workers). The
+     selection survives reloads via localStorage so a worker can pick
+     once at the start of their shift on the shared iPad. */
+  const [mineUserId, setMineUserId] = useState<string | null>(null);
+  const [showMinePicker, setShowMinePicker] = useState(false);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("garage:mine-user-id");
+      if (v) setMineUserId(v);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      if (mineUserId) {
+        window.localStorage.setItem("garage:mine-user-id", mineUserId);
+      } else {
+        window.localStorage.removeItem("garage:mine-user-id");
+      }
+    } catch {}
+  }, [mineUserId]);
+  const mineUser = useMemo(
+    () => allUsers.find((u) => u.id === mineUserId) ?? null,
+    [allUsers, mineUserId],
+  );
+  const mineDisplayName = mineUser?.name ?? null;
+
   /* Worker picker — opened with a "purpose" callback so any action
      that needs an actor can route through one component. */
   const [pickerState, setPickerState] = useState<{
@@ -238,8 +265,24 @@ export function GarageTodayClient({
   /* ── Visible repairs ─────────────────────────────────────────────── */
   const visibleRepairs = useMemo(() => {
     const q = search.trim().toLowerCase();
+    // For the "My day" filter we need both: (a) does this worker have
+    // an active timer here right now, and (b) is the worker recorded as
+    // a contributor on the job. Either is enough — we want to be lenient
+    // so picking a recently-paused job still surfaces it.
+    const mineActiveSet = new Set<string>();
+    if (mineUserId) {
+      for (const tm of liveTimers) {
+        if (tm.userId === mineUserId) mineActiveSet.add(tm.repairJobId);
+      }
+    }
     return repairs.filter((r) => {
       if (classify(r) !== tab) return false;
+      if (mineUserId) {
+        const inWorkers = mineDisplayName
+          ? r.workers.includes(mineDisplayName)
+          : false;
+        if (!mineActiveSet.has(r.id) && !inWorkers) return false;
+      }
       if (!q) return true;
       const hay = [
         r.publicCode,
@@ -256,7 +299,7 @@ export function GarageTodayClient({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [repairs, tab, search]);
+  }, [repairs, tab, search, mineUserId, mineDisplayName, liveTimers]);
 
   const totalActiveTimers = liveTimers.length;
   const unreadAdminMessages = repairs.filter(
@@ -462,6 +505,33 @@ export function GarageTodayClient({
               </button>
             ) : null}
           </label>
+          {mineUserId ? (
+            <button
+              type="button"
+              onClick={() => {
+                hapticTap();
+                setMineUserId(null);
+              }}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-400/15 px-3 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25 active:scale-[0.97]"
+              title={t("Show all repairs", "Mostrar todas", "Toon alle klussen")}
+            >
+              <span className="truncate max-w-[8rem]">
+                {mineDisplayName ?? t("Me", "Yo", "Mij")}
+              </span>
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                hapticTap();
+                setShowMinePicker(true);
+              }}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-semibold text-white/70 ring-1 ring-white/[0.05] hover:bg-white/[0.1] active:scale-[0.97]"
+            >
+              {t("My day", "Mi día", "Mijn dag")}
+            </button>
+          )}
         </div>
 
         {/* Tab bar */}
@@ -584,6 +654,31 @@ export function GarageTodayClient({
         workers={allUsers}
         title={t("Who's starting?", "¿Quién empieza?", "Wie begint?")}
         subtitle={pickerState?.repairTitle}
+      />
+
+      {/* ── "My day" worker picker ────────────────────────────────── */}
+      <WorkerPicker
+        open={showMinePicker}
+        onClose={() => setShowMinePicker(false)}
+        onPick={(worker) => {
+          setMineUserId(worker.id);
+          setShowMinePicker(false);
+          hapticSuccess();
+          toast.success(
+            t(
+              `Showing ${worker.name}'s repairs`,
+              `Mostrando reparaciones de ${worker.name}`,
+              `Klussen van ${worker.name}`,
+            ),
+          );
+        }}
+        workers={allUsers}
+        title={t("Whose day?", "¿Día de quién?", "Wiens dag?")}
+        subtitle={t(
+          "Filter to your repairs only",
+          "Filtra a tus reparaciones",
+          "Toon alleen jouw klussen",
+        )}
       />
 
       {/* ── Tool request sheet (global) ───────────────────────────── */}

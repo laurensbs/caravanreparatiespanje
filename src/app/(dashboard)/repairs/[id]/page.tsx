@@ -15,6 +15,7 @@ import { auth } from "@/lib/auth";
 import { hasMinRole } from "@/lib/auth-utils";
 import type { UserRole } from "@/types";
 import { RepairDetail } from "@/components/repairs/repair-detail";
+import { listVoiceNotesForRepair } from "@/actions/voice-notes";
 import type { Metadata } from "next";
 
 interface Props {
@@ -56,6 +57,11 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getRepairSyncState(id),
     getGarageActivity(id, 10),
   ]);
+
+  // Voice notes attached to this job's comments / blockers / findings.
+  // Errors swallowed so the page still renders if the table is missing
+  // (e.g. before the 0028 migration runs in a fresh environment).
+  const voiceNotesByOwner = await listVoiceNotesForRepair(id).catch(() => ({} as Record<string, never[]>));
   if (!job) notFound();
 
   // Mark garage updates as read when admin opens the page
@@ -96,6 +102,7 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       activeTimers={activeTimers}
       syncState={syncState}
       garageActivity={garageActivity}
+      voiceNotesByOwner={voiceNotesByOwner}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

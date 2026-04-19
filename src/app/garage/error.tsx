@@ -10,10 +10,10 @@ export default function GarageError({
   reset: () => void;
 }) {
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.error("[garage error]", error);
-    }
+    // Always log so the digest is visible in the browser console even
+    // in production — that's the value we look up in Vercel logs.
+    // eslint-disable-next-line no-console
+    console.error("[garage error]", { digest: error.digest, message: error.message }, error);
   }, [error]);
 
   return (

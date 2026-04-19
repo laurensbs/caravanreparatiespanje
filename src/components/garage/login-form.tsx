@@ -6,6 +6,7 @@ import { garageLogin } from "@/actions/garage-auth";
 import Image from "next/image";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { Delete } from "lucide-react";
+import { hapticKey, hapticError, hapticSuccess, primeHaptics } from "@/lib/haptic";
 
 const PIN_LENGTH = 4;
 
@@ -23,13 +24,12 @@ export function GarageLoginForm() {
       startTransition(async () => {
         const result = await garageLogin(pinValue);
         if (result.success) {
+          hapticSuccess();
           router.refresh();
         } else {
+          hapticError();
           setError(t("Incorrect PIN", "PIN incorrecto", "Onjuiste pincode"));
           setShake(true);
-          if (typeof navigator !== "undefined" && navigator.vibrate) {
-            navigator.vibrate([12, 80, 12, 80, 24]);
-          }
           setTimeout(() => {
             setShake(false);
             setDigits([]);
@@ -42,6 +42,8 @@ export function GarageLoginForm() {
 
   function handleDigit(d: string) {
     if (isPending || digits.length >= PIN_LENGTH) return;
+    primeHaptics();
+    hapticKey();
     const next = [...digits, d];
     setDigits(next);
     setError("");
@@ -52,6 +54,7 @@ export function GarageLoginForm() {
 
   function handleDelete() {
     if (isPending) return;
+    hapticKey();
     setDigits((prev) => prev.slice(0, -1));
     setError("");
   }
@@ -63,7 +66,7 @@ export function GarageLoginForm() {
   ];
 
   const padBtn =
-    "relative flex aspect-square items-center justify-center rounded-full bg-white/[0.08] text-2xl font-medium text-white transition-all duration-150 hover:bg-white/[0.12] active:scale-95 active:bg-white/[0.2] disabled:opacity-40 sm:text-[1.75rem]";
+    "relative flex aspect-square items-center justify-center rounded-full bg-white/[0.08] text-2xl font-medium text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-transform duration-100 ease-out hover:bg-white/[0.12] active:scale-[0.88] active:bg-white/[0.22] disabled:opacity-40 sm:text-[1.75rem] touch-manipulation";
 
   return (
     <div

@@ -25,7 +25,9 @@ import {
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { useGaragePoll } from "@/lib/use-garage-poll";
-import { hapticTap, hapticSuccess } from "@/lib/haptic";
+import { hapticTap, hapticSuccess, primeHaptics } from "@/lib/haptic";
+import { usePullToRefresh } from "@/lib/use-pull-to-refresh";
+import { PullToRefreshIndicator } from "@/components/garage/pull-to-refresh-indicator";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
@@ -203,6 +205,27 @@ export function GarageTodayClient({
       if (v) setMineUserId(v);
     } catch {}
   }, []);
+
+  // Unlock the AudioContext on the first user gesture so haptic clicks are
+  // audible right from tap one (iOS Safari requirement).
+  useEffect(() => {
+    const onFirst = () => {
+      primeHaptics();
+      window.removeEventListener("pointerdown", onFirst);
+    };
+    window.addEventListener("pointerdown", onFirst, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirst);
+  }, []);
+
+  // Subtle "elevation" of the sticky header once the user starts scrolling.
+  // Mirrors iOS large-title → compact-title behaviour.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   useEffect(() => {
     try {
       if (mineUserId) {
@@ -306,6 +329,28 @@ export function GarageTodayClient({
     (r) => r.garageAdminMessage && !r.garageAdminMessageReadAt,
   ).length;
 
+  // How many repairs would be visible if the "My day" filter is active for the
+  // currently selected user. Used to show a count next to their name in the
+  // header chip so workers immediately see their workload.
+  const mineCount = useMemo(() => {
+    if (!mineUserId) return 0;
+    const activeForMe = new Set(
+      liveTimers.filter((t) => t.userId === mineUserId).map((t) => t.repairJobId),
+    );
+    return repairs.filter((r) => {
+      if (activeForMe.has(r.id)) return true;
+      if (mineDisplayName && r.workers.includes(mineDisplayName)) return true;
+      return false;
+    }).length;
+  }, [mineUserId, mineDisplayName, repairs, liveTimers]);
+
+  // First letter of the active "my day" user — used as a tiny avatar circle
+  // so workers immediately recognise whose filter is active.
+  const mineInitial = (mineDisplayName ?? "")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+
   /* ── Refresh ─────────────────────────────────────────────────────── */
   async function handleRefresh() {
     if (refreshing) return;
@@ -320,6 +365,14 @@ export function GarageTodayClient({
       setRefreshing(false);
     }
   }
+
+  // Native-feeling pull-to-refresh on touch devices. Reuses the same
+  // refresh path as the header button so both feel identical.
+  const ptr = usePullToRefresh(async () => {
+    hapticSuccess();
+    router.refresh();
+    await new Promise((r) => setTimeout(r, 600));
+  });
 
   /* ── Actions ─────────────────────────────────────────────────────── */
   async function handleStartTimer(repair: RepairItem, worker: WorkerOption) {
@@ -434,9 +487,18 @@ export function GarageTodayClient({
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-stone-950 text-white">
+      <PullToRefreshIndicator
+        pull={ptr.pull}
+        armed={ptr.armed}
+        refreshing={ptr.refreshing}
+      />
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-30 border-b border-white/[0.06] bg-stone-950/90 backdrop-blur"
+        className={`sticky top-0 z-30 border-b bg-stone-950/90 backdrop-blur transition-[box-shadow,background-color] duration-200 ${
+          scrolled
+            ? "border-white/[0.08] bg-stone-950/95 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]"
+            : "border-white/[0.06]"
+        }`}
         style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
       >
         <div className="flex items-center gap-3 px-4 pt-4 pb-2 sm:px-6">
@@ -516,13 +578,21 @@ export function GarageTodayClient({
                 hapticTap();
                 setMineUserId(null);
               }}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-400/15 px-3 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25 active:scale-[0.97]"
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-400/15 pl-1.5 pr-2.5 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25 active:scale-[0.97]"
               title={t("Show all repairs", "Mostrar todas", "Toon alle klussen")}
             >
-              <span className="truncate max-w-[8rem]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/30 text-[13px] font-bold text-emerald-50">
+                {mineInitial || "•"}
+              </span>
+              <span className="truncate max-w-[7rem]">
                 {mineDisplayName ?? t("Me", "Yo", "Mij")}
               </span>
-              <X className="h-3.5 w-3.5" />
+              {mineCount > 0 ? (
+                <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-emerald-300/90 px-1.5 text-[11px] font-bold text-emerald-950">
+                  {mineCount}
+                </span>
+              ) : null}
+              <X className="h-3.5 w-3.5 opacity-70" />
             </button>
           ) : (
             <button
@@ -538,40 +608,52 @@ export function GarageTodayClient({
           )}
         </div>
 
-        {/* Tab bar */}
-        <div className="flex items-stretch gap-1 px-2 pb-2 sm:px-4">
-          {(
-            [
-              { id: "active" as const, label: t("Active", "Activos", "Actief"), count: counts.active },
-              { id: "waiting" as const, label: t("Waiting", "Esperando", "Wachtend"), count: counts.waiting },
-              { id: "check" as const, label: t("Check", "Revisión", "Check"), count: counts.check },
-              { id: "done" as const, label: t("Done", "Hecho", "Klaar"), count: counts.done },
-            ]
-          ).map((it) => (
-            <button
-              key={it.id}
-              type="button"
-              onClick={() => {
-                hapticTap();
-                setTab(it.id);
-              }}
-              className={`flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-semibold transition-all ${
-                tab === it.id
-                  ? "bg-white text-stone-950"
-                  : "bg-white/[0.04] text-white/60 hover:bg-white/[0.08] active:bg-white/[0.12]"
-              }`}
-            >
-              <span>{it.label}</span>
-              <span
-                className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                  tab === it.id ? "bg-stone-950/15 text-stone-950" : "bg-white/[0.08] text-white/70"
-                }`}
-              >
-                {it.count}
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* Tab bar — sliding pill, like iOS segmented control */}
+        {(() => {
+          const tabs = [
+            { id: "active" as const, label: t("Active", "Activos", "Actief"), count: counts.active },
+            { id: "waiting" as const, label: t("Waiting", "Esperando", "Wachtend"), count: counts.waiting },
+            { id: "check" as const, label: t("Check", "Revisión", "Check"), count: counts.check },
+            { id: "done" as const, label: t("Done", "Hecho", "Klaar"), count: counts.done },
+          ];
+          const activeIdx = tabs.findIndex((it) => it.id === tab);
+          return (
+            <div className="px-2 pb-2 sm:px-4">
+              <div className="relative flex items-stretch gap-1 rounded-xl bg-white/[0.04] p-1">
+                <div
+                  aria-hidden
+                  className="absolute inset-y-1 rounded-lg bg-white shadow-[0_1px_3px_rgba(0,0,0,0.25)] transition-all duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
+                  style={{
+                    width: `calc((100% - 0.5rem) / ${tabs.length})`,
+                    transform: `translateX(calc(${activeIdx} * (100% + 0.25rem)))`,
+                  }}
+                />
+                {tabs.map((it) => (
+                  <button
+                    key={it.id}
+                    type="button"
+                    onClick={() => {
+                      hapticTap();
+                      setTab(it.id);
+                    }}
+                    className={`relative z-[1] flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors duration-200 ${
+                      tab === it.id ? "text-stone-950" : "text-white/60 active:text-white/80"
+                    }`}
+                  >
+                    <span>{it.label}</span>
+                    <span
+                      className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold transition-colors duration-200 ${
+                        tab === it.id ? "bg-stone-950/15 text-stone-950" : "bg-white/[0.08] text-white/70"
+                      }`}
+                    >
+                      {it.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Live ticker */}
         {(totalActiveTimers > 0 || unreadAdminMessages > 0 || stats.urgentCount > 0) ? (
@@ -621,7 +703,10 @@ export function GarageTodayClient({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div
+            key={`${tab}-${mineUserId ?? "all"}`}
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]"
+          >
             {visibleRepairs.map((r) => (
               <JobCard
                 key={r.id}
@@ -749,7 +834,7 @@ function JobCard({
 
   return (
     <article
-      className={`group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset transition-all hover:bg-white/[0.05] ${PRIORITY_RING[repair.priority] ?? "ring-white/[0.06]"}`}
+      className={`tap-press group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset hover:bg-white/[0.05] ${PRIORITY_RING[repair.priority] ?? "ring-white/[0.06]"}`}
     >
       {/* ── Header row: status, code, chevron ─────────────────────── */}
       <button

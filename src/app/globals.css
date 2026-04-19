@@ -384,6 +384,19 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Springy press for tappable cards (used by JobCard etc.) */
+.tap-press {
+  transition: transform 120ms cubic-bezier(.32,.72,0,1), box-shadow 120ms;
+}
+.tap-press:active {
+  transform: scale(0.985);
+}
+
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }

@@ -626,23 +626,61 @@ export async function bulkUpdateRepairJobs(data: unknown) {
 
 export async function getRepairStatusCounts() {
   await requireAuth();
-  const rows = await db
-    .select({ status: repairJobs.status, count: count() })
-    .from(repairJobs)
-    .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
-    .groupBy(repairJobs.status);
-  const urgentRow = await db
-    .select({ count: count() })
-    .from(repairJobs)
-    .where(and(
-      isNull(repairJobs.archivedAt),
-      isNull(repairJobs.deletedAt),
-      sql`${repairJobs.priority} = 'urgent'`,
-      sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived')`,
-    ));
-  const map: Record<string, number> = {};
-  for (const r of rows) map[r.status] = Number(r.count);
-  return { byStatus: map, urgent: Number(urgentRow[0]?.count ?? 0) };
+
+  // Eén breed query dat alles in één scan ophaalt: per-status, urgent en
+  // de date-buckets (today/week/overdue/unscheduled) die de chip-rij op
+  // /repairs gebruikt. Eén round-trip i.p.v. 5 losse SELECTs scheelt
+  // merkbaar bij elke pagina-laad.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setDate(endOfToday.getDate() + 1);
+  const endOfWeek = new Date(startOfToday);
+  endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+  const NOT_FINAL = sql`${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived', 'rejected')`;
+
+  const [statusRows, [aggregates]] = await Promise.all([
+    db
+      .select({ status: repairJobs.status, count: count() })
+      .from(repairJobs)
+      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
+      .groupBy(repairJobs.status),
+    db
+      .select({
+        urgent: count(
+          sql`CASE WHEN ${repairJobs.priority} = 'urgent' AND ${repairJobs.status} NOT IN ('completed', 'invoiced', 'archived') THEN 1 END`
+        ),
+        today: count(
+          sql`CASE WHEN ${repairJobs.dueDate} >= ${startOfToday} AND ${repairJobs.dueDate} < ${endOfToday} THEN 1 END`
+        ),
+        week: count(
+          sql`CASE WHEN ${repairJobs.dueDate} >= ${startOfToday} AND ${repairJobs.dueDate} <= ${endOfWeek} THEN 1 END`
+        ),
+        overdue: count(
+          sql`CASE WHEN ${repairJobs.dueDate} IS NOT NULL AND ${repairJobs.dueDate} < ${startOfToday} AND ${NOT_FINAL} THEN 1 END`
+        ),
+        unscheduled: count(
+          sql`CASE WHEN ${repairJobs.dueDate} IS NULL THEN 1 END`
+        ),
+      })
+      .from(repairJobs)
+      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt))),
+  ]);
+
+  const byStatus: Record<string, number> = {};
+  for (const r of statusRows) byStatus[r.status] = Number(r.count);
+
+  return {
+    byStatus,
+    urgent: Number(aggregates?.urgent ?? 0),
+    byDate: {
+      today: Number(aggregates?.today ?? 0),
+      week: Number(aggregates?.week ?? 0),
+      overdue: Number(aggregates?.overdue ?? 0),
+      unscheduled: Number(aggregates?.unscheduled ?? 0),
+    },
+  };
 }
 
 export async function getDashboardStats() {

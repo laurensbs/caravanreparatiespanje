@@ -8,6 +8,24 @@ import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/gar
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Server Actions are POST requests. If anything inside them — including
+ * the implicit re-render that revalidatePath kicks off — throws, the
+ * client receives an opaque 500 with only a digest. Wrap the revalidate
+ * calls so a transient render glitch in /garage cannot turn a successful
+ * mutation into a broken POST. The mutation itself has already been
+ * committed; the worst-case fallback is that the UI refreshes a few
+ * seconds later via the existing polling.
+ */
+function safeRevalidate(path: string) {
+  try {
+    revalidatePath(path);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`[time-entries] revalidatePath(${path}) failed:`, err);
+  }
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Round raw minutes to nearest quarter-hour (ceiling, min 15) */
@@ -64,9 +82,9 @@ export async function startTimer(repairJobId: string, forUserId?: string) {
     })
     .returning({ id: timeEntries.id });
 
-  revalidatePath(`/garage/repairs/${repairJobId}`);
-  revalidatePath(`/repairs/${repairJobId}`);
-  revalidatePath("/garage");
+  safeRevalidate(`/garage/repairs/${repairJobId}`);
+  safeRevalidate(`/repairs/${repairJobId}`);
+  safeRevalidate("/garage");
   return { id: entry.id };
 }
 
@@ -123,9 +141,9 @@ export async function stopTimer(repairJobId: string, forUserId?: string) {
     await stopTimerById(active.id);
   }
 
-  revalidatePath(`/garage/repairs/${repairJobId}`);
-  revalidatePath(`/repairs/${repairJobId}`);
-  revalidatePath("/garage");
+  safeRevalidate(`/garage/repairs/${repairJobId}`);
+  safeRevalidate(`/repairs/${repairJobId}`);
+  safeRevalidate("/garage");
   return { success: true };
 }
 

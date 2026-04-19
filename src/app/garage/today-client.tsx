@@ -135,6 +135,22 @@ function elapsedMinutesSince(start: Date | string): number {
   return Math.max(0, Math.round((Date.now() - t) / 60000));
 }
 
+/**
+ * Live HH:MM:SS string from a start timestamp. Used in the running-timer
+ * strip so workers see seconds tick up — that's what makes a timer feel
+ * "alive" on a shared iPad. Resolves once per second via the surrounding
+ * `now` state.
+ */
+function fmtLiveClock(start: Date | string, now: Date): string {
+  const startMs = typeof start === "string" ? new Date(start).getTime() : start.getTime();
+  const totalSec = Math.max(0, Math.floor((now.getTime() - startMs) / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
 const STATUS_DOT: Record<string, string> = {
   in_progress: "bg-emerald-400",
   ready_for_check: "bg-amber-400",
@@ -254,9 +270,12 @@ export function GarageTodayClient({
 
   const [, startActionTransition] = useTransition();
 
-  /* Tick a 1-minute heartbeat for elapsed-time badges. */
+  /* 1-second heartbeat for the live HH:MM:SS clocks on running timers.
+     Cheap (one setState per second) and only triggers re-renders that
+     read `now`. Date/greeting derivations only change on the minute, so
+     they're stable across these ticks. */
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60000);
+    const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -378,18 +397,46 @@ export function GarageTodayClient({
   async function handleStartTimer(repair: RepairItem, worker: WorkerOption) {
     hapticTap();
     const actorLang = (worker.preferredLanguage ?? "en") as Language;
+
+    // Did this worker already have an active timer on a *different*
+    // repair? The backend auto-stops it, but we want the worker to know
+    // that's what happened (otherwise they'd think two timers ran in
+    // parallel for them, which can't happen — only across people).
+    const previousElsewhere = liveTimers.find(
+      (tm) => tm.userId === worker.id && tm.repairJobId !== repair.id,
+    );
+
     startActionTransition(async () => {
       try {
         await startTimer(repair.id, worker.id);
         hapticSuccess();
-        toast.success(
-          tFor(
-            actorLang,
-            `Timer started — ${worker.name}`,
-            `Temporizador iniciado — ${worker.name}`,
-            `Timer gestart — ${worker.name}`,
-          ),
-        );
+        if (previousElsewhere) {
+          toast.success(
+            tFor(
+              actorLang,
+              `Switched to this repair — ${worker.name}`,
+              `Cambiado a esta reparación — ${worker.name}`,
+              `Overgestapt naar deze klus — ${worker.name}`,
+            ),
+            {
+              description: tFor(
+                actorLang,
+                "Previous timer was paused automatically.",
+                "El temporizador anterior se pausó automáticamente.",
+                "Vorige timer is automatisch gepauzeerd.",
+              ),
+            },
+          );
+        } else {
+          toast.success(
+            tFor(
+              actorLang,
+              `Timer started — ${worker.name}`,
+              `Temporizador iniciado — ${worker.name}`,
+              `Timer gestart — ${worker.name}`,
+            ),
+          );
+        }
         router.refresh();
       } catch (err) {
         const msg = (err as Error)?.message ?? "Could not start timer";
@@ -823,6 +870,16 @@ function JobCard({
       : null;
   const partsPending = repair.parts.pending;
 
+  /* Live total minutes for this repair = recorded (already-rounded
+     finished entries) + sum of currently-running timers. This number is
+     what workers actually want to see on the overview: "this repair has
+     burned X minutes so far, and it's still ticking". */
+  const liveOngoingMinutes = timers.reduce(
+    (acc, tm) => acc + elapsedMinutesSince(tm.startedAt),
+    0,
+  );
+  const liveTotalMinutes = repair.totalMinutes + liveOngoingMinutes;
+
   // Title for the next-task pill
   const nextTaskTitle = repair.nextTask
     ? deviceLang === "es" && repair.nextTask.titleEs
@@ -904,27 +961,56 @@ function JobCard({
             <AlertTriangle className="h-3 w-3" /> {totalProblems}
           </span>
         ) : null}
-        {repair.totalMinutes > 0 ? (
+        {liveTotalMinutes > 0 && !someoneIsWorking ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2 py-1 text-white/60">
-            {fmtDuration(repair.totalMinutes, deviceLang)}
+            {fmtDuration(liveTotalMinutes, deviceLang)}
           </span>
         ) : null}
       </div>
 
       {/* ── Running timers strip (if any) ─────────────────────────── */}
       {someoneIsWorking ? (
-        <div className="flex flex-col gap-1.5 rounded-xl bg-emerald-500/[0.08] p-2.5 ring-1 ring-emerald-500/20">
-          {timers.map((tm) => {
-            const min = elapsedMinutesSince(tm.startedAt);
-            return (
+        <div className="flex flex-col gap-2 rounded-xl bg-emerald-500/[0.10] p-3 ring-1 ring-emerald-500/25">
+          {/* Big live total — the number workers care about most. */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="relative inline-flex h-2 w-2">
+                <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-emerald-400/70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300/90">
+                {timers.length === 1
+                  ? t("Running", "En curso", "Loopt")
+                  : `${timers.length} ${t("working", "trabajando", "bezig")}`}
+              </span>
+            </div>
+            <span className="font-mono text-lg font-bold tabular-nums text-emerald-50">
+              {fmtLiveClock(
+                /* Show the longest-running timer as the headline clock so
+                   it always grows monotonically; the per-person breakdown
+                   below shows individual times. */
+                new Date(
+                  timers.reduce((earliest, tm) => {
+                    const tmMs =
+                      typeof tm.startedAt === "string"
+                        ? new Date(tm.startedAt).getTime()
+                        : tm.startedAt.getTime();
+                    return tmMs < earliest ? tmMs : earliest;
+                  }, Date.now()),
+                ),
+                now,
+              )}
+            </span>
+          </div>
+
+          {/* Per-person breakdown with individual pause */}
+          <div className="flex flex-col gap-1.5">
+            {timers.map((tm) => (
               <div key={tm.id} className="flex items-center gap-2">
-                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-400">
-                  <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-emerald-400/60" />
-                </span>
                 <span className="min-w-0 flex-1 truncate text-sm text-emerald-100">
                   <span className="font-medium">{tm.userName ?? "—"}</span>
-                  <span className="ml-1.5 text-emerald-300/70">
-                    {fmtDuration(min, deviceLang)}
+                  <span className="ml-1.5 font-mono text-xs tabular-nums text-emerald-300/80">
+                    {fmtLiveClock(tm.startedAt, now)}
                   </span>
                 </span>
                 <button
@@ -934,13 +1020,29 @@ function JobCard({
                     onStopTimer(tm);
                   }}
                   className="inline-flex h-9 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-xs font-medium text-white hover:bg-white/15 active:bg-white/20"
+                  aria-label={t(
+                    `Pause ${tm.userName ?? "timer"}`,
+                    `Pausar ${tm.userName ?? "temporizador"}`,
+                    `Pauzeer ${tm.userName ?? "timer"}`,
+                  )}
                 >
                   <Pause className="h-3.5 w-3.5" />
                   {t("Pause", "Pausa", "Pauze")}
                 </button>
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* Total time so far for this repair (recorded + live). Smaller
+              line at the bottom so the live clock above stays the hero. */}
+          {repair.totalMinutes > 0 ? (
+            <p className="text-[11px] text-emerald-300/70">
+              {t("Total so far", "Total hasta ahora", "Totaal tot nu")}:{" "}
+              <span className="font-mono tabular-nums text-emerald-100">
+                {fmtDuration(liveTotalMinutes, deviceLang)}
+              </span>
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -953,11 +1055,15 @@ function JobCard({
               e.stopPropagation();
               onStartTimer();
             }}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
+            className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold shadow-sm active:scale-[0.98] ${
+              someoneIsWorking
+                ? "bg-emerald-400/15 text-emerald-100 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25"
+                : "bg-white text-stone-950 hover:bg-white/95"
+            }`}
           >
             <Play className="h-4 w-4 fill-current" />
             {someoneIsWorking
-              ? t("Join in", "Unirme", "Aansluiten")
+              ? t("Add worker", "Añadir persona", "Werker erbij")
               : t("Start timer", "Iniciar timer", "Start timer")}
           </button>
         ) : null}

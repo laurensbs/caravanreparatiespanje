@@ -8,6 +8,7 @@ import {
   useOptimistic,
 } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { toast } from "sonner";
 import {
   RefreshCw,
@@ -639,8 +640,20 @@ export function GarageTodayClient({
       <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
         {visibleRepairs.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl bg-white/[0.03] py-20 text-center">
-            <div className="text-5xl">🪿</div>
-            <p className="mt-3 text-base text-white/50">
+            {/* Logo as the empty-state mark — calmer than an emoji and
+                consistent with the login screen branding. The dark
+                container + invert keeps it legible on the stone-950 bg. */}
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+              <Image
+                src="/favicon.png"
+                alt="Reparatie Panel"
+                width={40}
+                height={40}
+                className="h-9 w-9 object-contain opacity-80 invert"
+                priority={false}
+              />
+            </div>
+            <p className="mt-4 text-base text-white/50">
               {search
                 ? t("No repairs match your search.", "Sin resultados.", "Geen resultaten.")
                 : tab === "done"

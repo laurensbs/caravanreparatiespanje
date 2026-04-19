@@ -1,79 +1,136 @@
 "use client";
 
-import { useState, useCallback, createContext, useContext } from "react";
-import { usePathname } from "next/navigation";
-import { garageLangManualSessionKey } from "@/lib/garage-lang-by-worker";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  createContext,
+  useContext,
+} from "react";
 
 export type Language = "en" | "es" | "nl";
 
+/**
+ * Two-layer language model for the shared garage iPad:
+ *
+ * 1. **deviceLang** — the UI default for the iPad (or phone). Set once
+ *    via the flag toggle in the header. Persisted in localStorage.
+ *    Defaults to English so the device feels neutral until configured.
+ *
+ * 2. **actor language** — the personal preference of whoever just
+ *    performed an action (start timer, complete task, …). Looked up
+ *    from the `users.preferred_language` column server-side and
+ *    passed to the helper `tFor(actorLang, en, es, nl)` for *that
+ *    one toast or confirmation*. The UI itself stays in deviceLang
+ *    so the iPad is predictable for the next person walking up.
+ */
 type LanguageContextValue = {
-  lang: Language;
-  /** Sets language + localStorage (e.g. worker-based auto on a repair) */
-  setLang: (l: Language) => void;
-  /** User picked via flag control — blocks auto language for this repair in the session */
-  setGarageLangByUser: (l: Language, repairJobId: string | null) => void;
+  deviceLang: Language;
+  setDeviceLang: (l: Language) => void;
+  /** Translate using the device language. */
   t: (en: string, es?: string | null, nl?: string | null) => string;
+  /** Translate using a specific actor's preferred language. */
+  tFor: (
+    actorLang: Language | null | undefined,
+    en: string,
+    es?: string | null,
+    nl?: string | null,
+  ) => string;
+
+  // ── Backward-compatible aliases for the old call sites that still
+  // live in today-client.tsx, detail-client.tsx, login-form.tsx and
+  // me-sheet.tsx. These are removed in step 2/4 of the overhaul once
+  // those screens are rewritten. Until then, treat them as the device
+  // language so behaviour is identical to before.
+  /** @deprecated use `deviceLang` */
+  lang: Language;
+  /** @deprecated use `setDeviceLang` */
+  setLang: (l: Language) => void;
+  /** @deprecated repairJobId is ignored — flag now sets the iPad-wide language. */
+  setGarageLangByUser: (l: Language, repairJobId: string | null) => void;
 };
 
+const STORAGE_KEY = "garage-device-lang";
+const DEFAULT_LANG: Language = "en";
+
 const LanguageContext = createContext<LanguageContextValue>({
-  lang: "en",
+  deviceLang: DEFAULT_LANG,
+  setDeviceLang: () => {},
+  t: (en) => en,
+  tFor: (_a, en) => en,
+  lang: DEFAULT_LANG,
   setLang: () => {},
   setGarageLangByUser: () => {},
-  t: (en) => en,
 });
 
 export function useLanguage() {
   return useContext(LanguageContext);
 }
 
-function readRepairJobIdFromPathname(pathname: string | null): string | null {
-  if (!pathname) return null;
-  const m = pathname.match(/^\/garage\/repairs\/([^/]+)/);
-  return m ? m[1] : null;
+function pick(lang: Language, en: string, es?: string | null, nl?: string | null): string {
+  if (lang === "es" && es) return es;
+  if (lang === "nl" && nl) return nl;
+  return en;
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Language>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("garage-lang") as Language) ?? "en";
-    }
-    return "en";
+  // Read synchronously on the client so the first paint is in the
+  // right language. Falls back to the default on the server.
+  const [deviceLang, setLangState] = useState<Language>(() => {
+    if (typeof window === "undefined") return DEFAULT_LANG;
+    const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
+    if (stored === "en" || stored === "es" || stored === "nl") return stored;
+    return DEFAULT_LANG;
   });
 
-  const applyLang = useCallback((l: Language) => {
-    setLangState(l);
-    localStorage.setItem("garage-lang", l);
+  // One-time migration: previously the key was "garage-lang" with
+  // a different lifecycle. Carry it over so we don't reset everyone.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const legacy = localStorage.getItem("garage-lang") as Language | null;
+    if (legacy && !localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, legacy);
+      setLangState(legacy);
+    }
   }, []);
 
-  const handleSetLang = useCallback(
-    (l: Language) => {
-      applyLang(l);
-    },
-    [applyLang]
+  const setDeviceLang = useCallback((l: Language) => {
+    setLangState(l);
+    try {
+      localStorage.setItem(STORAGE_KEY, l);
+    } catch {
+      // ignore quota / private mode
+    }
+  }, []);
+
+  const t = useCallback(
+    (en: string, es?: string | null, nl?: string | null) =>
+      pick(deviceLang, en, es, nl),
+    [deviceLang],
   );
 
-  const setGarageLangByUser = useCallback(
-    (l: Language, repairJobId: string | null) => {
-      applyLang(l);
-      if (repairJobId) {
-        try {
-          sessionStorage.setItem(garageLangManualSessionKey(repairJobId), "1");
-        } catch {
-          // ignore quota / private mode
-        }
-      }
-    },
-    [applyLang]
+  const tFor = useCallback(
+    (
+      actorLang: Language | null | undefined,
+      en: string,
+      es?: string | null,
+      nl?: string | null,
+    ) => pick(actorLang ?? deviceLang, en, es, nl),
+    [deviceLang],
   );
-
-  function t(en: string, es?: string | null, nl?: string | null) {
-    if (lang === "es" && es) return es;
-    if (lang === "nl" && nl) return nl;
-    return en;
-  }
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang: handleSetLang, setGarageLangByUser, t }}>
+    <LanguageContext.Provider
+      value={{
+        deviceLang,
+        setDeviceLang,
+        t,
+        tFor,
+        lang: deviceLang,
+        setLang: setDeviceLang,
+        setGarageLangByUser: (l) => setDeviceLang(l),
+      }}
+    >
       {children}
     </LanguageContext.Provider>
   );
@@ -85,29 +142,30 @@ const LANG_OPTIONS: { code: Language; flag: string; label: string }[] = [
   { code: "nl", flag: "🇳🇱", label: "NL" },
 ];
 
-/** Compact inline toggle – shows current flag, taps to cycle */
+/**
+ * Compact flag toggle — taps cycle through EN → ES → NL.
+ * Sets the *device* language for everyone using this iPad.
+ */
 export function LanguageToggle() {
-  const pathname = usePathname();
-  const repairJobId = readRepairJobIdFromPathname(pathname);
-  const { lang, setGarageLangByUser } = useLanguage();
-  const next = LANG_OPTIONS[(LANG_OPTIONS.findIndex((l) => l.code === lang) + 1) % LANG_OPTIONS.length];
+  const { deviceLang, setDeviceLang } = useLanguage();
+  const next =
+    LANG_OPTIONS[(LANG_OPTIONS.findIndex((l) => l.code === deviceLang) + 1) % LANG_OPTIONS.length];
 
   return (
     <button
       type="button"
-      onClick={() => setGarageLangByUser(next.code, repairJobId)}
+      onClick={() => setDeviceLang(next.code)}
       className="flex h-11 w-11 items-center justify-center rounded-xl text-xl hover:bg-white/[0.06] active:bg-white/[0.1] transition-all duration-150"
+      aria-label={`Switch language (currently ${deviceLang.toUpperCase()})`}
     >
-      {LANG_OPTIONS.find((l) => l.code === lang)?.flag}
+      {LANG_OPTIONS.find((l) => l.code === deviceLang)?.flag}
     </button>
   );
 }
 
-/** Big segmented bar – all 3 flags visible, direct tap */
+/** Big segmented bar with all three flags visible. */
 export function LanguageBar() {
-  const pathname = usePathname();
-  const repairJobId = readRepairJobIdFromPathname(pathname);
-  const { lang, setGarageLangByUser } = useLanguage();
+  const { deviceLang, setDeviceLang } = useLanguage();
 
   return (
     <div className="flex items-center gap-1 rounded-xl bg-white/[0.06] p-1">
@@ -115,9 +173,9 @@ export function LanguageBar() {
         <button
           key={opt.code}
           type="button"
-          onClick={() => setGarageLangByUser(opt.code, repairJobId)}
+          onClick={() => setDeviceLang(opt.code)}
           className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-sm font-semibold transition-all duration-150 ${
-            lang === opt.code
+            deviceLang === opt.code
               ? "bg-white/20 text-white shadow-sm"
               : "text-white/40 active:bg-white/[0.1]"
           }`}

@@ -1250,10 +1250,34 @@ export async function updateWorkerNote(workerId: string, note: string) {
 export async function getActiveUsers() {
   await requireAnyAuth();
   return db
-    .select({ id: users.id, name: users.name, role: users.role })
+    .select({
+      id: users.id,
+      name: users.name,
+      role: users.role,
+      preferredLanguage: users.preferredLanguage,
+    })
     .from(users)
     .where(eq(users.active, true))
     .orderBy(users.name);
+}
+
+/**
+ * Updates a technician's UI/notification language preference. Used by
+ * the small "your language" picker in the garage when a worker prefers
+ * a different language than the auto-seeded one. Anyone holding the
+ * shared garage PIN can update any technician's language — this is a
+ * shared workshop tool, not a per-user account.
+ */
+export async function setUserPreferredLanguage(
+  userId: string,
+  language: "en" | "es" | "nl",
+) {
+  await requireAnyAuth();
+  await db
+    .update(users)
+    .set({ preferredLanguage: language, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+  return { ok: true as const };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

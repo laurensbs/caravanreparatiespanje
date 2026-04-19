@@ -28,6 +28,13 @@ export const userRoleEnum = pgEnum("user_role", [
   "viewer",
 ]);
 
+// UI/notification language preference per user. The garage iPad has its
+// own device-wide default (set by an admin/owner), but each technician
+// can have a personal preference: when *they* perform an action, toasts
+// and confirmations switch to their language briefly. Stored on the
+// user row so it follows them across devices.
+export const userLanguageEnum = pgEnum("user_language", ["en", "es", "nl"]);
+
 export const repairStatusEnum = pgEnum("repair_status", [
   "new",
   "todo",
@@ -230,6 +237,9 @@ export const users = pgTable(
     // wachtwoord aanmaken. Wordt door de admin/migratie gezet voor nieuwe
     // accounts en automatisch op false gezet zodra het wachtwoord is gekozen.
     mustChangePassword: boolean("must_change_password").notNull().default(false),
+    // Personal UI/notification language. Defaults to English; admin can
+    // override per technician (e.g. Mark/Rolf → "nl", Spanish team → "es").
+    preferredLanguage: userLanguageEnum("preferred_language").notNull().default("en"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

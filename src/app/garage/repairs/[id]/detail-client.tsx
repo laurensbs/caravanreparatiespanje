@@ -1,50 +1,79 @@
 "use client";
 
+import {
+  useState,
+  useEffect,
+  useTransition,
+  useMemo,
+  useCallback,
+} from "react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useTransition, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useLanguage, LanguageToggle } from "@/components/garage/language-toggle";
+import { toast } from "sonner";
+import {
+  ChevronLeft,
+  RefreshCw,
+  ChevronDown,
+  Play,
+  Pause,
+  AlertTriangle,
+  MessageSquare,
+  Plus,
+  CheckCircle2,
+  XCircle,
+  OctagonX,
+  MapPin,
+  Phone,
+  Camera,
+  Package,
+  ClipboardList,
+  Info,
+  Flag,
+  Sparkles,
+} from "lucide-react";
+import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
-import { addGarageComment, suggestExtraTask, garageMarkDone, garageMarkNotDone, toggleMyWorker, resolveBlocker as resolveBlockerAction } from "@/actions/garage";
-import { markAdminMessageRead } from "@/actions/garage-sync";
 import { GaragePartsPicker } from "@/components/garage/parts-picker";
 import { GarageRepairThread } from "@/components/garage/repair-thread";
-import { stopTimer } from "@/actions/time-entries";
-import { useGaragePoll } from "@/lib/use-garage-poll";
-import { getSelectableGarageUsers } from "@/lib/garage-workers";
-import { inferGarageLanguageFromWorkerName, garageLangManualSessionKey } from "@/lib/garage-lang-by-worker";
-import { useGarageMe } from "@/lib/garage-me";
-import { hapticTap, hapticSuccess } from "@/lib/haptic";
-import { STATUS_LABELS, PRIORITY_LABELS, FINDING_CATEGORY_LABELS, FINDING_CATEGORY_EMOJI, FINDING_SEVERITY_LABELS, BLOCKER_REASON_LABELS } from "@/types";
-import type { RepairTask, RepairPhoto, RepairStatus, Priority, FindingCategory, FindingSeverity, BlockerReason } from "@/types";
-import { toast } from "sonner";
+import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
-  ChevronLeft,
-  RefreshCw,
-  MapPin,
-  ClipboardList,
-  Camera,
-  Package,
-  Info,
-  AlertTriangle,
-  MessageSquare,
-  Flag,
-  OctagonX,
-  Plus,
-  CheckCircle2,
-  XCircle,
-  Square,
-  X,
-} from "lucide-react";
+  addGarageComment,
+  suggestExtraTask,
+  garageMarkDone,
+  garageMarkNotDone,
+  resolveBlocker as resolveBlockerAction,
+} from "@/actions/garage";
+import { markAdminMessageRead } from "@/actions/garage-sync";
+import { startTimer, stopTimer } from "@/actions/time-entries";
+import { useGaragePoll } from "@/lib/use-garage-poll";
+import { hapticTap, hapticSuccess } from "@/lib/haptic";
+import {
+  STATUS_LABELS,
+  PRIORITY_LABELS,
+  FINDING_CATEGORY_LABELS,
+  FINDING_CATEGORY_EMOJI,
+  FINDING_SEVERITY_LABELS,
+  BLOCKER_REASON_LABELS,
+} from "@/types";
+import type {
+  RepairTask,
+  RepairPhoto,
+  RepairStatus,
+  Priority,
+  FindingCategory,
+  FindingSeverity,
+  BlockerReason,
+} from "@/types";
+import { canStartGarageTimerOnRepair } from "@/lib/garage-timer-policy";
 
-/* ─── Types ─── */
+/* ───────────────────────────────────────────────────────────────────── */
+/* Types                                                                  */
+/* ───────────────────────────────────────────────────────────────────── */
 
 type RepairDetail = {
   id: string;
@@ -132,209 +161,257 @@ interface Props {
   repair: RepairDetail;
   currentUserId: string;
   currentUserName: string;
-  partCategories: { id: string; key: string; label: string; icon: string; color: string; sortOrder: number; active: boolean }[];
+  partCategories: {
+    id: string;
+    key: string;
+    label: string;
+    icon: string;
+    color: string;
+    sortOrder: number;
+    active: boolean;
+  }[];
   activeTimers: {
     id: string;
     userId: string;
     userName: string | null;
     startedAt: Date | string;
   }[];
-  allUsers: { id: string; name: string | null; role: string | null }[];
+  allUsers: {
+    id: string;
+    name: string | null;
+    role: string | null;
+    preferredLanguage?: Language | null;
+  }[];
 }
 
-type Tab = "tasks" | "photos" | "parts" | "info";
+/* ───────────────────────────────────────────────────────────────────── */
+/* Helpers                                                                */
+/* ───────────────────────────────────────────────────────────────────── */
 
-/* ─── Header Timer ─── */
+function elapsedString(start: Date | string): string {
+  const t = typeof start === "string" ? new Date(start).getTime() : start.getTime();
+  const diff = Math.max(0, Date.now() - t);
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return h > 0
+    ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+    : `${m}:${String(s).padStart(2, "0")}`;
+}
 
-function HeaderTimerDisplay({ timer, repairJobId, t, onStop }: {
-  timer: { id: string; userId: string; userName: string | null; startedAt: Date | string };
-  repairJobId: string;
-  t: (en: string, es: string, nl: string) => string;
-  onStop: () => void;
-}) {
-  const [elapsed, setElapsed] = useState("");
+const STATUS_TONE: Record<string, string> = {
+  in_progress: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20",
+  ready_for_check: "bg-amber-500/15 text-amber-300 ring-amber-400/20",
+  waiting_parts: "bg-orange-500/15 text-orange-300 ring-orange-400/20",
+  waiting_customer: "bg-orange-500/15 text-orange-300 ring-orange-400/20",
+  blocked: "bg-rose-500/15 text-rose-300 ring-rose-400/20",
+  completed: "bg-stone-500/15 text-stone-300 ring-stone-400/20",
+  invoiced: "bg-stone-500/15 text-stone-300 ring-stone-400/20",
+  todo: "bg-sky-500/15 text-sky-300 ring-sky-400/20",
+  new: "bg-sky-500/15 text-sky-300 ring-sky-400/20",
+};
 
+/* ───────────────────────────────────────────────────────────────────── */
+/* Live elapsed badge                                                     */
+/* ───────────────────────────────────────────────────────────────────── */
+
+function LiveElapsed({ start }: { start: Date | string }) {
+  const [label, setLabel] = useState(() => elapsedString(start));
   useEffect(() => {
-    const start = new Date(timer.startedAt).getTime();
-    const tick = () => {
-      const diff = Date.now() - start;
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setElapsed(h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(() => setLabel(elapsedString(start)), 1000);
     return () => clearInterval(id);
-  }, [timer.startedAt]);
+  }, [start]);
+  return <span className="font-mono text-base tabular-nums text-emerald-200">{label}</span>;
+}
 
-  const handleStop = async () => {
-    const ok = await confirmDialog({
-      title: t(
-        `Pause timer for ${timer.userName ?? "worker"}?`,
-        `¿Pausar temporizador de ${timer.userName ?? "trabajador"}?`,
-        `Timer pauzeren voor ${timer.userName ?? "werker"}?`,
-      ),
-      description: t(
-        "Time is saved on this repair for billing.",
-        "El tiempo queda registrado en esta reparación.",
-        "Tijd wordt opgeslagen op deze klus voor facturatie.",
-      ),
-      confirmLabel: t("Pause", "Pausar", "Pauzeren"),
-      cancelLabel: t("Keep running", "Seguir", "Laten lopen"),
-    });
-    if (!ok) return;
-    hapticTap();
-    await stopTimer(repairJobId, timer.userId);
-    onStop();
-  };
+/* ───────────────────────────────────────────────────────────────────── */
+/* Section primitive                                                      */
+/* ───────────────────────────────────────────────────────────────────── */
+
+function Section({
+  icon,
+  title,
+  badge,
+  defaultOpen = true,
+  action,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  badge?: number | string;
+  defaultOpen?: boolean;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <button
-      type="button"
-      onClick={handleStop}
-      className="flex shrink-0 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/15 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition-all active:scale-[0.97] active:bg-red-500/25 sm:gap-2 sm:px-3"
-      aria-label={t("Pause timer", "Pausar temporizador", "Timer pauzeren")}
-    >
-      <Square className="h-3.5 w-3.5 shrink-0 fill-current" />
-      <span className="max-w-[5rem] truncate text-[11px] font-medium text-white/70">
-        {timer.userName?.split(" ")[0]}
-      </span>
-      <span className="font-mono text-[12.5px] tabular-nums">{elapsed}</span>
-    </button>
+    <section className="overflow-hidden rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.05]">
+      <header className="flex items-center gap-2 px-4 py-3">
+        <button
+          type="button"
+          onClick={() => {
+            hapticTap();
+            setOpen((v) => !v);
+          }}
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-white/60">
+            {icon}
+          </span>
+          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold uppercase tracking-wide text-white/80">
+            {title}
+          </h2>
+          {badge !== undefined && badge !== 0 && badge !== "" ? (
+            <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white/[0.08] px-1.5 text-[11px] font-bold text-white/70">
+              {badge}
+            </span>
+          ) : null}
+          <ChevronDown
+            className={`h-4 w-4 text-white/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+        {action}
+      </header>
+      {open ? <div className="px-4 pb-4">{children}</div> : null}
+    </section>
   );
 }
 
-/* ─── Main ─── */
+/* ───────────────────────────────────────────────────────────────────── */
+/* Main                                                                   */
+/* ───────────────────────────────────────────────────────────────────── */
 
-export function GarageRepairDetailClient({ repair, currentUserId, currentUserName, partCategories, activeTimers, allUsers }: Props) {
-  const { t, setLang, lang } = useLanguage();
+export function GarageRepairDetailClient({
+  repair,
+  currentUserId,
+  currentUserName,
+  partCategories,
+  activeTimers,
+  allUsers,
+}: Props) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>("tasks");
+  const { t, deviceLang, tFor } = useLanguage();
+
+  /* ── State ─────────────────────────────────────────────────────── */
   const [problemTaskId, setProblemTaskId] = useState<string | null>(null);
   const [showFinalCheck, setShowFinalCheck] = useState(false);
-  const [showComment, setShowComment] = useState(false);
-  const [showSuggest, setShowSuggest] = useState(false);
-  const [commentText, setCommentText] = useState("");
-  const [suggestTitle, setSuggestTitle] = useState("");
-  const [suggestDesc, setSuggestDesc] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [showNotDone, setShowNotDone] = useState(false);
-  const [notDoneReason, setNotDoneReason] = useState("");
+  const [showCommentSheet, setShowCommentSheet] = useState(false);
+  const [showSuggestSheet, setShowSuggestSheet] = useState(false);
+  const [showNotDoneSheet, setShowNotDoneSheet] = useState(false);
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
-  const [showWorkerPicker, setShowWorkerPicker] = useState(false);
-  const [workerPickerResolve, setWorkerPickerResolve] = useState<((ok: boolean) => void) | null>(null);
-  const [lastPickedWorkerId, setLastPickedWorkerId] = useState<string | null>(null);
-  const selectableUsers = useMemo(() => getSelectableGarageUsers(allUsers), [allUsers]);
-  const { me } = useGarageMe();
+  const [commentText, setCommentText] = useState("");
+  const [suggestTitle, setSuggestTitle] = useState("");
+  const [suggestDesc, setSuggestDesc] = useState("");
+  const [notDoneReason, setNotDoneReason] = useState("");
+  const [isPending, startTransition] = useTransition();
 
+  /* Worker picker state — every action that needs an actor opens this. */
+  const [picker, setPicker] = useState<{
+    purpose: "startTimer" | "taskStart";
+    onPick: (worker: WorkerOption) => void;
+    title?: string;
+  } | null>(null);
+
+  /* ── Derived ───────────────────────────────────────────────────── */
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
-  const hasTasks = repair.tasks.length > 0;
   const doneCount = repair.tasks.filter((t) => t.status === "done").length;
+  const hasTasks = repair.tasks.length > 0;
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
-  const activeBlockers = repair.blockers.filter(b => b.active);
-  const unresolvedFindings = repair.findings.filter(f => !f.resolvedAt);
-  // Priority for "who am I on this job": explicit tap > device-level "me" >
-  // anyone already clocked in on the repair. This makes a single-tap flow
-  // possible when the iPad already knows the worker.
-  const meIsSelectable = !!me && selectableUsers.some((u) => u.id === me.id);
-  const activeWorkerId =
-    lastPickedWorkerId ??
-    (meIsSelectable ? me!.id : null) ??
-    repair.workers[0]?.userId ??
-    null;
-  const activeWorker = selectableUsers.find((u) => u.id === activeWorkerId);
+  const activeBlockers = repair.blockers.filter((b) => b.active);
+  const unresolvedFindings = repair.findings.filter((f) => !f.resolvedAt);
+  const canTimer = canStartGarageTimerOnRepair(repair.status);
+  const progress = repair.tasks.length > 0 ? Math.round((doneCount / repair.tasks.length) * 100) : 0;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      if (sessionStorage.getItem(garageLangManualSessionKey(repair.id))) return;
-    } catch {
-      return;
-    }
-    const workerDisplayName =
-      activeWorker?.name ??
-      repair.workers.find((w) => w.userId === activeWorkerId)?.userName ??
-      null;
-    const inferred = inferGarageLanguageFromWorkerName(workerDisplayName);
-    if (!inferred) return;
-    setLang(inferred);
-  }, [repair.id, activeWorkerId, activeWorker?.name, repair.workers, setLang]);
-
-  async function ensureActiveWorkerSelected() {
-    if (activeWorker?.id) return true;
-    // Fast path: the iPad already knows who's at it → silently clock them
-    // in on this job. Avoids a redundant "who are you?" prompt on every
-    // action when we already have the answer.
-    if (meIsSelectable && me) {
-      const isAssigned = repair.workers.some((w) => w.userId === me.id);
-      if (!isAssigned) {
-        await toggleMyWorker(repair.id, me.id);
-      }
-      setLastPickedWorkerId(me.id);
-      router.refresh();
-      return true;
-    }
-    const ok = await new Promise<boolean>((resolve) => {
-      setWorkerPickerResolve(() => resolve);
-      setShowWorkerPicker(true);
-    });
-    if (!ok) {
-      toast.message(t("Select a worker first", "Selecciona primero un trabajador", "Kies eerst een werker"));
-    }
-    return ok;
-  }
-
-  // Check if any worker is assigned before starting a task
-  async function handleBeforeStart(): Promise<boolean> {
-    if (repair.workers.length > 0) return true;
-    // Same fast path as above — no picker if we already know "me".
-    if (meIsSelectable && me) {
-      await toggleMyWorker(repair.id, me.id);
-      setLastPickedWorkerId(me.id);
-      router.refresh();
-      return true;
-    }
-    return new Promise<boolean>((resolve) => {
-      setWorkerPickerResolve(() => resolve);
-      setShowWorkerPicker(true);
-    });
-  }
-
-  // Smart polling: only refresh when data actually changed
+  /* ── Side effects ──────────────────────────────────────────────── */
   useGaragePoll(repair.id);
 
-  // Auto-mark admin message as read
   useEffect(() => {
     if (repair.garageAdminMessage && !repair.garageAdminMessageReadAt) {
       markAdminMessageRead(repair.id);
     }
   }, [repair.id, repair.garageAdminMessage, repair.garageAdminMessageReadAt]);
 
-  // Flags
-  const flags: { key: string; label: string; color: string }[] = [];
-  if (repair.waterDamageRiskFlag) flags.push({ key: "water", label: t("Water Damage", "Daño Agua", "Waterschade"), color: "bg-blue-400/10 text-blue-400" });
-  if (repair.safetyFlag) flags.push({ key: "safety", label: t("Safety", "Seguridad", "Veiligheid"), color: "bg-red-400/10 text-red-400" });
-  if (repair.tyresFlag) flags.push({ key: "tyres", label: t("Tyres", "Neumáticos", "Banden"), color: "bg-white/[0.06] text-white/60" });
-  if (repair.lightsFlag) flags.push({ key: "lights", label: t("Lights", "Luces", "Verlichting"), color: "bg-amber-400/10 text-amber-400" });
-  if (repair.brakesFlag) flags.push({ key: "brakes", label: t("Brakes", "Frenos", "Remmen"), color: "bg-red-400/10 text-red-400" });
-  if (repair.windowsFlag) flags.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), color: "bg-teal-400/10 text-teal-400" });
-  if (repair.sealsFlag) flags.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), color: "bg-teal-400/10 text-teal-400" });
-  if (repair.partsRequiredFlag) flags.push({ key: "parts", label: t("Parts Needed", "Piezas", "Onderdelen Nodig"), color: "bg-orange-400/10 text-orange-400" });
-  if (repair.followUpRequiredFlag) flags.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), color: "bg-violet-400/10 text-violet-400" });
-  if (repair.customFlags && Array.isArray(repair.customFlags)) {
-    for (const cf of repair.customFlags as string[]) {
-      flags.push({ key: `custom-${cf}`, label: cf, color: "bg-violet-400/10 text-violet-400" });
-    }
+  /* ── Worker-picker promise helper ──────────────────────────────── */
+  const askWorker = useCallback(
+    (title?: string) =>
+      new Promise<WorkerOption | null>((resolve) => {
+        setPicker({
+          purpose: "taskStart",
+          title,
+          onPick: (worker) => {
+            setPicker(null);
+            resolve(worker);
+          },
+        });
+      }),
+    [],
+  );
+
+  /* ── Actions ───────────────────────────────────────────────────── */
+  const handleRefresh = () => router.refresh();
+
+  async function handleStartTimer(worker: WorkerOption) {
+    hapticTap();
+    const lang = (worker.preferredLanguage ?? "en") as Language;
+    startTransition(async () => {
+      try {
+        await startTimer(repair.id, worker.id);
+        hapticSuccess();
+        toast.success(
+          tFor(
+            lang,
+            `Timer started — ${worker.name}`,
+            `Temporizador iniciado — ${worker.name}`,
+            `Timer gestart — ${worker.name}`,
+          ),
+        );
+        router.refresh();
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not start timer");
+      }
+    });
   }
 
-  function handleRefresh() { router.refresh(); }
+  async function handleStopTimer(timer: Props["activeTimers"][number]) {
+    const worker = allUsers.find((u) => u.id === timer.userId);
+    const lang = (worker?.preferredLanguage ?? "en") as Language;
+    const ok = await confirmDialog({
+      title: tFor(
+        lang,
+        `Pause timer for ${timer.userName ?? "worker"}?`,
+        `¿Pausar temporizador de ${timer.userName ?? "trabajador"}?`,
+        `Timer pauzeren voor ${timer.userName ?? "werker"}?`,
+      ),
+      description: tFor(
+        lang,
+        "Time stays saved on this repair for billing.",
+        "El tiempo queda registrado en esta reparación.",
+        "Tijd blijft opgeslagen op deze klus voor facturatie.",
+      ),
+      confirmLabel: tFor(lang, "Pause", "Pausar", "Pauzeren"),
+      cancelLabel: tFor(lang, "Keep running", "Seguir", "Laten lopen"),
+    });
+    if (!ok) return;
+    hapticTap();
+    startTransition(async () => {
+      await stopTimer(repair.id, timer.userId);
+      hapticSuccess();
+      toast.success(
+        tFor(
+          lang,
+          `Timer paused — ${timer.userName}`,
+          `Pausado — ${timer.userName}`,
+          `Gepauzeerd — ${timer.userName}`,
+        ),
+      );
+      router.refresh();
+    });
+  }
 
   async function handleMarkDone() {
-    const ok = await ensureActiveWorkerSelected();
-    if (!ok) return;
     startTransition(async () => {
       await garageMarkDone(repair.id);
       toast.success(t("Sent for review", "Enviado para revisión", "Klaar gemeld voor controle"));
@@ -344,12 +421,10 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   async function handleMarkNotDone() {
     if (!notDoneReason.trim()) return;
-    const ok = await ensureActiveWorkerSelected();
-    if (!ok) return;
     startTransition(async () => {
       await garageMarkNotDone(repair.id, notDoneReason);
       setNotDoneReason("");
-      setShowNotDone(false);
+      setShowNotDoneSheet(false);
       toast.success(t("Status updated", "Estado actualizado", "Status bijgewerkt"));
       router.refresh();
     });
@@ -357,26 +432,22 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
 
   async function handleAddComment() {
     if (!commentText.trim()) return;
-    const ok = await ensureActiveWorkerSelected();
-    if (!ok) return;
     startTransition(async () => {
       await addGarageComment(repair.id, commentText);
       setCommentText("");
-      setShowComment(false);
+      setShowCommentSheet(false);
       toast.success(t("Comment added", "Comentario añadido", "Opmerking toegevoegd"));
       router.refresh();
     });
   }
 
-  async function handleSuggest() {
+  async function handleSuggestTask() {
     if (!suggestTitle.trim()) return;
-    const ok = await ensureActiveWorkerSelected();
-    if (!ok) return;
     startTransition(async () => {
       await suggestExtraTask(repair.id, suggestTitle, suggestDesc || undefined);
       setSuggestTitle("");
       setSuggestDesc("");
-      setShowSuggest(false);
+      setShowSuggestSheet(false);
       toast.success(t("Task suggested", "Tarea sugerida", "Taak voorgesteld"));
       router.refresh();
     });
@@ -390,825 +461,792 @@ export function GarageRepairDetailClient({ repair, currentUserId, currentUserNam
     });
   }
 
-  const progress = repair.tasks.length > 0 ? Math.round((doneCount / repair.tasks.length) * 100) : 0;
+  /* ── Flags row ─────────────────────────────────────────────────── */
+  const flagItems: { key: string; label: string; tone: string }[] = [];
+  if (repair.waterDamageRiskFlag) flagItems.push({ key: "water", label: t("Water Damage", "Daño Agua", "Waterschade"), tone: "bg-blue-500/15 text-blue-300 ring-blue-400/20" });
+  if (repair.safetyFlag) flagItems.push({ key: "safety", label: t("Safety", "Seguridad", "Veiligheid"), tone: "bg-rose-500/15 text-rose-300 ring-rose-400/20" });
+  if (repair.tyresFlag) flagItems.push({ key: "tyres", label: t("Tyres", "Neumáticos", "Banden"), tone: "bg-white/[0.06] text-white/70 ring-white/10" });
+  if (repair.lightsFlag) flagItems.push({ key: "lights", label: t("Lights", "Luces", "Verlichting"), tone: "bg-amber-500/15 text-amber-300 ring-amber-400/20" });
+  if (repair.brakesFlag) flagItems.push({ key: "brakes", label: t("Brakes", "Frenos", "Remmen"), tone: "bg-rose-500/15 text-rose-300 ring-rose-400/20" });
+  if (repair.windowsFlag) flagItems.push({ key: "windows", label: t("Windows", "Ventanas", "Ramen"), tone: "bg-teal-500/15 text-teal-300 ring-teal-400/20" });
+  if (repair.sealsFlag) flagItems.push({ key: "seals", label: t("Seals", "Sellados", "Afdichtingen"), tone: "bg-teal-500/15 text-teal-300 ring-teal-400/20" });
+  if (repair.partsRequiredFlag) flagItems.push({ key: "parts", label: t("Parts Needed", "Piezas", "Onderdelen Nodig"), tone: "bg-orange-500/15 text-orange-300 ring-orange-400/20" });
+  if (repair.followUpRequiredFlag) flagItems.push({ key: "followup", label: t("Follow-up", "Seguimiento", "Follow-up"), tone: "bg-violet-500/15 text-violet-300 ring-violet-400/20" });
+  if (repair.customFlags) {
+    for (const cf of repair.customFlags) flagItems.push({ key: `custom-${cf}`, label: cf, tone: "bg-violet-500/15 text-violet-300 ring-violet-400/20" });
+  }
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { key: "tasks", label: t("Tasks", "Tareas", "Taken"), icon: <ClipboardList className="h-5 w-5" />, badge: repair.tasks.length - doneCount || undefined },
-    { key: "photos", label: t("Photos", "Fotos", "Foto's"), icon: <Camera className="h-5 w-5" />, badge: repair.photos.length || undefined },
-    { key: "parts", label: t("Parts", "Piezas", "Delen"), icon: <Package className="h-5 w-5" />, badge: repair.partRequests.filter(p => p.status !== "received" && p.status !== "cancelled").length || undefined },
-    { key: "info", label: "Info", icon: <Info className="h-5 w-5" />, badge: (activeBlockers.length + unresolvedFindings.length) || undefined },
-  ];
+  /* ── Photos by task lookup ─────────────────────────────────────── */
+  const photosByTask = useMemo(() => {
+    const m = new Map<string, RepairPhoto[]>();
+    for (const p of repair.photos) {
+      const k = p.repairTaskId ?? "__unassigned__";
+      const list = m.get(k) ?? [];
+      list.push(p);
+      m.set(k, list);
+    }
+    return m;
+  }, [repair.photos]);
 
+  /* ── Render ────────────────────────────────────────────────────── */
   return (
-    // `min-h-[100dvh]` handles mobile browser URL bar resize better than `h-screen`
-    // which traps content behind the iOS Safari bottom chrome.
-    <div className="flex min-h-[100dvh] flex-col bg-stone-950 text-white">
+    <div className="relative flex min-h-[100dvh] flex-col bg-stone-950 text-white">
+      {/* ─── Sticky header ──────────────────────────────────────── */}
+      <header
+        className="sticky top-0 z-30 border-b border-white/[0.06] bg-stone-950/90 backdrop-blur-xl"
+        style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
+      >
+        <div className="mx-auto flex max-w-3xl items-center gap-1 px-3 py-2 sm:px-5">
+          <button
+            type="button"
+            onClick={() => router.push("/garage")}
+            className="-ml-2 inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm font-medium text-white/60 hover:bg-white/[0.06] active:bg-white/[0.12]"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            {t("Back", "Atrás", "Terug")}
+          </button>
+          <div className="flex-1" />
+          <LanguageToggle />
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-white/40 hover:bg-white/[0.06] active:bg-white/[0.12]"
+            aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
 
-      {/* ─── HEADER ─── */}
-      <header className="safe-area-pt sticky top-0 z-30 shrink-0 border-b border-white/[0.06] bg-stone-950/95 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-3 sm:px-4">
-          {/* Nav row — always contains Back + Lang + Refresh. Running timers
-              live on their own horizontally-scrollable row just below so we
-              never overflow the header on phones when 2-3 people are
-              clocked in on the same job. */}
-          <div className="flex h-12 items-center justify-between">
-            <button
-              type="button"
-              onClick={() => router.push("/garage")}
-              className="-ml-2 inline-flex h-11 items-center gap-0.5 rounded-xl px-2 text-sm font-medium text-white/55 transition-all active:scale-95 active:bg-white/[0.06] active:text-white/80"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              {t("Back", "Atrás", "Terug")}
-            </button>
-            <div className="flex items-center gap-0.5">
-              <LanguageToggle />
-              <button
-                type="button"
-                onClick={handleRefresh}
-                className="flex h-11 w-11 items-center justify-center rounded-xl text-white/40 transition-all active:scale-95 active:bg-white/[0.06]"
-                aria-label={t("Refresh", "Actualizar", "Vernieuwen")}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+      {/* ─── Content ───────────────────────────────────────────── */}
+      <main className="flex-1 pb-44">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-3 py-4 sm:px-5">
 
-          {/* Running-timer chips — scroll horizontally on phones, wrap on
-              tablets. Keeping these close to the top makes "Pause" always
-              reachable with one thumb. */}
-          {activeTimers.length > 0 && (
-            <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap">
-              {activeTimers.map((timer) => (
-                <HeaderTimerDisplay
-                  key={timer.id}
-                  timer={timer}
-                  repairJobId={repair.id}
-                  t={t}
-                  onStop={() => router.refresh()}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Vehicle identity */}
-          <div className="pb-3">
-            <div className="mb-1 flex flex-wrap items-center gap-2">
-              <h1 className="font-mono text-[19px] font-bold tracking-tight text-white">
-                {repair.unitRegistration || repair.publicCode || "—"}
+          {/* ── Hero ─────────────────────────────────────────── */}
+          <section className="flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 ring-1 ring-white/[0.05]">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-mono text-2xl font-bold tracking-tight text-white">
+                {repair.unitRegistration ?? repair.publicCode ?? "—"}
               </h1>
-              {(repair.priority === "urgent" || repair.priority === "high") && (
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${STATUS_TONE[repair.status] ?? "bg-white/[0.06] text-white/60 ring-white/10"}`}
+              >
+                {STATUS_LABELS[repair.status as RepairStatus]}
+              </span>
+              {(repair.priority === "urgent" || repair.priority === "high") ? (
                 <span
-                  className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${
                     repair.priority === "urgent"
-                      ? "bg-red-400/10 text-red-300"
-                      : "bg-amber-400/10 text-amber-300"
+                      ? "bg-rose-500/15 text-rose-300 ring-rose-400/20"
+                      : "bg-amber-500/15 text-amber-300 ring-amber-400/20"
                   }`}
                 >
                   {PRIORITY_LABELS[repair.priority as Priority]}
                 </span>
-              )}
-              <span
-                className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
-                  repair.status === "in_progress"
-                    ? "bg-teal-400/10 text-teal-300"
-                    : repair.status === "ready_for_check"
-                      ? "bg-violet-400/10 text-violet-300"
-                      : repair.status === "completed"
-                        ? "bg-emerald-400/10 text-emerald-300"
-                        : repair.status === "blocked"
-                          ? "bg-red-400/10 text-red-300"
-                          : "bg-white/[0.06] text-white/50"
-                }`}
-              >
-                {STATUS_LABELS[repair.status as RepairStatus]}
-              </span>
+              ) : null}
             </div>
-            <p className="text-[12.5px] text-white/45">
-              {[repair.customerName, repair.unitBrand, repair.unitModel]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-            {hasTasks && (
-              <div className="mt-2 flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+
+            {repair.title ? (
+              <p className="text-base text-white/85">{repair.title}</p>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
+              {repair.customerName ? <span>{repair.customerName}</span> : null}
+              {repair.unitBrand ? <span>{repair.unitBrand} {repair.unitModel ?? ""}</span> : null}
+              {repair.unitCurrentPosition || repair.unitStorageLocation ? (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {repair.unitCurrentPosition ?? repair.unitStorageLocation}
+                </span>
+              ) : null}
+            </div>
+
+            {hasTasks ? (
+              <div className="flex items-center gap-2.5">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                   <div
-                    className={`h-full rounded-full transition-all duration-700 ease-out ${
-                      progress === 100
-                        ? "bg-emerald-400"
-                        : "bg-gradient-to-r from-teal-400 to-teal-500"
-                    }`}
+                    className={`h-full rounded-full transition-all duration-700 ease-out ${progress === 100 ? "bg-emerald-400" : "bg-gradient-to-r from-teal-400 to-teal-500"}`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-[11.5px] font-medium tabular-nums text-white/35">
+                <span className="text-xs font-semibold tabular-nums text-white/60">
                   {doneCount}/{repair.tasks.length}
                 </span>
               </div>
-            )}
-          </div>
-        </div>
-      </header>
+            ) : null}
 
-      {/* ─── CONTENT AREA ─── */}
-      {/* pb-44 keeps the sticky bottom action bar from covering the last card */}
-      <main className="flex-1 pb-44">
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4">
-
-          {/* Admin message banner — keeps the latest single message glanceable */}
-          {repair.garageAdminMessage && (
-            <div className="motion-safe:animate-slide-up mb-3 rounded-2xl border border-teal-400/20 bg-gradient-to-br from-teal-400/[0.08] to-teal-400/[0.04] px-4 py-3.5 shadow-[0_0_0_1px_rgba(20,184,166,0.10)]">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="relative flex h-5 w-5 items-center justify-center">
-                  {!repair.garageAdminMessageReadAt ? (
-                    <span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-teal-400/70" />
-                  ) : null}
-                  <MessageSquare className="relative h-4 w-4 text-teal-300" />
-                </span>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-teal-300">
-                  {t("Office Message", "Mensaje de Oficina", "Kantoor Bericht")}
-                </h3>
+            {flagItems.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {flagItems.map((f) => (
+                  <span
+                    key={f.key}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${f.tone}`}
+                  >
+                    <Flag className="h-3 w-3" />
+                    {f.label}
+                  </span>
+                ))}
               </div>
-              <p className="whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-white/85">
-                {repair.garageAdminMessage}
-              </p>
-              {repair.garageAdminMessageAt && (
-                <p className="mt-1.5 text-[11px] text-teal-400/55">
-                  {new Date(repair.garageAdminMessageAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              )}
-            </div>
-          )}
+            ) : null}
+          </section>
 
-          {/* Bidirectional admin ↔ garage thread */}
-          <GarageRepairThread repairJobId={repair.id} t={t} lang={lang} />
-
-          {/* Active blockers banner */}
-          {activeBlockers.length > 0 && (
-            <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5 mb-4 space-y-3">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-400">
-                {t("Blocked", "Bloqueado", "Geblokkeerd")} ({activeBlockers.length})
-              </h3>
-              {activeBlockers.map((b) => (
-                <div key={b.id} className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-sm font-semibold text-red-400">
-                      {BLOCKER_REASON_LABELS[b.reason as BlockerReason]}
-                    </span>
-                    {b.description && <p className="text-sm text-red-300/70 mt-0.5">{b.description}</p>}
-                    <p className="text-[11px] text-red-400/50 mt-0.5">{b.createdByName} · {new Date(b.createdAt).toLocaleDateString()}</p>
+          {/* ── Active timers ────────────────────────────────── */}
+          {activeTimers.length > 0 ? (
+            <section className="flex flex-col gap-2 rounded-2xl bg-emerald-500/[0.08] p-3 ring-1 ring-emerald-500/20">
+              {activeTimers.map((tm) => (
+                <div key={tm.id} className="flex items-center gap-3">
+                  <span className="relative inline-flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-emerald-100">
+                      {tm.userName ?? "—"}{" "}
+                      <span className="ml-1 text-xs font-medium text-emerald-300/70">
+                        {t("is working", "está trabajando", "is bezig")}
+                      </span>
+                    </p>
+                    <LiveElapsed start={tm.startedAt} />
                   </div>
                   <button
-                    onClick={() => handleResolveBlocker(b.id)}
-                    disabled={isPending}
-                    className="shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-400/20 px-3 py-2 text-xs font-semibold text-emerald-400 active:bg-emerald-500/20"
+                    type="button"
+                    onClick={() => handleStopTimer(tm)}
+                    className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-white/10 px-3 text-sm font-semibold text-white hover:bg-white/15 active:scale-[0.97]"
                   >
-                    ✓ {t("Resolve", "Resolver", "Oplossen")}
+                    <Pause className="h-4 w-4" />
+                    {t("Pause", "Pausa", "Pauze")}
                   </button>
                 </div>
               ))}
-            </div>
-          )}
+            </section>
+          ) : null}
 
-          {/* Final check failed */}
-          {repair.finalCheckStatus === "failed" && repair.finalCheckNotes && (
-            <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5 mb-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-400 mb-1">
-                {t("Final Check Failed", "Control Final Fallido", "Natest Afgekeurd")}
-              </h3>
-              <p className="text-sm text-red-300">{repair.finalCheckNotes}</p>
-            </div>
-          )}
-
-          {/* ═══ TAB: TASKS ═══ */}
-          {activeTab === "tasks" && (
-            <div className="space-y-4">
-              {/* Team: tap name = who gets task/timer; ✕ = remove from job */}
-              <div>
-                <p className="text-[11px] uppercase tracking-wide text-white/35 font-semibold mb-2">
-                  {t("Team on this job", "Equipo en este trabajo", "Team op deze klus")}
-                </p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {selectableUsers.map((user) => {
-                    const isAssigned = repair.workers.some((w) => w.userId === user.id);
-                    const isActive = activeWorkerId === user.id;
-                    return (
-                      <div
-                        key={user.id}
-                        className={`inline-flex items-stretch rounded-full overflow-hidden min-h-11 border transition-all ${
-                          isActive
-                            ? "border-teal-400/50 bg-teal-400/[0.08] ring-1 ring-teal-400/25"
-                            : isAssigned
-                              ? "border-emerald-400/25 bg-emerald-400/[0.06]"
-                              : "border-white/[0.08] bg-white/[0.03]"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            hapticTap();
-                            if (isAssigned) {
-                              setLastPickedWorkerId(user.id);
-                              return;
-                            }
-                            startTransition(async () => {
-                              await toggleMyWorker(repair.id, user.id);
-                              setLastPickedWorkerId(user.id);
-                              router.refresh();
-                            });
-                          }}
-                          disabled={isPending}
-                          className={`inline-flex items-center gap-2 pl-3 pr-2 py-2.5 text-base font-medium transition-all active:scale-[0.99] disabled:opacity-50 ${
-                            isAssigned ? "text-emerald-200" : "text-white/55"
-                          }`}
-                        >
-                          <span
-                            className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold text-white shrink-0 ${
-                              isAssigned ? "bg-emerald-500" : "bg-white/20"
-                            }`}
-                          >
-                            {(user.name ?? "?").charAt(0).toUpperCase()}
-                          </span>
-                          <span className="max-w-[140px] truncate">{user.name}</span>
-                          {isAssigned && <span className="text-emerald-400 text-xs font-bold">✓</span>}
-                        </button>
-                        {isAssigned && (
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              hapticTap();
-                              startTransition(async () => {
-                                await toggleMyWorker(repair.id, user.id);
-                                if (lastPickedWorkerId === user.id) {
-                                  setLastPickedWorkerId(null);
-                                }
-                                router.refresh();
-                              });
-                            }}
-                            className="shrink-0 px-2.5 border-l border-white/10 text-white/35 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 disabled:opacity-40"
-                            aria-label={t("Remove from job", "Quitar del trabajo", "Van klus halen")}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Flags */}
-              {flags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {flags.map((f) => (
-                    <span key={f.key} className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${f.color}`}>
-                      {f.label}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Office notes */}
-              {(repair.descriptionRaw || repair.notesRaw || repair.internalComments) && (
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] pl-4 pr-4 py-3.5 border-l-[3px] border-l-amber-400/50">
-                  <p className="text-[11px] uppercase tracking-wider font-semibold text-white/30 mb-1.5">
-                    {t("Office Notes", "Notas de Oficina", "Kantoor Notities")}
-                  </p>
-                  {repair.descriptionRaw && <p className="text-sm whitespace-pre-wrap text-white/70 leading-relaxed">{repair.descriptionRaw}</p>}
-                  {repair.notesRaw && <p className="text-sm whitespace-pre-wrap mt-1.5 text-white/50 leading-relaxed">{repair.notesRaw}</p>}
-                  {repair.internalComments && <p className="text-sm whitespace-pre-wrap mt-1.5 text-white/30 italic leading-relaxed">{repair.internalComments}</p>}
-                </div>
-              )}
-
-              {/* Task list */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-semibold text-white/90">
-                    {t("Tasks", "Tareas", "Taken")}
-                  </h2>
-                  <button
-                    onClick={() => setShowSuggest(true)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 h-8 text-xs font-medium text-white/50 active:bg-white/[0.06]"
-                  >
-                    <Plus className="h-3 w-3" />
-                    {t("Task", "Tarea", "Taak")}
-                  </button>
-                </div>
-                {hasTasks ? (
-                  <div className="space-y-2">
-                    {repair.tasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        repairJobId={repair.id}
-                        repairJobStatus={repair.status}
-                        onUpdate={handleRefresh}
-                        onProblem={(id) => setProblemTaskId(id)}
-                        onBeforeStart={handleBeforeStart}
-                        workerId={activeWorkerId ?? undefined}
-                        photos={repair.photos.filter((p) => p.repairTaskId === task.id).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] py-8 px-4 text-center">
-                    <ClipboardList className="h-8 w-8 text-white/10 mx-auto mb-2" />
-                    <p className="text-sm text-white/30">{t("No tasks yet", "Sin tareas todav\u00eda", "Nog geen taken")}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ═══ TAB: PHOTOS ═══ */}
-          {activeTab === "photos" && (
-            <div className="space-y-4">
-              {/* Task photos grouped by task */}
-              {repair.tasks
-                .filter((task) => repair.photos.some((p) => p.repairTaskId === task.id))
-                .map((task) => (
-                  <div key={task.id}>
-                    <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <ClipboardList className="h-3 w-3" />
-                      {task.title}
-                      <span className="text-[10px] bg-white/[0.06] text-white/40 rounded-full px-1.5 py-0.5 font-bold">
-                        {repair.photos.filter((p) => p.repairTaskId === task.id).length}
-                      </span>
-                    </h3>
-                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
-                      <div className="grid grid-cols-3 gap-0.5 p-0.5">
-                        {repair.photos
-                          .filter((p) => p.repairTaskId === task.id)
-                          .map((photo) => (
-                            <button
-                              key={photo.id}
-                              onClick={() => setViewPhoto(photo.thumbnailUrl ?? photo.url)}
-                              className="aspect-square overflow-hidden bg-white/[0.04]"
-                            >
-                              <img
-                                src={photo.thumbnailUrl ?? photo.url}
-                                alt={photo.caption || ""}
-                                className="w-full h-full object-cover"
-                              />
-                            </button>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-              {/* General photos + upload */}
-              <div>
-                {repair.photos.some((p) => p.repairTaskId) && (
-                  <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Camera className="h-3 w-3" />
-                    {t("General", "General", "Algemeen")}
-                  </h3>
-                )}
-                <GaragePhotoUpload
-                  repairJobId={repair.id}
-                  photos={repair.photos.filter((p) => !p.repairTaskId).map((p) => ({ id: p.id, url: p.thumbnailUrl ?? p.url, caption: p.caption }))}
-                  onUpdate={handleRefresh}
-                  t={t}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ═══ TAB: PARTS ═══ */}
-          {activeTab === "parts" && (
-            <div className="space-y-4">
-              {repair.partRequests.length > 0 && (
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-semibold text-white/90">{t("Requested Parts", "Piezas Solicitadas", "Aangevraagde Onderdelen")}</h2>
-                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                    repair.partRequests.every(p => p.status === "received") ? "bg-emerald-400/10 text-emerald-400" : "bg-amber-400/10 text-amber-400"
-                  }`}>
-                    {repair.partRequests.filter(p => p.status === "received").length}/{repair.partRequests.length} {t("received", "recibidas", "ontvangen")}
-                  </span>
-                </div>
-              )}
-
-              {repair.partRequests.length > 0 ? (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
-                  {repair.partRequests.map((pr, i) => (
-                    <div key={pr.id} className={`flex items-center justify-between px-4 py-3.5 text-sm ${i > 0 ? "border-t border-white/[0.04]" : ""}`}>
-                      <div className="min-w-0">
-                        <span className="font-medium text-white/90">{pr.partName}</span>
-                        {pr.quantity > 1 && <span className="text-white/30 ml-1">×{pr.quantity}</span>}
-                        {pr.supplierName && <span className="text-xs text-white/30 ml-2">{pr.supplierName}</span>}
-                      </div>
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ml-2 ${
-                        pr.status === "received" ? "bg-emerald-400/10 text-emerald-400" :
-                        pr.status === "shipped" ? "bg-indigo-400/10 text-indigo-400" :
-                        pr.status === "ordered" ? "bg-blue-400/10 text-blue-400" :
-                        pr.status === "cancelled" ? "bg-white/[0.06] text-white/40" :
-                        "bg-amber-400/10 text-amber-400"
-                      }`}>
-                        {t(
-                          pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
-                          pr.status === "received" ? "Recibida" : pr.status === "shipped" ? "Enviada" : pr.status === "ordered" ? "Pedida" : pr.status === "cancelled" ? "Cancelada" : "Solicitada",
-                          pr.status === "received" ? "Ontvangen" : pr.status === "shipped" ? "Onderweg" : pr.status === "ordered" ? "Besteld" : pr.status === "cancelled" ? "Geannuleerd" : "Aangevraagd"
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] py-12 px-6 text-center">
-                  <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
-                  <p className="text-base text-white/30">{t("No parts requested yet", "Sin piezas solicitadas", "No parts yet aangevraagd")}</p>
-                </div>
-              )}
-
-              {isActive && (
-                <GaragePartsPicker
-                  repairJobId={repair.id}
-                  t={t}
-                  partCategories={partCategories}
-                  workerName={activeWorker?.name ?? undefined}
-                />
-              )}
-            </div>
-          )}
-
-          {/* ═══ TAB: INFO ═══ */}
-          {activeTab === "info" && (
-            <div className="space-y-4">
-              {/* Vehicle details */}
-              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]">
-                  <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
-                    {t("Vehicle", "Veh\u00edculo", "Voertuig")}
-                  </h3>
-                </div>
-                <div className="divide-y divide-white/[0.04]">
-                  {repair.unitRegistration && <InfoRow label={t("Registration", "Matrícula", "Kenteken")} value={repair.unitRegistration} mono />}
-                  {repair.unitBrand && <InfoRow label={t("Brand", "Marca", "Merk")} value={`${repair.unitBrand} ${repair.unitModel || ""}`} />}
-                  {repair.unitYear && <InfoRow label={t("Year", "Año", "Bouwjaar")} value={String(repair.unitYear)} />}
-                  {repair.unitLength && <InfoRow label={t("Length", "Largo", "Lengte")} value={repair.unitLength} />}
-                  {repair.unitChassisId && <InfoRow label={t("Chassis", "Chasis", "Chassis")} value={repair.unitChassisId} mono />}
-                  {(repair.unitStorageLocation || repair.unitCurrentPosition) && (
-                    <InfoRow
-                      label={t("Location", "Ubicación", "Locatie")}
-                      value={repair.unitCurrentPosition || repair.unitStorageLocation || ""}
-                      icon={<MapPin className="h-3 w-3 text-white/30" />}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Customer */}
-              {repair.customerId && (
-                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                  <div className="px-4 py-3 border-b border-white/[0.04]">
-                    <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
-                      {t("Customer", "Cliente", "Klant")}
-                    </h3>
-                  </div>
-                  <div className="divide-y divide-white/[0.04]">
-                    {repair.customerName && <InfoRow label={t("Name", "Nombre", "Naam")} value={repair.customerName} />}
-                    {repair.customerPhone && (
-                      <a href={`tel:${repair.customerPhone}`} className="block">
-                        <InfoRow label={t("Phone", "Teléfono", "Telefoon")} value={repair.customerPhone} link />
-                      </a>
-                    )}
-                    {repair.customerMobile && repair.customerMobile !== repair.customerPhone && (
-                      <a href={`tel:${repair.customerMobile}`} className="block">
-                        <InfoRow label={t("Mobile", "Móvil", "Mobiel")} value={repair.customerMobile} link />
-                      </a>
-                    )}
-                    {repair.customerEmail && (
-                      <a href={`mailto:${repair.customerEmail}`} className="block">
-                        <InfoRow label={t("Email", "Email", "Email")} value={repair.customerEmail} link />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Job details */}
-              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/[0.04]">
-                  <h3 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
-                    {t("Job", "Trabajo", "Klus")}
-                  </h3>
-                </div>
-                <div className="divide-y divide-white/[0.04]">
-                  {repair.publicCode && <InfoRow label={t("Code", "Código", "Code")} value={repair.publicCode} mono />}
-                  {repair.title && <InfoRow label={t("Title", "Título", "Titel")} value={repair.title} />}
-                  <InfoRow label="Status" value={STATUS_LABELS[repair.status as RepairStatus] || repair.status} />
-                  <InfoRow label={t("Priority", "Prioridad", "Prioriteit")} value={PRIORITY_LABELS[repair.priority as Priority] || repair.priority} />
-                  {repair.dueDate && <InfoRow label={t("Due", "Vencimiento", "Deadline")} value={new Date(repair.dueDate).toLocaleDateString()} />}
-                </div>
-              </div>
-
-              {/* Findings */}
-              {unresolvedFindings.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-white/90 mb-2">
-                    {t("Issues found", "Problemas", "Bevindingen")} ({unresolvedFindings.length})
-                  </h3>
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
-                    {unresolvedFindings.map((f, i) => (
-                      <div key={f.id} className={`flex items-start gap-2.5 px-4 py-3 text-sm ${i > 0 ? "border-t border-white/[0.04]" : ""}`}>
-                        <span className="text-base mt-0.5 shrink-0">{FINDING_CATEGORY_EMOJI[f.category as FindingCategory]}</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-medium text-white/90">{FINDING_CATEGORY_LABELS[f.category as FindingCategory]}</span>
-                            <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                              f.severity === "critical" ? "bg-red-400/10 text-red-400" : f.severity === "minor" ? "bg-white/[0.06] text-white/40" : "bg-amber-400/10 text-amber-400"
-                            }`}>
-                              {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
-                            </span>
-                            {f.requiresCustomerApproval && (
-                              <span className="inline-flex items-center rounded-full bg-orange-400/10 text-orange-400 px-1.5 py-0.5 text-[10px] font-medium">
-                                {t("Approval", "Aprobación", "Goedkeuring")}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-white/50 mt-0.5">{f.description}</p>
-                          <p className="text-[11px] text-white/25 mt-0.5">{f.createdByName} · {new Date(f.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* ─── BOTTOM: Action bar + Tab nav ─── */}
-      <div className="safe-area-pb fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl">
-        {/* Action buttons */}
-        {isActive && (
-          <div className="mx-auto max-w-4xl px-4 pb-1 pt-2">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  hapticSuccess();
-                  handleMarkDone();
-                }}
-                disabled={isPending}
-                className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-emerald-500 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all active:scale-[0.98] active:bg-emerald-600 disabled:opacity-50"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {t("Ready for Check", "Listo para Revisión", "Klaar voor Controle")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  hapticTap();
-                  setShowNotDone(true);
-                }}
-                aria-label={t("Mark not done", "Marcar como no hecho", "Markeer als niet klaar")}
-                className="flex h-11 items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 text-sm font-medium text-white/55 transition-all active:scale-[0.98] active:bg-white/[0.06]"
-              >
-                <XCircle className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Quick actions row */}
-        <div className="mx-auto max-w-4xl px-4 py-1.5">
-          <div className="flex gap-1.5">
+          {/* ── Primary action: start timer ─────────────────── */}
+          {canTimer ? (
             <button
               type="button"
               onClick={() => {
                 hapticTap();
-                setShowComment(true);
+                setPicker({
+                  purpose: "startTimer",
+                  onPick: (w) => {
+                    setPicker(null);
+                    handleStartTimer(w);
+                  },
+                  title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
+                });
               }}
-              className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-white/[0.04] text-[12px] font-medium text-white/45 transition-all active:scale-[0.98] active:bg-white/[0.08]"
+              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-base font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
             >
-              <MessageSquare className="h-3.5 w-3.5" />
-              {t("Comment", "Nota", "Opmerking")}
+              <Play className="h-5 w-5 fill-current" />
+              {activeTimers.length > 0
+                ? t("Join in (start my timer)", "Unirme (iniciar mi timer)", "Aansluiten (start mijn timer)")
+                : t("Start my timer", "Iniciar mi timer", "Start mijn timer")}
             </button>
-            {isActive && (
-              <>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    hapticTap();
-                    const ok = await ensureActiveWorkerSelected();
-                    if (!ok) return;
-                    setShowFinding(true);
-                  }}
-                  className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-white/[0.04] text-[12px] font-medium text-white/45 transition-all active:scale-[0.98] active:bg-white/[0.08]"
-                >
-                  <Flag className="h-3.5 w-3.5" />
-                  {t("Issue", "Problema", "Bevinding")}
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    hapticTap();
-                    const ok = await ensureActiveWorkerSelected();
-                    if (!ok) return;
-                    setShowBlocker(true);
-                  }}
-                  className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-white/[0.04] text-[12px] font-medium text-white/45 transition-all active:scale-[0.98] active:bg-white/[0.08]"
-                >
-                  <OctagonX className="h-3.5 w-3.5" />
-                  {t("Block", "Bloqueo", "Blokkade")}
-                </button>
-              </>
+          ) : null}
+
+          {/* ── Office message ──────────────────────────────── */}
+          {repair.garageAdminMessage ? (
+            <section className="rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/[0.08] to-sky-400/[0.04] p-4">
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-400/15 text-sky-300">
+                  <MessageSquare className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-sky-300/80">
+                    {t("From the office", "De oficina", "Van kantoor")}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-white/85">
+                    {repair.garageAdminMessage}
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {/* ── Active blockers ─────────────────────────────── */}
+          {activeBlockers.length > 0 ? (
+            <Section
+              icon={<OctagonX className="h-4 w-4 text-rose-300" />}
+              title={t("Blocked", "Bloqueado", "Geblokkeerd")}
+              badge={activeBlockers.length}
+            >
+              <div className="flex flex-col gap-2">
+                {activeBlockers.map((b) => (
+                  <div
+                    key={b.id}
+                    className="flex items-start gap-3 rounded-xl bg-rose-500/[0.08] p-3 ring-1 ring-rose-400/20"
+                  >
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-rose-200">
+                        {BLOCKER_REASON_LABELS[b.reason as BlockerReason]}
+                      </p>
+                      {b.description ? (
+                        <p className="mt-0.5 text-sm text-white/70">{b.description}</p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleResolveBlocker(b.id)}
+                      className="inline-flex h-9 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-xs font-semibold text-white hover:bg-white/15 active:scale-[0.97]"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {t("Resolve", "Resolver", "Oplossen")}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          ) : null}
+
+          {/* ── Tasks ───────────────────────────────────────── */}
+          <Section
+            icon={<ClipboardList className="h-4 w-4" />}
+            title={t("Tasks", "Tareas", "Taken")}
+            badge={hasTasks ? `${doneCount}/${repair.tasks.length}` : 0}
+            action={
+              <button
+                type="button"
+                onClick={() => setShowSuggestSheet(true)}
+                className="inline-flex h-9 items-center gap-1 rounded-lg bg-white/[0.06] px-2.5 text-xs font-semibold text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t("Suggest", "Sugerir", "Voorstel")}
+              </button>
+            }
+          >
+            {hasTasks ? (
+              <div className="flex flex-col gap-2">
+                {repair.tasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    repairJobId={repair.id}
+                    repairJobStatus={repair.status}
+                    onUpdate={handleRefresh}
+                    onProblem={(taskId) => setProblemTaskId(taskId)}
+                    onBeforeStart={async () => {
+                      const w = await askWorker(
+                        t("Who's starting this task?", "¿Quién empieza?", "Wie begint deze taak?"),
+                      );
+                      return !!w;
+                    }}
+                    photos={photosByTask.get(task.id) ?? []}
+                    workerId={undefined}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-sm text-white/40">
+                {t("No tasks yet.", "Sin tareas aún.", "Nog geen taken.")}
+              </p>
             )}
-            {allDone && repair.finalCheckStatus !== "passed" && (
+          </Section>
+
+          {/* ── Photos ──────────────────────────────────────── */}
+          <Section
+            icon={<Camera className="h-4 w-4" />}
+            title={t("Photos", "Fotos", "Foto's")}
+            badge={repair.photos.length}
+            defaultOpen={false}
+            action={
+              <GaragePhotoUpload
+                repairJobId={repair.id}
+                photos={photosByTask.get("__unassigned__") ?? []}
+                onUpdate={handleRefresh}
+                t={t}
+                compact
+              />
+            }
+          >
+            {repair.photos.length === 0 ? (
+              <p className="py-4 text-center text-sm text-white/40">
+                {t("No photos yet.", "Sin fotos aún.", "Nog geen foto's.")}
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {repair.photos.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setViewPhoto(p.url)}
+                    className="aspect-square overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] active:scale-[0.97]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt={p.caption ?? "photo"} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          {/* ── Parts ───────────────────────────────────────── */}
+          <Section
+            icon={<Package className="h-4 w-4" />}
+            title={t("Parts", "Piezas", "Onderdelen")}
+            badge={repair.partRequests.filter((p) => p.status !== "received" && p.status !== "cancelled").length}
+            defaultOpen={repair.partRequests.length > 0}
+          >
+            {repair.partRequests.length > 0 ? (
+              <div className="mb-3 flex flex-col gap-1.5 overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+                {repair.partRequests.map((pr) => (
+                  <div key={pr.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white/90">
+                        {pr.partName}
+                        {pr.quantity > 1 ? <span className="ml-1 text-white/40">×{pr.quantity}</span> : null}
+                      </p>
+                      {pr.supplierName ? (
+                        <p className="truncate text-[11px] text-white/40">{pr.supplierName}</p>
+                      ) : null}
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        pr.status === "received"
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : pr.status === "shipped"
+                            ? "bg-indigo-500/15 text-indigo-300"
+                            : pr.status === "ordered"
+                              ? "bg-blue-500/15 text-blue-300"
+                              : pr.status === "cancelled"
+                                ? "bg-white/[0.06] text-white/40"
+                                : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {t(
+                        pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
+                        pr.status === "received" ? "Recibida" : pr.status === "shipped" ? "Enviada" : pr.status === "ordered" ? "Pedida" : pr.status === "cancelled" ? "Cancelada" : "Solicitada",
+                        pr.status === "received" ? "Ontvangen" : pr.status === "shipped" ? "Onderweg" : pr.status === "ordered" ? "Besteld" : pr.status === "cancelled" ? "Geannuleerd" : "Aangevraagd",
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {isActive ? (
+              <GaragePartsPicker
+                repairJobId={repair.id}
+                t={t}
+                partCategories={partCategories}
+                onAdded={handleRefresh}
+              />
+            ) : null}
+          </Section>
+
+          {/* ── Findings ────────────────────────────────────── */}
+          {(unresolvedFindings.length > 0 || repair.findings.length > 0) ? (
+            <Section
+              icon={<Sparkles className="h-4 w-4" />}
+              title={t("Findings", "Hallazgos", "Bevindingen")}
+              badge={unresolvedFindings.length || repair.findings.length}
+              defaultOpen={unresolvedFindings.length > 0}
+              action={
+                <button
+                  type="button"
+                  onClick={() => setShowFinding(true)}
+                  className="inline-flex h-9 items-center gap-1 rounded-lg bg-white/[0.06] px-2.5 text-xs font-semibold text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("Add", "Añadir", "Toevoegen")}
+                </button>
+              }
+            >
+              <div className="flex flex-col gap-2">
+                {repair.findings.map((f) => (
+                  <div
+                    key={f.id}
+                    className={`flex items-start gap-2.5 rounded-xl p-3 ring-1 ${f.resolvedAt ? "bg-white/[0.03] ring-white/[0.06] opacity-60" : "bg-amber-500/[0.06] ring-amber-400/15"}`}
+                  >
+                    <span className="text-base">
+                      {FINDING_CATEGORY_EMOJI[f.category as FindingCategory] ?? "🔧"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-white/90">
+                        {FINDING_CATEGORY_LABELS[f.category as FindingCategory]}{" "}
+                        <span className="text-white/40">·</span>{" "}
+                        <span className="text-amber-300">
+                          {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 text-sm text-white/70">{f.description}</p>
+                      {f.createdByName ? (
+                        <p className="mt-0.5 text-[11px] text-white/40">— {f.createdByName}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowFinding(true)}
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white/[0.04] text-sm font-medium text-white/60 ring-1 ring-white/[0.06] hover:bg-white/[0.06] active:scale-[0.99]"
+            >
+              <Plus className="h-4 w-4" />
+              {t("Add a finding", "Añadir hallazgo", "Bevinding toevoegen")}
+            </button>
+          )}
+
+          {/* ── Conversation thread ─────────────────────────── */}
+          <Section
+            icon={<MessageSquare className="h-4 w-4" />}
+            title={t("Conversation", "Conversación", "Gesprek")}
+            defaultOpen
+          >
+            <GarageRepairThread repairJobId={repair.id} t={t} lang={deviceLang} />
+          </Section>
+
+          {/* ── Info ────────────────────────────────────────── */}
+          <Section
+            icon={<Info className="h-4 w-4" />}
+            title={t("Info", "Información", "Info")}
+            defaultOpen={false}
+          >
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+              {repair.publicCode ? (
+                <>
+                  <dt className="text-white/40">{t("Code", "Código", "Code")}</dt>
+                  <dd className="font-mono text-white/85">{repair.publicCode}</dd>
+                </>
+              ) : null}
+              {repair.unitChassisId ? (
+                <>
+                  <dt className="text-white/40">{t("Chassis", "Chasis", "Chassis")}</dt>
+                  <dd className="font-mono text-white/85">{repair.unitChassisId}</dd>
+                </>
+              ) : null}
+              {repair.unitYear ? (
+                <>
+                  <dt className="text-white/40">{t("Year", "Año", "Bouwjaar")}</dt>
+                  <dd className="text-white/85">{repair.unitYear}</dd>
+                </>
+              ) : null}
+              {repair.unitLength ? (
+                <>
+                  <dt className="text-white/40">{t("Length", "Longitud", "Lengte")}</dt>
+                  <dd className="text-white/85">{repair.unitLength}</dd>
+                </>
+              ) : null}
+              {repair.dueDate ? (
+                <>
+                  <dt className="text-white/40">{t("Due", "Fecha", "Inleverdatum")}</dt>
+                  <dd className="text-white/85">
+                    {new Date(repair.dueDate).toLocaleDateString(
+                      deviceLang === "nl" ? "nl-NL" : deviceLang === "es" ? "es-ES" : "en-GB",
+                    )}
+                  </dd>
+                </>
+              ) : null}
+              {repair.customerPhone ?? repair.customerMobile ? (
+                <>
+                  <dt className="text-white/40">{t("Phone", "Teléfono", "Telefoon")}</dt>
+                  <dd>
+                    <a
+                      href={`tel:${repair.customerMobile ?? repair.customerPhone}`}
+                      className="inline-flex items-center gap-1 text-sky-300 hover:underline"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {repair.customerMobile ?? repair.customerPhone}
+                    </a>
+                  </dd>
+                </>
+              ) : null}
+            </dl>
+
+            {repair.descriptionRaw || repair.notesRaw ? (
+              <div className="mt-4 space-y-3">
+                {repair.descriptionRaw ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                      {t("Description", "Descripción", "Beschrijving")}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">
+                      {repair.descriptionRaw}
+                    </p>
+                  </div>
+                ) : null}
+                {repair.notesRaw ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                      {t("Notes", "Notas", "Notities")}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">
+                      {repair.notesRaw}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </Section>
+        </div>
+      </main>
+
+      {/* ─── Sticky bottom action bar ─────────────────────── */}
+      {isActive ? (
+        <div
+          className="sticky bottom-0 z-30 border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl"
+          style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-2.5 sm:px-5">
+            {allDone || repair.status === "ready_for_check" ? (
               <button
                 type="button"
                 onClick={() => setShowFinalCheck(true)}
-                className="flex h-9 flex-1 items-center justify-center gap-1 rounded-full bg-amber-400/10 text-[12px] font-semibold text-amber-300 transition-all active:scale-[0.98] active:bg-amber-400/20"
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-violet-500 text-sm font-bold text-white shadow-md hover:bg-violet-500/90 active:scale-[0.98]"
               >
-                {t("Final Check", "Control", "Natest")}
+                <CheckCircle2 className="h-4 w-4" />
+                {t("Final check", "Control final", "Eindcontrole")}
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tab navigation */}
-        <div className="mx-auto max-w-4xl">
-          <div className="flex">
-            {tabs.map((tab) => {
-              const active = activeTab === tab.key;
-              return (
+            ) : (
+              <>
                 <button
                   type="button"
-                  key={tab.key}
-                  onClick={() => {
-                    hapticTap();
-                    setActiveTab(tab.key);
-                  }}
-                  className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 transition-colors ${
-                    active ? "text-white" : "text-white/35"
-                  }`}
+                  onClick={handleMarkDone}
+                  disabled={isPending || repair.status === "completed"}
+                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-bold text-white shadow-md hover:bg-emerald-500/90 active:scale-[0.98] disabled:opacity-50"
                 >
-                  <div className="relative">
-                    {tab.icon}
-                    {tab.badge && tab.badge > 0 ? (
-                      <span className="absolute -right-1.5 -top-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white">
-                        {tab.badge}
-                      </span>
-                    ) : null}
-                  </div>
-                  <span className="text-[10px] font-semibold">{tab.label}</span>
-                  {active ? (
-                    <span className="absolute left-1/4 right-1/4 top-0 h-0.5 rounded-full bg-white" />
-                  ) : null}
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => setShowNotDoneSheet(true)}
+                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
+                  aria-label={t("Not done", "No listo", "Niet klaar")}
+                  title={t("Not done", "No listo", "Niet klaar")}
+                >
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowCommentSheet(true)}
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
+              aria-label={t("Comment", "Comentario", "Opmerking")}
+              title={t("Comment", "Comentario", "Opmerking")}
+            >
+              <MessageSquare className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBlocker(true)}
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 active:scale-[0.97]"
+              aria-label={t("Block", "Bloquear", "Blokkeer")}
+              title={t("Block", "Bloquear", "Blokkeer")}
+            >
+              <OctagonX className="h-5 w-5" />
+            </button>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* ─── DIALOGS ─── */}
-      <ProblemDialog open={!!problemTaskId} onClose={() => setProblemTaskId(null)} taskId={problemTaskId} onComplete={handleRefresh} />
-      <FinalCheckDialog repairJobId={repair.id} open={showFinalCheck} onClose={() => setShowFinalCheck(false)} onComplete={handleRefresh} />
-      <FindingDialog repairJobId={repair.id} open={showFinding} onClose={() => setShowFinding(false)} onComplete={handleRefresh} />
-      <BlockerDialog repairJobId={repair.id} open={showBlocker} onClose={() => setShowBlocker(false)} onComplete={handleRefresh} />
+      {/* ─── Worker picker (overlay) ─────────────────────── */}
+      <WorkerPicker
+        open={!!picker}
+        onClose={() => setPicker(null)}
+        onPick={(worker) => picker?.onPick(worker)}
+        workers={allUsers}
+        title={picker?.title}
+        subtitle={repair.title ?? repair.publicCode ?? undefined}
+      />
 
-      {/* Worker Picker Dialog */}
-      <Dialog open={showWorkerPicker} onOpenChange={(open) => {
-        if (!open) {
-          workerPickerResolve?.(false);
-          setWorkerPickerResolve(null);
-          setShowWorkerPicker(false);
-        }
-      }}>
-        <DialogContent className="rounded-2xl max-w-sm bg-foreground border-white/[0.08] text-white">
-          <DialogHeader>
-            <DialogTitle>{t("Who are you?", "¿Quién eres?", "Wie ben je?")}</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {selectableUsers.map((user) => (
-              <button
-                key={user.id}
-                onClick={async () => {
-                  const isAssigned = repair.workers.some((w) => w.userId === user.id);
-                  if (!isAssigned) {
-                    await toggleMyWorker(repair.id, user.id);
-                  }
-                  setLastPickedWorkerId(user.id);
-                  setShowWorkerPicker(false);
-                  workerPickerResolve?.(true);
-                  setWorkerPickerResolve(null);
-                  router.refresh();
-                }}
-                className="flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-sm font-medium text-white/80 active:bg-white/[0.08] transition-all"
-              >
-                <span className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-500 text-sm font-bold text-white shrink-0">
-                  {(user.name ?? "?").charAt(0).toUpperCase()}
-                </span>
-                {user.name}
-              </button>
-            ))}
+      {/* ─── Dialogs ─────────────────────────────────────── */}
+      {problemTaskId ? (
+        <ProblemDialog
+          taskId={problemTaskId}
+          open={!!problemTaskId}
+          onClose={() => setProblemTaskId(null)}
+          onComplete={handleRefresh}
+        />
+      ) : null}
+
+      {showFinalCheck ? (
+        <FinalCheckDialog
+          repairJobId={repair.id}
+          open={showFinalCheck}
+          onClose={() => setShowFinalCheck(false)}
+          onComplete={handleRefresh}
+        />
+      ) : null}
+
+      {showFinding ? (
+        <FindingDialog
+          repairJobId={repair.id}
+          open={showFinding}
+          onClose={() => setShowFinding(false)}
+          onComplete={handleRefresh}
+        />
+      ) : null}
+
+      {showBlocker ? (
+        <BlockerDialog
+          repairJobId={repair.id}
+          open={showBlocker}
+          onClose={() => setShowBlocker(false)}
+          onComplete={handleRefresh}
+        />
+      ) : null}
+
+      {/* Comment sheet */}
+      {showCommentSheet ? (
+        <BottomSheet onClose={() => setShowCommentSheet(false)}>
+          <h3 className="text-base font-semibold text-white">
+            {t("Add a comment", "Añadir comentario", "Opmerking toevoegen")}
+          </h3>
+          <textarea
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            rows={4}
+            placeholder={t("Type your comment…", "Escribe…", "Typ je opmerking…")}
+            className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowCommentSheet(false)}
+              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/70 hover:bg-white/[0.1]"
+            >
+              {t("Cancel", "Cancelar", "Annuleer")}
+            </button>
+            <button
+              type="button"
+              onClick={handleAddComment}
+              disabled={isPending || !commentText.trim()}
+              className="h-12 flex-1 rounded-xl bg-emerald-500 text-sm font-bold text-white hover:bg-emerald-500/90 disabled:opacity-50"
+            >
+              {t("Send", "Enviar", "Verzenden")}
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </BottomSheet>
+      ) : null}
 
-      {/* Comment Dialog */}
-      <Dialog open={showComment} onOpenChange={setShowComment}>
-        <DialogContent className="rounded-2xl max-w-md bg-foreground border-white/[0.08] text-white">
-          <DialogHeader>
-            <DialogTitle>{t("Add Comment", "Añadir Comentario", "Opmerking Toevoegen")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-1">
-            <textarea
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder={t("Type your message...", "Escribe tu mensaje...", "Typ je bericht...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowComment(false)} className="flex-1 h-11 rounded-xl">{t("Cancel", "Cancelar", "Annuleren")}</Button>
-              <Button onClick={handleAddComment} disabled={!commentText.trim() || isPending} className="flex-1 h-11 rounded-xl">{t("Send", "Enviar", "Verstuur")}</Button>
-            </div>
+      {/* Suggest task sheet */}
+      {showSuggestSheet ? (
+        <BottomSheet onClose={() => setShowSuggestSheet(false)}>
+          <h3 className="text-base font-semibold text-white">
+            {t("Suggest a task", "Sugerir tarea", "Taak voorstellen")}
+          </h3>
+          <input
+            type="text"
+            value={suggestTitle}
+            onChange={(e) => setSuggestTitle(e.target.value)}
+            placeholder={t("Short title…", "Título corto…", "Korte titel…")}
+            className="h-12 w-full rounded-xl bg-white/[0.06] px-3 text-base text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
+          />
+          <textarea
+            value={suggestDesc}
+            onChange={(e) => setSuggestDesc(e.target.value)}
+            rows={3}
+            placeholder={t("Optional details…", "Detalles…", "Toelichting…")}
+            className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSuggestSheet(false)}
+              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/70 hover:bg-white/[0.1]"
+            >
+              {t("Cancel", "Cancelar", "Annuleer")}
+            </button>
+            <button
+              type="button"
+              onClick={handleSuggestTask}
+              disabled={isPending || !suggestTitle.trim()}
+              className="h-12 flex-1 rounded-xl bg-white text-sm font-bold text-stone-950 hover:bg-white/95 disabled:opacity-50"
+            >
+              {t("Suggest", "Sugerir", "Voorstellen")}
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </BottomSheet>
+      ) : null}
 
-      {/* Not Done Dialog */}
-      <Dialog open={showNotDone} onOpenChange={setShowNotDone}>
-        <DialogContent className="rounded-2xl max-w-md bg-foreground border-white/[0.08] text-white">
-          <DialogHeader>
-            <DialogTitle className="text-amber-400">{t("Why is it not done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-1">
-            <textarea
-              value={notDoneReason}
-              onChange={(e) => setNotDoneReason(e.target.value)}
-              placeholder={t("Describe the problem...", "Describe el problema...", "Beschrijf het probleem...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowNotDone(false)} className="flex-1 h-11 rounded-xl">{t("Cancel", "Cancelar", "Annuleren")}</Button>
-              <Button onClick={handleMarkNotDone} disabled={!notDoneReason.trim() || isPending} className="flex-1 h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">{t("Submit", "Enviar", "Verstuur")}</Button>
-            </div>
+      {/* Not done sheet */}
+      {showNotDoneSheet ? (
+        <BottomSheet onClose={() => setShowNotDoneSheet(false)}>
+          <h3 className="text-base font-semibold text-white">
+            {t("Why isn't it done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}
+          </h3>
+          <textarea
+            value={notDoneReason}
+            onChange={(e) => setNotDoneReason(e.target.value)}
+            rows={3}
+            placeholder={t("Reason…", "Motivo…", "Reden…")}
+            className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowNotDoneSheet(false)}
+              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/70 hover:bg-white/[0.1]"
+            >
+              {t("Cancel", "Cancelar", "Annuleer")}
+            </button>
+            <button
+              type="button"
+              onClick={handleMarkNotDone}
+              disabled={isPending || !notDoneReason.trim()}
+              className="h-12 flex-1 rounded-xl bg-amber-500 text-sm font-bold text-stone-950 hover:bg-amber-500/90 disabled:opacity-50"
+            >
+              {t("Send", "Enviar", "Verzenden")}
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </BottomSheet>
+      ) : null}
 
-      {/* Suggest Task Dialog */}
-      <Dialog open={showSuggest} onOpenChange={setShowSuggest}>
-        <DialogContent className="rounded-2xl max-w-md bg-foreground border-white/[0.08] text-white">
-          <DialogHeader>
-            <DialogTitle>{t("Suggest Extra Task", "Sugerir Tarea Extra", "Extra Taak Voorstellen")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-1">
-            <input
-              value={suggestTitle}
-              onChange={(e) => setSuggestTitle(e.target.value)}
-              placeholder={t("Task name...", "Nombre de tarea...", "Naam van taak...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
-              autoFocus
-            />
-            <textarea
-              value={suggestDesc}
-              onChange={(e) => setSuggestDesc(e.target.value)}
-              placeholder={t("Description (optional)...", "Descripción (opcional)...", "Beschrijving (optioneel)...")}
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-white placeholder:text-white/30"
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowSuggest(false)} className="flex-1 h-11 rounded-xl border-white/[0.1] text-white/70 hover:bg-white/[0.06]">{t("Cancel", "Cancelar", "Annuleren")}</Button>
-              <Button onClick={handleSuggest} disabled={!suggestTitle.trim() || isPending} className="flex-1 h-11 rounded-xl">{t("Suggest", "Sugerir", "Voorstellen")}</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Photo lightbox (for grouped task photos) */}
-      {viewPhoto && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setViewPhoto(null)}>
-          <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center rounded-full bg-white/10 text-white" onClick={() => setViewPhoto(null)}>
-            <XCircle className="h-5 w-5" />
-          </button>
-          <img src={viewPhoto} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+      {/* Photo lightbox */}
+      {viewPhoto ? (
+        <div
+          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setViewPhoto(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={viewPhoto}
+            alt="photo"
+            className="max-h-full max-w-full rounded-2xl object-contain"
+          />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-/* ─── InfoRow helper ─── */
+/* ───────────────────────────────────────────────────────────────────── */
+/* BottomSheet primitive                                                  */
+/* ───────────────────────────────────────────────────────────────────── */
 
-function InfoRow({ label, value, mono, link, icon }: { label: string; value: string; mono?: boolean; link?: boolean; icon?: React.ReactNode }) {
+function BottomSheet({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   return (
-    <div className="flex items-center justify-between px-4 py-3">
-      <span className="text-sm text-white/30">{label}</span>
-      <span className={`text-sm text-right ${link ? "text-teal-400" : "text-white/80"} ${mono ? "font-mono" : ""} flex items-center gap-1`}>
-        {icon}
-        {value}
-      </span>
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="flex w-full max-w-md flex-col gap-3 rounded-t-3xl bg-stone-900 p-5 shadow-2xl ring-1 ring-white/10 sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+      >
+        {children}
+      </div>
     </div>
   );
 }

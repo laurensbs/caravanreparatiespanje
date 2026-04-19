@@ -209,19 +209,6 @@ export function GarageTodayClient({
   const [tab, setTab] = useState<FilterTab>("active");
   const [search, setSearch] = useState("");
 
-  /* "My day" filter — when set, only show repairs where this worker is
-     active right now (lopende timer) or assigned (in r.workers). The
-     selection survives reloads via localStorage so a worker can pick
-     once at the start of their shift on the shared iPad. */
-  const [mineUserId, setMineUserId] = useState<string | null>(null);
-  const [showMinePicker, setShowMinePicker] = useState(false);
-  useEffect(() => {
-    try {
-      const v = window.localStorage.getItem("garage:mine-user-id");
-      if (v) setMineUserId(v);
-    } catch {}
-  }, []);
-
   // Unlock the AudioContext on the first user gesture so haptic clicks are
   // audible right from tap one (iOS Safari requirement).
   useEffect(() => {
@@ -242,20 +229,16 @@ export function GarageTodayClient({
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Wipe any leftover "My day" selection from older builds so a worker
+  // doesn't get stuck on a phantom filter from a previous session. The
+  // shared-iPad model means anyone can start anything; per-person filtering
+  // turned out to be more confusing than helpful and was removed.
   useEffect(() => {
     try {
-      if (mineUserId) {
-        window.localStorage.setItem("garage:mine-user-id", mineUserId);
-      } else {
-        window.localStorage.removeItem("garage:mine-user-id");
-      }
+      window.localStorage.removeItem("garage:mine-user-id");
     } catch {}
-  }, [mineUserId]);
-  const mineUser = useMemo(
-    () => allUsers.find((u) => u.id === mineUserId) ?? null,
-    [allUsers, mineUserId],
-  );
-  const mineDisplayName = mineUser?.name ?? null;
+  }, []);
 
   /* Worker picker — opened with a "purpose" callback so any action
      that needs an actor can route through one component. */
@@ -307,24 +290,8 @@ export function GarageTodayClient({
   /* ── Visible repairs ─────────────────────────────────────────────── */
   const visibleRepairs = useMemo(() => {
     const q = search.trim().toLowerCase();
-    // For the "My day" filter we need both: (a) does this worker have
-    // an active timer here right now, and (b) is the worker recorded as
-    // a contributor on the job. Either is enough — we want to be lenient
-    // so picking a recently-paused job still surfaces it.
-    const mineActiveSet = new Set<string>();
-    if (mineUserId) {
-      for (const tm of liveTimers) {
-        if (tm.userId === mineUserId) mineActiveSet.add(tm.repairJobId);
-      }
-    }
     return repairs.filter((r) => {
       if (classify(r) !== tab) return false;
-      if (mineUserId) {
-        const inWorkers = mineDisplayName
-          ? r.workers.includes(mineDisplayName)
-          : false;
-        if (!mineActiveSet.has(r.id) && !inWorkers) return false;
-      }
       if (!q) return true;
       const hay = [
         r.publicCode,
@@ -341,34 +308,12 @@ export function GarageTodayClient({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [repairs, tab, search, mineUserId, mineDisplayName, liveTimers]);
+  }, [repairs, tab, search]);
 
   const totalActiveTimers = liveTimers.length;
   const unreadAdminMessages = repairs.filter(
     (r) => r.garageAdminMessage && !r.garageAdminMessageReadAt,
   ).length;
-
-  // How many repairs would be visible if the "My day" filter is active for the
-  // currently selected user. Used to show a count next to their name in the
-  // header chip so workers immediately see their workload.
-  const mineCount = useMemo(() => {
-    if (!mineUserId) return 0;
-    const activeForMe = new Set(
-      liveTimers.filter((t) => t.userId === mineUserId).map((t) => t.repairJobId),
-    );
-    return repairs.filter((r) => {
-      if (activeForMe.has(r.id)) return true;
-      if (mineDisplayName && r.workers.includes(mineDisplayName)) return true;
-      return false;
-    }).length;
-  }, [mineUserId, mineDisplayName, repairs, liveTimers]);
-
-  // First letter of the active "my day" user — used as a tiny avatar circle
-  // so workers immediately recognise whose filter is active.
-  const mineInitial = (mineDisplayName ?? "")
-    .trim()
-    .charAt(0)
-    .toUpperCase();
 
   /* ── Refresh ─────────────────────────────────────────────────────── */
   async function handleRefresh() {
@@ -618,41 +563,6 @@ export function GarageTodayClient({
               </button>
             ) : null}
           </label>
-          {mineUserId ? (
-            <button
-              type="button"
-              onClick={() => {
-                hapticTap();
-                setMineUserId(null);
-              }}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-400/15 pl-1.5 pr-2.5 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25 active:scale-[0.97]"
-              title={t("Show all repairs", "Mostrar todas", "Toon alle klussen")}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/30 text-[13px] font-bold text-emerald-50">
-                {mineInitial || "•"}
-              </span>
-              <span className="truncate max-w-[7rem]">
-                {mineDisplayName ?? t("Me", "Yo", "Mij")}
-              </span>
-              {mineCount > 0 ? (
-                <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-emerald-300/90 px-1.5 text-[11px] font-bold text-emerald-950">
-                  {mineCount}
-                </span>
-              ) : null}
-              <X className="h-3.5 w-3.5 opacity-70" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                hapticTap();
-                setShowMinePicker(true);
-              }}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-semibold text-white/70 ring-1 ring-white/[0.05] hover:bg-white/[0.1] active:scale-[0.97]"
-            >
-              {t("My day", "Mi día", "Mijn dag")}
-            </button>
-          )}
         </div>
 
         {/* Tab bar — sliding pill, like iOS segmented control */}
@@ -751,7 +661,7 @@ export function GarageTodayClient({
           </div>
         ) : (
           <div
-            key={`${tab}-${mineUserId ?? "all"}`}
+            key={tab}
             className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]"
           >
             {visibleRepairs.map((r) => (
@@ -790,31 +700,6 @@ export function GarageTodayClient({
         workers={allUsers}
         title={t("Who's starting?", "¿Quién empieza?", "Wie begint?")}
         subtitle={pickerState?.repairTitle}
-      />
-
-      {/* ── "My day" worker picker ────────────────────────────────── */}
-      <WorkerPicker
-        open={showMinePicker}
-        onClose={() => setShowMinePicker(false)}
-        onPick={(worker) => {
-          setMineUserId(worker.id);
-          setShowMinePicker(false);
-          hapticSuccess();
-          toast.success(
-            t(
-              `Showing ${worker.name}'s repairs`,
-              `Mostrando reparaciones de ${worker.name}`,
-              `Klussen van ${worker.name}`,
-            ),
-          );
-        }}
-        workers={allUsers}
-        title={t("Whose day?", "¿Día de quién?", "Wiens dag?")}
-        subtitle={t(
-          "Filter to your repairs only",
-          "Filtra a tus reparaciones",
-          "Toon alleen jouw klussen",
-        )}
       />
 
       {/* ── Tool request sheet (global) ───────────────────────────── */}

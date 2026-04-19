@@ -31,13 +31,11 @@ export default async function FeedbackPage() {
           </>
         }
       />
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm dark:border-border dark:bg-card/[0.03] max-sm:rounded-xl">
-        <FeedbackClient
-          items={items}
-          currentUserId={session.user.id!}
-          userRole={session.user.role as "admin" | "manager" | "staff" | "viewer"}
-        />
-      </div>
+      <FeedbackClient
+        items={items}
+        currentUserId={session.user.id!}
+        userRole={session.user.role as "admin" | "manager" | "staff" | "viewer"}
+      />
     </DashboardPageCanvas>
   );
 }

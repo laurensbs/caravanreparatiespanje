@@ -13,13 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   MessageSquarePlus,
   CheckCircle2,
@@ -142,91 +136,57 @@ export function FeedbackClient({
   const closedItems = items.filter((i) => i.status === "done" || i.status === "dismissed");
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex items-center justify-end gap-2 border-b border-border/60 px-4 py-3 sm:px-6">
-        <Button
-          type="button"
-          onClick={() => setShowForm(!showForm)}
-          className="h-10 w-full shrink-0 touch-manipulation gap-2 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.98] sm:h-9 sm:w-auto"
-        >
-          <MessageSquarePlus className="h-4 w-4" aria-hidden />
-          {showForm ? "Close form" : "New request"}
-        </Button>
-      </div>
+    <div className="animate-fade-in space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
+      {/* 1. Hero + changelog (what shipped, no roadmap noise) */}
+      <FeedbackProductUpdates
+        openRequestCount={openItems.length}
+        doneRequestCount={closedItems.length}
+      />
 
-      <div className="space-y-6 border-b border-border/40 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
-        <FeedbackProductUpdates openRequestCount={openItems.length} doneRequestCount={closedItems.length} />
-
-        {showForm && (
-          <Card className="animate-slide-up border-primary/20 shadow-sm">
-            <CardHeader className="space-y-1 px-4 pt-4 sm:px-6 sm:pt-6">
-              <CardTitle className="text-lg sm:text-xl">New feedback</CardTitle>
-              <CardDescription className="text-sm">What would you like changed or added?</CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                  placeholder="Title (e.g. search by registration)"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  autoFocus
-                  className="h-11 touch-manipulation rounded-xl text-base sm:text-sm"
-                />
-                <Textarea
-                  placeholder="Description (optional) — explain what you mean…"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="min-h-[120px] touch-manipulation resize-y rounded-xl text-base sm:text-sm"
-                />
-                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto"
-                    onClick={() => setShowForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isPending || !title.trim()} className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto">
-                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-                    Submit
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        <section id="feedback-queue" className="scroll-mt-6">
-          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
-            <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/25 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
-              <div className="min-w-0">
-                <h2 className="text-base font-semibold tracking-tight text-foreground">Open requests</h2>
-                <p className="text-xs text-muted-foreground">Active items we have not marked as done yet.</p>
-              </div>
-              <Badge variant="secondary" className="w-fit shrink-0 tabular-nums">
-                {openItems.length} open
-              </Badge>
+      {/* 2. Open requests — the team’s outstanding asks */}
+      <section
+        id="feedback-queue"
+        className="animate-slide-up scroll-mt-6"
+        style={{ animationDelay: "60ms", animationFillMode: "backwards" }}
+      >
+        <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.10)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_24px_48px_-24px_rgba(0,0,0,0.6)]">
+          <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground">Open requests</h2>
+              <p className="text-xs text-muted-foreground">Wat we nog op de planning hebben staan.</p>
             </div>
-            <div className="space-y-3 p-4 sm:p-5">
-              {openItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/80 bg-muted/15 py-14 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
-                    <Inbox className="h-7 w-7 opacity-70" aria-hidden />
-                  </div>
-                  <div className="max-w-sm space-y-1 px-2">
-                    <p className="text-sm font-medium text-foreground">No open requests</p>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      You are all caught up. Use <span className="font-medium text-foreground">New request</span> to suggest an improvement.
-                    </p>
-                  </div>
+            <Badge variant="secondary" className="w-fit shrink-0 rounded-full px-2.5 tabular-nums">
+              {openItems.length} open
+            </Badge>
+          </div>
+          <div className="space-y-3 p-4 sm:p-5">
+            {openItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/15 py-16 text-center">
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-foreground/[0.06] to-transparent text-muted-foreground ring-1 ring-border/60">
+                  <Inbox className="h-6 w-6 opacity-70" aria-hidden />
                 </div>
-              ) : (
-                openItems.map((item) => (
+                <div className="max-w-sm space-y-1 px-2">
+                  <p className="text-sm font-medium text-foreground">Niks openstaand</p>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Goed bezig — alles is afgehandeld. Onderaan deze pagina kun je een{" "}
+                    <a
+                      href="#feedback-form"
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      nieuw idee
+                    </a>{" "}
+                    insturen.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              openItems.map((item, i) => (
+                <div
+                  key={item.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${80 + i * 35}ms`, animationFillMode: "backwards" }}
+                >
                   <FeedbackCard
-                    key={item.id}
                     item={item}
                     isAdmin={isAdmin}
                     isOwner={item.userId === currentUserId}
@@ -235,43 +195,130 @@ export function FeedbackClient({
                     onDelete={handleDelete}
                     isPending={isPending}
                   />
-                ))
-              )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Resolved — collapsible feel, lower visual weight */}
+      {closedItems.length > 0 && (
+        <section
+          className="animate-slide-up"
+          style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
+        >
+          <div className="overflow-hidden rounded-3xl border border-border/50 bg-muted/[0.25] dark:bg-card/[0.4]">
+            <div className="flex flex-col gap-1 border-b border-border/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+              <div>
+                <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground/90">Resolved</h2>
+                <p className="text-xs text-muted-foreground">Eerder afgehandeld of weggestuurd.</p>
+              </div>
+              <Badge
+                variant="outline"
+                className="w-fit shrink-0 rounded-full px-2.5 tabular-nums text-muted-foreground"
+              >
+                {closedItems.length} total
+              </Badge>
+            </div>
+            <div className="divide-y divide-border/40 p-2 sm:p-3">
+              {closedItems.map((item) => (
+                <div key={item.id} className="p-2 sm:p-2.5">
+                  <FeedbackCard
+                    item={item}
+                    isAdmin={isAdmin}
+                    isOwner={item.userId === currentUserId}
+                    highlightTeamReply={initialUnreadReplyIds.has(item.id)}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    isPending={isPending}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </section>
+      )}
 
-        {closedItems.length > 0 && (
-          <section className="space-y-0">
-            <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
-              <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/15 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">Resolved</h2>
-                  <p className="text-xs text-muted-foreground">Completed or dismissed requests.</p>
-                </div>
-                <Badge variant="outline" className="w-fit shrink-0 tabular-nums text-muted-foreground">
-                  {closedItems.length} total
-                </Badge>
-              </div>
-              <div className="divide-y divide-border/50 p-2 sm:p-3">
-                {closedItems.map((item) => (
-                  <div key={item.id} className="p-2 sm:p-2.5">
-                    <FeedbackCard
-                      item={item}
-                      isAdmin={isAdmin}
-                      isOwner={item.userId === currentUserId}
-                      highlightTeamReply={initialUnreadReplyIds.has(item.id)}
-                      onStatusChange={handleStatusChange}
-                      onDelete={handleDelete}
-                      isPending={isPending}
-                    />
-                  </div>
-                ))}
-              </div>
+      {/* 4. New request — bottom of the page on purpose. After scrolling
+            through what shipped + what is open, the user has the full
+            picture; only then ask them what is missing. */}
+      <section
+        id="feedback-form"
+        className="animate-slide-up scroll-mt-6"
+        style={{ animationDelay: "180ms", animationFillMode: "backwards" }}
+      >
+        <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-amber-500/[0.04] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.12)] dark:from-card dark:to-amber-500/[0.06] sm:p-7">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gradient-to-br from-amber-500/15 to-transparent blur-3xl"
+          />
+          <div className="relative flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-foreground text-background shadow-sm">
+              <MessageSquarePlus className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[15px] font-semibold tracking-[-0.005em] text-foreground">
+                Iets dat beter kan?
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Tip ons aan. Eén regel is genoeg — wij vragen door als het nodig is.
+              </p>
             </div>
-          </section>
-        )}
-      </div>
+            {!showForm ? (
+              <Button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="h-10 shrink-0 touch-manipulation gap-2 rounded-xl bg-foreground px-4 text-background shadow-sm transition-all hover:-translate-y-0.5 hover:bg-foreground/90 hover:shadow-md active:scale-[0.98] sm:h-9"
+              >
+                <MessageSquarePlus className="h-4 w-4" aria-hidden />
+                Nieuw idee
+              </Button>
+            ) : null}
+          </div>
+
+          {showForm ? (
+            <form
+              onSubmit={handleSubmit}
+              className="animate-slide-up relative mt-5 space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4 backdrop-blur-md sm:p-5"
+            >
+              <Input
+                placeholder="Korte titel (bv. ‘zoek op kenteken’)"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                autoFocus
+                className="h-11 touch-manipulation rounded-xl text-base sm:text-sm"
+              />
+              <Textarea
+                placeholder="Beschrijving (optioneel) — leg uit wat je bedoelt…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="min-h-[120px] touch-manipulation resize-y rounded-xl text-base sm:text-sm"
+              />
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto"
+                  onClick={() => setShowForm(false)}
+                >
+                  Annuleren
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending || !title.trim()}
+                  className="h-11 w-full touch-manipulation rounded-xl sm:h-10 sm:w-auto"
+                >
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+                  Versturen
+                </Button>
+              </div>
+            </form>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

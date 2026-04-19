@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, useCallback } from "react";
 import {
   listRepairMessages,
   adminReplyToGarage,
   markGarageRepliesRead,
   type RepairMessage,
 } from "@/actions/garage-sync";
-import { Send, MessageSquare, ChevronDown, ChevronUp, Pin, X } from "lucide-react";
+import { Send, MessageSquare, ChevronDown, ChevronUp, Pin, X, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 function timeLabel(d: Date) {
@@ -19,6 +19,23 @@ function dayLabel(d: Date) {
   if (d.toDateString() === today.toDateString()) return "Today";
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
+
+/** Compacte "23m"-weergave voor presence — bewust grof, want we polleren
+ *  dit niet elke seconde. Boven het uur tonen we "1h 4m" zodat het
+ *  signaal snel scant. */
+function elapsedShort(start: Date) {
+  const minutes = Math.max(0, Math.floor((Date.now() - start.getTime()) / 60_000));
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+export type ThreadActiveTimer = {
+  userId: string | null;
+  userName: string | null;
+  startedAt: Date | string;
+};
 
 /**
  * Bidirectional thread shown on the admin repair detail page. Mirrors the
@@ -42,6 +59,7 @@ export function AdminRepairThread({
   pinnedMessage,
   pinnedAt,
   onClearPin,
+  activeTimers = [],
 }: {
   repairJobId: string;
   /** Called after a successful reply so the parent can refresh state. */
@@ -49,6 +67,10 @@ export function AdminRepairThread({
   pinnedMessage?: string | null;
   pinnedAt?: Date | string | null;
   onClearPin?: () => Promise<void> | void;
+  /** Lopende timers op deze repair — gebruikt voor de presence-pill
+   *  ("Jake is now in the garage · 23m"). Kost niets extra omdat de
+   *  page deze data al ophaalt voor de Time Log. */
+  activeTimers?: ThreadActiveTimer[];
 }) {
   const [messages, setMessages] = useState<RepairMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,32 +78,82 @@ export function AdminRepairThread({
   const [expanded, setExpanded] = useState(false);
   const [isPosting, startTransition] = useTransition();
 
-  async function refresh() {
+  // Houd het laatst-gezien aantal garage-replies bij zodat we het verschil
+  // tussen "initial load" en "een nieuw bericht is binnengekomen" kunnen
+  // detecteren tijdens polling. Dit is een ref (geen state) want het mag
+  // geen render triggeren.
+  const lastGarageCountRef = useRef<number | null>(null);
+  // Backoff voor polling: bij netwerkfouten lopen we van 8s → 16s → 30s
+  // → 60s, zodat een uitgevallen tablet/server het admin-panel niet
+  // platkookt. Reset naar 8s zodra een fetch weer slaagt.
+  const failCountRef = useRef(0);
+
+  const refresh = useCallback(async () => {
     try {
       const list = await listRepairMessages(repairJobId);
-      setMessages(list);
+      failCountRef.current = 0;
+      setMessages((prev) => {
+        const prevGarage = prev.filter((m) => m.direction === "garage_to_admin").length;
+        const nextGarage = list.filter((m) => m.direction === "garage_to_admin").length;
+        // Stille toast zodra er een nieuw bericht is binnengekomen ná de
+        // initiële load. Bij eerste mount (lastGarageCountRef nog null)
+        // niet toasten — anders krijg je hem bij elke pagina-open.
+        if (lastGarageCountRef.current !== null && nextGarage > prevGarage) {
+          toast.message("New reply from the garage", {
+            description: list[list.length - 1]?.body?.slice(0, 80),
+          });
+          // Triggert ook een server-refresh zodat presence/timers
+          // mee-verfrissen.
+          onChange?.();
+        }
+        lastGarageCountRef.current = nextGarage;
+        return list;
+      });
+      // Markeer ongelezen garage-replies als gezien zodra we ze ophalen
+      // (admin kijkt er actief naar).
+      await markGarageRepliesRead(repairJobId).catch(() => {});
     } catch {
-      // ignore
+      failCountRef.current += 1;
     }
-  }
+  }, [repairJobId, onChange]);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const list = await listRepairMessages(repairJobId);
-        if (!cancelled) setMessages(list);
-        // Mark unread garage replies as seen.
-        await markGarageRepliesRead(repairJobId).catch(() => {});
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    setLoading(true);
+    refresh().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [repairJobId]);
+  }, [refresh]);
+
+  // Lichte polling — laat de admin-thread automatisch nieuwe garage-
+  // replies ophalen, in dezelfde geest als `useGaragePoll` aan de
+  // werker-kant. We pauzeren als het tabblad onzichtbaar is (geen zin om
+  // te pollen voor een ongeziene UI) en backen exponentieel af bij
+  // fouten zodat een tijdelijk netwerkprobleem niet blijft tikken.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      const fails = failCountRef.current;
+      const baseMs = 8000;
+      const ms =
+        fails === 0 ? baseMs : Math.min(60_000, baseMs * Math.pow(2, fails));
+      timer = setTimeout(async () => {
+        if (typeof document !== "undefined" && document.hidden) {
+          schedule();
+          return;
+        }
+        await refresh();
+        schedule();
+      }, ms);
+    };
+    schedule();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [refresh]);
 
   async function handleSend() {
     const trimmed = draft.trim();
@@ -122,6 +194,22 @@ export function AdminRepairThread({
       : pinnedAt
     : null;
 
+  // Tikker zodat de "23m" in de presence-pill elke minuut updatet zonder
+  // dat we de hele page hoeven te refreshen. Geen state-explosie: alleen
+  // een tick-counter zodat React re-rendert.
+  const [, setNow] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setNow((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const livePresence = activeTimers
+    .filter((t) => !!t.userName)
+    .map((t) => ({
+      name: t.userName as string,
+      startedAt: typeof t.startedAt === "string" ? new Date(t.startedAt) : t.startedAt,
+    }));
+
   return (
     <section className="rounded-xl bg-muted/50 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
       <header className="mb-3 flex items-center justify-between gap-2">
@@ -130,6 +218,16 @@ export function AdminRepairThread({
           <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold">
             Conversation with garage
           </p>
+          {livePresence.length > 0 ? (
+            <span
+              className="relative flex h-2 w-2"
+              aria-label="Garage is online on this repair"
+              title="Garage is on this repair right now"
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+          ) : null}
           {messages.length > 0 ? (
             <span className="rounded-full bg-muted dark:bg-card/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground/70">
               {messages.length}
@@ -154,6 +252,38 @@ export function AdminRepairThread({
           </button>
         ) : null}
       </header>
+
+      {/* Live presence — wie heeft er nu een lopende timer op deze
+          repair (= staat fysiek aan de bus)? Geeft de admin context bij
+          het sturen: "Jake werkt er nú aan, snelle vraag kan even".
+          Niets als er geen actieve timers zijn — geen lege ruimte. */}
+      {livePresence.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-emerald-200/70 bg-emerald-50/60 px-3 py-2 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          <Wrench className="h-3.5 w-3.5 shrink-0 text-emerald-700/80 dark:text-emerald-300/80" />
+          <p className="text-[12px] text-emerald-900/90 dark:text-emerald-100/90">
+            {livePresence.length === 1 ? (
+              <>
+                <span className="font-medium">{livePresence[0].name}</span>
+                <span className="opacity-70"> is in the garage now</span>
+                <span className="ml-1 tabular-nums opacity-60">
+                  · {elapsedShort(livePresence[0].startedAt)}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="font-medium">
+                  {livePresence.map((p) => p.name).join(", ")}
+                </span>
+                <span className="opacity-70"> are in the garage now</span>
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
 
       {/* Pinned banner — toont in één regel wat er nu bovenaan op de
           garage-tablet staat (de meest recente "must-see"-prikkel). De

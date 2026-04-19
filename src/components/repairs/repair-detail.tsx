@@ -1685,6 +1685,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   await clearGarageMessage(job.id);
                   router.refresh();
                 }}
+                activeTimers={activeTimers as { userId: string | null; userName: string | null; startedAt: Date | string }[]}
               />
 
               {/* ── Start / Schedule pills ── */}

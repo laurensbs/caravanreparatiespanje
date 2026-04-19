@@ -101,12 +101,12 @@ export default async function RepairsPage({ searchParams }: Props) {
         { group: "when", key: "overdue", label: "Overdue", count: byDate.overdue, href: "/repairs?dueWithin=overdue", isActive: filters.dueWithin === "overdue", tone: "destructive", hideIfEmpty: true },
         { group: "when", key: "unscheduled", label: "No date", count: byDate.unscheduled, href: "/repairs?dueWithin=unscheduled", isActive: filters.dueWithin === "unscheduled" },
         { group: "mine", key: "todo", label: "To Do", count: todoCount, href: "/repairs?status=todo", isActive: filters.status === "todo" },
-        { group: "mine", key: "in_progress", label: "In Garage", count: inGarageCount, href: "/repairs?status=in_progress", isActive: filters.status === "in_progress" },
-        { group: "mine", key: "ready_for_check", label: "Ready for Check", count: readyForCheckCount, href: "/repairs?status=ready_for_check", isActive: filters.status === "ready_for_check", tone: "emerald" },
+        { group: "mine", key: "in_progress", label: "In Garage", count: inGarageCount, href: "/repairs?status=in_progress", isActive: filters.status === "in_progress", tone: "solid" },
+        { group: "mine", key: "ready_for_check", label: "Ready for Check", count: readyForCheckCount, href: "/repairs?status=ready_for_check", isActive: filters.status === "ready_for_check", tone: "amber" },
         { group: "mine", key: "mine", label: "My work", count: null, href: "/repairs?mine=1", isActive: filters.mine === "1" },
         { group: "waiting", key: "waiting_parts", label: "Waiting for Parts", count: waitingPartsCount, href: "/repairs?status=waiting_parts", isActive: filters.status === "waiting_parts", tone: "amber", hideIfEmpty: true },
-        { group: "waiting", key: "waiting_customer", label: "Waiting for Contact", count: waitingCustomerCount, href: "/repairs?status=waiting_customer", isActive: filters.status === "waiting_customer", tone: "amber", hideIfEmpty: true },
-        { group: "waiting", key: "quote_needed", label: "Quote Needed", count: quoteNeededCount, href: "/repairs?status=quote_needed", isActive: filters.status === "quote_needed", hideIfEmpty: true },
+        { group: "waiting", key: "waiting_customer", label: "Waiting for Contact", count: waitingCustomerCount, href: "/repairs?status=waiting_customer", isActive: filters.status === "waiting_customer", tone: "orange", hideIfEmpty: true },
+        { group: "waiting", key: "quote_needed", label: "Quote Needed", count: quoteNeededCount, href: "/repairs?status=quote_needed", isActive: filters.status === "quote_needed", tone: "amber", hideIfEmpty: true },
       ]} />
 
       <RepairFiltersBar

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { users, auditLogs } from "@/lib/db/schema";
-import { requireOwner } from "@/lib/auth-utils";
+import { isOwner } from "@/lib/auth-utils";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { format, formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -32,12 +32,18 @@ function avatarGradient(name: string | undefined | null): string {
   return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
 }
 
-function relative(ts: Date | null): string {
+function relative(ts: Date | string | null): string {
   if (!ts) return "Nog nooit";
-  return formatDistanceToNow(ts, { addSuffix: true, locale: nl });
+  // Drizzle's raw sql<Date|null> tag is a TS hint, not a runtime cast —
+  // pg sometimes hands us a Date and sometimes a string depending on
+  // the driver path. Normalise so date-fns doesn't throw on a string,
+  // which is what nukes the whole RSC render in production.
+  const d = ts instanceof Date ? ts : new Date(ts);
+  if (Number.isNaN(d.getTime())) return "Nog nooit";
+  return formatDistanceToNow(d, { addSuffix: true, locale: nl });
 }
 
-function statusFor(lastSeen: Date | null): {
+function statusFor(lastSeen: Date | string | null): {
   label: string;
   dot: string;
   text: string;
@@ -45,21 +51,26 @@ function statusFor(lastSeen: Date | null): {
   if (!lastSeen) {
     return { label: "Never signed in", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
   }
-  const minutes = (Date.now() - lastSeen.getTime()) / 60_000;
+  const d = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
+  if (Number.isNaN(d.getTime())) {
+    return { label: "Never signed in", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
+  }
+  const minutes = (Date.now() - d.getTime()) / 60_000;
   if (minutes < 10) return { label: "Active now", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" };
   if (minutes < 60 * 24) return { label: "Recent", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
   return { label: "Longer ago", dot: "bg-muted-foreground/40", text: "text-muted-foreground" };
 }
 
 export default async function ActivityPage() {
-  // Owner-only — defer to the helper which throws on non-owner. We catch
-  // and redirect to dashboard rather than letting the error boundary
-  // render, because this page is intentionally hidden, not 'broken'.
-  try {
-    await requireOwner();
-  } catch {
-    redirect("/");
-  }
+  // Owner-only — but we deliberately route around the throwing helper
+  // because a try/catch around `requireOwner()` also swallows the
+  // NEXT_REDIRECT signal that next-auth uses, which surfaces as a
+  // "Server Components render" crash on Vercel. Read the session
+  // ourselves and redirect with a clean control-flow throw.
+  const { auth } = await import("@/lib/auth");
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  if (!isOwner(session.user.email)) redirect("/");
 
   // 1) All active users + their last successful login (from audit_logs).
   // 2) Last 25 login events for the timeline.

@@ -16,11 +16,6 @@ export const metadata: Metadata = {
     googleBot: { index: false, follow: false },
   },
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
-    shortcut: "/favicon.png",
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

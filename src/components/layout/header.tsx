@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, Settings, Sparkles, MessageSquare, Menu, Trash2 } from "lucide-react";
+import { Search, LogOut, Settings, Sparkles, MessageSquare, Menu, Trash2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -71,7 +71,7 @@ function HeaderIconLink({
       <Button
         variant="ghost"
         size="icon"
-        className="relative h-9 w-9 shrink-0 touch-manipulation rounded-lg sm:h-8 sm:w-8"
+        className="relative h-11 w-11 shrink-0 touch-manipulation rounded-lg sm:h-8 sm:w-8"
         asChild
       >
         <Link
@@ -121,7 +121,7 @@ function HeaderIconButton({
         onClick={onClick}
         aria-label={ariaLabel ?? (showBadge ? `${title}, ${badgeCount} pending` : title)}
         className={cn(
-          "group relative h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.96] sm:h-8 sm:w-8",
+          "group relative h-11 w-11 shrink-0 touch-manipulation rounded-lg text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.96] sm:h-8 sm:w-8",
           isActive && "bg-foreground/[0.06] text-foreground",
         )}
       >
@@ -166,12 +166,15 @@ export function Header({
   return (
     <>
       <CommandPalette />
-      <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center gap-2 border-b border-border/60 bg-background/75 px-2.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:gap-3 sm:px-5">
+      <header
+        className="sticky top-0 z-30 flex h-[60px] min-w-0 items-center gap-2 border-b border-border/60 bg-background/75 px-2 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:h-14 sm:gap-3 sm:px-5"
+        style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
+      >
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="group h-9 w-9 shrink-0 touch-manipulation rounded-lg text-muted-foreground hover:text-foreground lg:hidden"
+          className="group h-11 w-11 shrink-0 touch-manipulation rounded-lg text-muted-foreground hover:text-foreground sm:h-9 sm:w-9 lg:hidden"
           aria-label="Open menu"
           onClick={() => setMobileOpen(true)}
         >
@@ -184,10 +187,13 @@ export function Header({
             onClick={() =>
               document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
             }
-            className="group group/search flex h-9 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0)] transition-all hover:border-foreground/15 hover:bg-card hover:text-foreground focus-visible:border-ring focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:max-w-sm lg:max-w-md"
+            className="group group/search flex h-11 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0)] transition-all hover:border-foreground/15 hover:bg-card hover:text-foreground focus-visible:border-ring focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-9 sm:max-w-sm lg:max-w-md"
           >
-            <Search className="icon-pop h-3.5 w-3.5 shrink-0 opacity-70 transition-all group-hover/search:opacity-100" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal tracking-[-0.005em]">Search work orders, klanten, units…</span>
+            <Search className="icon-pop h-4 w-4 shrink-0 opacity-70 transition-all group-hover/search:opacity-100 sm:h-3.5 sm:w-3.5" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal tracking-[-0.005em]">
+              <span className="sm:hidden">Search…</span>
+              <span className="hidden sm:inline">Search work orders, klanten, units…</span>
+            </span>
             <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground shadow-[0_1px_0_0_rgba(0,0,0,0.04)] sm:inline-flex">
               ⌘K
             </kbd>
@@ -195,57 +201,120 @@ export function Header({
         </div>
 
         <TooltipProvider delayDuration={250} disableHoverableContent>
-        <div className="flex max-w-[min(60vw,18rem)] shrink-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:max-w-none sm:overflow-visible [&::-webkit-scrollbar]:hidden">
-          <HeaderIconButton
-            title={inboxTotalCount > 0 ? `Inbox · ${inboxTotalCount}` : "Inbox & Assistant"}
-            ariaLabel="Open inbox and assistant"
-            isActive={assistantOpen}
-            badgeCount={assistantBadge}
-            badgeTone={assistantBadgeTone}
-            onClick={() => openWith(inboxTotalCount > 0 ? "inbox" : "assistant")}
-          >
-            <Sparkles className="icon-wiggle h-4 w-4" />
-          </HeaderIconButton>
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-0.5">
+          {/*
+            Compact "more" overflow on phones. We collapse Inbox / Feedback /
+            Bin / Theme / Settings into a single tap target so the search bar
+            actually has room to breathe and every visible button stays >=44px.
+          */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="More actions"
+                className="relative h-11 w-11 shrink-0 touch-manipulation rounded-lg text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.96] sm:hidden"
+              >
+                <MoreHorizontal className="h-5 w-5" />
+                {assistantBadge > 0 || feedbackUnreadReplyCount > 0 ? (
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" aria-hidden />
+                ) : null}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60 rounded-xl p-1.5">
+              <DropdownMenuItem
+                className="rounded-lg py-2.5"
+                onSelect={() => openWith(inboxTotalCount > 0 ? "inbox" : "assistant")}
+              >
+                <Sparkles className="mr-2.5 h-4 w-4" />
+                <span className="flex-1">{inboxTotalCount > 0 ? "Inbox" : "Assistant"}</span>
+                {assistantBadge > 0 ? (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-5 rounded-full px-1.5 text-[10px] font-semibold tabular-nums",
+                      assistantBadgeTone === "red" && "border-destructive/40 bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {assistantBadge > 9 ? "9+" : assistantBadge}
+                  </Badge>
+                ) : null}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="rounded-lg py-2.5" onSelect={() => router.push("/feedback")}>
+                <MessageSquare className="mr-2.5 h-4 w-4" />
+                <span className="flex-1">Feedback</span>
+                {feedbackUnreadReplyCount > 0 ? (
+                  <Badge variant="outline" className="h-5 rounded-full border-destructive/40 bg-destructive/10 px-1.5 text-[10px] font-semibold tabular-nums text-destructive">
+                    {feedbackUnreadReplyCount > 9 ? "9+" : feedbackUnreadReplyCount}
+                  </Badge>
+                ) : null}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="rounded-lg py-2.5" onSelect={() => router.push("/repairs/bin")}>
+                <Trash2 className="mr-2.5 h-4 w-4" />
+                Deleted work orders
+              </DropdownMenuItem>
+              {showSettings ? (
+                <DropdownMenuItem className="rounded-lg py-2.5" onSelect={() => router.push("/settings")}>
+                  <Settings className="mr-2.5 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <HeaderIconLink
-            href="/feedback"
-            title="Feedback"
-            isActive={feedbackActive}
-            badgeCount={feedbackUnreadReplyCount}
-          >
-            <MessageSquare className="icon-bob h-4 w-4" />
-          </HeaderIconLink>
+          <div className="hidden items-center gap-0.5 sm:flex">
+            <HeaderIconButton
+              title={inboxTotalCount > 0 ? `Inbox · ${inboxTotalCount}` : "Inbox & Assistant"}
+              ariaLabel="Open inbox and assistant"
+              isActive={assistantOpen}
+              badgeCount={assistantBadge}
+              badgeTone={assistantBadgeTone}
+              onClick={() => openWith(inboxTotalCount > 0 ? "inbox" : "assistant")}
+            >
+              <Sparkles className="icon-wiggle h-4 w-4" />
+            </HeaderIconButton>
 
-          <HeaderIconLink
-            href="/repairs/bin"
-            title="Deleted work orders"
-            isActive={binActive}
-          >
-            <Trash2 className="icon-wiggle h-4 w-4" />
-          </HeaderIconLink>
-
-          <span className="mx-1.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
-
-          <HoverHint label="Toggle theme" side="bottom">
-            <span className="inline-flex">
-              <ThemeToggle />
-            </span>
-          </HoverHint>
-
-          {showSettings ? (
-            <HeaderIconLink href="/settings" title="Settings" isActive={settingsActive}>
-              <Settings className="icon-spin-slow h-4 w-4" />
+            <HeaderIconLink
+              href="/feedback"
+              title="Feedback"
+              isActive={feedbackActive}
+              badgeCount={feedbackUnreadReplyCount}
+            >
+              <MessageSquare className="icon-bob h-4 w-4" />
             </HeaderIconLink>
-          ) : null}
 
-          <span className="mx-1.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
+            <HeaderIconLink
+              href="/repairs/bin"
+              title="Deleted work orders"
+              isActive={binActive}
+            >
+              <Trash2 className="icon-wiggle h-4 w-4" />
+            </HeaderIconLink>
+
+            <span className="mx-1.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
+
+            <HoverHint label="Toggle theme" side="bottom">
+              <span className="inline-flex">
+                <ThemeToggle />
+              </span>
+            </HoverHint>
+
+            {showSettings ? (
+              <HeaderIconLink href="/settings" title="Settings" isActive={settingsActive}>
+                <Settings className="icon-spin-slow h-4 w-4" />
+              </HeaderIconLink>
+            ) : null}
+
+            <span className="mx-1.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="group/avatar h-9 gap-2 rounded-full px-1 pr-2.5 touch-manipulation transition-colors hover:bg-foreground/[0.05]"
+                className="group/avatar h-11 gap-2 rounded-full px-1 pr-1 touch-manipulation transition-colors hover:bg-foreground/[0.05] sm:h-9 sm:pr-2.5"
                 aria-label={`Account menu for ${userName}`}
               >
                 <span

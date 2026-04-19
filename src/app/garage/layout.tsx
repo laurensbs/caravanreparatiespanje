@@ -10,6 +10,7 @@ import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 
 export const metadata = {
   title: "Garage — Caravan Repairs",
+  manifest: "/garage-manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent" as const,

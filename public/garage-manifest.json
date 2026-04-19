@@ -1,0 +1,17 @@
+{
+  "id": "/garage?source=pwa",
+  "name": "Garage Tablet",
+  "short_name": "Garage",
+  "description": "Garage tablet for active repairs and time tracking",
+  "start_url": "/garage",
+  "scope": "/garage",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c0a09",
+  "theme_color": "#0c0a09",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/garage/icon", "sizes": "32x32", "type": "image/png", "purpose": "any" },
+    { "src": "/garage/apple-icon", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

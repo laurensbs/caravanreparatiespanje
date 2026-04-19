@@ -226,6 +226,10 @@ export const users = pgTable(
     passwordHash: text("password_hash").notNull(),
     role: userRoleEnum("role").notNull().default("staff"),
     active: boolean("active").notNull().default(true),
+    // Wanneer true moet de gebruiker bij de eerstvolgende login een nieuw
+    // wachtwoord aanmaken. Wordt door de admin/migratie gezet voor nieuwe
+    // accounts en automatisch op false gezet zodra het wachtwoord is gekozen.
+    mustChangePassword: boolean("must_change_password").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

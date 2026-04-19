@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { checkMustChangePassword, setInitialPassword } from "@/actions/first-login";
 
 type Account = {
   name: string;
@@ -28,30 +29,50 @@ const ACCOUNTS: Account[] = [
   { name: "Noah", email: "noah@caravanrepairspain.com", color: "from-amber-500 to-orange-500" },
 ];
 
-type Stage = "pick" | "password" | "success";
+type Stage = "pick" | "password" | "setup" | "success";
 
 export default function LoginPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<Account | null>(null);
   const [stage, setStage] = useState<Stage>("pick");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [shake, setShake] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (stage === "password") {
       const t = setTimeout(() => passwordRef.current?.focus(), 220);
       return () => clearTimeout(t);
     }
+    if (stage === "setup") {
+      const t = setTimeout(() => newPasswordRef.current?.focus(), 220);
+      return () => clearTimeout(t);
+    }
   }, [stage]);
 
-  function pickAccount(acc: Account) {
+  async function pickAccount(acc: Account) {
     setSelected(acc);
-    setStage("password");
+    setError("");
+    setChecking(true);
+    // Snel even checken of dit account nog een eerste wachtwoord moet
+    // kiezen — zo niet, dan tonen we direct het normale password-scherm.
+    try {
+      const mustChange = await checkMustChangePassword(acc.email.trim());
+      setStage(mustChange ? "setup" : "password");
+    } catch {
+      setStage("password");
+    } finally {
+      setChecking(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,11 +103,67 @@ export default function LoginPage() {
     }, 700);
   }
 
+  async function handleSetupSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) return;
+    setError("");
+
+    if (newPassword.length < 6) {
+      setError("Minimaal 6 tekens");
+      setShake(true);
+      setTimeout(() => setShake(false), 450);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Wachtwoorden komen niet overeen");
+      setShake(true);
+      setTimeout(() => setShake(false), 450);
+      return;
+    }
+
+    setLoading(true);
+    const result = await setInitialPassword({
+      email: selected.email.trim(),
+      newPassword,
+    });
+
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+      setShake(true);
+      setTimeout(() => setShake(false), 450);
+      return;
+    }
+
+    // Direct doorloggen met het zojuist gekozen wachtwoord — geen tweede
+    // schermovergang nodig.
+    const signed = await signIn("credentials", {
+      email: selected.email.trim(),
+      password: newPassword,
+      redirect: false,
+    });
+
+    if (signed?.error) {
+      setError("Inloggen mislukt — probeer opnieuw");
+      setLoading(false);
+      return;
+    }
+
+    setStage("success");
+    setTimeout(() => {
+      router.push("/");
+      router.refresh();
+    }, 700);
+  }
+
   function reset() {
     setStage("pick");
     setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
     setError("");
     setShowPassword(false);
+    setShowNewPassword(false);
     setCapsLock(false);
     setTimeout(() => setSelected(null), 250);
   }
@@ -131,6 +208,8 @@ export default function LoginPage() {
         >
           {stage === "success"
             ? `Welcome, ${selected?.name}`
+            : stage === "setup"
+            ? `Welcome ${selected?.name} — choose a password`
             : stage === "password"
             ? `Welcome back, ${selected?.name}`
             : "Choose your account to continue"}
@@ -153,8 +232,9 @@ export default function LoginPage() {
                 key={acc.email}
                 type="button"
                 onClick={() => pickAccount(acc)}
+                disabled={checking}
                 style={{ animationDelay: `${i * 70}ms` }}
-                className="login-tile group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_1px_0_0_rgba(255,255,255,0.6)_inset] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]"
+                className="login-tile group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_1px_0_0_rgba(255,255,255,0.6)_inset] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 dark:hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]"
               >
                 {/* Top accent line in account colour, fades in on hover. */}
                 <span
@@ -285,6 +365,150 @@ export default function LoginPage() {
                   </>
                 ) : (
                   "Sign in"
+                )}
+              </Button>
+            </form>
+          )}
+        </div>
+
+        {/* Stage: setup — first-time password creation. Same visual
+            language as the password stage so the transition feels like a
+            natural extension, not a separate flow. */}
+        <div
+          className={`transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            stage === "setup"
+              ? "opacity-100 translate-y-0 pointer-events-auto"
+              : "opacity-0 translate-y-2 pointer-events-none absolute inset-0"
+          }`}
+        >
+          {selected && (
+            <form
+              onSubmit={handleSetupSubmit}
+              className={`space-y-4 ${shake ? "animate-[shake_0.45s_ease-in-out]" : ""}`}
+            >
+              <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
+                <div className="relative">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${selected.color} text-base font-semibold text-white shadow-[0_2px_6px_-1px_rgba(0,0,0,0.18),inset_0_1px_0_0_rgba(255,255,255,0.18)]`}
+                  >
+                    {selected.name.charAt(0)}
+                  </div>
+                  {loading && (
+                    <span
+                      aria-hidden
+                      className={`absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background bg-gradient-to-br ${selected.color} opacity-0 animate-[pulseRing_1.4s_ease-out_infinite]`}
+                    />
+                  )}
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="text-sm font-medium leading-tight tracking-[-0.005em]">
+                    {selected.name}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Sparkles className="h-3 w-3" />
+                    <span>First time — choose a password</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={reset}
+                  disabled={loading}
+                  className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                  aria-label="Choose a different account"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    ref={newPasswordRef}
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    onKeyUp={(e) => {
+                      if ("getModifierState" in e) {
+                        setCapsLock(e.getModifierState("CapsLock"));
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if ("getModifierState" in e) {
+                        setCapsLock(e.getModifierState("CapsLock"));
+                      }
+                    }}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    disabled={loading}
+                    className="h-11 rounded-xl pr-10 text-base tracking-wide"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    tabIndex={-1}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    disabled={loading}
+                    className="h-11 rounded-xl pr-10 text-base tracking-wide"
+                  />
+                </div>
+
+                {/* Strength + status: één regel hoog zodat de layout niet
+                    verspringt zodra een melding verschijnt. */}
+                <div className="grid h-4 grid-cols-2 gap-2 px-1 text-[11px]">
+                  <p
+                    className={`text-amber-600 transition-opacity duration-200 dark:text-amber-400 ${
+                      capsLock && !error ? "opacity-100" : "opacity-0"
+                    }`}
+                    aria-live="polite"
+                  >
+                    {capsLock ? "Caps Lock is on" : "\u00A0"}
+                  </p>
+                  <p
+                    className={`text-right transition-opacity duration-200 ${
+                      error
+                        ? "text-destructive opacity-100"
+                        : newPassword.length > 0 && newPassword.length < 6
+                        ? "text-muted-foreground opacity-100"
+                        : "opacity-0"
+                    }`}
+                    aria-live="polite"
+                  >
+                    {error || (newPassword.length > 0 && newPassword.length < 6 ? "Min. 6 characters" : "\u00A0")}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="h-11 w-full rounded-xl text-sm font-medium tracking-[-0.005em] transition-all active:scale-[0.98]"
+                disabled={loading || !newPassword || !confirmPassword}
+              >
+                {loading ? (
+                  <>
+                    <Spinner className="mr-2" />
+                    Creating…
+                  </>
+                ) : (
+                  "Create password & sign in"
                 )}
               </Button>
             </form>

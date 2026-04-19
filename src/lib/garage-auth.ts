@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 
 const COOKIE_NAME = "garage_auth";
@@ -90,10 +91,10 @@ export async function clearGarageSession(): Promise<void> {
   cookieStore.delete({ name: COOKIE_NAME, path: "/garage" });
 }
 
-/** Require garage authentication — throws if not authenticated */
+/** Require garage authentication — redirects to /garage if missing */
 export async function requireGarageAuth(): Promise<void> {
   const ok = await isGarageAuthenticated();
-  if (!ok) throw new Error("Garage authentication required");
+  if (!ok) redirect("/garage");
 }
 
 /** Auth context returned by requireAnyAuth */
@@ -102,7 +103,17 @@ export type AuthContext = {
   userName: string;
 };
 
-/** Require either NextAuth session OR valid garage cookie */
+/**
+ * Require either NextAuth session OR valid garage cookie.
+ *
+ * If neither is present we *redirect* the caller to `/garage` instead
+ * of throwing. Throwing turned a stale-cookie POST (PWA on iPhone, an
+ * orphan in-flight server action after the 4h garage cookie expired,
+ * a polled fetch from a backgrounded tab) into an opaque 500 with
+ * only a digest. Next.js treats `redirect()` as a structured control
+ * flow signal — the client is bounced to /garage where the layout
+ * shows the PIN keypad and the worker can re-authenticate.
+ */
 export async function requireAnyAuth(): Promise<AuthContext> {
   const session = await auth();
   if (session?.user) {
@@ -112,5 +123,5 @@ export async function requireAnyAuth(): Promise<AuthContext> {
   if (garageOk) {
     return { userId: null, userName: "Garage" };
   }
-  throw new Error("Unauthorized");
+  redirect("/garage");
 }

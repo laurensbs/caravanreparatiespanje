@@ -67,7 +67,7 @@ import type { CustomerRepairItem } from "@/components/repairs/repair-detail-pick
 import { RepairTaskList } from "@/components/repairs/repair-task-list";
 import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-sync-ui";
 import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-form";
-import { sendMessageToGarage, clearGarageMessage } from "@/actions/garage-sync";
+import { clearGarageMessage } from "@/actions/garage-sync";
 import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
 import type { RepairTask } from "@/types";
 
@@ -314,24 +314,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const [discountPercent, setDiscountPercent] = useState(parseFloat(job.discountPercent ?? "0"));
   const [nextAction, setNextAction] = useState(job.nextAction ?? "");
   const [currentBlocker, setCurrentBlocker] = useState(job.currentBlocker ?? "");
-  const [garageMessage, setGarageMessage] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-
-  async function handleSendGarageMessage() {
-    const text = garageMessage.trim();
-    if (!text || sendingMessage) return;
-    setSendingMessage(true);
-    try {
-      await sendMessageToGarage(job.id, text);
-      setGarageMessage("");
-      toast.success("Message delivered — the garage sees it on this repair in their app.");
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send message");
-    } finally {
-      setSendingMessage(false);
-    }
-  }
 
   // Flag definitions for rendering
   const allFlags = [
@@ -1688,71 +1670,22 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </>
               )}
 
-              {/* ── Bidirectional thread (admin ↔ garage) ── */}
-              <AdminRepairThread repairJobId={job.id} onChange={() => router.refresh()} />
-
-              {/* ── Send Direct Message to Garage (legacy banner) ── */}
-              <div className="rounded-xl bg-muted/40 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold mb-2">
-                  Pin a single banner message
-                </p>
-                <p className="text-[11px] text-muted-foreground dark:text-muted-foreground/70 mb-3 leading-relaxed">
-                  Appears at the top of the garage tablet for this job. Use this for short, must-see notes; the conversation above is the day-to-day thread.
-                </p>
-                {syncState?.garageAdminMessage && (
-                  <div className="rounded-xl bg-card dark:bg-card/[0.04] border border-border dark:border-border px-3 py-2.5 mb-3">
-                    <p className="text-xs text-foreground dark:text-foreground/90 whitespace-pre-wrap">{syncState.garageAdminMessage}</p>
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-[10px] text-muted-foreground/70 dark:text-muted-foreground">
-                        {syncState.garageAdminMessageAt ? format(new Date(syncState.garageAdminMessageAt), "HH:mm") : ""}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await clearGarageMessage(job.id);
-                          router.refresh();
-                          toast.success("Garage message cleared");
-                        }}
-                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground/90"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="text"
-                    value={garageMessage}
-                    onChange={(e) => setGarageMessage(e.target.value)}
-                    placeholder="Type a message for the garage team…"
-                    className="flex-1 min-w-0 rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-ring/40"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        void handleSendGarageMessage();
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!garageMessage.trim() || sendingMessage}
-                    onClick={() => void handleSendGarageMessage()}
-                    className="shrink-0 rounded-xl h-[38px] px-4 text-sm font-medium border-border dark:border-border text-foreground dark:text-foreground hover:bg-muted dark:hover:bg-card/10"
-                  >
-                    {sendingMessage ? (
-                      <Spinner className="h-3.5 w-3.5" />
-                    ) : (
-                      <>
-                        <Send className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                        Send
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
+              {/* ── Bidirectional thread (admin ↔ garage) ──
+                  Eén kanaal: het laatste eigen bericht fungeert
+                  automatisch als banner bovenaan op de garage-tablet.
+                  De thread toont links wat er nu gepind staat met een
+                  X-knop om de banner los te koppelen zonder een nieuw
+                  bericht te sturen. */}
+              <AdminRepairThread
+                repairJobId={job.id}
+                onChange={() => router.refresh()}
+                pinnedMessage={syncState?.garageAdminMessage ?? null}
+                pinnedAt={syncState?.garageAdminMessageAt ?? null}
+                onClearPin={async () => {
+                  await clearGarageMessage(job.id);
+                  router.refresh();
+                }}
+              />
 
               {/* ── Start / Schedule pills ── */}
               {startedToday ? (

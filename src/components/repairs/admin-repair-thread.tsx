@@ -7,7 +7,7 @@ import {
   markGarageRepliesRead,
   type RepairMessage,
 } from "@/actions/garage-sync";
-import { Send, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, MessageSquare, ChevronDown, ChevronUp, Pin, X } from "lucide-react";
 import { toast } from "sonner";
 
 function timeLabel(d: Date) {
@@ -22,16 +22,33 @@ function dayLabel(d: Date) {
 
 /**
  * Bidirectional thread shown on the admin repair detail page. Mirrors the
- * garage portal thread; admin replies are persisted both as thread messages
- * and as the legacy banner via the actions layer.
+ * garage portal thread; admin replies are persisted as thread messages én
+ * mirrored to the "pinned banner" field on the repair, which the garage
+ * tablet shows at the top of the job for must-see visibility.
+ *
+ * Sturen via dit ene component vervangt het oude losse "Pin a single
+ * banner message"-blok; daar bestond verwarring over of een bericht in de
+ * thread terechtkwam (de banner-only invoer sloeg dat over). Nu is er één
+ * input, één thread, en de meest recente eigen post fungeert als banner.
+ *
+ * Geef `pinnedMessage` mee om een kleine "pinned"-rij bovenaan te tonen
+ * zodat je in één blik ziet wat er momenteel als banner op de tablet
+ * staat — én 'm met één klik kunt opheffen via `onClearPin` zonder een
+ * nieuw bericht te sturen.
  */
 export function AdminRepairThread({
   repairJobId,
   onChange,
+  pinnedMessage,
+  pinnedAt,
+  onClearPin,
 }: {
   repairJobId: string;
   /** Called after a successful reply so the parent can refresh state. */
   onChange?: () => void;
+  pinnedMessage?: string | null;
+  pinnedAt?: Date | string | null;
+  onClearPin?: () => Promise<void> | void;
 }) {
   const [messages, setMessages] = useState<RepairMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +102,26 @@ export function AdminRepairThread({
   const visible = expanded ? messages : messages.slice(-4);
   const hiddenCount = Math.max(0, messages.length - visible.length);
 
+  const [clearingPin, setClearingPin] = useState(false);
+  async function handleClearPin() {
+    if (!onClearPin || clearingPin) return;
+    setClearingPin(true);
+    try {
+      await onClearPin();
+      toast.success("Banner cleared on the garage tablet");
+    } catch {
+      toast.error("Could not clear the banner");
+    } finally {
+      setClearingPin(false);
+    }
+  }
+
+  const pinnedAtDate = pinnedAt
+    ? typeof pinnedAt === "string"
+      ? new Date(pinnedAt)
+      : pinnedAt
+    : null;
+
   return (
     <section className="rounded-xl bg-muted/50 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
       <header className="mb-3 flex items-center justify-between gap-2">
@@ -117,6 +154,40 @@ export function AdminRepairThread({
           </button>
         ) : null}
       </header>
+
+      {/* Pinned banner — toont in één regel wat er nu bovenaan op de
+          garage-tablet staat (de meest recente "must-see"-prikkel). De
+          banner verdwijnt automatisch zodra de werker reageert; deze
+          knop is voor de admin die 'm handmatig wil opheffen zonder
+          eerst nog een bericht te sturen. */}
+      {pinnedMessage ? (
+        <div className="mb-3 flex items-start gap-2 rounded-xl border border-amber-200/70 bg-amber-50/70 px-3 py-2 dark:border-amber-500/20 dark:bg-amber-500/[0.06]">
+          <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700/80 dark:text-amber-300/80" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800/80 dark:text-amber-300/80">
+              Pinned on garage tablet
+              {pinnedAtDate ? (
+                <span className="ml-1.5 font-normal opacity-70">· {timeLabel(pinnedAtDate)}</span>
+              ) : null}
+            </p>
+            <p className="mt-0.5 truncate text-[12.5px] text-amber-900/90 dark:text-amber-100/90">
+              {pinnedMessage}
+            </p>
+          </div>
+          {onClearPin ? (
+            <button
+              type="button"
+              onClick={() => void handleClearPin()}
+              disabled={clearingPin}
+              className="shrink-0 rounded-lg p-1 text-amber-700/70 transition-colors hover:bg-amber-100/70 hover:text-amber-800 disabled:opacity-50 dark:text-amber-300/70 dark:hover:bg-amber-500/10 dark:hover:text-amber-200"
+              aria-label="Clear pinned banner"
+              title="Clear pinned banner"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="py-3 text-center text-xs text-muted-foreground/70 dark:text-muted-foreground">

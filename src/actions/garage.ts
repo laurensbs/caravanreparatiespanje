@@ -316,12 +316,23 @@ export async function getGarageRepairsToday() {
       and(
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
-        inArray(repairJobs.status, [
-          "in_progress",
-          "waiting_parts",
-          "blocked",
-          "ready_for_check",
-        ]),
+        or(
+          inArray(repairJobs.status, [
+            "in_progress",
+            "waiting_parts",
+            "blocked",
+            "ready_for_check",
+          ]),
+          // Vandaag afgeronde reparaties blijven zichtbaar in de
+          // "Done" tab zodat de werker ziet wat er net klaar is en er
+          // een bevestigingsgevoel ontstaat. Alles wat langer dan
+          // vandaag geleden is afgerond (of al gefactureerd) hoort in
+          // het admin-paneel, niet meer op de werkvloer.
+          and(
+            eq(repairJobs.status, "completed"),
+            sql`${repairJobs.completedAt}::date = CURRENT_DATE`,
+          ),
+        ),
       )
     )
     .orderBy(asc(repairJobs.priority), asc(repairJobs.title));

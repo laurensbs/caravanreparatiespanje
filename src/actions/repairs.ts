@@ -1222,6 +1222,12 @@ export async function adminApproveRepair(repairJobId: string) {
     .set({
       status: "completed",
       completedAt: new Date(),
+      // Finalcheck expliciet op "passed" zetten zodat de garage-UI
+      // (die hier op filtert in `classify`) de kaart correct onder
+      // "Done" laat zien in plaats van bij "Check" te laten hangen.
+      finalCheckStatus: "passed",
+      finalCheckByUserId: session.user.id,
+      finalCheckAt: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(repairJobs.id, repairJobId));

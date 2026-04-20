@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Printer, Globe, Filter, Plus, MapPin, User, Wrench, GripVertical, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Filter, Plus, MapPin, User, Wrench, GripVertical, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -66,12 +66,12 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
   const [repairs, setRepairs] = useState(initialRepairs);
   const [weekStart, setWeekStart] = useState(initialWeekStart);
   const [weekEnd, setWeekEnd] = useState(initialWeekEnd);
-  const [lang, setLang] = useState<PlanningLang>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("planning-lang") as PlanningLang) || "en";
-    }
-    return "en";
-  });
+  // Planning UI is English-only — the language switcher was removed to
+  // keep the toolbar tidy and match the rest of the admin panel. The
+  // `lang` variable is kept (widened to the full union) so existing
+  // locale-dependent branches elsewhere in this file keep compiling
+  // without churn, even though only "en" is reachable.
+  const lang: PlanningLang = "en" as PlanningLang;
   const [filterUser, setFilterUser] = useState<string>("all");
   const [filterLocation, setFilterLocation] = useState<string>("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -82,11 +82,6 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
   const monday = new Date(weekStart);
   const ariaPrevWeek = lang === "nl" ? "Vorige week" : lang === "es" ? "Semana anterior" : "Previous week";
   const ariaNextWeek = lang === "nl" ? "Volgende week" : lang === "es" ? "Siguiente semana" : "Next week";
-
-  function changeLang(newLang: PlanningLang) {
-    setLang(newLang);
-    if (typeof window !== "undefined") localStorage.setItem("planning-lang", newLang);
-  }
 
   function navigateWeek(offset: number) {
     const newMonday = new Date(monday);
@@ -264,7 +259,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
           />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="inline-flex items-center gap-0 rounded-xl border border-border/60 bg-card shadow-sm dark:border-border dark:bg-card/[0.03]">
+            <div className="inline-flex items-center gap-0 rounded-xl border border-border bg-card shadow-none dark:border-border dark:bg-card">
               <Button
                 type="button"
                 variant="ghost"
@@ -296,16 +291,15 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
             </div>
 
             {/*
-              Mobile layout: primary filters (staff + locations) share a single
-              row via a 2-column grid; the secondary controls (language picker
-              and print) sit next to each other as compact icon buttons. This
-              replaces the previous 4-wide stack of full-width bars that made
-              the page feel cluttered before you ever reached the schedule.
+              Toolbar style matches the rest of the admin panel
+              (flat border + bg-card, no shadow). On mobile the two main
+              filters share a 2-column grid; Print stays as an icon-only
+              button so the row never wraps.
             */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
               <div className="grid grid-cols-2 gap-2 sm:contents">
                 <Select value={filterUser} onValueChange={setFilterUser}>
-                  <SelectTrigger className="h-10 w-full rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation sm:w-[min(100%,11rem)] dark:border-border dark:bg-card/[0.03]">
+                  <SelectTrigger className="h-10 w-full touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none sm:w-[160px] dark:border-border dark:bg-card dark:text-foreground/90">
                     <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
                     <SelectValue />
                   </SelectTrigger>
@@ -321,14 +315,12 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
 
                 {locations.length > 1 ? (
                   <Select value={filterLocation} onValueChange={setFilterLocation}>
-                    <SelectTrigger className="h-10 w-full rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation sm:w-[min(100%,11rem)] dark:border-border dark:bg-card/[0.03]">
+                    <SelectTrigger className="h-10 w-full touch-manipulation rounded-xl border-border bg-card text-sm text-foreground/90 shadow-none sm:w-[170px] dark:border-border dark:bg-card dark:text-foreground/90">
                       <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">
-                        {lang === "nl" ? "All locations" : lang === "es" ? "Todas las ubicaciones" : "All locations"}
-                      </SelectItem>
+                      <SelectItem value="all">All locations</SelectItem>
                       {locations.map((l) => (
                         <SelectItem key={l.id} value={l.id}>
                           {l.name}
@@ -339,38 +331,21 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-2">
-                <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
-                  <SelectTrigger
-                    aria-label="Language"
-                    className="h-10 w-[84px] shrink-0 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation sm:w-24 dark:border-border dark:bg-card/[0.03]"
-                  >
-                    <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">EN</SelectItem>
-                    <SelectItem value="nl">NL</SelectItem>
-                    <SelectItem value="es">ES</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label={t.print}
-                  className="h-10 w-10 shrink-0 rounded-xl border-border/60 bg-card text-muted-foreground shadow-sm touch-manipulation hover:text-foreground sm:w-auto sm:gap-2 sm:px-3 dark:border-border dark:bg-card/[0.03] dark:text-muted-foreground/70 dark:hover:text-foreground"
-                  onClick={() => window.print()}
-                >
-                  <Printer className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline text-sm font-medium">{t.print}</span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label={t.print}
+                className="h-10 w-10 shrink-0 touch-manipulation rounded-xl border-border bg-card text-muted-foreground shadow-none hover:text-foreground sm:w-auto sm:gap-2 sm:px-3.5 dark:border-border dark:bg-card dark:text-muted-foreground/70 dark:hover:text-foreground"
+                onClick={() => window.print()}
+              >
+                <Printer className="h-4 w-4 shrink-0" />
+                <span className="hidden text-sm font-medium sm:inline">{t.print}</span>
+              </Button>
 
               <Link
                 href="/repairs"
-                className="hidden sm:inline-flex h-10 items-center rounded-xl px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground dark:text-muted-foreground/70 dark:hover:text-foreground"
+                className="hidden h-10 items-center rounded-xl px-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex dark:text-muted-foreground/70 dark:hover:text-foreground"
               >
                 {t.browseWorkOrders} →
               </Link>

@@ -12,6 +12,7 @@ import { AssistantShell } from "@/components/assistant-shell";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { SessionKeepAlive } from "@/components/session-keep-alive";
 import { PageTransition } from "@/components/layout/page-transition";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { Toaster } from "sonner";
@@ -83,6 +84,7 @@ export default async function DashboardLayout({
         </div>
         <ConfirmDialogHost />
         <KeyboardShortcuts />
+        <SessionKeepAlive />
       </AssistantProvider>
     </SidebarProvider>
   );

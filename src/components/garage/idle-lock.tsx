@@ -6,7 +6,8 @@ import { garageLock } from "@/actions/garage-auth";
 import { useLanguage } from "@/components/garage/language-toggle";
 
 // Total time after which the iPad returns to the PIN screen.
-const IDLE_LOCK_MS = 12 * 60 * 1000; // 12 minutes
+// Matches the admin session timeout so the whole app behaves the same.
+const IDLE_LOCK_MS = 30 * 60 * 1000; // 30 minutes
 // When the warning toast appears before the lock, giving the worker a chance
 // to tap anything to stay signed in.
 const WARNING_BEFORE_LOCK_MS = 30 * 1000; // 30 seconds
@@ -14,17 +15,12 @@ const WARNING_BEFORE_LOCK_MS = 30 * 1000; // 30 seconds
 /**
  * Soft idle lock for the shared garage iPad.
  *
- * Previously we locked after 3 minutes of inactivity, with no warning. In
- * the real workshop workers often walk to the van, measure something, come
- * back to a PIN wall — frustrating and also drives workers to leave the
- * iPad unlocked on a bench "to avoid typing the PIN again".
- *
- * New behaviour:
+ * Behaviour:
  *   • Any interaction (tap, key, pointer move) resets the timer.
  *   • 30 s before lock we show a warning toast. The toast itself counts
  *     as an interaction, so a single tap on anything dismisses it and
  *     restarts the idle countdown.
- *   • After 12 minutes of real inactivity we clear the garage cookie and
+ *   • After 30 minutes of real inactivity we clear the garage cookie and
  *     reload to the PIN screen.
  */
 export function GarageIdleLock() {

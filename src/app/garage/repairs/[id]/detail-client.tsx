@@ -186,11 +186,26 @@ interface Props {
     role: string | null;
     preferredLanguage?: Language | null;
   }[];
+  /** Som van alle afgeronde time-entries op deze repair (in minuten).
+   *  Gebruikt om "gepauzeerd — 1u 23m tot nu" te laten zien zodat tijd
+   *  nooit onzichtbaar is, zelfs niet als er op dit moment geen timer
+   *  loopt. */
+  recordedMinutes: number;
 }
 
 /* ───────────────────────────────────────────────────────────────────── */
 /* Helpers                                                                */
 /* ───────────────────────────────────────────────────────────────────── */
+
+/** Compacte "HH:MM" of "MMm"-weergave voor de gepauzeerde hero-state.
+ *  Bewust niet seconden — gepauzeerde tijd staat stil, dus geen SS. */
+function formatPausedDuration(totalMinutes: number): string {
+  const m = Math.max(0, Math.round(totalMinutes));
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest === 0 ? `${h}:00` : `${h}:${String(rest).padStart(2, "0")}`;
+}
 
 function elapsedString(start: Date | string | number): string {
   const t =
@@ -314,6 +329,7 @@ export function GarageRepairDetailClient({
   partCategories,
   activeTimers,
   allUsers,
+  recordedMinutes,
 }: Props) {
   const router = useRouter();
   const { t, deviceLang, tFor } = useLanguage();
@@ -751,24 +767,60 @@ export function GarageRepairDetailClient({
                 </div>
               </div>
             ) : canTimer ? (
-              <button
-                type="button"
-                onClick={() => {
-                  hapticTap();
-                  setPicker({
-                    purpose: "startTimer",
-                    onPick: (w) => {
-                      setPicker(null);
-                      handleStartTimer(w);
-                    },
-                    title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
-                  });
-                }}
-                className="mt-1 flex h-12 items-center justify-center gap-2 rounded-2xl bg-white text-[15px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
-              >
-                <Play className="h-4 w-4 fill-current" />
-                {t("Start timer", "Iniciar timer", "Start timer")}
-              </button>
+              recordedMinutes > 0 ? (
+                /* Er staat al tijd op deze repair maar er loopt nu niks
+                   — dus "gepauzeerd". Toon de opgebouwde tijd groot in
+                   beeld zodat je nooit het gevoel hebt dat je tijd
+                   kwijt is, met een duidelijke Hervat-knop ernaast. */
+                <div className="mt-1 flex items-center gap-3 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.08]">
+                  <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-white/30" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                      {t("Paused", "En pausa", "Gepauzeerd")}
+                    </p>
+                    <p className="font-mono text-2xl font-bold leading-tight tabular-nums text-white/90">
+                      {formatPausedDuration(recordedMinutes)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hapticTap();
+                      setPicker({
+                        purpose: "startTimer",
+                        onPick: (w) => {
+                          setPicker(null);
+                          handleStartTimer(w);
+                        },
+                        title: t("Who's resuming?", "¿Quién sigue?", "Wie gaat verder?"),
+                      });
+                    }}
+                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-white px-3.5 text-[14px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
+                  >
+                    <Play className="h-4 w-4 fill-current" />
+                    {t("Resume", "Seguir", "Hervatten")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticTap();
+                    setPicker({
+                      purpose: "startTimer",
+                      onPick: (w) => {
+                        setPicker(null);
+                        handleStartTimer(w);
+                      },
+                      title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
+                    });
+                  }}
+                  className="mt-1 flex h-12 items-center justify-center gap-2 rounded-2xl bg-white text-[15px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
+                >
+                  <Play className="h-4 w-4 fill-current" />
+                  {t("Start timer", "Iniciar timer", "Start timer")}
+                </button>
+              )
             ) : null}
           </section>
 

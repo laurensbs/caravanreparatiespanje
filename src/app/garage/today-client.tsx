@@ -847,12 +847,23 @@ function JobCard({
             <AlertTriangle className="h-3 w-3" /> {totalProblems}
           </span>
         ) : null}
-        {liveTotalMinutes > 0 && !someoneIsWorking ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2 py-1 text-white/60">
+      </div>
+
+      {/* ── Paused state — toon opgebouwde tijd zodat een werker
+          nooit denkt "waar is m'n tijd gebleven?" als niemand nu
+          aan het werk is. Hervat-knop vervangt "Start timer" op de
+          Quick-actions rij hieronder. */}
+      {!someoneIsWorking && liveTotalMinutes > 0 ? (
+        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06]">
+          <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-white/30" aria-hidden />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
+            {t("Paused", "En pausa", "Gepauzeerd")}
+          </span>
+          <span className="ml-auto font-mono text-sm font-bold tabular-nums text-white/80">
             {fmtDuration(liveTotalMinutes, deviceLang)}
           </span>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {/* ── Running timers strip (if any) ─────────────────────────── */}
       {someoneIsWorking ? (
@@ -944,7 +955,9 @@ function JobCard({
             className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
           >
             <Play className="h-4 w-4 fill-current" />
-            {t("Start timer", "Iniciar timer", "Start timer")}
+            {liveTotalMinutes > 0
+              ? t("Resume", "Seguir", "Hervatten")
+              : t("Start timer", "Iniciar timer", "Start timer")}
           </button>
         ) : null}
         {nextTaskTitle ? (

@@ -28,10 +28,18 @@ function safeRevalidate(path: string) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Round raw minutes to nearest quarter-hour (ceiling, min 15) */
+/** Afronden naar dichtstbijzijnde kwartier voor facturatie.
+ *  Voorbeelden:
+ *    3  → 0  (dichter bij 0 dan bij 15)
+ *    8  → 15 (dichter bij 15 dan bij 0)
+ *    32 → 30
+ *    37 → 45
+ *    45 → 45
+ *  Bewust `Math.round` (= banker's neutral) i.p.v. ceiling: een werker
+ *  die 32 min werkt krijgt 30m geregistreerd, niet 45m. */
 function roundToQuarter(minutes: number): number {
   if (minutes <= 0) return 0;
-  return Math.ceil(minutes / 15) * 15;
+  return Math.round(minutes / 15) * 15;
 }
 
 // ─── Start / Stop Timer ─────────────────────────────────────────────────────

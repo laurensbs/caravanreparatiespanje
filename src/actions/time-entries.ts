@@ -122,14 +122,18 @@ async function stopTimerById(timeEntryId: string) {
   const rawMinutes = Math.round(
     (now.getTime() - new Date(entry.startedAt).getTime()) / 60000
   );
-  const rounded = roundToQuarter(rawMinutes);
 
+  // Bij pauze/stop NIET afronden. We schrijven de echte minuten weg
+  // in zowel `durationMinutes` als `roundedMinutes`; de
+  // kwartier-afronding gebeurt pas bij "Klaar voor controle"
+  // (finalizeRepairTimeRounding) zodat bv. twee sessies van 20 + 17
+  // minuten samen als 37 → 45m worden geboekt, niet als 15 + 15 = 30.
   await db
     .update(timeEntries)
     .set({
       endedAt: now,
       durationMinutes: rawMinutes,
-      roundedMinutes: rounded,
+      roundedMinutes: rawMinutes,
       updatedAt: now,
     })
     .where(eq(timeEntries.id, timeEntryId));
@@ -234,6 +238,76 @@ export async function getJobTimeEntries(repairJobId: string) {
   return entries;
 }
 
+/**
+ * Rondt alle time-entries van een klus af op kwartiertjes — per werker
+ * gecumuleerd. Wordt aangeroepen door `garageMarkDone` op het moment dat
+ * de werkplaats de klus klaar meldt.
+ *
+ * Aanpak:
+ *   1. Groepeer alle (niet-lopende) entries per userId.
+ *   2. Som `durationMinutes` per werker → nearest-15m target.
+ *   3. De oudste entries behouden hun echte `durationMinutes` in
+ *      `roundedMinutes`; het verschil wordt op de *laatste* entry
+ *      geplakt. Zo blijft de som exact gelijk aan het target en heeft
+ *      geen enkele entry een negatieve waarde.
+ *
+ * Lopende timers (endedAt IS NULL) slaan we over — daar zit nog geen
+ * definitieve tijd in. In de praktijk stopt garageMarkDone ze niet
+ * automatisch; als er nog iemand loopt, past finalize dat op die
+ * entry toe zodra 'ie later stopt/handmatig vastgezet wordt.
+ */
+export async function finalizeRepairTimeRounding(repairJobId: string): Promise<void> {
+  const entries = await db
+    .select({
+      id: timeEntries.id,
+      userId: timeEntries.userId,
+      durationMinutes: timeEntries.durationMinutes,
+      startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
+    })
+    .from(timeEntries)
+    .where(eq(timeEntries.repairJobId, repairJobId));
+
+  type Row = (typeof entries)[number];
+  const byUser = new Map<string, Row[]>();
+  for (const e of entries) {
+    if (!e.endedAt) continue; // skip lopende timers
+    const list = byUser.get(e.userId) ?? [];
+    list.push(e);
+    byUser.set(e.userId, list);
+  }
+
+  for (const [, rows] of byUser) {
+    // chronologisch sorteren — laatste entry pakt het restant
+    rows.sort((a, b) => {
+      const ta = new Date(a.startedAt).getTime();
+      const tb = new Date(b.startedAt).getTime();
+      return ta - tb;
+    });
+    const sumRaw = rows.reduce((acc, r) => acc + (r.durationMinutes ?? 0), 0);
+    if (sumRaw <= 0) continue;
+    const target = Math.round(sumRaw / 15) * 15;
+    // Alle entries behalve de laatste: roundedMinutes = durationMinutes
+    // (hun werkelijke tijd). Laatste: target - som van overige.
+    const allButLast = rows.slice(0, -1);
+    const last = rows[rows.length - 1];
+    const kept = allButLast.reduce((acc, r) => acc + (r.durationMinutes ?? 0), 0);
+    const lastRounded = Math.max(0, target - kept);
+
+    const now = new Date();
+    for (const r of allButLast) {
+      await db
+        .update(timeEntries)
+        .set({ roundedMinutes: r.durationMinutes ?? 0, updatedAt: now })
+        .where(eq(timeEntries.id, r.id));
+    }
+    await db
+      .update(timeEntries)
+      .set({ roundedMinutes: lastRounded, updatedAt: now })
+      .where(eq(timeEntries.id, last.id));
+  }
+}
+
 /** Get total actual minutes for a repair job — niet afgerond, want we
  *  gebruiken dit tijdens het werk (garage-overview / detail-hero) waar
  *  kwartaalafronding verwarrend is (een sessie van 3 min zou
@@ -262,15 +336,16 @@ export async function createManualTimeEntry(data: {
 
   const now = new Date();
   const startedAt = new Date(now.getTime() - data.minutes * 60000);
-  const rounded = roundToQuarter(data.minutes);
 
+  // Handmatige entry: geen sessie-afronding, de finalize-stap bij
+  // "Klaar voor controle" rondt straks het totaal per werker af.
   await db.insert(timeEntries).values({
     repairJobId: data.repairJobId,
     userId: data.userId,
     startedAt,
     endedAt: now,
     durationMinutes: data.minutes,
-    roundedMinutes: rounded,
+    roundedMinutes: data.minutes,
     source: "manual",
     note: data.note,
   });

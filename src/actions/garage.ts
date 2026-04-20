@@ -7,6 +7,7 @@ import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, or, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { recordGarageUpdate } from "./garage-sync";
+import { finalizeRepairTimeRounding } from "./time-entries";
 
 /**
  * See note in src/actions/time-entries.ts: revalidatePath can throw
@@ -104,6 +105,35 @@ export async function updateRepairTitle(repairJobId: string, title: string) {
 
 export async function garageMarkDone(repairJobId: string) {
   const ctx = await requireAnyAuth();
+
+  // Stop alle nog lopende timers op deze klus (werker vergat afsluiten)
+  // zodat ze in de kwartaal-afronding meegaan. Schrijft `durationMinutes`
+  // en tijdelijk gelijk naar `roundedMinutes`; finalize corrigeert zo
+  // meteen per werker.
+  const now = new Date();
+  const stillRunning = await db
+    .select({ id: timeEntries.id, startedAt: timeEntries.startedAt })
+    .from(timeEntries)
+    .where(and(eq(timeEntries.repairJobId, repairJobId), isNull(timeEntries.endedAt)));
+  for (const tm of stillRunning) {
+    const raw = Math.max(
+      0,
+      Math.round((now.getTime() - new Date(tm.startedAt).getTime()) / 60000),
+    );
+    await db
+      .update(timeEntries)
+      .set({
+        endedAt: now,
+        durationMinutes: raw,
+        roundedMinutes: raw,
+        updatedAt: now,
+      })
+      .where(eq(timeEntries.id, tm.id));
+  }
+
+  // Afronden op kwartiertjes — per werker, over de som van al hun
+  // sessies op deze klus. Zie finalizeRepairTimeRounding.
+  await finalizeRepairTimeRounding(repairJobId);
 
   await db
     .update(repairJobs)

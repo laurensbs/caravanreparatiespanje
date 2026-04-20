@@ -192,8 +192,13 @@ interface Props {
 /* Helpers                                                                */
 /* ───────────────────────────────────────────────────────────────────── */
 
-function elapsedString(start: Date | string): string {
-  const t = typeof start === "string" ? new Date(start).getTime() : start.getTime();
+function elapsedString(start: Date | string | number): string {
+  const t =
+    typeof start === "number"
+      ? start
+      : typeof start === "string"
+        ? new Date(start).getTime()
+        : start.getTime();
   const diff = Math.max(0, Date.now() - t);
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
@@ -226,6 +231,22 @@ function LiveElapsed({ start }: { start: Date | string }) {
     return () => clearInterval(id);
   }, [start]);
   return <span className="font-mono text-base tabular-nums text-emerald-200">{label}</span>;
+}
+
+/** Groot HH:MM:SS bovenin het detail-scherm — toont de langst-lopende
+ *  timer, zodat een werker in één oogopslag ziet hoe lang deze repair
+ *  al ondernemen is. Tikt elke seconde. */
+function HeroLiveClock({ start }: { start: number | Date | string }) {
+  const [label, setLabel] = useState(() => elapsedString(start));
+  useEffect(() => {
+    const id = setInterval(() => setLabel(elapsedString(start)), 1000);
+    return () => clearInterval(id);
+  }, [start]);
+  return (
+    <span className="font-mono text-2xl font-bold leading-none tabular-nums text-emerald-100">
+      {label}
+    </span>
+  );
 }
 
 /* ───────────────────────────────────────────────────────────────────── */
@@ -623,62 +644,101 @@ export function GarageRepairDetailClient({
                 ))}
               </div>
             ) : null}
-          </section>
 
-          {/* ── Active timers ────────────────────────────────── */}
-          {activeTimers.length > 0 ? (
-            <section className="flex flex-col gap-2 rounded-2xl bg-emerald-500/[0.08] p-3 ring-1 ring-emerald-500/20">
-              {activeTimers.map((tm) => (
-                <div key={tm.id} className="flex items-center gap-3">
-                  <span className="relative inline-flex h-2.5 w-2.5">
+            {/* Hero-timer — direct onder de licentieplaat zodat een werker
+                niet hoeft te scrollen om te zien "loopt er iets, hoe lang,
+                en hoe pauzeer ik". Toont:
+                - grote HH:MM:SS van de langst-lopende timer (de "klok
+                  van de klus") + namen van actieve werkers
+                - per-werker pauzeknop
+                - als niemand bezig is: één duidelijke Start-knop
+                  (auto-promoot status naar `in_progress` server-side) */}
+            {activeTimers.length > 0 ? (
+              <div className="mt-1 flex flex-col gap-2 rounded-2xl bg-emerald-500/[0.08] p-3 ring-1 ring-emerald-500/20">
+                <div className="flex items-center gap-3">
+                  <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-emerald-100">
-                      {tm.userName ?? "—"}{" "}
-                      <span className="ml-1 text-xs font-medium text-emerald-300/70">
-                        {t("is working", "está trabajando", "is bezig")}
-                      </span>
-                    </p>
-                    <LiveElapsed start={tm.startedAt} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleStopTimer(tm)}
-                    className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-white/10 px-3 text-sm font-semibold text-white hover:bg-white/15 active:scale-[0.97]"
-                  >
-                    <Pause className="h-4 w-4" />
-                    {t("Pause", "Pausa", "Pauze")}
-                  </button>
+                  <HeroLiveClock start={activeTimers.reduce((min, tm) => {
+                    const ts = typeof tm.startedAt === "string"
+                      ? new Date(tm.startedAt).getTime()
+                      : tm.startedAt.getTime();
+                    return ts < min ? ts : min;
+                  }, Date.now())} />
+                  <span className="ml-auto truncate text-[11px] font-medium uppercase tracking-wider text-emerald-300/70">
+                    {activeTimers.length === 1
+                      ? t("running", "en curso", "loopt")
+                      : `${activeTimers.length} ${t("working", "trabajando", "bezig")}`}
+                  </span>
                 </div>
-              ))}
-            </section>
-          ) : null}
+                <div className="flex flex-col gap-1.5">
+                  {activeTimers.map((tm) => (
+                    <div
+                      key={tm.id}
+                      className="flex items-center gap-2 rounded-xl bg-emerald-500/[0.08] px-2.5 py-1.5 ring-1 ring-emerald-400/10"
+                    >
+                      <span className="truncate text-[13px] font-semibold text-emerald-100">
+                        {tm.userName ?? "—"}
+                      </span>
+                      <LiveElapsed start={tm.startedAt} />
+                      <button
+                        type="button"
+                        onClick={() => handleStopTimer(tm)}
+                        className="ml-auto inline-flex h-9 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[12px] font-semibold text-white transition-all hover:bg-white/15 active:scale-[0.97]"
+                        aria-label={t("Pause", "Pausa", "Pauze")}
+                      >
+                        <Pause className="h-3.5 w-3.5" />
+                        {t("Pause", "Pausa", "Pauze")}
+                      </button>
+                    </div>
+                  ))}
+                  {canTimer ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        hapticTap();
+                        setPicker({
+                          purpose: "startTimer",
+                          onPick: (w) => {
+                            setPicker(null);
+                            handleStartTimer(w);
+                          },
+                          title: t("Who's joining?", "¿Quién se une?", "Wie sluit aan?"),
+                        });
+                      }}
+                      className="mt-0.5 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 text-[12.5px] font-semibold text-white transition-all hover:bg-white/15 active:scale-[0.97]"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      {t("Add worker", "Añadir trabajador", "Werker erbij")}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : canTimer ? (
+              <button
+                type="button"
+                onClick={() => {
+                  hapticTap();
+                  setPicker({
+                    purpose: "startTimer",
+                    onPick: (w) => {
+                      setPicker(null);
+                      handleStartTimer(w);
+                    },
+                    title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
+                  });
+                }}
+                className="mt-1 flex h-12 items-center justify-center gap-2 rounded-2xl bg-white text-[15px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                {t("Start timer", "Iniciar timer", "Start timer")}
+              </button>
+            ) : null}
+          </section>
 
-          {/* ── Primary action: start timer ─────────────────── */}
-          {canTimer ? (
-            <button
-              type="button"
-              onClick={() => {
-                hapticTap();
-                setPicker({
-                  purpose: "startTimer",
-                  onPick: (w) => {
-                    setPicker(null);
-                    handleStartTimer(w);
-                  },
-                  title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
-                });
-              }}
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-base font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
-            >
-              <Play className="h-5 w-5 fill-current" />
-              {activeTimers.length > 0
-                ? t("Join in (start my timer)", "Unirme (iniciar mi timer)", "Aansluiten (start mijn timer)")
-                : t("Start my timer", "Iniciar mi timer", "Start mijn timer")}
-            </button>
-          ) : null}
+          {/* NB: de oorspronkelijke "Start my timer"-knop hier is verhuisd
+              naar de hero-kaart bovenin (zichtbaar zonder scrollen). */}
 
           {/* ── Office message ──────────────────────────────── */}
           {repair.garageAdminMessage ? (

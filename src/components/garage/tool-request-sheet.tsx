@@ -2,10 +2,14 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Wrench, X, Send, Package } from "lucide-react";
+import { Wrench, X, Send, Package, Clock } from "lucide-react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
-import { createToolRequest } from "@/actions/tool-requests";
+import {
+  createToolRequest,
+  listRecentGarageRequests,
+  type GarageRequestRow,
+} from "@/actions/tool-requests";
 import { createPartRequestFromGarage } from "@/actions/parts";
 import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
 import { uploadVoiceNote } from "@/lib/upload-voice-note";
@@ -50,7 +54,26 @@ export function ToolRequestSheet({
   const [search, setSearch] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // "Eerder aangevraagd" — lijst wordt iedere keer dat de sheet opent
+  // ververst (en ook na een succesvolle verzending hieronder), zodat
+  // werkers weten wat er de afgelopen uren al langs is gekomen.
+  const [recent, setRecent] = useState<GarageRequestRow[]>([]);
+  const [recentLoading, setRecentLoading] = useState(false);
+
+  async function refreshRecent() {
+    try {
+      setRecentLoading(true);
+      const rows = await listRecentGarageRequests(15);
+      setRecent(rows);
+    } catch {
+      // Niet kritiek — de sheet blijft werken; de lijst blijft leeg.
+    } finally {
+      setRecentLoading(false);
+    }
+  }
+
   useEffect(() => {
+    if (open) void refreshRecent();
     // Reset on close so the next opener gets a clean slate.
     if (!open) {
       setKind("tool");
@@ -167,6 +190,10 @@ export function ToolRequestSheet({
           );
         }
         onSent?.();
+        // Zelfs voor de korte tijd dat de sheet sluit en weer opent:
+        // refresh de "recente" lijst optimistisch zodat hij bij het
+        // volgende openen meteen met je eigen verzoek bovenaan staat.
+        void refreshRecent();
         onClose();
       } catch (err) {
         toast.error((err as Error)?.message ?? "Send failed");
@@ -307,6 +334,42 @@ export function ToolRequestSheet({
             t={t}
           />
 
+          {/* Eerder aangevraagd — read-only historie zodat werkers zien
+              wat kantoor al weet. Dubbele submits (en "heb jij al
+              gevraagd om…?") zijn hiermee niet meer nodig. */}
+          {recent.length > 0 || recentLoading ? (
+            <div className="rounded-xl bg-white/[0.04] p-2 ring-1 ring-white/[0.06]">
+              <div className="flex items-center gap-2 px-2 pb-2 pt-1">
+                <Clock className="h-3.5 w-3.5 text-white/40" aria-hidden />
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                  {t(
+                    "Recently requested",
+                    "Solicitudes recientes",
+                    "Recent aangevraagd",
+                  )}
+                </p>
+                {recentLoading ? (
+                  <span className="ml-auto text-[10px] text-white/30">
+                    {t("loading…", "cargando…", "laden…")}
+                  </span>
+                ) : null}
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {recent.length === 0 && !recentLoading ? (
+                  <p className="px-2 py-3 text-center text-xs text-white/30">
+                    {t(
+                      "No requests yet.",
+                      "Sin solicitudes todavía.",
+                      "Nog geen aanvragen.",
+                    )}
+                  </p>
+                ) : (
+                  recent.map((r) => <RecentRequestRow key={r.id} row={r} t={t} />)
+                )}
+              </div>
+            </div>
+          ) : null}
+
           {repairOptions.length > 0 ? (
             <div
               className={`rounded-xl bg-white/[0.04] p-2 ring-1 ${
@@ -423,4 +486,93 @@ export function ToolRequestSheet({
       </div>
     </div>
   );
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Recent request row
+   ─────────────────────────────────────────────────────────────────────
+   Compact read-only chip row. Intentionally understated so the form
+   above (the thing you're here to do) remains the visual priority.
+   ───────────────────────────────────────────────────────────────── */
+
+function RecentRequestRow({
+  row,
+  t,
+}: {
+  row: GarageRequestRow;
+  t: (en: string, es: string, nl: string) => string;
+}) {
+  const isTool = row.kind === "tool";
+  const icon = isTool ? (
+    <Wrench className="h-3.5 w-3.5" />
+  ) : (
+    <Package className="h-3.5 w-3.5" />
+  );
+
+  const statusStyle: Record<GarageRequestRow["status"], { label: string; className: string }> = {
+    pending: {
+      label: t("Pending", "Pendiente", "Wachtend"),
+      className: "bg-amber-500/15 text-amber-200 ring-amber-400/25",
+    },
+    ordered: {
+      label: t("Ordered", "Pedido", "Besteld"),
+      className: "bg-sky-500/15 text-sky-200 ring-sky-400/25",
+    },
+    done: {
+      label: t("Done", "Listo", "Klaar"),
+      className: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/25",
+    },
+    cancelled: {
+      label: t("Cancelled", "Cancelado", "Afgewezen"),
+      className: "bg-white/[0.06] text-white/40 ring-white/10",
+    },
+  };
+
+  const when = formatWhen(row.createdAt, t);
+
+  return (
+    <div className="flex items-start gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-white/[0.03]">
+      <span
+        className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 ${
+          isTool
+            ? "bg-amber-500/15 text-amber-300 ring-amber-400/25"
+            : "bg-sky-500/15 text-sky-200 ring-sky-400/25"
+        }`}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-medium text-white/90">
+          {row.description}
+        </p>
+        <p className="truncate text-[11px] text-white/40">
+          {when}
+          {row.requestedByName ? ` · ${row.requestedByName}` : ""}
+          {row.repair ? ` · ${row.repair.label}` : ""}
+        </p>
+      </div>
+      <span
+        className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${statusStyle[row.status].className}`}
+      >
+        {statusStyle[row.status].label}
+      </span>
+    </div>
+  );
+}
+
+function formatWhen(
+  date: Date | string,
+  t: (en: string, es: string, nl: string) => string,
+): string {
+  const ts = typeof date === "string" ? new Date(date).getTime() : date.getTime();
+  const diffMs = Date.now() - ts;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return t("just now", "ahora", "zojuist");
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}u`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  const d = new Date(ts);
+  return d.toLocaleDateString();
 }

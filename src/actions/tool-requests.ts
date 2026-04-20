@@ -10,6 +10,7 @@ import {
   customers,
   units,
   users,
+  partRequests,
 } from "@/lib/db/schema";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { auth } from "@/lib/auth";
@@ -263,4 +264,134 @@ export async function countOpenToolRequests(): Promise<number> {
     .from(toolRequests)
     .where(and(eq(toolRequests.status, "open"), isNull(toolRequests.resolvedAt)));
   return row?.n ?? 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Garage-facing recent-requests feed
+   ─────────────────────────────────────────────────────────────────────
+   Workers asked to see what they (and their colleagues) have already
+   asked for so they don't double-submit ("did somebody ask for that
+   impact driver yet?") and can track status without having to bug the
+   office. We return a compact, read-only view that merges tool +
+   part requests; the same list surfaces in the ToolRequestSheet.
+   ───────────────────────────────────────────────────────────────── */
+
+export type GarageRequestRow = {
+  id: string;
+  /** Discriminator — drives icon + where it lives admin-side. */
+  kind: "tool" | "part";
+  description: string;
+  /** Normalised to a small set of states the worker understands:
+   *  "pending" (newly submitted, waiting for office),
+   *  "ordered" (office is on it / part is on its way),
+   *  "done"    (resolved / received),
+   *  "cancelled". */
+  status: "pending" | "ordered" | "done" | "cancelled";
+  createdAt: Date;
+  requestedByName: string | null;
+  repair: {
+    id: string;
+    label: string;
+    sublabel: string | null;
+  } | null;
+};
+
+export async function listRecentGarageRequests(
+  limit: number = 20,
+): Promise<GarageRequestRow[]> {
+  // `requireAnyAuth` accepts both garage-PIN sessions and admin users so
+  // this is safe to call from the workshop iPad.
+  await requireAnyAuth();
+
+  const cap = Math.max(1, Math.min(50, limit));
+
+  const toolRows = await db
+    .select({
+      id: toolRequests.id,
+      description: toolRequests.description,
+      status: toolRequests.status,
+      createdAt: toolRequests.createdAt,
+      requestedByLabel: toolRequests.requestedByLabel,
+      requestedByName: users.name,
+      repairJobId: toolRequests.repairJobId,
+      repairCode: repairJobs.publicCode,
+      repairTitle: repairJobs.title,
+      customerName: customers.name,
+      unitRegistration: units.registration,
+    })
+    .from(toolRequests)
+    .leftJoin(users, eq(users.id, toolRequests.requestedByUserId))
+    .leftJoin(repairJobs, eq(repairJobs.id, toolRequests.repairJobId))
+    .leftJoin(customers, eq(customers.id, repairJobs.customerId))
+    .leftJoin(units, eq(units.id, repairJobs.unitId))
+    .orderBy(desc(toolRequests.createdAt))
+    .limit(cap);
+
+  const partRows = await db
+    .select({
+      id: partRequests.id,
+      partName: partRequests.partName,
+      status: partRequests.status,
+      createdAt: partRequests.createdAt,
+      repairJobId: partRequests.repairJobId,
+      repairCode: repairJobs.publicCode,
+      repairTitle: repairJobs.title,
+      customerName: customers.name,
+      unitRegistration: units.registration,
+    })
+    .from(partRequests)
+    .leftJoin(repairJobs, eq(repairJobs.id, partRequests.repairJobId))
+    .leftJoin(customers, eq(customers.id, repairJobs.customerId))
+    .leftJoin(units, eq(units.id, repairJobs.unitId))
+    .orderBy(desc(partRequests.createdAt))
+    .limit(cap);
+
+  const tools: GarageRequestRow[] = toolRows.map((r) => ({
+    id: `tool:${r.id}`,
+    kind: "tool",
+    description: r.description,
+    status:
+      r.status === "resolved"
+        ? "done"
+        : r.status === "cancelled"
+          ? "cancelled"
+          : "pending",
+    createdAt: r.createdAt,
+    requestedByName: r.requestedByName ?? r.requestedByLabel ?? null,
+    repair: r.repairJobId
+      ? {
+          id: r.repairJobId,
+          label: r.unitRegistration ?? r.repairCode ?? "—",
+          sublabel: r.repairTitle ?? r.customerName ?? null,
+        }
+      : null,
+  }));
+
+  const parts: GarageRequestRow[] = partRows.map((r) => ({
+    id: `part:${r.id}`,
+    kind: "part",
+    description: r.partName,
+    status:
+      r.status === "received"
+        ? "done"
+        : r.status === "cancelled"
+          ? "cancelled"
+          : r.status === "requested"
+            ? "pending"
+            : "ordered",
+    createdAt: r.createdAt,
+    requestedByName: null,
+    repair: r.repairJobId
+      ? {
+          id: r.repairJobId,
+          label: r.unitRegistration ?? r.repairCode ?? "—",
+          sublabel: r.repairTitle ?? r.customerName ?? null,
+        }
+      : null,
+  }));
+
+  // Merge + newest-first, then cap.
+  return [...tools, ...parts]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, cap);
 }

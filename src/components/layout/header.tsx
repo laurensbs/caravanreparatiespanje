@@ -167,8 +167,11 @@ export function Header({
     <>
       <CommandPalette />
       <header
-        className="sticky top-0 z-30 flex h-[60px] min-w-0 items-center gap-2 border-b border-border/60 bg-background/75 px-2 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:h-14 sm:gap-3 sm:px-5"
-        style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
+        // min-h i.p.v. fixed h, zodat env(safe-area-inset-top) de header
+        // boven de iPhone statusbar uitbreidt (tijd/batterij) in plaats
+        // van er overheen te lopen. Desktop houdt 14 (56px) als vloer.
+        className="sticky top-0 z-30 flex min-h-[60px] min-w-0 items-center gap-2 border-b border-border/60 bg-background/75 px-2 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:min-h-14 sm:gap-3 sm:px-5"
+        style={{ paddingTop: "max(6px, env(safe-area-inset-top))" }}
       >
         <Button
           type="button"
@@ -187,10 +190,10 @@ export function Header({
             onClick={() =>
               document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
             }
-            className="group group/search flex h-11 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0)] transition-all hover:border-foreground/15 hover:bg-card hover:text-foreground focus-visible:border-ring focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-9 sm:max-w-sm lg:max-w-md"
+            className="group group/search flex h-11 min-w-0 max-w-full flex-1 cursor-pointer items-center gap-2.5 rounded-xl border border-border/60 bg-muted/40 px-3.5 text-muted-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0)] transition-all hover:border-foreground/15 hover:bg-card hover:text-foreground focus-visible:border-ring focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-9 sm:gap-2 sm:px-3 sm:max-w-sm lg:max-w-md"
           >
-            <Search className="icon-pop h-4 w-4 shrink-0 opacity-70 transition-all group-hover/search:opacity-100 sm:h-3.5 sm:w-3.5" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-normal tracking-[-0.005em]">
+            <Search className="icon-pop h-[18px] w-[18px] shrink-0 opacity-70 transition-all group-hover/search:opacity-100 sm:h-3.5 sm:w-3.5" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left text-[15px] font-normal tracking-[-0.005em] sm:text-[13px]">
               <span className="sm:hidden">Search…</span>
               <span className="hidden sm:inline">Search work orders, klanten, units…</span>
             </span>

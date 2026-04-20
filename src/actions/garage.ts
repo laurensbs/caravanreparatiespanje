@@ -227,14 +227,58 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
 // TODAY's REPAIRS
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Zodra een geplande reparatie aanbreekt (dueDate <= vandaag), beloven
+ * we dat hij automatisch "In Garage" wordt — zonder dat admin hem
+ * handmatig hoeft te verplaatsen. Dit wordt idempotent uitgevoerd bij
+ * elke /garage load (en is dus feitelijk een gratis daily cron):
+ *
+ *   status IN (new | todo | scheduled | in_inspection)
+ *   AND dueDate::date <= CURRENT_DATE
+ *   → status = 'in_progress'
+ *
+ * Ook stragglers uit gisteren of eerder worden opgepakt zodat de
+ * werkplaats-lijst nooit een "plannen-gat" heeft. Pure SQL UPDATE,
+ * geen individuele loop → blijft snel, zelfs met honderden items.
+ *
+ * Exported voor hergebruik vanuit andere hot paths (planning page,
+ * sidebar counts) zodat de status zo snel mogelijk convergeert.
+ */
+export async function autoPromoteDueRepairsToInProgress(): Promise<number> {
+  const result = await db
+    .update(repairJobs)
+    .set({ status: "in_progress", updatedAt: new Date() })
+    .where(
+      and(
+        isNull(repairJobs.deletedAt),
+        isNull(repairJobs.archivedAt),
+        inArray(repairJobs.status, ["new", "todo", "scheduled", "in_inspection"]),
+        sql`${repairJobs.dueDate}::date <= CURRENT_DATE`,
+      ),
+    )
+    .returning({ id: repairJobs.id });
+  return result.length;
+}
+
 export async function getGarageRepairsToday() {
   const ctx = await requireAnyAuth();
 
+  // Eerst geplande reparaties voor (of voor van)daag auto-promoten naar
+  // in_progress, zodat ze onder de actieve scope vallen en zichtbaar
+  // zijn voor werkers. Idempotent — tweede aanroep op dezelfde dag
+  // doet niks omdat alle kandidaten al in_progress staan.
+  try {
+    await autoPromoteDueRepairsToInProgress();
+  } catch (err) {
+    // Een mislukte auto-promote mag nooit de hele overview kapot maken.
+    // eslint-disable-next-line no-console
+    console.error("[garage] autoPromoteDueRepairsToInProgress failed:", err);
+  }
+
   // Werkvloer-scope: alleen reparaties die daadwerkelijk FYSIEK in de
   // werkplaats liggen en actie vragen van een werker. Geplande items
-  // (status `scheduled`, `todo`, `new`) verschijnen pas als iemand er
-  // een timer op zet — dat auto-promote't de status naar `in_progress`
-  // (zie startTimer in actions/time-entries.ts), en dan tonen we ze.
+  // worden door de auto-promote hierboven automatisch opgepakt zodra
+  // hun dueDate aanbreekt; tot die tijd horen ze op /planning.
   // Resultaat: de /garage overview blijft de hele dag rustig en toont
   // alleen wat er hier en nu speelt, niet de hele week-planning of
   // kantoor-wachtlijst.

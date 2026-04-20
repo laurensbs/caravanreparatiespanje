@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { and, eq, isNull, isNotNull, sql, inArray, notInArray } from "drizzle-orm";
+import { autoPromoteDueRepairsToInProgress } from "./garage";
 
 /**
  * Lightweight counts for the sidebar nav. One round-trip, all `count(*)`
@@ -40,6 +41,17 @@ import { and, eq, isNull, isNotNull, sql, inArray, notInArray } from "drizzle-or
  */
 export async function getSidebarCounts() {
   await requireAuth();
+
+  // Vóór we gaan tellen: promote geplande reparaties waarvan de dag
+  // aangebroken is naar `in_progress`, zodat elk admin-scherm (én de
+  // cijfers hieronder) consistent is met wat werkers in /garage zien.
+  // Best-effort: mislukte promote mag de layout nooit kraken.
+  try {
+    await autoPromoteDueRepairsToInProgress();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[sidebar] autoPromoteDueRepairsToInProgress failed:", err);
+  }
 
   const baseActiveRepair = and(
     isNull(repairJobs.archivedAt),

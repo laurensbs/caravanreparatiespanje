@@ -53,8 +53,9 @@ export function AddRepairDialog({ open, onOpenChange, targetDate, lang, onAdded 
         setResults([]);
         setSelectedId(null);
         onAdded();
-      } catch {
-        toast.error("Failed to schedule repair");
+      } catch (err) {
+        const msg = (err as Error)?.message ?? "Failed to schedule repair";
+        toast.error(msg);
         setSelectedId(null);
       }
     });

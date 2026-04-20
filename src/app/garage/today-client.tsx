@@ -30,7 +30,7 @@ import { useGaragePoll } from "@/lib/use-garage-poll";
 import { hapticTap, hapticSuccess, primeHaptics } from "@/lib/haptic";
 import { usePullToRefresh } from "@/lib/use-pull-to-refresh";
 import { PullToRefreshIndicator } from "@/components/garage/pull-to-refresh-indicator";
-import { startTimer, stopTimer } from "@/actions/time-entries";
+import { startTimer, stopTimer, GARAGE_TIMER_NO_TASKS } from "@/actions/time-entries";
 import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
@@ -394,6 +394,15 @@ export function GarageTodayClient({
               "This repair is not active.",
               "Esta reparación no está activa.",
               "Deze reparatie is niet actief.",
+            ),
+          );
+        } else if (msg === GARAGE_TIMER_NO_TASKS) {
+          toast.error(
+            tFor(
+              actorLang,
+              "No tasks yet — ask the office to add them first.",
+              "Sin tareas — pide a la oficina que las añada primero.",
+              "Nog geen taken — vraag kantoor om ze eerst toe te voegen.",
             ),
           );
         } else {

@@ -57,7 +57,7 @@ import {
 } from "@/actions/garage";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { markAdminMessageRead } from "@/actions/garage-sync";
-import { startTimer, stopTimer } from "@/actions/time-entries";
+import { startTimer, stopTimer, GARAGE_TIMER_NO_TASKS } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import {
@@ -479,7 +479,19 @@ export function GarageRepairDetailClient({
         );
         router.refresh();
       } catch (err) {
-        toast.error((err as Error)?.message ?? "Could not start timer");
+        const msg = (err as Error)?.message ?? "Could not start timer";
+        if (msg === GARAGE_TIMER_NO_TASKS) {
+          toast.error(
+            tFor(
+              lang,
+              "No tasks yet — ask the office to add them first.",
+              "Sin tareas — pide a la oficina que las añada primero.",
+              "Nog geen taken — vraag kantoor om ze eerst toe te voegen.",
+            ),
+          );
+        } else {
+          toast.error(msg);
+        }
       }
     });
   }

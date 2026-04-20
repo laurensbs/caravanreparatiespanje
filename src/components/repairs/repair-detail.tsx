@@ -1069,13 +1069,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       <PopoverContent align="start" className="w-56 p-3 space-y-2">
                         <button
                           onClick={async () => {
-                            const today = new Date();
-                            today.setHours(8, 0, 0, 0);
-                            await scheduleRepair(job.id, today.toISOString());
-                            setStatus("scheduled");
-                            setStartedToday(true);
-                            toast.success("Repair started for today");
-                            router.refresh();
+                            try {
+                              const today = new Date();
+                              today.setHours(8, 0, 0, 0);
+                              await scheduleRepair(job.id, today.toISOString());
+                              setStatus("scheduled");
+                              setStartedToday(true);
+                              toast.success("Repair started for today");
+                              router.refresh();
+                            } catch (err) {
+                              toast.error((err as Error)?.message ?? "Failed to start repair");
+                            }
                           }}
                           className="w-full flex items-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2 px-3 transition-colors hover:bg-foreground/90"
                         >
@@ -1100,11 +1104,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                             min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
                             onChange={async (e) => {
                               if (e.target.value) {
-                                const d = new Date(e.target.value);
-                                d.setHours(8, 0, 0, 0);
-                                await scheduleRepair(job.id, d.toISOString());
-                                toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
-                                router.refresh();
+                                try {
+                                  const d = new Date(e.target.value);
+                                  d.setHours(8, 0, 0, 0);
+                                  await scheduleRepair(job.id, d.toISOString());
+                                  toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
+                                  router.refresh();
+                                } catch (err) {
+                                  toast.error((err as Error)?.message ?? "Failed to schedule repair");
+                                }
                               }
                             }}
                           />
@@ -1866,13 +1874,17 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <div className="flex gap-2">
                     <button
                       onClick={async () => {
-                        const today = new Date();
-                        today.setHours(8, 0, 0, 0);
-                        await scheduleRepair(job.id, today.toISOString());
-                        setStatus("scheduled");
-                        setStartedToday(true);
-                        toast.success("Repair started for today");
-                        router.refresh();
+                        try {
+                          const today = new Date();
+                          today.setHours(8, 0, 0, 0);
+                          await scheduleRepair(job.id, today.toISOString());
+                          setStatus("scheduled");
+                          setStartedToday(true);
+                          toast.success("Repair started for today");
+                          router.refresh();
+                        } catch (err) {
+                          toast.error((err as Error)?.message ?? "Failed to start repair");
+                        }
                       }}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-foreground text-background text-xs font-medium py-2.5 px-3 transition-colors hover:bg-foreground/90"
                     >
@@ -1897,11 +1909,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         min={format(new Date(Date.now() + 86400000), "yyyy-MM-dd")}
                         onChange={async (e) => {
                           if (e.target.value) {
-                            const d = new Date(e.target.value);
-                            d.setHours(8, 0, 0, 0);
-                            await scheduleRepair(job.id, d.toISOString());
-                            toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
-                            router.refresh();
+                            try {
+                              const d = new Date(e.target.value);
+                              d.setHours(8, 0, 0, 0);
+                              await scheduleRepair(job.id, d.toISOString());
+                              toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
+                              router.refresh();
+                            } catch (err) {
+                              toast.error((err as Error)?.message ?? "Failed to schedule repair");
+                            }
                           }
                         }}
                       />

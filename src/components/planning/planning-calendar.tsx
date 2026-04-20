@@ -198,8 +198,9 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
     startTransition(async () => {
       try {
         await scheduleRepair(repairId, iso);
-      } catch {
-        toast.error("Failed to reschedule");
+      } catch (err) {
+        const msg = (err as Error)?.message ?? "Failed to reschedule";
+        toast.error(msg);
         const data = await getPlannedRepairs(weekStart, weekEnd);
         setRepairs(data);
       }

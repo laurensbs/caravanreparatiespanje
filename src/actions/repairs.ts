@@ -19,10 +19,49 @@ export type UpdateRepairJobResult =
   | { ok: true; job: RepairJobRow }
   | {
       ok: false;
-      code: "validation" | "not_found" | "server_error";
+      code: "validation" | "not_found" | "server_error" | "no_tasks";
       message: string;
       zodIssues?: { path: string; message: string }[];
     };
+
+/**
+ * Statusseries die de reparatie op de werkvloer zetten: "scheduled"
+ * (op de planning) en "in_progress" (in de garage). Dit zijn de enige
+ * transities waarvoor we taken vereisen — alle andere (bijv. blocked,
+ * waiting_customer) mogen zonder taken.
+ */
+const WORKSHOP_STATUSES = new Set(["scheduled", "in_progress"]);
+
+/**
+ * Guard: een reparatie mag pas ingepland of naar de garage als er
+ * minstens één taak op staat. Dit voorkomt dat werkers een caravan op
+ * hun lijst krijgen zonder te weten wat er moet gebeuren.
+ *
+ * Bestaande items die al `scheduled` of `in_progress` zijn worden
+ * NIET geblokkeerd — de guard vergelijkt oude met nieuwe status en
+ * laat no-op transities of overgangen tussen workshop-statussen
+ * ongemoeid. Pas als een reparatie een workshop-status kríjgt terwijl
+ * hij die nog niet had, tellen we de taken. Zo respecteren we het
+ * "sla bestaande items over"-verzoek.
+ */
+export async function assertRepairHasTasksForScheduling(
+  repairId: string,
+  nextStatus: string,
+  previousStatus: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!WORKSHOP_STATUSES.has(nextStatus)) return { ok: true };
+  if (WORKSHOP_STATUSES.has(previousStatus)) return { ok: true };
+  const [row] = await db
+    .select({ total: count() })
+    .from(repairTasks)
+    .where(eq(repairTasks.repairJobId, repairId));
+  if ((row?.total ?? 0) > 0) return { ok: true };
+  return {
+    ok: false,
+    message:
+      "Add at least one task before scheduling or moving this repair into the garage.",
+  };
+}
 
 /** Columns the panel may patch via `updateRepairJob` (never Holded IDs — use holded actions). */
 const REPAIR_JOB_PATCH_KEYS = [
@@ -506,6 +545,20 @@ export async function updateRepairJob(id: string, data: unknown): Promise<Update
 
     if (!existing) {
       return { ok: false, code: "not_found", message: "Job not found" };
+    }
+
+    // Blokkeer overgang naar 'scheduled' of 'in_progress' zonder taken.
+    // Bestaande items die al in die status staan mogen wel worden
+    // bijgewerkt (volgens user: "sla bestaande items over").
+    if (parsed.status !== undefined && parsed.status !== existing.status) {
+      const guard = await assertRepairHasTasksForScheduling(
+        id,
+        parsed.status,
+        existing.status,
+      );
+      if (!guard.ok) {
+        return { ok: false, code: "no_tasks", message: guard.message };
+      }
     }
 
     const changes: Record<string, { from: unknown; to: unknown }> = {};

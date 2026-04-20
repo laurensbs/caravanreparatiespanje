@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
-import { startTimer } from "@/actions/time-entries";
+import { startTimer, GARAGE_TIMER_NO_TASKS } from "@/actions/time-entries";
 import { GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { garageTimerBlockedReason } from "@/lib/garage-timer-policy";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
@@ -91,6 +91,14 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
           } catch (e) {
             if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
               toast.message(garageTimerBlockedReason(repairJobStatus, t));
+            } else if (e instanceof Error && e.message === GARAGE_TIMER_NO_TASKS) {
+              toast.error(
+                t(
+                  "No tasks yet — ask the office to add them first.",
+                  "Sin tareas — pide a la oficina que las añada primero.",
+                  "Nog geen taken — vraag kantoor om ze eerst toe te voegen.",
+                ),
+              );
             } else {
               throw e;
             }

@@ -446,6 +446,61 @@ export function GarageRepairDetailClient({
   }
 
   async function handleMarkDone() {
+    // Bevestigingsdialoog — "klaar melden" is onomkeerbaar voor de
+    // werker (status gaat naar ready_for_check, admin pakt 't over),
+    // dus een per-ongeluk tap mag niet meteen door. We geven ook
+    // context mee: hoeveel taken nog open staan, of er een actieve
+    // blokkade is, of de timer nog tikt. Dat laat de werker meteen
+    // zien of het terecht is.
+    const openTasks = repair.tasks.length - doneCount;
+    const runningTimers = activeTimers.length;
+    const blockerActive = activeBlockers.length;
+    const warnings: string[] = [];
+    if (openTasks > 0) {
+      warnings.push(
+        t(
+          `${openTasks} task${openTasks > 1 ? "s" : ""} still open`,
+          `${openTasks} tarea${openTasks > 1 ? "s" : ""} sin completar`,
+          `${openTasks} ta${openTasks > 1 ? "ken nog" : "ak nog"} open`,
+        ),
+      );
+    }
+    if (runningTimers > 0) {
+      warnings.push(
+        t(
+          "Timer is still running — it will be paused",
+          "Temporizador activo — se pausará",
+          "Timer loopt nog — wordt automatisch gepauzeerd",
+        ),
+      );
+    }
+    if (blockerActive > 0) {
+      warnings.push(
+        t("There's an active blocker", "Hay un bloqueo activo", "Er is een actieve blokkade"),
+      );
+    }
+
+    const description =
+      warnings.length > 0
+        ? `${t(
+            "This sends the job to the office for review. You can't undo this from the garage.",
+            "Esto envía el trabajo a la oficina para revisión. No se puede deshacer desde el taller.",
+            "Hiermee stuur je de klus naar kantoor voor controle. Dit kun je vanuit de werkplaats niet meer terugdraaien.",
+          )}\n\n⚠️ ${warnings.join(" · ")}`
+        : t(
+            "This sends the job to the office for review. You can't undo this from the garage.",
+            "Esto envía el trabajo a la oficina para revisión. No se puede deshacer desde el taller.",
+            "Hiermee stuur je de klus naar kantoor voor controle. Dit kun je vanuit de werkplaats niet meer terugdraaien.",
+          );
+
+    const ok = await confirmDialog({
+      title: t("Mark this job ready for check?", "¿Marcar como listo para revisión?", "Klus klaar melden voor controle?"),
+      description,
+      confirmLabel: t("Yes, send to office", "Sí, enviar a oficina", "Ja, naar kantoor"),
+      cancelLabel: t("Not yet", "Todavía no", "Nog niet"),
+    });
+    if (!ok) return;
+    hapticSuccess();
     startTransition(async () => {
       await garageMarkDone(repair.id);
       toast.success(t("Sent for review", "Enviado para revisión", "Klaar gemeld voor controle"));

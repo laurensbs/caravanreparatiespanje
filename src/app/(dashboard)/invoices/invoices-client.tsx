@@ -1,17 +1,18 @@
 "use client";
 
-import { Fragment, useState, useMemo } from "react";
+import { Fragment, useState, useMemo, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Receipt, Wrench, Search, ExternalLink, Send, X, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2, FilterX } from "lucide-react";
+import { Receipt, Wrench, Search, ExternalLink, Send, X, FileText, AlertTriangle, Clock, Phone, Info, MessageSquare, Trash2, CheckCircle2, FilterX, RefreshCw } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { toast } from "sonner";
 import { sendHoldedInvoice } from "@/actions/holded";
+import { quickSyncHoldedQuotes } from "@/actions/holded-sync";
 import { markInvoicePaid, sendPaymentReminder, dismissQuote, setQuoteNote, convertAndSendQuote } from "@/actions/invoices";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -79,6 +80,7 @@ type Tab = "invoices" | "quotes" | "overdue";
 
 export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [], initialTab }: InvoicesClientProps & { initialTab?: Tab }) {
   const router = useRouter();
+  const [syncing, startSync] = useTransition();
   const [tab, setTab] = useState<Tab>(initialTab ?? "invoices");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -263,19 +265,59 @@ export function InvoicesClient({ invoices, quotes, overdue, overdueEstimates = [
   return (
     <div className="animate-fade-in">
       <header className="border-b border-border/60 bg-card px-4 py-5 dark:bg-transparent sm:px-6 sm:py-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">
-          Billing
-        </p>
-        <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-foreground dark:text-foreground sm:text-3xl">
-          Invoices &amp; quotes
-        </h1>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-          {tab === "invoices"
-            ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
-            : tab === "quotes"
-              ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
-              : `${filteredOverdue.length} overdue invoice${filteredOverdue.length !== 1 ? "s" : ""}${filteredOverdueEstimates.length > 0 ? ` + ${filteredOverdueEstimates.length} uninvoiced quote${filteredOverdueEstimates.length !== 1 ? "s" : ""}` : ""}${hasActiveFilters ? ` (${overdue.length + overdueEstimates.length} total)` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 dark:text-muted-foreground">
+              Billing
+            </p>
+            <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-foreground dark:text-foreground sm:text-3xl">
+              Invoices &amp; quotes
+            </h1>
+            <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+              {tab === "invoices"
+                ? `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${invoices.length} total)` : ""}`
+                : tab === "quotes"
+                  ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""}${hasActiveFilters ? ` (${quotes.length} total)` : ""}`
+                  : `${filteredOverdue.length} overdue invoice${filteredOverdue.length !== 1 ? "s" : ""}${filteredOverdueEstimates.length > 0 ? ` + ${filteredOverdueEstimates.length} uninvoiced quote${filteredOverdueEstimates.length !== 1 ? "s" : ""}` : ""}${hasActiveFilters ? ` (${overdue.length + overdueEstimates.length} total)` : ""} · €${(overdueTotal + estimatesTotal).toFixed(2)} outstanding`}
+            </p>
+          </div>
+          {/*
+            Manual Holded sync. The cron runs every 15 minutes; this
+            button lets the admin pull in approvals/declines the moment
+            they happen without waiting for the next tick.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              startSync(async () => {
+                try {
+                  const res = await quickSyncHoldedQuotes({ force: true });
+                  const changed =
+                    (res.stats?.quoteApprovalsSynced ?? 0) +
+                    (res.stats?.quoteDeclinesSynced ?? 0) +
+                    (res.stats?.discovered ?? 0) +
+                    (res.stats?.repairsAutoCreated ?? 0);
+                  if (changed > 0) {
+                    toast.success(res.message);
+                    router.refresh();
+                  } else {
+                    toast(res.message);
+                  }
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Sync failed");
+                }
+              });
+            }}
+            disabled={syncing}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-[13px] font-medium text-foreground/90 transition-colors hover:text-foreground disabled:opacity-50 dark:border-border dark:bg-card"
+          >
+            <RefreshCw
+              className={cn("h-3.5 w-3.5", syncing && "animate-spin")}
+              aria-hidden
+            />
+            {syncing ? "Syncing…" : "Sync with Holded"}
+          </button>
+        </div>
         <HoldedHint variant="readonly" className="mt-4">
           Lists are synced from Holded (repair-related documents only). PDF links open Holded documents; repair codes
           link to jobs in this panel. Mark paid and reminders use Holded where applicable.

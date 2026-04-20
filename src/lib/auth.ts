@@ -97,12 +97,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const isOnLogin = pathname.startsWith("/login");
       const isGarage = pathname.startsWith("/garage");
       const hasGarageCookie = !!request.cookies.get("garage_auth")?.value;
+      // Did this browser ever hold a NextAuth session-token, even an
+      // expired one? If so, we treat the device as an admin device and
+      // bounce to /login on logout, instead of the workshop PWA. This
+      // prevents admins whose session briefly hiccups from being
+      // teleported into /garage because an old garage_auth cookie is
+      // still lying around on the same browser.
+      const looksLikeAdminDevice =
+        !!request.cookies.get("authjs.session-token")?.value ||
+        !!request.cookies.get("__Secure-authjs.session-token")?.value ||
+        !!request.cookies.get("next-auth.session-token")?.value ||
+        !!request.cookies.get("__Secure-next-auth.session-token")?.value;
 
       // Garage-PWA "lock-in": als deze browser een actieve garage-sessie heeft
       // en niet als admin is ingelogd, dan stuur alle navigatie buiten /garage
       // terug naar /garage. Zo kunnen werkers nooit per ongeluk in het admin-
       // dashboard of inlogscherm belanden (de tablet opent dit als app).
-      if (hasGarageCookie && !isLoggedIn && !isGarage) {
+      //
+      // Uitzondering: als dit apparaat overduidelijk een admin-device is
+      // (heeft een NextAuth-cookie gezet gehad), respecteren we de
+      // normale login-flow. Dat voorkomt dat admins naar /garage worden
+      // gegooid wanneer hun sessie net aan het verversen is.
+      if (
+        hasGarageCookie &&
+        !isLoggedIn &&
+        !isGarage &&
+        !isOnLogin &&
+        !looksLikeAdminDevice
+      ) {
         return Response.redirect(new URL("/garage", request.nextUrl));
       }
 

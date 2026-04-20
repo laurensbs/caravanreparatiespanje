@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -91,6 +91,32 @@ export async function clearGarageSession(): Promise<void> {
   cookieStore.delete({ name: COOKIE_NAME, path: "/garage" });
 }
 
+/**
+ * Best-effort detection of whether the current request originates from
+ * the garage PWA. We inspect the `referer` header (set by the browser
+ * on every navigation / fetch / form submit) and the Next.js-internal
+ * `next-url` header. If either points at `/garage`, the caller is a
+ * garage tablet; otherwise we assume the admin portal.
+ *
+ * Used to decide where to bounce unauthenticated callers: an admin
+ * whose session briefly hiccups should land on `/login`, not on the
+ * workshop PIN screen.
+ */
+async function callerIsFromGarage(): Promise<boolean> {
+  try {
+    const hdrs = await headers();
+    const referer = hdrs.get("referer") ?? "";
+    const nextUrl = hdrs.get("next-url") ?? "";
+    const rscUrl = hdrs.get("rsc") ? hdrs.get("next-router-state-tree") ?? "" : "";
+    const candidates = `${referer} ${nextUrl} ${rscUrl}`;
+    // Referer can be a full URL (http://…/garage/repairs/…) or just
+    // a path depending on the browser; substring match is enough.
+    return /\/garage(?:\/|$|\?)/.test(candidates);
+  } catch {
+    return false;
+  }
+}
+
 /** Require garage authentication — redirects to /garage if missing */
 export async function requireGarageAuth(): Promise<void> {
   const ok = await isGarageAuthenticated();
@@ -106,13 +132,14 @@ export type AuthContext = {
 /**
  * Require either NextAuth session OR valid garage cookie.
  *
- * If neither is present we *redirect* the caller to `/garage` instead
- * of throwing. Throwing turned a stale-cookie POST (PWA on iPhone, an
- * orphan in-flight server action after the 4h garage cookie expired,
- * a polled fetch from a backgrounded tab) into an opaque 500 with
- * only a digest. Next.js treats `redirect()` as a structured control
- * flow signal — the client is bounced to /garage where the layout
- * shows the PIN keypad and the worker can re-authenticate.
+ * If neither is present we *redirect* the caller instead of throwing,
+ * because throwing turned a stale-cookie POST into an opaque 500. The
+ * redirect target depends on the caller's origin: requests coming
+ * from the garage PWA go back to `/garage` (PIN keypad); everything
+ * else goes to `/login`. That last part is critical — without it an
+ * admin whose session momentarily hiccups during a server action
+ * gets bounced into the workshop PWA, which is confusing and
+ * entirely wrong.
  */
 export async function requireAnyAuth(): Promise<AuthContext> {
   const session = await auth();
@@ -123,5 +150,6 @@ export async function requireAnyAuth(): Promise<AuthContext> {
   if (garageOk) {
     return { userId: null, userName: "Garage" };
   }
-  redirect("/garage");
+  const fromGarage = await callerIsFromGarage();
+  redirect(fromGarage ? "/garage" : "/login");
 }

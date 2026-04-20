@@ -13,6 +13,11 @@ import "./garage-theme.css";
 export const metadata = {
   title: "Garage — Caravan Repairs",
   manifest: "/garage-manifest.json",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent" as const,

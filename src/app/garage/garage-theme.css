@@ -160,13 +160,49 @@
 .garage-light .ring-amber-400\/25 { --tw-ring-color: rgb(180 83 9 / 0.3); }
 .garage-light .ring-amber-400\/30 { --tw-ring-color: rgb(180 83 9 / 0.35); }
 
-/* Emerald / rose / violet helper pills used on overview cards. */
-.garage-light .text-emerald-200 { color: #065f46; }
+/* Emerald / rose / violet helper pills used on overview cards and
+   the running-timer hero card. The dark theme leans on emerald-100..300
+   which are pale mint — unreadable on a white surface. Push them to
+   emerald-700..900 so "LOOPT" and the live clock stay legible. */
+.garage-light .text-emerald-50 { color: #064e3b; }
+.garage-light .text-emerald-100 { color: #065f46; }
+.garage-light .text-emerald-200 { color: #047857; }
 .garage-light .text-emerald-300 { color: #047857; }
+.garage-light .text-emerald-400 { color: #059669; }
 .garage-light .text-rose-200 { color: #9f1239; }
 .garage-light .text-rose-300 { color: #be123c; }
 .garage-light .text-violet-200 { color: #5b21b6; }
 .garage-light .text-violet-300 { color: #6d28d9; }
+
+/* Tailwind emits arbitrary alpha variants (e.g. `text-emerald-300/70`)
+   as a separate selector with its own `color` value, so the plain
+   `text-emerald-300` override above doesn't catch them. Re-bind the
+   most common alpha variants we actually use. */
+.garage-light .text-emerald-100\/70 { color: rgb(6 95 70 / 0.78); }
+.garage-light .text-emerald-200\/70 { color: rgb(4 120 87 / 0.78); }
+.garage-light .text-emerald-300\/70 { color: rgb(4 120 87 / 0.78); }
+.garage-light .text-emerald-300\/80 { color: rgb(4 120 87 / 0.88); }
+
+/* Emerald tinted surfaces — the hero running-timer uses
+   `bg-emerald-500/[0.08]` with `ring-emerald-500/20`. In light mode
+   those alpha values render as an almost-white pill; boost them so
+   the timer card actually reads as "something is happening here". */
+.garage-light .bg-emerald-500\/\[0\.08\] { background-color: rgb(16 185 129 / 0.12); }
+.garage-light .bg-emerald-500\/10 { background-color: rgb(16 185 129 / 0.14); }
+.garage-light .bg-emerald-500\/15 { background-color: rgb(16 185 129 / 0.18); }
+.garage-light .bg-emerald-500\/20 { background-color: rgb(16 185 129 / 0.22); }
+.garage-light .ring-emerald-500\/20 { --tw-ring-color: rgb(5 150 105 / 0.4); }
+.garage-light .ring-emerald-400\/10 { --tw-ring-color: rgb(5 150 105 / 0.28); }
+.garage-light .ring-emerald-400\/20 { --tw-ring-color: rgb(5 150 105 / 0.4); }
+
+/* Teal tinted surfaces (`in_progress` status chip, progress bar). */
+.garage-light .text-teal-100 { color: #134e4a; }
+.garage-light .text-teal-200 { color: #115e59; }
+.garage-light .text-teal-300 { color: #0f766e; }
+.garage-light .text-teal-400 { color: #0d9488; }
+.garage-light .bg-teal-400\/10 { background-color: rgb(20 184 166 / 0.16); }
+.garage-light .bg-teal-500\/15 { background-color: rgb(20 184 166 / 0.2); }
+.garage-light .ring-teal-400\/20 { --tw-ring-color: rgb(13 148 136 / 0.35); }
 
 /* Sonner toast + confirm dialog already follow the OS `color-scheme` we
    set in theme-provider, so they don't need explicit overrides. */

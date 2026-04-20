@@ -11,7 +11,7 @@
   "theme_color": "#0c0a09",
   "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/garage/icon", "sizes": "32x32", "type": "image/png", "purpose": "any" },
-    { "src": "/garage/apple-icon", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/favicon.png", "sizes": "any", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
   ]
 }

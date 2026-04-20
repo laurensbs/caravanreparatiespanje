@@ -43,38 +43,53 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
   const status = task.status as RepairTaskStatus;
   const isDone = status === "done";
 
-  function handleStatusChange(newStatus: RepairTaskStatus) {
+  async function handleStatusChange(newStatus: RepairTaskStatus) {
     if (newStatus === "problem") {
       hapticTap();
       onProblem(task.id);
       return;
     }
     newStatus === "done" ? hapticSuccess() : hapticTap();
+
+    // Open de worker-picker VOOR de transition. Als we dit binnen
+    // startTransition doen, markeert React de setState van de picker
+    // als low-priority en kan het modaal "blijven hangen" — de werker
+    // ervaart dat als "er gebeurt niks" na ▶ Start.
+    let pickedWorkerId: string | null = null;
+    if (newStatus === "in_progress" && onBeforeStart) {
+      const res = await onBeforeStart();
+      if (!res) return;
+      if (typeof res === "string") pickedWorkerId = res;
+    }
+
     startTransition(async () => {
-      let pickedWorkerId: string | null = null;
-      if (newStatus === "in_progress" && onBeforeStart) {
-        const res = await onBeforeStart();
-        if (!res) return;
-        if (typeof res === "string") pickedWorkerId = res;
-      }
-      await updateTaskStatus(task.id, newStatus);
-      // Start ook meteen de klok zodat "▶ Start" op een taak niet
-      // stilletjes een status-update is maar de werkelijke timer
-      // aantrapt. Dit is de bug waardoor het leek alsof "Start"
-      // niets deed.
-      if (newStatus === "in_progress" && pickedWorkerId) {
-        try {
-          await startTimer(repairJobId, pickedWorkerId);
-        } catch (e) {
-          if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
-            toast.message(garageTimerBlockedReason(repairJobStatus, t));
-          } else {
-            throw e;
+      try {
+        await updateTaskStatus(task.id, newStatus);
+        if (newStatus === "in_progress" && pickedWorkerId) {
+          try {
+            await startTimer(repairJobId, pickedWorkerId);
+          } catch (e) {
+            if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
+              toast.message(garageTimerBlockedReason(repairJobStatus, t));
+            } else {
+              throw e;
+            }
           }
         }
+        if (newStatus === "done") {
+          toast.success(t("Task completed", "Tarea completada", "Taak afgerond"));
+        }
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not update task");
+      } finally {
+        onUpdate();
       }
-      onUpdate();
     });
+  }
+
+  function toggleDone() {
+    if (isPending) return;
+    handleStatusChange(isDone ? "pending" : "done");
   }
 
   const actions = getActions(task.status);
@@ -83,15 +98,23 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
     <div className={`bg-white/[0.03] rounded-2xl border border-white/[0.06] transition-all duration-150 ${isPending ? "opacity-60" : ""} ${isDone ? "opacity-50" : ""}`}>
       <div className="px-4 py-3.5">
         <div className="flex items-start gap-3">
-          <span className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none shrink-0 mt-0.5 ${
-            status === "done" ? "bg-emerald-400/10 text-emerald-400" :
-            status === "in_progress" ? "bg-teal-400/10 text-teal-400" :
-            status === "problem" ? "bg-red-400/10 text-red-400" :
-            status === "review" ? "bg-amber-400/10 text-amber-400" :
-            "bg-white/[0.06] text-white/30"
-          }`}>
+          <button
+            type="button"
+            onClick={toggleDone}
+            disabled={isPending}
+            aria-label={isDone
+              ? t("Mark as not done", "Marcar como no hecho", "Markeer als niet klaar")
+              : t("Mark as done", "Marcar como hecho", "Afvinken")}
+            className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none shrink-0 mt-0.5 transition-all active:scale-90 disabled:opacity-50 ${
+              status === "done" ? "bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20" :
+              status === "in_progress" ? "bg-teal-400/10 text-teal-400 hover:bg-teal-400/20" :
+              status === "problem" ? "bg-red-400/10 text-red-400 hover:bg-red-400/20" :
+              status === "review" ? "bg-amber-400/10 text-amber-400 hover:bg-amber-400/20" :
+              "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
+            }`}
+          >
             {STATUS_ICONS[status]}
-          </span>
+          </button>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">

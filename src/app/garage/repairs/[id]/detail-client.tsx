@@ -379,6 +379,7 @@ export function GarageRepairDetailClient({
   const [picker, setPicker] = useState<{
     purpose: "startTimer" | "taskStart";
     onPick: (worker: WorkerOption) => void;
+    onCancel?: () => void;
     title?: string;
   } | null>(null);
 
@@ -431,13 +432,22 @@ export function GarageRepairDetailClient({
   const askWorker = useCallback(
     (title?: string) =>
       new Promise<WorkerOption | null>((resolve) => {
+        // Één resolver die we zowel vanuit onPick als onClose/cancel
+        // veilig kunnen aanroepen — zo blijft de aanroeper (TaskCard)
+        // nooit hangen in een pending-state als de werker de picker
+        // wegklikt zonder iemand te kiezen.
+        let settled = false;
+        const done = (worker: WorkerOption | null) => {
+          if (settled) return;
+          settled = true;
+          setPicker(null);
+          resolve(worker);
+        };
         setPicker({
           purpose: "taskStart",
           title,
-          onPick: (worker) => {
-            setPicker(null);
-            resolve(worker);
-          },
+          onPick: (worker) => done(worker),
+          onCancel: () => done(null),
         });
       }),
     [],
@@ -1272,7 +1282,10 @@ export function GarageRepairDetailClient({
       {/* ─── Worker picker (overlay) ─────────────────────── */}
       <WorkerPicker
         open={!!picker}
-        onClose={() => setPicker(null)}
+        onClose={() => {
+          picker?.onCancel?.();
+          setPicker(null);
+        }}
         onPick={(worker) => picker?.onPick(worker)}
         workers={allUsers}
         title={picker?.title}

@@ -141,6 +141,15 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     } else if (statuses.length > 1) {
       conditions.push(inArray(repairJobs.status, statuses as any));
     }
+    // "Scheduled" betekent in dit portaal: staat echt op de planning
+    // (heeft een dueDate). Items die na een goedgekeurde Holded-offerte
+    // in status=scheduled belanden zonder datum, zijn technisch wel
+    // `scheduled` maar nog niet geslot op de kalender; die willen we
+    // niet in deze lijst. Ze verschijnen in het No-date filter tot
+    // iemand er in de planning een datum aan hangt.
+    if (statuses.length === 1 && statuses[0] === "scheduled") {
+      conditions.push(isNotNull(repairJobs.dueDate));
+    }
   }
 
   if (filters.locationId) {

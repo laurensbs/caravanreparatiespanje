@@ -10,7 +10,7 @@ import {
   toolRequests,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
-import { and, eq, isNull, sql, inArray, notInArray } from "drizzle-orm";
+import { and, eq, isNull, isNotNull, sql, inArray, notInArray } from "drizzle-orm";
 
 /**
  * Lightweight counts for the sidebar nav. One round-trip, all `count(*)`
@@ -22,7 +22,13 @@ import { and, eq, isNull, sql, inArray, notInArray } from "drizzle-orm";
  *   workOrdersOpen   – non-completed/invoiced/archived repairs
  *   workOrdersUrgent – open repairs with priority=urgent (drives the
  *                      red attention dot in the rail)
- *   planning         – repairs in scheduled (need to be slotted)
+ *   planning         – repairs with status=scheduled AND a dueDate set
+ *                      (i.e. actually on the planning). A quote just
+ *                      approved in Holded goes to status=scheduled
+ *                      without a date; those aren't on the planning
+ *                      yet so we don't count them here — they'd
+ *                      otherwise inflate the badge to 100+ and lose
+ *                      its meaning.
  *   contacts         – total customers
  *   units            – total units (caravans)
  *   parts            – pending part requests + open workshop tool
@@ -69,6 +75,11 @@ export async function getSidebarCounts() {
             isNull(repairJobs.archivedAt),
             isNull(repairJobs.deletedAt),
             eq(repairJobs.status, "scheduled"),
+            // Alleen echt-geplande items tellen: anders zou de badge
+            // elk net-goedgekeurd Holded-offerte-reparatie meetellen,
+            // terwijl die pas werkelijk "scheduled" is zodra kantoor
+            // er een datum aan hangt in de planning.
+            isNotNull(repairJobs.dueDate),
           ),
         ),
 

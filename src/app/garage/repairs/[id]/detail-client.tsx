@@ -19,7 +19,6 @@ import {
   MessageSquare,
   Plus,
   CheckCircle2,
-  XCircle,
   OctagonX,
   MapPin,
   Phone,
@@ -49,7 +48,6 @@ import {
   addGarageComment,
   suggestExtraTask,
   garageMarkDone,
-  garageMarkNotDone,
   resolveBlocker as resolveBlockerAction,
 } from "@/actions/garage";
 import { markAdminMessageRead } from "@/actions/garage-sync";
@@ -367,7 +365,6 @@ export function GarageRepairDetailClient({
   const [showFinalCheck, setShowFinalCheck] = useState(false);
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [showSuggestSheet, setShowSuggestSheet] = useState(false);
-  const [showNotDoneSheet, setShowNotDoneSheet] = useState(false);
   const [showFinding, setShowFinding] = useState(false);
   const [showBlocker, setShowBlocker] = useState(false);
   const [showHandNeeded, setShowHandNeeded] = useState(false);
@@ -376,7 +373,6 @@ export function GarageRepairDetailClient({
   const [commentVoice, setCommentVoice] = useState<VoiceClip | null>(null);
   const [suggestTitle, setSuggestTitle] = useState("");
   const [suggestDesc, setSuggestDesc] = useState("");
-  const [notDoneReason, setNotDoneReason] = useState("");
   const [isPending, startTransition] = useTransition();
 
   /* Worker picker state — every action that needs an actor opens this. */
@@ -392,7 +388,26 @@ export function GarageRepairDetailClient({
   const hasTasks = repair.tasks.length > 0;
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
   const activeBlockers = repair.blockers.filter((b) => b.active);
-  const unresolvedFindings = repair.findings.filter((f) => !f.resolvedAt);
+
+  /* Lokale overlay voor zojuist toegevoegde findings zodat ze meteen
+     zichtbaar zijn zonder een server-refresh af te wachten. Zodra het
+     volgende `router.refresh` binnenkomt vervangt `repair.findings`
+     (vanuit props) effectief deze entries — dedupe op id. */
+  const [optimisticFindings, setOptimisticFindings] = useState<typeof repair.findings>([]);
+  const findings = useMemo(() => {
+    const seen = new Set(repair.findings.map((f) => f.id));
+    const extras = optimisticFindings.filter((f) => !seen.has(f.id));
+    return [...extras, ...repair.findings];
+  }, [repair.findings, optimisticFindings]);
+  useEffect(() => {
+    // Als alle optimistische entries binnen zijn gekomen via props,
+    // ruim ze op zodat we geen achtergelaten state blijven meezeulen.
+    setOptimisticFindings((prev) =>
+      prev.filter((f) => !repair.findings.some((r) => r.id === f.id)),
+    );
+  }, [repair.findings]);
+
+  const unresolvedFindings = findings.filter((f) => !f.resolvedAt);
   // "Mag een werker hier een timer starten?" — de server ondersteunt
   // auto-promote van `new|todo|scheduled|in_inspection` → `in_progress`
   // bij start, dus we tonen de knop ook in die statussen. Wachtstatus-
@@ -541,17 +556,6 @@ export function GarageRepairDetailClient({
     });
   }
 
-  async function handleMarkNotDone() {
-    if (!notDoneReason.trim()) return;
-    startTransition(async () => {
-      await garageMarkNotDone(repair.id, notDoneReason);
-      setNotDoneReason("");
-      setShowNotDoneSheet(false);
-      toast.success(t("Status updated", "Estado actualizado", "Status bijgewerkt"));
-      router.refresh();
-    });
-  }
-
   async function handleAddComment() {
     const hasText = commentText.trim().length > 0;
     if (!hasText && !commentVoice) return;
@@ -666,142 +670,168 @@ export function GarageRepairDetailClient({
       <main className="flex-1 pb-44">
         <div className="mx-auto flex max-w-3xl flex-col gap-3 px-3 py-4 sm:px-5">
 
-          {/* ── Hero ─────────────────────────────────────────── */}
-          <section className="flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 ring-1 ring-white/[0.05]">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-mono text-2xl font-bold tracking-tight text-white">
-                {repair.unitRegistration ?? repair.publicCode ?? "—"}
-              </h1>
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${STATUS_TONE[repair.status] ?? "bg-white/[0.06] text-white/60 ring-white/10"}`}
-              >
-                {STATUS_LABELS[repair.status as RepairStatus]}
-              </span>
-              {(repair.priority === "urgent" || repair.priority === "high") ? (
+          {/* ── Hero ─────────────────────────────────────────────────
+               Op mobiel stapelen we kolommen (info boven, timer eronder),
+               op sm+ zetten we de timer expliciet NAAST de klantdetails:
+               zo zie je in één oogopslag voor wie + wagen + hoe lang er
+               al aan gewerkt wordt, zonder scrollen. */}
+          <section className="flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 ring-1 ring-white/[0.05] sm:flex-row sm:items-stretch sm:gap-4">
+            {/* Linker kolom — klant, wagen, status, voortgang, flags. */}
+            <div className="flex min-w-0 flex-1 flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-mono text-2xl font-bold tracking-tight text-white">
+                  {repair.unitRegistration ?? repair.publicCode ?? "—"}
+                </h1>
                 <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${
-                    repair.priority === "urgent"
-                      ? "bg-rose-500/15 text-rose-300 ring-rose-400/20"
-                      : "bg-amber-500/15 text-amber-300 ring-amber-400/20"
-                  }`}
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${STATUS_TONE[repair.status] ?? "bg-white/[0.06] text-white/60 ring-white/10"}`}
                 >
-                  {PRIORITY_LABELS[repair.priority as Priority]}
+                  {STATUS_LABELS[repair.status as RepairStatus]}
                 </span>
-              ) : null}
-            </div>
-
-            {repair.title ? (
-              <p className="text-base text-white/85">{repair.title}</p>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
-              {repair.customerName ? <span>{repair.customerName}</span> : null}
-              {repair.unitBrand ? <span>{repair.unitBrand} {repair.unitModel ?? ""}</span> : null}
-              {repair.unitCurrentPosition || repair.unitStorageLocation ? (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {repair.unitCurrentPosition ?? repair.unitStorageLocation}
-                </span>
-              ) : null}
-            </div>
-
-            {hasTasks ? (
-              <div className="flex items-center gap-2.5">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-                  <div
-                    className={`h-full rounded-full transition-all duration-700 ease-out ${progress === 100 ? "bg-emerald-400" : "bg-gradient-to-r from-teal-400 to-teal-500"}`}
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <span className="text-xs font-semibold tabular-nums text-white/60">
-                  {doneCount}/{repair.tasks.length}
-                </span>
-              </div>
-            ) : null}
-
-            {flagItems.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {flagItems.map((f) => (
+                {(repair.priority === "urgent" || repair.priority === "high") ? (
                   <span
-                    key={f.key}
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${f.tone}`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${
+                      repair.priority === "urgent"
+                        ? "bg-rose-500/15 text-rose-300 ring-rose-400/20"
+                        : "bg-amber-500/15 text-amber-300 ring-amber-400/20"
+                    }`}
                   >
-                    <Flag className="h-3 w-3" />
-                    {f.label}
+                    {PRIORITY_LABELS[repair.priority as Priority]}
                   </span>
-                ))}
+                ) : null}
               </div>
-            ) : null}
 
-            {/* Hero-timer — direct onder de licentieplaat zodat een werker
-                niet hoeft te scrollen om te zien "loopt er iets, hoe lang,
-                en hoe pauzeer ik". Toont:
-                - grote HH:MM:SS van de langst-lopende timer (de "klok
-                  van de klus") + namen van actieve werkers
-                - per-werker pauzeknop
-                - als niemand bezig is: één duidelijke Start-knop
-                  (auto-promoot status naar `in_progress` server-side) */}
-            {activeTimers.length > 0 ? (
-              <div className="mt-1 flex flex-col gap-2 rounded-2xl bg-emerald-500/[0.08] p-3 ring-1 ring-emerald-500/20">
-                <div className="flex items-center gap-3">
-                  <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              {repair.title ? (
+                <p className="text-base text-white/85">{repair.title}</p>
+              ) : null}
+
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
+                {repair.customerName ? <span>{repair.customerName}</span> : null}
+                {repair.unitBrand ? <span>{repair.unitBrand} {repair.unitModel ?? ""}</span> : null}
+                {repair.unitCurrentPosition || repair.unitStorageLocation ? (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {repair.unitCurrentPosition ?? repair.unitStorageLocation}
                   </span>
-                  <HeroLiveClock
-                    start={activeTimers.reduce((min, tm) => {
-                      const ts = typeof tm.startedAt === "string"
-                        ? new Date(tm.startedAt).getTime()
-                        : tm.startedAt.getTime();
-                      return ts < min ? ts : min;
-                    }, Date.now())}
-                    baselineMinutes={recordedMinutes}
-                  />
-                  <span className="ml-auto truncate text-[11px] font-medium uppercase tracking-wider text-emerald-300/70">
-                    {activeTimers.length === 1
-                      ? t("running", "en curso", "loopt")
-                      : `${activeTimers.length} ${t("working", "trabajando", "bezig")}`}
+                ) : null}
+              </div>
+
+              {hasTasks ? (
+                <div className="flex items-center gap-2.5">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ease-out ${progress === 100 ? "bg-emerald-400" : "bg-gradient-to-r from-teal-400 to-teal-500"}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold tabular-nums text-white/60">
+                    {doneCount}/{repair.tasks.length}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  {activeTimers.map((tm) => (
-                    <div
-                      key={tm.id}
-                      className="flex items-center gap-2 rounded-xl bg-emerald-500/[0.08] px-2.5 py-1.5 ring-1 ring-emerald-400/10"
+              ) : null}
+
+              {flagItems.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {flagItems.map((f) => (
+                    <span
+                      key={f.key}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${f.tone}`}
                     >
-                      <span className="truncate text-[13px] font-semibold text-emerald-100">
-                        {tm.userName ?? "—"}
-                      </span>
-                      <LiveElapsed start={tm.startedAt} />
-                      <button
-                        type="button"
-                        onClick={() => handleStopTimer(tm)}
-                        className="ml-auto inline-flex h-9 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[12px] font-semibold text-white transition-all hover:bg-white/15 active:scale-[0.97]"
-                        aria-label={t("Pause", "Pausa", "Pauze")}
-                      >
-                        <Pause className="h-3.5 w-3.5" />
-                        {t("Pause", "Pausa", "Pauze")}
-                      </button>
-                    </div>
+                      <Flag className="h-3 w-3" />
+                      {f.label}
+                    </span>
                   ))}
                 </div>
-              </div>
-            ) : canTimer ? (
-              recordedMinutes > 0 ? (
-                /* Er staat al tijd op deze repair maar er loopt nu niks
-                   — dus "gepauzeerd". Toon de opgebouwde tijd groot in
-                   beeld zodat je nooit het gevoel hebt dat je tijd
-                   kwijt is, met een duidelijke Hervat-knop ernaast. */
-                <div className="mt-1 flex items-center gap-3 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.08]">
-                  <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-white/30" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
-                      {t("Paused", "En pausa", "Gepauzeerd")}
-                    </p>
-                    <p className="font-mono text-2xl font-bold leading-tight tabular-nums text-white/90">
+              ) : null}
+            </div>
+
+            {/* Rechter kolom — de werkelijke "klok van de klus".
+                Mobiel: onderaan de hero. Tablet+: 280px strip naast
+                de klant/wagen info. Een werker kan hier altijd zien
+                of er iets loopt, hoe lang, en wie — en pauzeren of
+                starten zonder te scrollen. Weggaan via Back is altijd
+                veilig: de timer blijft server-side doortikken. */}
+            {(activeTimers.length > 0 || canTimer) ? (
+              <div className="flex shrink-0 flex-col gap-2 sm:w-[280px] sm:border-l sm:border-white/[0.05] sm:pl-4">
+                {activeTimers.length > 0 ? (
+                  <div className="flex h-full flex-col gap-2 rounded-2xl bg-emerald-500/[0.08] p-3 ring-1 ring-emerald-500/20">
+                    <div className="flex items-center gap-2">
+                      <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                      </span>
+                      <HeroLiveClock
+                        start={activeTimers.reduce((min, tm) => {
+                          const ts = typeof tm.startedAt === "string"
+                            ? new Date(tm.startedAt).getTime()
+                            : tm.startedAt.getTime();
+                          return ts < min ? ts : min;
+                        }, Date.now())}
+                        baselineMinutes={recordedMinutes}
+                      />
+                      <span className="ml-auto truncate text-[10px] font-medium uppercase tracking-wider text-emerald-300/70">
+                        {activeTimers.length === 1
+                          ? t("running", "en curso", "loopt")
+                          : `${activeTimers.length} ${t("working", "trabajando", "bezig")}`}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {activeTimers.map((tm) => (
+                        <div
+                          key={tm.id}
+                          className="flex items-center gap-2 rounded-xl bg-emerald-500/[0.08] px-2.5 py-1.5 ring-1 ring-emerald-400/10"
+                        >
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-emerald-100">
+                            {tm.userName ?? "—"}
+                          </span>
+                          <LiveElapsed start={tm.startedAt} />
+                          <button
+                            type="button"
+                            onClick={() => handleStopTimer(tm)}
+                            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[12px] font-semibold text-white transition-all hover:bg-white/15 active:scale-[0.97]"
+                            aria-label={t("Pause", "Pausa", "Pauze")}
+                          >
+                            <Pause className="h-3.5 w-3.5" />
+                            {t("Pause", "Pausa", "Pauze")}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : recordedMinutes > 0 ? (
+                  /* Er staat al tijd op deze repair maar er loopt nu niks
+                     — dus "gepauzeerd". Toon de opgebouwde tijd groot in
+                     beeld zodat je nooit het gevoel hebt dat je tijd
+                     kwijt is, met een duidelijke Hervat-knop ernaast. */
+                  <div className="flex h-full flex-col gap-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.08]">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-white/30" aria-hidden />
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                        {t("Paused", "En pausa", "Gepauzeerd")}
+                      </p>
+                    </div>
+                    <p className="font-mono text-3xl font-bold leading-none tabular-nums text-white/90">
                       {formatPausedDuration(recordedMinutes)}
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        hapticTap();
+                        setPicker({
+                          purpose: "startTimer",
+                          onPick: (w) => {
+                            setPicker(null);
+                            handleStartTimer(w);
+                          },
+                          title: t("Who's resuming?", "¿Quién sigue?", "Wie gaat verder?"),
+                        });
+                      }}
+                      className="mt-auto inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 text-[14px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      {t("Resume", "Seguir", "Hervatten")}
+                    </button>
                   </div>
+                ) : (
                   <button
                     type="button"
                     onClick={() => {
@@ -812,35 +842,18 @@ export function GarageRepairDetailClient({
                           setPicker(null);
                           handleStartTimer(w);
                         },
-                        title: t("Who's resuming?", "¿Quién sigue?", "Wie gaat verder?"),
+                        title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
                       });
                     }}
-                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-white px-3.5 text-[14px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
+                    className="flex h-full min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-4 text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
                   >
-                    <Play className="h-4 w-4 fill-current" />
-                    {t("Resume", "Seguir", "Hervatten")}
+                    <Play className="h-6 w-6 fill-current" />
+                    <span className="text-[15px] font-bold">
+                      {t("Start timer", "Iniciar timer", "Start timer")}
+                    </span>
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    hapticTap();
-                    setPicker({
-                      purpose: "startTimer",
-                      onPick: (w) => {
-                        setPicker(null);
-                        handleStartTimer(w);
-                      },
-                      title: t("Who's starting?", "¿Quién empieza?", "Wie begint?"),
-                    });
-                  }}
-                  className="mt-1 flex h-12 items-center justify-center gap-2 rounded-2xl bg-white text-[15px] font-bold text-stone-950 shadow-md transition-all hover:bg-white/95 active:scale-[0.98]"
-                >
-                  <Play className="h-4 w-4 fill-current" />
-                  {t("Start timer", "Iniciar timer", "Start timer")}
-                </button>
-              )
+                )}
+              </div>
             ) : null}
           </section>
 
@@ -932,10 +945,9 @@ export function GarageRepairDetailClient({
                       const w = await askWorker(
                         t("Who's starting this task?", "¿Quién empieza?", "Wie begint deze taak?"),
                       );
-                      return !!w;
+                      return w ? w.id : null;
                     }}
                     photos={photosByTask.get(task.id) ?? []}
-                    workerId={undefined}
                   />
                 ))}
               </div>
@@ -1042,11 +1054,11 @@ export function GarageRepairDetailClient({
           </Section>
 
           {/* ── Findings ────────────────────────────────────── */}
-          {(unresolvedFindings.length > 0 || repair.findings.length > 0) ? (
+          {(unresolvedFindings.length > 0 || findings.length > 0) ? (
             <Section
               icon={<Sparkles className="h-4 w-4" />}
               title={t("Findings", "Hallazgos", "Bevindingen")}
-              badge={unresolvedFindings.length || repair.findings.length}
+              badge={unresolvedFindings.length || findings.length}
               defaultOpen={unresolvedFindings.length > 0}
               action={
                 <button
@@ -1060,7 +1072,7 @@ export function GarageRepairDetailClient({
               }
             >
               <div className="flex flex-col gap-2">
-                {repair.findings.map((f) => (
+                {findings.map((f) => (
                   <div
                     key={f.id}
                     className={`flex items-start gap-2.5 rounded-xl p-3 ring-1 ${f.resolvedAt ? "bg-white/[0.03] ring-white/[0.06] opacity-60" : "bg-amber-500/[0.06] ring-amber-400/15"}`}
@@ -1211,26 +1223,20 @@ export function GarageRepairDetailClient({
                 {t("Final check", "Control final", "Eindcontrole")}
               </button>
             ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={handleMarkDone}
-                  disabled={isPending || repair.status === "completed"}
-                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-bold text-white shadow-md hover:bg-emerald-500/90 active:scale-[0.98] disabled:opacity-50"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowNotDoneSheet(true)}
-                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
-                  aria-label={t("Not done", "No listo", "Niet klaar")}
-                  title={t("Not done", "No listo", "Niet klaar")}
-                >
-                  <XCircle className="h-5 w-5" />
-                </button>
-              </>
+              /* Alleen "Klaar voor controle" houden als hoofdactie.
+                 De oude "Niet klaar / Why isn't it done?"-sheet voelt
+                 dubbel met Blokkeer — als er een reden is dat het niet
+                 af is, is dat ofwel een blocker, ofwel een opmerking.
+                 Eén duidelijke groene actie scheelt twijfel. */
+              <button
+                type="button"
+                onClick={handleMarkDone}
+                disabled={isPending || repair.status === "completed"}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-bold text-white shadow-md hover:bg-emerald-500/90 active:scale-[0.98] disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
+              </button>
             )}
             <button
               type="button"
@@ -1297,7 +1303,29 @@ export function GarageRepairDetailClient({
           repairJobId={repair.id}
           open={showFinding}
           onClose={() => setShowFinding(false)}
-          onComplete={handleRefresh}
+          onComplete={(newFinding) => {
+            // Meteen zichtbaar tonen in "Findings" zodat de werker
+            // directe feedback krijgt dat z'n bevinding is genoteerd
+            // — zonder te moeten wachten op de server-roundtrip die
+            // `repair.findings` vernieuwt.
+            if (newFinding) {
+              setOptimisticFindings((prev) => [
+                {
+                  id: newFinding.id,
+                  category: newFinding.category,
+                  description: newFinding.description,
+                  severity: newFinding.severity,
+                  requiresFollowUp: newFinding.requiresFollowUp,
+                  requiresCustomerApproval: newFinding.requiresCustomerApproval,
+                  resolvedAt: null,
+                  createdAt: new Date(),
+                  createdByName: newFinding.createdByName ?? currentUserName,
+                },
+                ...prev,
+              ]);
+            }
+            handleRefresh();
+          }}
         />
       ) : null}
 
@@ -1391,39 +1419,6 @@ export function GarageRepairDetailClient({
               className="h-12 flex-1 rounded-xl bg-white text-sm font-bold text-stone-950 hover:bg-white/95 disabled:opacity-50"
             >
               {t("Suggest", "Sugerir", "Voorstellen")}
-            </button>
-          </div>
-        </BottomSheet>
-      ) : null}
-
-      {/* Not done sheet */}
-      {showNotDoneSheet ? (
-        <BottomSheet onClose={() => setShowNotDoneSheet(false)}>
-          <h3 className="text-base font-semibold text-white">
-            {t("Why isn't it done?", "¿Por qué no está listo?", "Waarom is het niet klaar?")}
-          </h3>
-          <textarea
-            value={notDoneReason}
-            onChange={(e) => setNotDoneReason(e.target.value)}
-            rows={3}
-            placeholder={t("Reason…", "Motivo…", "Reden…")}
-            className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowNotDoneSheet(false)}
-              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/70 hover:bg-white/[0.1]"
-            >
-              {t("Cancel", "Cancelar", "Annuleer")}
-            </button>
-            <button
-              type="button"
-              onClick={handleMarkNotDone}
-              disabled={isPending || !notDoneReason.trim()}
-              className="h-12 flex-1 rounded-xl bg-amber-500 text-sm font-bold text-stone-950 hover:bg-amber-500/90 disabled:opacity-50"
-            >
-              {t("Send", "Enviar", "Verzenden")}
             </button>
           </div>
         </BottomSheet>

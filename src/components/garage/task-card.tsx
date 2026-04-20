@@ -26,12 +26,16 @@ interface TaskCardProps {
   repairJobStatus: string;
   onUpdate: () => void;
   onProblem: (taskId: string) => void;
-  onBeforeStart?: () => Promise<boolean>;
+  /** Called before a task is moved to `in_progress`. May return a
+   *  worker id (the picked technician); if it returns a string the
+   *  card will also start a timer for that worker. Returning `null`
+   *  cancels the status change. Returning `true` (legacy) promotes
+   *  without starting a timer. */
+  onBeforeStart?: () => Promise<string | boolean | null>;
   photos?: { id: string; url: string; caption: string | null }[];
-  workerId?: string;
 }
 
-export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProblem, onBeforeStart, photos = [], workerId }: TaskCardProps) {
+export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProblem, onBeforeStart, photos = [] }: TaskCardProps) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
@@ -47,14 +51,20 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
     }
     newStatus === "done" ? hapticSuccess() : hapticTap();
     startTransition(async () => {
+      let pickedWorkerId: string | null = null;
       if (newStatus === "in_progress" && onBeforeStart) {
-        const ok = await onBeforeStart();
-        if (!ok) return;
+        const res = await onBeforeStart();
+        if (!res) return;
+        if (typeof res === "string") pickedWorkerId = res;
       }
       await updateTaskStatus(task.id, newStatus);
-      if (newStatus === "in_progress" && workerId) {
+      // Start ook meteen de klok zodat "▶ Start" op een taak niet
+      // stilletjes een status-update is maar de werkelijke timer
+      // aantrapt. Dit is de bug waardoor het leek alsof "Start"
+      // niets deed.
+      if (newStatus === "in_progress" && pickedWorkerId) {
         try {
-          await startTimer(repairJobId, workerId);
+          await startTimer(repairJobId, pickedWorkerId);
         } catch (e) {
           if (e instanceof Error && e.message === GARAGE_TIMER_NOT_ALLOWED) {
             toast.message(garageTimerBlockedReason(repairJobStatus, t));

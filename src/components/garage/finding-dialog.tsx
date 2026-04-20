@@ -80,7 +80,18 @@ interface FindingDialogProps {
   open: boolean;
   onClose: () => void;
   repairJobId: string;
-  onComplete: () => void;
+  /** Fired once the finding has been persisted server-side. The
+   *  optional payload lets the caller render the entry optimistically
+   *  without waiting for a full page refresh. */
+  onComplete: (finding?: {
+    id: string;
+    category: string;
+    description: string;
+    severity: string;
+    requiresFollowUp: boolean;
+    requiresCustomerApproval: boolean;
+    createdByName: string | null;
+  }) => void;
 }
 
 export function FindingDialog({ open, onClose, repairJobId, onComplete }: FindingDialogProps) {
@@ -130,7 +141,19 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
         }
       }
       reset();
-      onComplete();
+      onComplete(
+        finding
+          ? {
+              id: finding.id,
+              category: finding.category,
+              description: finding.description,
+              severity: finding.severity,
+              requiresFollowUp: finding.requiresFollowUp ?? false,
+              requiresCustomerApproval: finding.requiresCustomerApproval ?? false,
+              createdByName: null,
+            }
+          : undefined,
+      );
       onClose();
     });
   }

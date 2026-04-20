@@ -454,25 +454,11 @@ export function GarageRepairDetailClient({
   }
 
   async function handleStopTimer(timer: Props["activeTimers"][number]) {
+    // Direct pauzeren zonder bevestiging — de actie is triviaal
+    // terug te draaien (één tap op Hervatten) en tijd blijft altijd
+    // bewaard, dus een extra modal is hier alleen maar in de weg.
     const worker = allUsers.find((u) => u.id === timer.userId);
     const lang = (worker?.preferredLanguage ?? "en") as Language;
-    const ok = await confirmDialog({
-      title: tFor(
-        lang,
-        `Pause timer for ${timer.userName ?? "worker"}?`,
-        `¿Pausar temporizador de ${timer.userName ?? "trabajador"}?`,
-        `Timer pauzeren voor ${timer.userName ?? "werker"}?`,
-      ),
-      description: tFor(
-        lang,
-        "Time stays saved on this repair for billing.",
-        "El tiempo queda registrado en esta reparación.",
-        "Tijd blijft opgeslagen op deze klus voor facturatie.",
-      ),
-      confirmLabel: tFor(lang, "Pause", "Pausar", "Pauzeren"),
-      cancelLabel: tFor(lang, "Keep running", "Seguir", "Laten lopen"),
-    });
-    if (!ok) return;
     hapticTap();
     startTransition(async () => {
       await stopTimer(repair.id, timer.userId);

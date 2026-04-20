@@ -748,26 +748,6 @@ export function GarageRepairDetailClient({
                       </button>
                     </div>
                   ))}
-                  {canTimer ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        hapticTap();
-                        setPicker({
-                          purpose: "startTimer",
-                          onPick: (w) => {
-                            setPicker(null);
-                            handleStartTimer(w);
-                          },
-                          title: t("Who's joining?", "¿Quién se une?", "Wie sluit aan?"),
-                        });
-                      }}
-                      className="mt-0.5 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white/10 px-3 text-[12.5px] font-semibold text-white transition-all hover:bg-white/15 active:scale-[0.97]"
-                    >
-                      <Play className="h-3.5 w-3.5 fill-current" />
-                      {t("Add worker", "Añadir trabajador", "Werker erbij")}
-                    </button>
-                  ) : null}
                 </div>
               </div>
             ) : canTimer ? (

@@ -934,23 +934,17 @@ function JobCard({
 
       {/* ── Quick actions ─────────────────────────────────────────── */}
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-        {canStartTimer ? (
+        {canStartTimer && !someoneIsWorking ? (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onStartTimer();
             }}
-            className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold shadow-sm active:scale-[0.98] ${
-              someoneIsWorking
-                ? "bg-emerald-400/15 text-emerald-100 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25"
-                : "bg-white text-stone-950 hover:bg-white/95"
-            }`}
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
           >
             <Play className="h-4 w-4 fill-current" />
-            {someoneIsWorking
-              ? t("Add worker", "Añadir persona", "Werker erbij")
-              : t("Start timer", "Iniciar timer", "Start timer")}
+            {t("Start timer", "Iniciar timer", "Start timer")}
           </button>
         ) : null}
         {nextTaskTitle ? (

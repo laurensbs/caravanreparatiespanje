@@ -172,18 +172,21 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
         title={item.label}
         {...linkProps}
         className={cn(
-          "group relative flex items-center rounded-lg text-[13px] font-medium tracking-[-0.005em] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          effectiveCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2",
+          "group relative flex items-center rounded-xl text-[14px] font-medium tracking-[-0.005em] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] lg:text-[13px] lg:rounded-lg",
+          // Ruimere tap-target op telefoon/tablet, strakker op desktop.
+          effectiveCollapsed
+            ? "justify-center p-2.5"
+            : "gap-3 px-3 py-2.5 lg:py-2",
           isActive
-            ? "bg-card text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.06),0_1px_0_0_rgba(255,255,255,0.6)_inset] dark:bg-card/[0.06] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] dark:ring-1 dark:ring-white/[0.04]"
-            : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground active:scale-[0.98] dark:hover:bg-card/[0.04]",
+            ? "bg-gradient-to-b from-card to-card/80 text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.06),0_1px_0_0_rgba(255,255,255,0.7)_inset] ring-1 ring-border/40 dark:from-card/[0.08] dark:to-card/[0.04] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] dark:ring-white/[0.06]"
+            : "text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.98] dark:hover:bg-card/[0.05]",
         )}
       >
         {/* Active indicator: subtle vertical bar that slides in. */}
         {isActive && !effectiveCollapsed && (
           <span
             aria-hidden
-            className="absolute left-0 top-1/2 h-4 w-[3px] -translate-x-1.5 -translate-y-1/2 rounded-full bg-foreground/80 dark:bg-card/70"
+            className="absolute left-0 top-1/2 h-5 w-[3px] -translate-x-1 -translate-y-1/2 rounded-full bg-gradient-to-b from-foreground/90 to-foreground/60 dark:from-card dark:to-card/60"
           />
         )}
         <span
@@ -215,10 +218,10 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
             {showCount && (
               <span
                 className={cn(
-                  "ml-auto inline-flex h-4 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-colors",
+                  "ml-auto inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold tabular-nums ring-1 transition-colors",
                   isActive
-                    ? "bg-foreground/[0.08] text-foreground/80"
-                    : "bg-foreground/[0.05] text-muted-foreground group-hover:bg-foreground/[0.08] group-hover:text-foreground/80",
+                    ? "bg-foreground/10 text-foreground ring-border/40 dark:bg-foreground/[0.08] dark:ring-white/[0.06]"
+                    : "bg-background/80 text-muted-foreground ring-border/40 group-hover:bg-foreground/[0.06] group-hover:text-foreground dark:bg-card/[0.04] dark:ring-white/[0.04]",
                 )}
               >
                 {count > 99 ? "99+" : count}
@@ -257,18 +260,25 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen flex-col bg-secondary/80 backdrop-blur-md transition-[transform,width,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] dark:bg-sidebar/95 border-r border-border/50",
+          "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border/50 bg-gradient-to-b from-secondary/85 via-secondary/75 to-secondary/65 backdrop-blur-xl transition-[transform,width,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] dark:from-sidebar dark:via-sidebar/95 dark:to-sidebar/90",
           mobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full",
           "lg:translate-x-0",
           effectiveCollapsed ? "w-60 lg:w-[60px]" : "w-60 lg:w-60",
-          effectiveCollapsed ? "lg:shadow-none" : "lg:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.18)] dark:lg:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]",
+          effectiveCollapsed
+            ? "lg:shadow-none"
+            : "shadow-[0_20px_40px_-16px_rgba(0,0,0,0.20)] lg:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.18)] dark:lg:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]",
         )}
       >
         <div
           className={cn(
-            "flex items-center justify-center border-b border-border/50 transition-all duration-300",
-            effectiveCollapsed ? "h-16 px-2 lg:h-16" : "h-28 px-4 sm:h-32 lg:h-36",
+            "flex flex-col items-center justify-end border-b border-border/50 transition-all duration-300",
+            effectiveCollapsed ? "h-16 px-2 lg:h-16" : "px-4 pb-4 pt-2 sm:pt-3",
           )}
+          style={
+            effectiveCollapsed
+              ? undefined
+              : { paddingTop: "max(12px, calc(env(safe-area-inset-top) + 8px))" }
+          }
         >
           {/*
             The logo source is a pure-black silhouette on a transparent background.
@@ -279,11 +289,21 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
           <Image
             src="/favicon.png"
             alt="Logo"
-            width={effectiveCollapsed ? 44 : 220}
-            height={effectiveCollapsed ? 30 : 160}
+            width={effectiveCollapsed ? 44 : 160}
+            height={effectiveCollapsed ? 30 : 112}
             className="object-contain transition-all duration-300 dark:invert"
             priority
           />
+          {!effectiveCollapsed && (
+            <div className="mt-1 flex flex-col items-center">
+              <p className="text-[12px] font-semibold tracking-[-0.005em] text-foreground/90">
+                Caravanstalling Spanje
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                Repair panel
+              </p>
+            </div>
+          )}
         </div>
 
         <nav
@@ -302,11 +322,12 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
                   {showGroup && (
                     <p
                       className={cn(
-                        "mb-1.5 mt-4 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/60",
+                        "mb-1 mt-4 flex items-center gap-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60",
                         effectiveCollapsed ? "hidden" : "",
                       )}
                     >
-                      {item.group}
+                      <span>{item.group}</span>
+                      <span aria-hidden className="h-px flex-1 bg-border/50" />
                     </p>
                   )}
                   <NavLink item={item} />
@@ -321,6 +342,7 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
             "space-y-0.5 border-t border-border/50 py-2",
             effectiveCollapsed ? "px-1.5 lg:px-1.5" : "px-3",
           )}
+          style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
         >
           {bottomItems.map((item) => (
             <NavLink key={item.href} item={item} />

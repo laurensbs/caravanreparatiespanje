@@ -534,7 +534,10 @@ export function GarageRepairDetailClient({
     startTransition(async () => {
       await garageMarkDone(repair.id);
       toast.success(t("Sent for review", "Enviado para revisión", "Klaar gemeld voor controle"));
-      router.refresh();
+      // Terug naar overview — de klus is klaar voor kantoor, hier
+      // hoeft de werker verder niets meer te doen. Scheelt een
+      // extra tap en voorkomt per ongeluk nog iets aanpassen.
+      router.push("/garage");
     });
   }
 

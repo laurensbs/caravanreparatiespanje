@@ -952,6 +952,16 @@ export function GarageRepairDetailClient({
                     onUpdate={handleRefresh}
                     onProblem={(taskId) => setProblemTaskId(taskId)}
                     onBeforeStart={async () => {
+                      // Als er al iemand aan deze reparatie werkt, hoeven
+                      // we de werker-picker niet opnieuw te tonen: de taak
+                      // valt gewoon onder de al lopende timer. We geven
+                      // `true` (legacy) terug zodat TaskCard alléén de
+                      // status op in_progress zet en geen nieuwe timer
+                      // start (dat zou de lopende timer auto-stoppen en
+                      // herstarten — tijd kwijt).
+                      if (activeTimers.length > 0) {
+                        return true;
+                      }
                       const w = await askWorker(
                         t("Who's starting this task?", "¿Quién empieza?", "Wie begint deze taak?"),
                       );

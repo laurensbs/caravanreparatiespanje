@@ -430,11 +430,15 @@ export async function getGarageRepairsToday() {
     workersMap.set(w.repairJobId, list);
   }
 
-  // Get total logged time per job (rounded minutes)
+  // Som van werkelijke (onafgeronde) minuten per klus. We tonen
+  // tussentijds bewust de echte tijd — kwartaalafronding hoort pas bij
+  // facturatie, niet tijdens het werk (dan lijkt het of een 9-minuten
+  // sessie "15m" wordt en daarna weer terugspringt bij pauze, wat
+  // werkers het gevoel geeft dat de timer "fout" telt).
   const timeTotals = await db
     .select({
       repairJobId: timeEntries.repairJobId,
-      totalMinutes: sql<number>`coalesce(sum(${timeEntries.roundedMinutes}), 0)`,
+      totalMinutes: sql<number>`coalesce(sum(${timeEntries.durationMinutes}), 0)`,
     })
     .from(timeEntries)
     .where(inArray(timeEntries.repairJobId, jobIds))

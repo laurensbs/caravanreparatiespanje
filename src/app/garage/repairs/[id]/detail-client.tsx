@@ -248,20 +248,48 @@ function LiveElapsed({ start }: { start: Date | string }) {
   return <span className="font-mono text-base tabular-nums text-emerald-200">{label}</span>;
 }
 
-/** Groot HH:MM:SS bovenin het detail-scherm — toont de langst-lopende
- *  timer, zodat een werker in één oogopslag ziet hoe lang deze repair
- *  al ondernemen is. Tikt elke seconde. */
-function HeroLiveClock({ start }: { start: number | Date | string }) {
-  const [label, setLabel] = useState(() => elapsedString(start));
+/** Groot HH:MM:SS bovenin het detail-scherm. Toont cumulatieve tijd:
+ *  eerder opgebouwde minuten + lopende sessie van de langst-lopende
+ *  timer. Zo reset de klok niet na een pauze+hervat, wat verwarring
+ *  voorkomt ("waar is m'n tijd gebleven?"). */
+function HeroLiveClock({
+  start,
+  baselineMinutes = 0,
+}: {
+  start: number | Date | string;
+  baselineMinutes?: number;
+}) {
+  const startMs =
+    typeof start === "number"
+      ? start
+      : typeof start === "string"
+        ? new Date(start).getTime()
+        : start.getTime();
+  const render = () => {
+    const ongoingSec = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+    return fmtClockSeconds(baselineMinutes * 60 + ongoingSec);
+  };
+  const [label, setLabel] = useState(render);
   useEffect(() => {
-    const id = setInterval(() => setLabel(elapsedString(start)), 1000);
+    const id = setInterval(() => setLabel(render()), 1000);
     return () => clearInterval(id);
-  }, [start]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startMs, baselineMinutes]);
   return (
     <span className="font-mono text-2xl font-bold leading-none tabular-nums text-emerald-100">
       {label}
     </span>
   );
+}
+
+/** Format een aantal seconden als HH:MM:SS of M:SS. */
+function fmtClockSeconds(totalSec: number): string {
+  const s = Math.max(0, Math.floor(totalSec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 
 /* ───────────────────────────────────────────────────────────────────── */
@@ -731,12 +759,15 @@ export function GarageRepairDetailClient({
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
                   </span>
-                  <HeroLiveClock start={activeTimers.reduce((min, tm) => {
-                    const ts = typeof tm.startedAt === "string"
-                      ? new Date(tm.startedAt).getTime()
-                      : tm.startedAt.getTime();
-                    return ts < min ? ts : min;
-                  }, Date.now())} />
+                  <HeroLiveClock
+                    start={activeTimers.reduce((min, tm) => {
+                      const ts = typeof tm.startedAt === "string"
+                        ? new Date(tm.startedAt).getTime()
+                        : tm.startedAt.getTime();
+                      return ts < min ? ts : min;
+                    }, Date.now())}
+                    baselineMinutes={recordedMinutes}
+                  />
                   <span className="ml-auto truncate text-[11px] font-medium uppercase tracking-wider text-emerald-300/70">
                     {activeTimers.length === 1
                       ? t("running", "en curso", "loopt")

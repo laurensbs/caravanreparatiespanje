@@ -226,11 +226,14 @@ export async function getJobTimeEntries(repairJobId: string) {
   return entries;
 }
 
-/** Get total rounded minutes for a repair job */
+/** Get total actual minutes for a repair job — niet afgerond, want we
+ *  gebruiken dit tijdens het werk (garage-overview / detail-hero) waar
+ *  kwartaalafronding verwarrend is (een sessie van 3 min zou
+ *  anders als "15m" verschijnen). Afronding hoort pas bij facturatie. */
 export async function getJobTotalTime(repairJobId: string) {
   const [result] = await db
     .select({
-      totalMinutes: sql<number>`coalesce(sum(${timeEntries.roundedMinutes}), 0)::int`,
+      totalMinutes: sql<number>`coalesce(sum(${timeEntries.durationMinutes}), 0)::int`,
     })
     .from(timeEntries)
     .where(eq(timeEntries.repairJobId, repairJobId));

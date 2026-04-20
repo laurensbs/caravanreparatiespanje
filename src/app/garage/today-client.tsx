@@ -145,11 +145,17 @@ function elapsedMinutesSince(start: Date | string): number {
 function fmtLiveClock(start: Date | string, now: Date): string {
   const startMs = typeof start === "string" ? new Date(start).getTime() : start.getTime();
   const totalSec = Math.max(0, Math.floor((now.getTime() - startMs) / 1000));
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
+  return fmtClockSeconds(totalSec);
+}
+
+/** Format een aantal seconden als live-klok (H:MM:SS of M:SS). */
+function fmtClockSeconds(totalSec: number): string {
+  const s = Math.max(0, Math.floor(totalSec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 
 const STATUS_DOT: Record<string, string> = {
@@ -882,21 +888,21 @@ function JobCard({
               </span>
             </div>
             <span className="font-mono text-lg font-bold tabular-nums text-emerald-50">
-              {fmtLiveClock(
-                /* Show the longest-running timer as the headline clock so
-                   it always grows monotonically; the per-person breakdown
-                   below shows individual times. */
-                new Date(
-                  timers.reduce((earliest, tm) => {
-                    const tmMs =
-                      typeof tm.startedAt === "string"
-                        ? new Date(tm.startedAt).getTime()
-                        : tm.startedAt.getTime();
-                    return tmMs < earliest ? tmMs : earliest;
-                  }, Date.now()),
-                ),
-                now,
-              )}
+              {/* Cumulatieve headline-klok = eerder opgebouwde
+                  (afgeronde) tijd + lopende sessie van de langst-
+                  lopende timer. Blijft daardoor monotoon groeien: bij
+                  pauze+hervat springt de klok niet terug naar 0. */}
+              {(() => {
+                const earliestMs = timers.reduce((earliest, tm) => {
+                  const tmMs =
+                    typeof tm.startedAt === "string"
+                      ? new Date(tm.startedAt).getTime()
+                      : tm.startedAt.getTime();
+                  return tmMs < earliest ? tmMs : earliest;
+                }, Date.now());
+                const ongoingSec = Math.max(0, Math.floor((now.getTime() - earliestMs) / 1000));
+                return fmtClockSeconds(repair.totalMinutes * 60 + ongoingSec);
+              })()}
             </span>
           </div>
 
@@ -930,16 +936,9 @@ function JobCard({
             ))}
           </div>
 
-          {/* Total time so far for this repair (recorded + live). Smaller
-              line at the bottom so the live clock above stays the hero. */}
-          {repair.totalMinutes > 0 ? (
-            <p className="text-[11px] text-emerald-300/70">
-              {t("Total so far", "Total hasta ahora", "Totaal tot nu")}:{" "}
-              <span className="font-mono tabular-nums text-emerald-100">
-                {fmtDuration(liveTotalMinutes, deviceLang)}
-              </span>
-            </p>
-          ) : null}
+          {/* Geen "Totaal tot nu"-regel meer tijdens het werken — de
+              grote live-klok boven is het enige dat telt voor de
+              werker. Afronden/totalen zie je pas bij facturatie. */}
         </div>
       ) : null}
 

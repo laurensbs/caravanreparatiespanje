@@ -10,6 +10,7 @@ import {
   pickRepairForHoldedDocument,
   type RepairHoldedMatchFields,
 } from "@/lib/holded/repair-ref-match";
+import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 
 export type HoldedQuoteSyncStats = {
   discovered: number;
@@ -165,7 +166,13 @@ export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
       // quote (someone created it manually in Holded) shows up in the panel.
       const approved = q.status === 1 || (typeof q.approvedAt === "number" && q.approvedAt > 0);
       const declined = q.status === -1;
-      const initialStatus = declined ? "rejected" : approved ? "scheduled" : "waiting_approval";
+      // Goedgekeurde quote zonder taken → `todo` (niet `scheduled`): pas
+      // na checklist kan de klus op planning/garage.
+      const initialStatus = declined
+        ? "rejected"
+        : approved
+          ? "todo"
+          : "waiting_approval";
       const initialResponse = declined ? "declined" : approved ? "approved" : "waiting_response";
 
       const [created] = await db
@@ -268,7 +275,9 @@ export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
         updates.customerResponseStatus = "approved";
       }
       if (repair.status === "waiting_approval") {
-        updates.status = "scheduled";
+        updates.status = (await repairJobHasTasks(repair.id))
+          ? "scheduled"
+          : "todo";
       }
 
       if (Object.keys(updates).length <= 1) continue;
@@ -277,14 +286,15 @@ export async function executeHoldedQuoteSync(): Promise<HoldedQuoteSyncStats> {
 
       const detail: string[] = [];
       if (updates.customerResponseStatus) detail.push("customer → approved");
-      if (updates.status) detail.push("status waiting_approval → scheduled");
+      if (updates.status)
+        detail.push(`status waiting_approval → ${updates.status}`);
 
       await db.insert(repairJobEvents).values({
         repairJobId: repair.id,
         eventType: "quote_approval_synced",
         fieldChanged: "holded_quote",
         oldValue: `${repair.customerResponseStatus} / ${repair.status}`,
-        newValue: "approved / scheduled (where applicable)",
+        newValue: `approved / ${updates.status ?? repair.status}`,
         comment: `Holded quote ${q.docNumber ?? q.id} approved — ${detail.join(", ")}`,
       });
 

@@ -10,6 +10,7 @@ import { autoGenerateReminder } from "./reminders";
 import { clearGarageAttention } from "./garage-sync";
 import { syncCustomerToHolded } from "./holded";
 import { generatePublicCode } from "@/lib/utils";
+import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 import { eq, desc, asc, ilike, or, and, sql, count, inArray, notInArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -51,11 +52,7 @@ export async function assertRepairHasTasksForScheduling(
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   if (!WORKSHOP_STATUSES.has(nextStatus)) return { ok: true };
   if (WORKSHOP_STATUSES.has(previousStatus)) return { ok: true };
-  const [row] = await db
-    .select({ total: count() })
-    .from(repairTasks)
-    .where(eq(repairTasks.repairJobId, repairId));
-  if ((row?.total ?? 0) > 0) return { ok: true };
+  if (await repairJobHasTasks(repairId)) return { ok: true };
   return {
     ok: false,
     message:
@@ -558,6 +555,23 @@ export async function updateRepairJob(id: string, data: unknown): Promise<Update
       );
       if (!guard.ok) {
         return { ok: false, code: "no_tasks", message: guard.message };
+      }
+    }
+
+    // Eerste keer een dueDate zetten (via dit patch-pad i.p.v. scheduleRepair)
+    // — zelfde regel als planning: zonder taken geen datum op de kalender.
+    if (parsed.dueDate !== undefined) {
+      const nextDue = parsed.dueDate ? new Date(parsed.dueDate) : null;
+      const hadDueDate = existing.dueDate != null;
+      const willHaveDueDate =
+        nextDue != null && !Number.isNaN(nextDue.getTime());
+      if (!hadDueDate && willHaveDueDate && !(await repairJobHasTasks(id))) {
+        return {
+          ok: false,
+          code: "no_tasks",
+          message:
+            "Add at least one task before scheduling this repair.",
+        };
       }
     }
 

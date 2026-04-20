@@ -1,11 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { timeEntries, users, repairJobs, repairTasks } from "@/lib/db/schema";
+import { timeEntries, users, repairJobs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
-import { eq, and, isNull, desc, sql, count } from "drizzle-orm";
+import { repairJobHasTasks } from "@/lib/repair-has-tasks";
+import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -91,19 +92,11 @@ export async function startTimer(repairJobId: string, forUserId?: string) {
   const autoPromotableStatuses = new Set(["new", "todo", "scheduled", "in_inspection"]);
   if (!canStartGarageTimerOnRepair(job.status)) {
     if (autoPromotableStatuses.has(job.status)) {
-      // Nieuwe transitie naar in_progress → taken vereist. Bestaande
-      // `scheduled` items zijn ooit ingepland met een oude regel en
-      // vallen onder "sla bestaande items over"; die tellen we niet
-      // mee, dus we checken alleen `new`/`todo`/`in_inspection`.
-      const requiresTasks = new Set(["new", "todo", "in_inspection"]);
-      if (requiresTasks.has(job.status)) {
-        const [tc] = await db
-          .select({ total: count() })
-          .from(repairTasks)
-          .where(eq(repairTasks.repairJobId, repairJobId));
-        if ((tc?.total ?? 0) === 0) {
-          throw new Error(GARAGE_TIMER_NO_TASKS);
-        }
+      // Elke auto-promote naar `in_progress` vereist minstens één taak —
+      // ook vanuit `scheduled`, anders kunnen werkers alsnog klokken op
+      // een lege klus totdat iemand taken toevoegt.
+      if (!(await repairJobHasTasks(repairJobId))) {
+        throw new Error(GARAGE_TIMER_NO_TASKS);
       }
       await db
         .update(repairJobs)

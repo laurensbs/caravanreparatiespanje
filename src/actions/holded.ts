@@ -34,6 +34,7 @@ import {
 } from "@/lib/holded/resolve-unit-from-document";
 import { matchesSpreadsheetRefInText, repairPublicCodeAppearsInText } from "@/lib/holded/repair-ref-match";
 import { linkHoldedDocumentsForCustomer } from "@/lib/holded/link-holded-for-customer";
+import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 
 // ─── Invoice creation from repair ───
 
@@ -1028,7 +1029,12 @@ export async function refreshHoldedQuoteStatus(repairJobId: string): Promise<{
         updates.customerResponseStatus = "approved";
       }
       if (job.status === "waiting_approval") {
-        updates.status = "scheduled";
+        // Zonder taken geen `scheduled` — blijft `todo` met approved zodat
+        // kantoor eerst een checklist zet voordat de klus op de planning
+        // / garage-flow terechtkomt.
+        updates.status = (await repairJobHasTasks(repairJobId))
+          ? "scheduled"
+          : "todo";
       }
     }
   }

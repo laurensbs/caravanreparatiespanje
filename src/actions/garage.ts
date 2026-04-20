@@ -235,6 +235,8 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
  *
  *   status IN (new | todo | scheduled | in_inspection)
  *   AND dueDate::date <= CURRENT_DATE
+ *   AND minstens één taak (lege checklist → blijft gepland tot kantoor
+ *     taken toevoegt; zo komen er geen "lege" klussen in /garage)
  *   → status = 'in_progress'
  *
  * Ook stragglers uit gisteren of eerder worden opgepakt zodat de
@@ -254,6 +256,7 @@ export async function autoPromoteDueRepairsToInProgress(): Promise<number> {
         isNull(repairJobs.archivedAt),
         inArray(repairJobs.status, ["new", "todo", "scheduled", "in_inspection"]),
         sql`${repairJobs.dueDate}::date <= CURRENT_DATE`,
+        sql`exists (select 1 from repair_tasks rt where rt.repair_job_id = ${repairJobs.id})`,
       ),
     )
     .returning({ id: repairJobs.id });

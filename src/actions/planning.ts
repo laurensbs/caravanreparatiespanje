@@ -1,9 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairJobEvents, repairTasks, customers, locations, users, units, tags, repairJobTags } from "@/lib/db/schema";
+import { repairJobs, repairJobEvents, customers, locations, users, units, tags, repairJobTags } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
-import { eq, and, gte, lte, isNull, isNotNull, or, ilike, inArray, count } from "drizzle-orm";
+import { repairJobHasTasks } from "@/lib/repair-has-tasks";
+import { eq, and, gte, lte, isNull, isNotNull, or, ilike, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 const FUTURE_TAG_SLUG = "future-repair";
@@ -119,23 +120,14 @@ export async function scheduleRepair(repairId: string, dueDate: string) {
 
   if (!job) throw new Error("Repair not found");
 
-  // Een reparatie mag niet op de planning zonder taken. Bestaande
-  // geplande items (die al een dueDate hebben) zijn "bestaand" en
-  // mogen verschoven worden, ook zonder taken — alleen nieuwe
-  // inplanning wordt geblokkeerd. Zie detail in
-  // assertRepairHasTasksForScheduling; hier duiken we rechtstreeks
-  // naar de task-count om geen cirkel import op te lopen.
-  const isNewSchedule = !job.dueDate && !["scheduled", "in_progress"].includes(job.status);
-  if (isNewSchedule) {
-    const [tc] = await db
-      .select({ total: count() })
-      .from(repairTasks)
-      .where(eq(repairTasks.repairJobId, repairId));
-    if ((tc?.total ?? 0) === 0) {
-      throw new Error(
-        "Add at least one task before scheduling this repair.",
-      );
-    }
+  // Een reparatie mag niet op de planning zonder taken. Zodra er nog
+  // géén dueDate is en we er één zetten, is dat "nieuwe inplanning"
+  // (ook als de status al `scheduled` was zonder datum — edge case).
+  // Verschuiven naar een andere dag blijft toegestaan zonder extra check.
+  if (!job.dueDate && !(await repairJobHasTasks(repairId))) {
+    throw new Error(
+      "Add at least one task before scheduling this repair.",
+    );
   }
 
   const newDueDate = new Date(dueDate);

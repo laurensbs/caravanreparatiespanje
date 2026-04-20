@@ -72,13 +72,28 @@ export async function createToolRequest(input: {
     })
     .returning({ id: toolRequests.id });
 
+  revalidateToolRequestSurfaces();
+  return { id: row.id };
+}
+
+/**
+ * Tool requests show up in three places that must all stay in sync:
+ *   - The admin root dashboard "Workshop tool requests" widget
+ *   - The /parts page → Equipment tab
+ *   - The sidebar "Parts" badge (count bundles tool requests + parts)
+ * Next's revalidatePath("/dashboard") only refreshes a segment named
+ * literally "dashboard"; our dashboard lives at "/" via the (dashboard)
+ * route group, so we hit "/" explicitly. `layout` scope forces the
+ * sidebar data loader to re-run too.
+ */
+function revalidateToolRequestSurfaces() {
   try {
-    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
+    revalidatePath("/parts");
     revalidatePath("/repairs");
   } catch {
-    // best-effort
+    // best-effort — a stale badge is annoying but not critical
   }
-  return { id: row.id };
 }
 
 /**
@@ -102,11 +117,7 @@ export async function resolveToolRequest(input: {
       updatedAt: new Date(),
     })
     .where(eq(toolRequests.id, input.id));
-  try {
-    revalidatePath("/dashboard");
-  } catch {
-    // best-effort
-  }
+  revalidateToolRequestSurfaces();
 }
 
 /** Admin cancels (e.g. duplicate / not actually needed). */
@@ -122,11 +133,7 @@ export async function cancelToolRequest(id: string) {
       updatedAt: new Date(),
     })
     .where(eq(toolRequests.id, id));
-  try {
-    revalidatePath("/dashboard");
-  } catch {
-    // best-effort
-  }
+  revalidateToolRequestSurfaces();
 }
 
 /** Admin un-resolves (re-opens). */
@@ -143,11 +150,7 @@ export async function reopenToolRequest(id: string) {
       updatedAt: new Date(),
     })
     .where(eq(toolRequests.id, id));
-  try {
-    revalidatePath("/dashboard");
-  } catch {
-    // best-effort
-  }
+  revalidateToolRequestSurfaces();
 }
 
 /**

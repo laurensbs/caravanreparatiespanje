@@ -1,7 +1,14 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, partRequests, customers, units, repairJobAssignments } from "@/lib/db/schema";
+import {
+  repairJobs,
+  partRequests,
+  customers,
+  units,
+  repairJobAssignments,
+  toolRequests,
+} from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { and, eq, isNull, sql, inArray, notInArray } from "drizzle-orm";
 
@@ -18,7 +25,11 @@ import { and, eq, isNull, sql, inArray, notInArray } from "drizzle-orm";
  *   planning         – repairs in scheduled (need to be slotted)
  *   contacts         – total customers
  *   units            – total units (caravans)
- *   parts            – pending part requests (ordered/shipped)
+ *   parts            – pending part requests + open workshop tool
+ *                      requests. Both surface in the same /parts page
+ *                      (the "Equipment" tab holds tool requests), so
+ *                      the sidebar badge bundles them to match what
+ *                      the admin sees when they click through.
  *   invoices         – completed without a Holded invoice link
  */
 export async function getSidebarCounts() {
@@ -30,8 +41,16 @@ export async function getSidebarCounts() {
     notInArray(repairJobs.status, ["completed", "invoiced", "archived"]),
   );
 
-  const [openRepairs, urgentOpen, scheduled, customerTotal, unitTotal, pendingParts, uninvoiced] =
-    await Promise.all([
+  const [
+    openRepairs,
+    urgentOpen,
+    scheduled,
+    customerTotal,
+    unitTotal,
+    pendingParts,
+    openToolRequests,
+    uninvoiced,
+  ] = await Promise.all([
       db
         .select({ c: sql<number>`count(*)::int` })
         .from(repairJobs)
@@ -68,6 +87,11 @@ export async function getSidebarCounts() {
 
       db
         .select({ c: sql<number>`count(*)::int` })
+        .from(toolRequests)
+        .where(eq(toolRequests.status, "open")),
+
+      db
+        .select({ c: sql<number>`count(*)::int` })
         .from(repairJobs)
         .where(
           and(
@@ -85,7 +109,7 @@ export async function getSidebarCounts() {
     planning: scheduled[0]?.c ?? 0,
     contacts: customerTotal[0]?.c ?? 0,
     units: unitTotal[0]?.c ?? 0,
-    parts: pendingParts[0]?.c ?? 0,
+    parts: (pendingParts[0]?.c ?? 0) + (openToolRequests[0]?.c ?? 0),
     invoices: uninvoiced[0]?.c ?? 0,
   };
 }

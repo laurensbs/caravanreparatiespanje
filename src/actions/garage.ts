@@ -1515,9 +1515,57 @@ export async function resolveFinding(findingId: string) {
 }
 
 export async function deleteFinding(findingId: string) {
-  await requireRole("admin");
+  // Vroeger alleen admin; werkers moeten hun eigen typo's ook kwijt
+  // kunnen zonder kantoor te bellen. Audit blijft traceerbaar via
+  // repairJobEvents en het feit dat de vorige insert nog in de log staat.
+  await requireAnyAuth();
+  const [row] = await db
+    .select({ repairJobId: repairFindings.repairJobId })
+    .from(repairFindings)
+    .where(eq(repairFindings.id, findingId));
   await db.delete(repairFindings).where(eq(repairFindings.id, findingId));
+  if (row?.repairJobId) {
+    safeRevalidate(`/garage/repairs/${row.repairJobId}`);
+    safeRevalidate(`/repairs/${row.repairJobId}`);
+  }
   safeRevalidate("/");
+}
+
+/**
+ * Inline edit voor een bevinding. Werker (of admin) kan categorie,
+ * severity en tekst aanpassen; de follow-up / customer-approval flags
+ * zijn bewust uitgesloten — die triggeren kantoor-processen en horen
+ * niet achteraf gewijzigd te worden via dit pad.
+ */
+export async function updateFinding(
+  findingId: string,
+  data: {
+    category?: string;
+    description?: string;
+    severity?: string;
+  },
+) {
+  await requireAnyAuth();
+  const patch: Record<string, unknown> = {};
+  if (data.category !== undefined) patch.category = data.category as any;
+  if (data.description !== undefined) patch.description = data.description;
+  if (data.severity !== undefined) patch.severity = data.severity as any;
+  if (Object.keys(patch).length === 0) return;
+
+  const [row] = await db
+    .select({ repairJobId: repairFindings.repairJobId })
+    .from(repairFindings)
+    .where(eq(repairFindings.id, findingId));
+
+  await db
+    .update(repairFindings)
+    .set(patch)
+    .where(eq(repairFindings.id, findingId));
+
+  if (row?.repairJobId) {
+    safeRevalidate(`/garage/repairs/${row.repairJobId}`);
+    safeRevalidate(`/repairs/${row.repairJobId}`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

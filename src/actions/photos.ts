@@ -2,7 +2,8 @@
 
 import { db } from "@/lib/db";
 import { repairPhotos, repairJobs, customers, units } from "@/lib/db/schema";
-import { requireAuth, requireRole } from "@/lib/auth-utils";
+import { requireAuth } from "@/lib/auth-utils";
+import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { buildRepairFolderPath, getRepairFolderUrl } from "@/lib/onedrive";
@@ -77,7 +78,9 @@ export async function getRepairOneDriveFolderUrl(repairJobId: string): Promise<s
 }
 
 export async function deleteRepairPhoto(photoId: string) {
-  await requireRole("staff");
+  // Zowel admins als garage-werkers mogen foto's opruimen; file blijft
+  // in OneDrive staan voor archivering, we verwijderen alleen de DB-rij.
+  await requireAnyAuth();
 
   const [photo] = await db
     .select()

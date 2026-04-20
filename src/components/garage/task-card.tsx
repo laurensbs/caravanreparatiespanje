@@ -33,9 +33,14 @@ interface TaskCardProps {
    *  without starting a timer. */
   onBeforeStart?: () => Promise<string | boolean | null>;
   photos?: { id: string; url: string; caption: string | null }[];
+  /** True als er minstens één timer loopt op deze reparatie. We
+   *  blokkeren dan niet, maar zonder lopende timer mag een taak niet
+   *  afgevinkt worden — dat voorkomt dat werkers vergeten te klokken
+   *  en er achteraf gaten in de factuurtijd zitten. */
+  hasActiveTimer?: boolean;
 }
 
-export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProblem, onBeforeStart, photos = [] }: TaskCardProps) {
+export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProblem, onBeforeStart, photos = [], hasActiveTimer = false }: TaskCardProps) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
@@ -47,6 +52,21 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
     if (newStatus === "problem") {
       hapticTap();
       onProblem(task.id);
+      return;
+    }
+    // "Done" (of "opnieuw openen" vanuit done) mag alleen als er een
+    // timer loopt op deze reparatie — dat dwingt werkers om eerst te
+    // klokken, anders raken we billable minuten kwijt. Start/Retry
+    // mogen wel want die zetten juist een nieuwe timer op.
+    if ((newStatus === "done" || (isDone && newStatus === "pending")) && !hasActiveTimer) {
+      hapticTap();
+      toast.error(
+        t(
+          "Start the timer first — then you can tick off the task.",
+          "Primero inicia el temporizador y luego marca la tarea.",
+          "Start eerst de timer — dan kun je de taak afvinken.",
+        ),
+      );
       return;
     }
     newStatus === "done" ? hapticSuccess() : hapticTap();
@@ -92,6 +112,10 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
     handleStatusChange(isDone ? "pending" : "done");
   }
 
+  // Zonder lopende timer disabelen we de afvink-knop + done-knop. Start
+  // blijft altijd klikbaar (die zet zelf de timer op via onBeforeStart).
+  const tickDisabled = !hasActiveTimer && (status === "pending" || status === "in_progress" || status === "done");
+
   const actions = getActions(task.status);
 
   return (
@@ -105,13 +129,16 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
             aria-label={isDone
               ? t("Mark as not done", "Marcar como no hecho", "Markeer als niet klaar")
               : t("Mark as done", "Marcar como hecho", "Afvinken")}
+            title={tickDisabled
+              ? t("Start the timer first", "Inicia el temporizador primero", "Start eerst de timer")
+              : undefined}
             className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none shrink-0 mt-0.5 transition-all active:scale-90 disabled:opacity-50 ${
               status === "done" ? "bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20" :
               status === "in_progress" ? "bg-teal-400/10 text-teal-400 hover:bg-teal-400/20" :
               status === "problem" ? "bg-red-400/10 text-red-400 hover:bg-red-400/20" :
               status === "review" ? "bg-amber-400/10 text-amber-400 hover:bg-amber-400/20" :
               "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
-            }`}
+            } ${tickDisabled ? "cursor-not-allowed" : ""}`}
           >
             {STATUS_ICONS[status]}
           </button>

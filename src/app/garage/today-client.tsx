@@ -430,6 +430,20 @@ export function GarageTodayClient({
 
   async function handleTickTask(repair: RepairItem) {
     if (!repair.nextTask) return;
+    // Geen timer → niet afvinken. Zo blijft de factuurtijd kloppen en
+    // raakt de werker er gewend om eerst te klokken.
+    const hasTimerOnRepair = liveTimers.some((tm) => tm.repairJobId === repair.id);
+    if (!hasTimerOnRepair) {
+      hapticTap();
+      toast.error(
+        t(
+          "Start the timer first — then you can tick off the task.",
+          "Primero inicia el temporizador y luego marca la tarea.",
+          "Start eerst de timer — dan kun je de taak afvinken.",
+        ),
+      );
+      return;
+    }
     const taskId = repair.nextTask.id;
     hapticTap();
     startActionTransition(async () => {

@@ -29,6 +29,9 @@ import {
   Flag,
   Sparkles,
   HandHelping,
+  Pencil,
+  Trash2,
+  X,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { TaskCard } from "@/components/garage/task-card";
@@ -49,7 +52,10 @@ import {
   suggestExtraTask,
   garageMarkDone,
   resolveBlocker as resolveBlockerAction,
+  deleteFinding,
+  updateFinding,
 } from "@/actions/garage";
+import { deleteRepairPhoto } from "@/actions/photos";
 import { markAdminMessageRead } from "@/actions/garage-sync";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import { useGaragePoll } from "@/lib/use-garage-poll";
@@ -949,6 +955,7 @@ export function GarageRepairDetailClient({
                     task={task}
                     repairJobId={repair.id}
                     repairJobStatus={repair.status}
+                    hasActiveTimer={activeTimers.length > 0}
                     onUpdate={handleRefresh}
                     onProblem={(taskId) => setProblemTaskId(taskId)}
                     onBeforeStart={async () => {
@@ -1006,15 +1013,49 @@ export function GarageRepairDetailClient({
             ) : (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {repair.photos.map((p) => (
-                  <button
+                  <div
                     key={p.id}
-                    type="button"
-                    onClick={() => setViewPhoto(p.url)}
-                    className="aspect-square overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] active:scale-[0.97]"
+                    className="group relative aspect-square overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06]"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.url} alt={p.caption ?? "photo"} className="h-full w-full object-cover" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewPhoto(p.url)}
+                      className="block h-full w-full active:scale-[0.97]"
+                      aria-label={t("View photo", "Ver foto", "Foto bekijken")}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.url} alt={p.caption ?? "photo"} className="h-full w-full object-cover" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        hapticTap();
+                        const ok = await confirmDialog({
+                          title: t("Delete photo?", "¿Eliminar foto?", "Foto verwijderen?"),
+                          description: t(
+                            "The file stays in cloud storage, but is removed from this repair.",
+                            "El archivo queda en la nube, pero se elimina de esta reparación.",
+                            "Het bestand blijft in cloud-opslag, maar wordt uit deze reparatie verwijderd.",
+                          ),
+                          confirmLabel: t("Delete", "Eliminar", "Verwijderen"),
+                          cancelLabel: t("Cancel", "Cancelar", "Annuleren"),
+                          tone: "destructive",
+                        });
+                        if (!ok) return;
+                        try {
+                          await deleteRepairPhoto(p.id);
+                          toast.success(t("Photo deleted", "Foto eliminada", "Foto verwijderd"));
+                          handleRefresh();
+                        } catch (err) {
+                          toast.error((err as Error)?.message ?? "Could not delete photo");
+                        }
+                      }}
+                      aria-label={t("Delete photo", "Eliminar foto", "Foto verwijderen")}
+                      className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-rose-500 active:scale-90"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -1093,27 +1134,21 @@ export function GarageRepairDetailClient({
             >
               <div className="flex flex-col gap-2">
                 {findings.map((f) => (
-                  <div
+                  <FindingRow
                     key={f.id}
-                    className={`flex items-start gap-2.5 rounded-xl p-3 ring-1 ${f.resolvedAt ? "bg-white/[0.03] ring-white/[0.06] opacity-60" : "bg-amber-500/[0.06] ring-amber-400/15"}`}
-                  >
-                    <span className="text-base">
-                      {FINDING_CATEGORY_EMOJI[f.category as FindingCategory] ?? "🔧"}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-white/90">
-                        {FINDING_CATEGORY_LABELS[f.category as FindingCategory]}{" "}
-                        <span className="text-white/40">·</span>{" "}
-                        <span className="text-amber-300">
-                          {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
-                        </span>
-                      </p>
-                      <p className="mt-0.5 text-sm text-white/70">{f.description}</p>
-                      {f.createdByName ? (
-                        <p className="mt-0.5 text-[11px] text-white/40">— {f.createdByName}</p>
-                      ) : null}
-                    </div>
-                  </div>
+                    finding={f}
+                    t={t}
+                    onSaved={(next) => {
+                      setOptimisticFindings((prev) =>
+                        prev.map((x) => (x.id === next.id ? { ...x, ...next } : x)),
+                      );
+                      handleRefresh();
+                    }}
+                    onDeleted={(id) => {
+                      setOptimisticFindings((prev) => prev.filter((x) => x.id !== id));
+                      handleRefresh();
+                    }}
+                  />
                 ))}
               </div>
             </Section>
@@ -1468,6 +1503,167 @@ export function GarageRepairDetailClient({
 /* ───────────────────────────────────────────────────────────────────── */
 /* BottomSheet primitive                                                  */
 /* ───────────────────────────────────────────────────────────────────── */
+
+/* ───────────────────────────────────────────────────────────────────── */
+/* FindingRow — één kaart in de Findings-lijst                             */
+/*                                                                         */
+/* Inline edit en delete. Bewust géén categorie/severity-switcher hier:    */
+/* de oorspronkelijke keuze gaat via de FindingDialog en dwingt de werker  */
+/* na te denken over ernst. Alleen de omschrijving kan achteraf getypt     */
+/* bijgewerkt worden — de meest voorkomende reden om terug te komen is    */
+/* een typo of een extra detail.                                           */
+/* ───────────────────────────────────────────────────────────────────── */
+
+type FindingRowData = {
+  id: string;
+  category: string;
+  description: string;
+  severity: string;
+  requiresFollowUp: boolean;
+  requiresCustomerApproval: boolean;
+  resolvedAt: Date | string | null;
+  createdAt: Date | string;
+  createdByName: string | null;
+};
+
+function FindingRow({
+  finding: f,
+  t,
+  onSaved,
+  onDeleted,
+}: {
+  finding: FindingRowData;
+  t: (en: string, es: string, nl: string) => string;
+  onSaved: (next: FindingRowData) => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(f.description);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSave() {
+    const next = draft.trim();
+    if (!next || next === f.description) {
+      setEditing(false);
+      setDraft(f.description);
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await updateFinding(f.id, { description: next });
+        onSaved({ ...f, description: next });
+        setEditing(false);
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not update finding");
+      }
+    });
+  }
+
+  async function handleDelete() {
+    const ok = await confirmDialog({
+      title: t("Delete finding?", "¿Eliminar hallazgo?", "Bevinding verwijderen?"),
+      description: t(
+        "This cannot be undone.",
+        "Esto no se puede deshacer.",
+        "Dit kan niet ongedaan gemaakt worden.",
+      ),
+      confirmLabel: t("Delete", "Eliminar", "Verwijderen"),
+      cancelLabel: t("Cancel", "Cancelar", "Annuleren"),
+      tone: "destructive",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      try {
+        await deleteFinding(f.id);
+        onDeleted(f.id);
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not delete finding");
+      }
+    });
+  }
+
+  return (
+    <div
+      className={`group flex items-start gap-2.5 rounded-xl p-3 ring-1 ${f.resolvedAt ? "bg-white/[0.03] ring-white/[0.06] opacity-60" : "bg-amber-500/[0.06] ring-amber-400/15"}`}
+    >
+      <span className="text-base">
+        {FINDING_CATEGORY_EMOJI[f.category as FindingCategory] ?? "🔧"}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-medium text-white/90">
+            {FINDING_CATEGORY_LABELS[f.category as FindingCategory]}{" "}
+            <span className="text-white/40">·</span>{" "}
+            <span className="text-amber-300">
+              {FINDING_SEVERITY_LABELS[f.severity as FindingSeverity]}
+            </span>
+          </p>
+          {!editing && !f.resolvedAt ? (
+            <div className="-mt-1 flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => { hapticTap(); setEditing(true); setDraft(f.description); }}
+                disabled={isPending}
+                aria-label={t("Edit", "Editar", "Bewerken")}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-all hover:bg-white/[0.06] hover:text-white/80 active:scale-90 disabled:opacity-40"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isPending}
+                aria-label={t("Delete", "Eliminar", "Verwijderen")}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-300/70 transition-all hover:bg-rose-500/10 hover:text-rose-300 active:scale-90 disabled:opacity-40"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {editing ? (
+          <div className="mt-1 flex flex-col gap-2">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              autoFocus
+              rows={2}
+              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 text-sm text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setEditing(false); setDraft(f.description); }}
+                disabled={isPending}
+                className="h-8 rounded-lg bg-white/[0.06] px-3 text-xs font-semibold text-white/70 hover:bg-white/[0.1] disabled:opacity-40"
+              >
+                {t("Cancel", "Cancelar", "Annuleer")}
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isPending || !draft.trim() || draft.trim() === f.description}
+                className="h-8 rounded-lg bg-emerald-500 px-3 text-xs font-bold text-white hover:bg-emerald-500/90 disabled:opacity-40"
+              >
+                {isPending
+                  ? t("Saving…", "Guardando…", "Opslaan…")
+                  : t("Save", "Guardar", "Opslaan")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="mt-0.5 text-sm text-white/70">{f.description}</p>
+            {f.createdByName ? (
+              <p className="mt-0.5 text-[11px] text-white/40">— {f.createdByName}</p>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function BottomSheet({
   children,

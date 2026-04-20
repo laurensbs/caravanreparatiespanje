@@ -230,12 +230,19 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
 export async function getGarageRepairsToday() {
   const ctx = await requireAnyAuth();
 
-  const now = new Date();
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(now);
-  endOfDay.setHours(23, 59, 59, 999);
-
+  // Werkvloer-scope: alleen reparaties die daadwerkelijk FYSIEK in de
+  // werkplaats liggen en actie vragen van een werker. Geplande items
+  // (status `scheduled`, `todo`, `new`) verschijnen pas als iemand er
+  // een timer op zet — dat auto-promote't de status naar `in_progress`
+  // (zie startTimer in actions/time-entries.ts), en dan tonen we ze.
+  // Resultaat: de /garage overview blijft de hele dag rustig en toont
+  // alleen wat er hier en nu speelt, niet de hele week-planning of
+  // kantoor-wachtlijst.
+  //
+  // `waiting_customer` staat bewust niet in de lijst: dat is een
+  // kantoor-kwestie (bellen met klant) en hoort niet tot de werkplaats-
+  // actielijst. `blocked` en `waiting_parts` blijven er wel in omdat
+  // die caravans fysiek nog op de vloer staan en zichtbaar moeten zijn.
   const jobs = await db
     .select({
       id: repairJobs.id,
@@ -265,21 +272,12 @@ export async function getGarageRepairsToday() {
       and(
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
-        or(
-          // Today's repairs (any status)
-          and(
-            gte(repairJobs.dueDate, startOfDay),
-            lte(repairJobs.dueDate, endOfDay)
-          ),
-          // Active/waiting repairs regardless of due date
-          inArray(repairJobs.status, [
-            "in_progress",
-            "waiting_parts",
-            "waiting_customer",
-            "blocked",
-            "ready_for_check",
-          ])
-        )
+        inArray(repairJobs.status, [
+          "in_progress",
+          "waiting_parts",
+          "blocked",
+          "ready_for_check",
+        ]),
       )
     )
     .orderBy(asc(repairJobs.priority), asc(repairJobs.title));

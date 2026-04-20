@@ -94,6 +94,40 @@ export function AdminRepairThread({
   const [expanded, setExpanded] = useState(false);
   const [isPosting, startTransition] = useTransition();
 
+  // Inklapbare sectie — default dicht zodat de admin repair-pagina
+  // niet een lange chat-scroll laat zien bij elke klus. Onthoud de
+  // voorkeur per-admin via localStorage. Zodra er ongelezen replies
+  // vanuit de garage binnenkomen klappen we 'm automatisch open
+  // zodat die bericht niet over het hoofd wordt gezien.
+  const COLLAPSE_KEY = "admin_thread_open";
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(COLLAPSE_KEY);
+      if (stored === "1") setOpen(true);
+    } catch {
+      // ignore
+    }
+  }, []);
+  function toggleOpen() {
+    setOpen((v) => {
+      const next = !v;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
+  const unreadGarage = messages.filter(
+    (m) => m.direction === "garage_to_admin" && !m.readAt,
+  ).length;
+  // Bij een nieuw ongelezen bericht: auto-open.
+  useEffect(() => {
+    if (unreadGarage > 0) setOpen(true);
+  }, [unreadGarage]);
+
   // Houd het laatst-gezien aantal garage-replies bij zodat we het verschil
   // tussen "initial load" en "een nieuw bericht is binnengekomen" kunnen
   // detecteren tijdens polling. Dit is een ref (geen state) want het mag
@@ -247,8 +281,19 @@ export function AdminRepairThread({
 
   return (
     <section className="rounded-xl bg-muted/50 dark:bg-card/[0.02] border border-border/60 dark:border-border p-4">
-      <header className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={toggleOpen}
+          className="flex flex-1 items-center gap-2 rounded-md text-left transition-colors hover:opacity-80"
+          aria-expanded={open}
+          aria-controls="admin-thread-body"
+        >
+          {open ? (
+            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground dark:text-muted-foreground/70" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground dark:text-muted-foreground/70" />
+          )}
           <MessageSquare className="h-3.5 w-3.5 text-muted-foreground dark:text-muted-foreground/70" />
           <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold">
             Conversation with garage
@@ -268,8 +313,13 @@ export function AdminRepairThread({
               {messages.length}
             </span>
           ) : null}
-        </div>
-        {hiddenCount > 0 ? (
+          {unreadGarage > 0 ? (
+            <span className="rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+              {unreadGarage} new
+            </span>
+          ) : null}
+        </button>
+        {open && hiddenCount > 0 ? (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
@@ -287,6 +337,11 @@ export function AdminRepairThread({
           </button>
         ) : null}
       </header>
+
+      {/* Collapsed: we tonen niks anders dan de header met badge +
+          'X new'-pill. Dit voorkomt lange scrolls in admin-detail als
+          deze chat veel berichten bevat. */}
+      {open && (<div id="admin-thread-body" className="mt-3">
 
       {/* Live presence — wie heeft er nu een lopende timer op deze
           repair (= staat fysiek aan de bus)? Geeft de admin context bij
@@ -426,6 +481,7 @@ export function AdminRepairThread({
           Send
         </button>
       </div>
+      </div>)}
     </section>
   );
 }

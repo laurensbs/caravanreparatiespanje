@@ -460,7 +460,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const secondaryNotice =
     currentBlocker || (computedBlocker && !autoBlockerRedundant ? computedBlocker : null);
 
-  const showStatusFocusCard = Boolean(displayNextAction) || Boolean(secondaryNotice);
+  // Bij `ready_for_check` toont de amber review-bar al wat er moet
+  // gebeuren (plus de action buttons). De "Next action"-kaart hieronder
+  // zou exact hetzelfde zeggen — verbergen dus om drievoudige
+  // verdubbeling in de UI te voorkomen.
+  const showStatusFocusCard =
+    status !== "ready_for_check" &&
+    (Boolean(displayNextAction) || Boolean(secondaryNotice));
 
   useEffect(() => {
     setInvoiceStatus(job.invoiceStatus);
@@ -505,6 +511,65 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
     const now = new Date();
     setCostLines(prev => [...prev, { id: tempId, repairJobId: job.id, type: "labour", sourceType: "manual", sourceId: null, description: "Labour", quantity: "1", unitPrice: String(settings.hourlyRate), internalCost: "0", sortOrder: prev.length, createdAt: now, updatedAt: now } as any]);
     await addEstimateLineItem(job.id, { type: "labour", description: "Labour", quantity: 1, unitPrice: settings.hourlyRate, internalCost: 0, sourceType: "manual" });
+    router.refresh();
+  }
+
+  /**
+   * Pull the billable minutes from the garage time log straight into
+   * the estimate as a labour line. If an existing labour line is
+   * already linked to garage time (recognisable by the "Labour (garage
+   * time)" description) we simply bump its quantity. Otherwise we
+   * append a new one. Quantity is stored in hours (e.g. 7 min → 0.12h,
+   * 45 min → 0.75h) so the Mollie-style total calculation (qty ×
+   * unitPrice) shows the correct amount.
+   */
+  async function pullGarageLabour(totalMinutes: number) {
+    if (totalMinutes <= 0) return;
+    const hours = Math.round((totalMinutes / 60) * 100) / 100; // 2 decimalen
+    const unitPrice = settings.hourlyRate;
+    const GARAGE_LABEL = "Labour (garage time)";
+
+    const existing = costLines.find(
+      (l) => l.type === "labour" && (l.description ?? "") === GARAGE_LABEL,
+    );
+    if (existing) {
+      await updateEstimateLineItem(existing.id, { quantity: hours });
+      setCostLines((prev) =>
+        prev.map((l) =>
+          l.id === existing.id ? { ...l, quantity: String(hours) } : l,
+        ),
+      );
+      toast.success(`Updated labour line to ${hours}h`);
+    } else {
+      const tempId = crypto.randomUUID();
+      const now = new Date();
+      setCostLines((prev) => [
+        ...prev,
+        {
+          id: tempId,
+          repairJobId: job.id,
+          type: "labour",
+          sourceType: "manual",
+          sourceId: null,
+          description: GARAGE_LABEL,
+          quantity: String(hours),
+          unitPrice: String(unitPrice),
+          internalCost: "0",
+          sortOrder: prev.length,
+          createdAt: now,
+          updatedAt: now,
+        } as any,
+      ]);
+      await addEstimateLineItem(job.id, {
+        type: "labour",
+        description: GARAGE_LABEL,
+        quantity: hours,
+        unitPrice,
+        internalCost: 0,
+        sourceType: "manual",
+      });
+      toast.success(`Added ${hours}h of garage labour`);
+    }
     router.refresh();
   }
 
@@ -1819,6 +1884,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               filteredParts={filteredParts}
               addLabourLine={addLabourLine}
               addCustomLine={addCustomLine}
+              timeEntries={timeEntries}
+              pullGarageLabour={pullGarageLabour}
               addPartLine={addPartLine}
               removeCostLine={removeCostLine}
               updateCostLine={updateCostLine}
@@ -2887,6 +2954,8 @@ function FinancialWorkflow({
   tasks, partRequests, findings,
   initialDismissed,
   canLinkHoldedDocuments = false,
+  timeEntries = [],
+  pullGarageLabour,
 }: {
   job: any;
   estimatedCost: string;
@@ -2927,6 +2996,8 @@ function FinancialWorkflow({
   findings: FindingItem[];
   initialDismissed: DismissedWorkshopItem[];
   canLinkHoldedDocuments?: boolean;
+  timeEntries?: Array<{ durationMinutes: number | null; roundedMinutes: number | null }>;
+  pullGarageLabour: (totalMinutes: number) => Promise<void>;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmDeleteQuote, setConfirmDeleteQuote] = useState(false);
@@ -3071,6 +3142,59 @@ function FinancialWorkflow({
       </div>
 
 
+
+      {/* ─── Garage time pull banner ───
+          Zodra de werkplaats daadwerkelijk tijd heeft geklokt op deze
+          klus (billable = som van `roundedMinutes`) en die tijd nog
+          niet (volledig) in een labour-line staat, tonen we een rust-
+          ige "Pull labour from garage" knop in Mollie-stijl. Idempotent:
+          een tweede klik werkt de bestaande line bij naar het huidige
+          totaal. */}
+      {(() => {
+        const totalMinutes = timeEntries.reduce(
+          (acc, e) => acc + (e.roundedMinutes ?? e.durationMinutes ?? 0),
+          0,
+        );
+        if (totalMinutes <= 0) return null;
+        const garageLine = costLines.find(
+          (l) => l.type === "labour" && (l.description ?? "") === "Labour (garage time)",
+        );
+        const currentQty = garageLine ? parseFloat(garageLine.quantity as any) || 0 : 0;
+        const targetQty = Math.round((totalMinutes / 60) * 100) / 100;
+        const inSync = garageLine && Math.abs(currentQty - targetQty) < 0.005;
+        if (inSync) return null;
+        const hrs = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        const label = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+        return (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 dark:border-border/60 dark:bg-foreground/[0.03]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-8 w-8 rounded-xl bg-foreground/[0.06] dark:bg-foreground/[0.08] flex items-center justify-center shrink-0">
+                <Clock className="h-4 w-4 text-foreground/80" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  Garage logged {label}
+                </p>
+                <p className="text-xs text-muted-foreground/80">
+                  {garageLine
+                    ? `Update labour line to ${targetQty}h × €${settings.hourlyRate.toFixed(2)}`
+                    : `Add as labour: ${targetQty}h × €${settings.hourlyRate.toFixed(2)} = €${(targetQty * settings.hourlyRate).toFixed(2)}`}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAction("pullGarage", async () => { await pullGarageLabour(totalMinutes); })}
+              disabled={!!loading}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-foreground px-3.5 py-2 text-xs font-semibold text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+            >
+              {loading === "pullGarage" ? <Spinner className="h-3 w-3" /> : <Plus className="h-3.5 w-3.5" />}
+              {garageLine ? "Update" : "Pull into estimate"}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ─── Line items section ─── */}
       <div>

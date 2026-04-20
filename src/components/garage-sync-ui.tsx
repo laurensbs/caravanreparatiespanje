@@ -143,6 +143,12 @@ export function GarageSyncStrip({ syncState }: { syncState: SyncState | null }) 
   ) {
     return null;
   }
+  // Als de klus al in "Ready for check" staat, toont de dedicated
+  // amber-banner eronder dezelfde info (plus action buttons). Dan is
+  // deze strip pure ruis — verbergen dus.
+  if (syncState.status === "ready_for_check") {
+    return null;
+  }
 
   const style = getStripStyle(syncState.garageLastUpdateType, syncState.status);
   const label =

@@ -484,9 +484,9 @@ export function GarageRepairDetailClient({
           toast.error(
             tFor(
               lang,
-              "No tasks yet — ask the office to add them first.",
-              "Sin tareas — pide a la oficina que las añada primero.",
-              "Nog geen taken — vraag kantoor om ze eerst toe te voegen.",
+              "No tasks on this job yet — add at least one task (office / work order) before starting the timer.",
+              "Aún no hay tareas — añade al menos una (oficina / orden) antes de iniciar el temporizador.",
+              "Nog geen taken op deze klus — voeg minstens één taak toe (kantoor / werkorder) voordat je de timer start.",
             ),
           );
         } else {

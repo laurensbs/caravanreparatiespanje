@@ -9,7 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { STATUS_COLORS, PRIORITY_COLORS, STATUS_LABELS } from "@/types";
 import type { RepairStatus, Priority } from "@/types";
 import { type PlanningLang, getLocaleStrings, formatWeekRange } from "@/lib/planning-locale";
-import { getPlannedRepairs, scheduleRepair, type PlannedRepair } from "@/actions/planning";
+import {
+  getPlannedRepairs,
+  scheduleRepair,
+  SCHEDULE_NEEDS_TASKS,
+  type PlannedRepair,
+} from "@/actions/planning";
 import { AddRepairDialog } from "./add-repair-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -200,7 +205,7 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
         await scheduleRepair(repairId, iso);
       } catch (err) {
         const msg = (err as Error)?.message ?? "Failed to reschedule";
-        toast.error(msg);
+        toast.error(msg === SCHEDULE_NEEDS_TASKS ? t.scheduleNeedsTasks : msg);
         const data = await getPlannedRepairs(weekStart, weekEnd);
         setRepairs(data);
       }

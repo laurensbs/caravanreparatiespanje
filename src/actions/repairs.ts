@@ -9,6 +9,7 @@ import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
 import { clearGarageAttention } from "./garage-sync";
 import { syncCustomerToHolded } from "./holded";
+import { SCHEDULE_NEEDS_TASKS_ADMIN_TOAST } from "./planning";
 import { generatePublicCode } from "@/lib/utils";
 import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 import { eq, desc, asc, ilike, or, and, sql, count, inArray, notInArray, isNull, isNotNull, gte, lte } from "drizzle-orm";
@@ -55,8 +56,7 @@ export async function assertRepairHasTasksForScheduling(
   if (await repairJobHasTasks(repairId)) return { ok: true };
   return {
     ok: false,
-    message:
-      "Add at least one task before scheduling or moving this repair into the garage.",
+    message: SCHEDULE_NEEDS_TASKS_ADMIN_TOAST,
   };
 }
 
@@ -569,8 +569,7 @@ export async function updateRepairJob(id: string, data: unknown): Promise<Update
         return {
           ok: false,
           code: "no_tasks",
-          message:
-            "Add at least one task before scheduling this repair.",
+          message: SCHEDULE_NEEDS_TASKS_ADMIN_TOAST,
         };
       }
     }

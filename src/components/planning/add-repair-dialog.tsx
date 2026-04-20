@@ -8,7 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { PRIORITY_COLORS, STATUS_COLORS } from "@/types";
 import type { Priority, RepairStatus } from "@/types";
 import { type PlanningLang, getLocaleStrings, formatDateLocale } from "@/lib/planning-locale";
-import { searchUnscheduledRepairs, scheduleRepair, type SearchableRepair } from "@/actions/planning";
+import {
+  searchUnscheduledRepairs,
+  scheduleRepair,
+  SCHEDULE_NEEDS_TASKS,
+  type SearchableRepair,
+} from "@/actions/planning";
 import { toast } from "sonner";
 
 interface Props {
@@ -55,7 +60,7 @@ export function AddRepairDialog({ open, onOpenChange, targetDate, lang, onAdded 
         onAdded();
       } catch (err) {
         const msg = (err as Error)?.message ?? "Failed to schedule repair";
-        toast.error(msg);
+        toast.error(msg === SCHEDULE_NEEDS_TASKS ? t.scheduleNeedsTasks : msg);
         setSelectedId(null);
       }
     });

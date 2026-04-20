@@ -45,7 +45,12 @@ import { updatePartRequestStatus } from "@/actions/parts";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
 import { resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent, restoreWorkshopItem, restoreAllWorkshopItems } from "@/actions/estimates";
-import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
+import {
+  scheduleRepair,
+  unscheduleRepair,
+  SCHEDULE_NEEDS_TASKS,
+  SCHEDULE_NEEDS_TASKS_ADMIN_TOAST,
+} from "@/actions/planning";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -73,6 +78,11 @@ import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-fo
 import { clearGarageMessage } from "@/actions/garage-sync";
 import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
 import type { RepairTask } from "@/types";
+
+function toastScheduleRepairError(err: unknown, fallback: string) {
+  const m = err instanceof Error ? err.message : "";
+  toast.error(m === SCHEDULE_NEEDS_TASKS ? SCHEDULE_NEEDS_TASKS_ADMIN_TOAST : m || fallback);
+}
 
 /** Stored "next action" that still says to create an invoice while the panel already shows invoiced/paid — prefer auto suggestion. */
 function manualNextActionIsStaleInvoiceCreate(
@@ -1078,7 +1088,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                               toast.success("Repair started for today");
                               router.refresh();
                             } catch (err) {
-                              toast.error((err as Error)?.message ?? "Failed to start repair");
+                              toastScheduleRepairError(err, "Failed to start repair");
                             }
                           }}
                           className="w-full flex items-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2 px-3 transition-colors hover:bg-foreground/90"
@@ -1111,7 +1121,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                                   toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
                                   router.refresh();
                                 } catch (err) {
-                                  toast.error((err as Error)?.message ?? "Failed to schedule repair");
+                                  toastScheduleRepairError(err, "Failed to schedule repair");
                                 }
                               }
                             }}
@@ -1883,7 +1893,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           toast.success("Repair started for today");
                           router.refresh();
                         } catch (err) {
-                          toast.error((err as Error)?.message ?? "Failed to start repair");
+                          toastScheduleRepairError(err, "Failed to start repair");
                         }
                       }}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-foreground text-background text-xs font-medium py-2.5 px-3 transition-colors hover:bg-foreground/90"
@@ -1916,7 +1926,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                               toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
                               router.refresh();
                             } catch (err) {
-                              toast.error((err as Error)?.message ?? "Failed to schedule repair");
+                              toastScheduleRepairError(err, "Failed to schedule repair");
                             }
                           }
                         }}
@@ -2769,8 +2779,8 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
       toast.success(`Planned for ${format(d, "dd MMM yyyy")}`);
       setEditing(false);
       router.refresh();
-    } catch {
-      toast.error("Failed to set planning date");
+    } catch (err) {
+      toastScheduleRepairError(err, "Failed to set planning date");
     } finally {
       setSaving(false);
     }

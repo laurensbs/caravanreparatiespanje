@@ -55,6 +55,8 @@ export interface PlanningStrings {
   dragHint: string;
   /** Link to work orders list */
   browseWorkOrders: string;
+  /** Toast when scheduling is blocked because the work order has no tasks */
+  scheduleNeedsTasks: string;
 }
 
 const en: PlanningStrings = {
@@ -93,6 +95,8 @@ const en: PlanningStrings = {
   weekRepairsNone: "No repairs with a due date this week",
   dragHint: "Tip: drag a repair to another day to change its due date.",
   browseWorkOrders: "All work orders",
+  scheduleNeedsTasks:
+    "Add at least one task on this work order before you can schedule it — open the work order and add tasks under Tasks.",
 };
 
 const nl: PlanningStrings = {
@@ -131,6 +135,8 @@ const nl: PlanningStrings = {
   weekRepairsNone: "Geen reparaties met streefdatum deze week",
   dragHint: "Tip: sleep een reparatie naar een andere dag om de streefdatum aan te passen.",
   browseWorkOrders: "Alle werkorders",
+  scheduleNeedsTasks:
+    "Voeg minstens één taak toe aan deze reparatie voordat je hem kunt inplannen — open de werkorder en voeg taken toe onder Taken.",
 };
 
 const es: PlanningStrings = {
@@ -169,6 +175,8 @@ const es: PlanningStrings = {
   weekRepairsNone: "No hay reparaciones con fecha prevista esta semana",
   dragHint: "Consejo: arrastra una reparación a otro día para cambiar la fecha prevista.",
   browseWorkOrders: "Todas las órdenes",
+  scheduleNeedsTasks:
+    "Añade al menos una tarea a esta reparación antes de programarla — abre la orden y añade tareas en Tareas.",
 };
 
 const locales: Record<PlanningLang, PlanningStrings> = { en, nl, es };

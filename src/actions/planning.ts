@@ -7,6 +7,13 @@ import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 import { eq, and, gte, lte, isNull, isNotNull, or, ilike, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/** Stabiele foutcode — clients tonen `scheduleNeedsTasks` uit planning-locale. */
+export const SCHEDULE_NEEDS_TASKS = "SCHEDULE_NEEDS_TASKS";
+
+/** Admin repair-detail (Engels, gelijke toon als andere repair-toasts). */
+export const SCHEDULE_NEEDS_TASKS_ADMIN_TOAST =
+  "Add at least one task on this work order before you can put it on the planning calendar or in the garage.";
+
 const FUTURE_TAG_SLUG = "future-repair";
 const FUTURE_TAG_NAME = "Future Repair";
 const FUTURE_TAG_COLOR = "#f59e0b"; // amber
@@ -125,9 +132,7 @@ export async function scheduleRepair(repairId: string, dueDate: string) {
   // (ook als de status al `scheduled` was zonder datum — edge case).
   // Verschuiven naar een andere dag blijft toegestaan zonder extra check.
   if (!job.dueDate && !(await repairJobHasTasks(repairId))) {
-    throw new Error(
-      "Add at least one task before scheduling this repair.",
-    );
+    throw new Error(SCHEDULE_NEEDS_TASKS);
   }
 
   const newDueDate = new Date(dueDate);

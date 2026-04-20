@@ -28,6 +28,7 @@ import { CommunicationLogPanel } from "@/components/communication-log";
 import { VoicePlayer } from "@/components/voice-player";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
+import { compressImage } from "@/lib/compress-image";
 import {
   createHoldedInvoice,
   sendHoldedInvoice,
@@ -2436,8 +2437,13 @@ function PhotosSection({
     let successCount = 0;
     for (const file of files) {
       try {
+        // Ook in het admin-paneel comprimeren — de office upload
+        // vaak van telefoon en we willen geen 4 MB jpegs in
+        // OneDrive parkeren. Helper valt terug op origineel als
+        // compressie faalt.
+        const compressed = await compressImage(file);
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressed);
         formData.append("repairJobId", jobId);
         formData.append("photoType", "general");
         const res = await fetch("/api/photos/upload", { method: "POST", body: formData });

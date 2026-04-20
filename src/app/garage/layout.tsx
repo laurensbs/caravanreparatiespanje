@@ -6,6 +6,7 @@ import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageLoginForm } from "@/components/garage/login-form";
 import { GarageIdleLock } from "@/components/garage/idle-lock";
+import { GarageOfflineIndicator } from "@/components/garage/offline-indicator";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import "./garage-theme.css";
@@ -67,6 +68,7 @@ export default async function GarageLayout({
           <RouteProgress />
         </Suspense>
         <GarageIdleLock />
+        <GarageOfflineIndicator />
         {children}
         <Toaster
           theme="light"

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Camera, Plus, X, Loader2, Image as ImageIcon, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import { compressImage } from "@/lib/compress-image";
 
 interface GaragePhotoUploadProps {
   repairJobId: string;
@@ -47,8 +48,15 @@ export function GaragePhotoUpload({
     let successCount = 0;
     for (const file of fileArray) {
       try {
+        // Compressie vóór upload: iPad-camera levert 3-5 MB JPEGs,
+        // deze stap brengt dat terug naar ~400 KB op de lange zijde
+        // 1920px. Bij mislukte decode valt de helper terug op het
+        // origineel, dus uploaden werkt altijd — nooit trager dan
+        // voorheen.
+        const compressed = await compressImage(file);
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressed);
         formData.append("repairJobId", repairJobId);
         if (repairTaskId) formData.append("repairTaskId", repairTaskId);
         formData.append("photoType", repairTaskId ? "task" : "general");

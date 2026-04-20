@@ -950,6 +950,129 @@ export async function verifyHoldedDocuments(repairJobId: string) {
   return { fixed: Object.keys(updates).length > 0, issues };
 }
 
+// ─── Refresh single Holded quote status ───
+//
+// De cron `/api/sync-quotes` draait elke 15 minuten en doet voor álle
+// quotes de approval/decline-afhandeling. Bij het openen van één
+// specifieke repair-detail willen we dat niet afwachten: klanten
+// accepteren via de e-mail, en daarna wil de admin dat direct terug
+// zien. Deze action pakt alleen déze quote op uit Holded en past
+// exact dezelfde regels toe als de cron.
+export async function refreshHoldedQuoteStatus(repairJobId: string): Promise<{
+  changed: boolean;
+  customerResponseStatus: string | null;
+  status: string | null;
+  message: string;
+}> {
+  await requireAuth();
+  if (!isHoldedConfigured()) {
+    return {
+      changed: false,
+      customerResponseStatus: null,
+      status: null,
+      message: "Holded not configured",
+    };
+  }
+
+  const [job] = await db
+    .select({
+      id: repairJobs.id,
+      holdedQuoteId: repairJobs.holdedQuoteId,
+      holdedQuoteNum: repairJobs.holdedQuoteNum,
+      status: repairJobs.status,
+      customerResponseStatus: repairJobs.customerResponseStatus,
+    })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+
+  if (!job) throw new Error("Repair job not found");
+  if (!job.holdedQuoteId) {
+    return {
+      changed: false,
+      customerResponseStatus: job.customerResponseStatus,
+      status: job.status,
+      message: "No Holded quote linked",
+    };
+  }
+
+  let q: HoldedQuote;
+  try {
+    q = await getQuote(job.holdedQuoteId);
+  } catch {
+    return {
+      changed: false,
+      customerResponseStatus: job.customerResponseStatus,
+      status: job.status,
+      message: "Quote not found in Holded",
+    };
+  }
+
+  const approved = q.status === 1 || (typeof q.approvedAt === "number" && q.approvedAt > 0);
+  const declined = q.status === -1;
+
+  const updates: Record<string, unknown> = {};
+
+  if (declined) {
+    if (job.customerResponseStatus !== "declined") {
+      updates.customerResponseStatus = "declined";
+    }
+    if (job.status === "waiting_approval") {
+      updates.status = "rejected";
+    }
+  } else if (approved) {
+    if (job.customerResponseStatus === "declined") {
+      // eerdere decline respecteren — niet automatisch terugdraaien.
+    } else {
+      if (job.customerResponseStatus !== "approved") {
+        updates.customerResponseStatus = "approved";
+      }
+      if (job.status === "waiting_approval") {
+        updates.status = "scheduled";
+      }
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return {
+      changed: false,
+      customerResponseStatus: job.customerResponseStatus,
+      status: job.status,
+      message: approved
+        ? "Already in sync — quote is approved"
+        : declined
+          ? "Already in sync — quote is declined"
+          : "Quote still awaiting customer",
+    };
+  }
+
+  updates.updatedAt = new Date();
+  await db.update(repairJobs).set(updates).where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    eventType: "quote_approval_synced",
+    fieldChanged: "holded_quote",
+    oldValue: `${job.customerResponseStatus} / ${job.status}`,
+    newValue: `${updates.customerResponseStatus ?? job.customerResponseStatus} / ${updates.status ?? job.status}`,
+    comment: `Manual refresh — Holded quote ${q.docNumber ?? q.id} ${declined ? "declined" : approved ? "approved" : "pending"}`,
+  });
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  revalidatePath("/repairs");
+
+  return {
+    changed: true,
+    customerResponseStatus: (updates.customerResponseStatus as string | undefined) ?? job.customerResponseStatus,
+    status: (updates.status as string | undefined) ?? job.status,
+    message: declined
+      ? "Customer declined the quote"
+      : approved
+        ? "Customer approved the quote"
+        : "Quote status refreshed",
+  };
+}
+
 // ─── Delete Holded quote ───
 
 export async function deleteHoldedQuote(repairJobId: string) {

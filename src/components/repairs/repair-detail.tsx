@@ -36,6 +36,7 @@ import {
   verifyHoldedDocuments,
   deleteHoldedQuote,
   deleteHoldedInvoice,
+  refreshHoldedQuoteStatus,
 } from "@/actions/holded";
 import { deleteRepairJob, restoreRepairJob } from "@/actions/repairs";
 import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
@@ -485,12 +486,41 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   // General transition for inline actions (blockers, findings, review, etc.)
   const [reviewPending, startReviewTransition] = useTransition();
   const [, startPartTransition] = useTransition();
+  const [checkingHolded, startCheckHolded] = useTransition();
 
   // Push repair context to the global assistant
   useEffect(() => {
     setRepairContext({ job, settings });
     return () => setRepairContext(null);
   }, [job, settings, setRepairContext]);
+
+  // ── Auto-refresh Holded quote status on open ──
+  // Wanneer een repair in `waiting_approval` staat en aan een Holded-
+  // quote is gekoppeld, kijken we bij elke detail-open stilletjes of
+  // de klant in Holded al heeft geaccepteerd of afgewezen. Zo ja, dan
+  // updaten we de status direct i.p.v. te wachten tot de 15-min cron
+  // langsloopt. Er is een kleine guard: max één auto-check per
+  // `job.id + holdedQuoteId`-combinatie per sessie, zodat we Holded
+  // niet spammen als je tussen tabs wisselt.
+  const autoCheckRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== "waiting_approval") return;
+    if (!job.holdedQuoteId) return;
+    const key = `${job.id}:${job.holdedQuoteId}`;
+    if (autoCheckRef.current === key) return;
+    autoCheckRef.current = key;
+    void (async () => {
+      try {
+        const res = await refreshHoldedQuoteStatus(job.id);
+        if (res.changed) {
+          toast.success(res.message);
+          router.refresh();
+        }
+      } catch {
+        // stil — manual knop is nog steeds beschikbaar.
+      }
+    })();
+  }, [job.id, job.holdedQuoteId, status, router]);
 
   async function addPartLine(part: PartItem) {
     const baseCost = part.defaultCost ? parseFloat(part.defaultCost) : 0;
@@ -1252,6 +1282,41 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* ── Check Holded (manual quote-status refresh) ──
+                      Zodra de klant via Holded-mail accepteert of
+                      afwijst, pakt de cron `/api/sync-quotes` dat pas
+                      bij de volgende 15-min run op. Met deze knop kan
+                      de admin die ene quote direct vernieuwen zonder
+                      op de cron te wachten. */}
+                  {status === "waiting_approval" && job.holdedQuoteId && (
+                    <button
+                      type="button"
+                      disabled={checkingHolded}
+                      onClick={() => {
+                        startCheckHolded(async () => {
+                          try {
+                            const res = await refreshHoldedQuoteStatus(job.id);
+                            if (res.changed) {
+                              toast.success(res.message);
+                              router.refresh();
+                            } else {
+                              toast(res.message);
+                            }
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Check failed");
+                          }
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                    >
+                      {checkingHolded ? (
+                        <Spinner className="h-3 w-3" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                      Check Holded
+                    </button>
+                  )}
                   {nextActionContext.cta === "Link Holded PDF" && (
                     <button
                       type="button"

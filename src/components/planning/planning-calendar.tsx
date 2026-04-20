@@ -295,63 +295,78 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
               </Button>
             </div>
 
+            {/*
+              Mobile layout: primary filters (staff + locations) share a single
+              row via a 2-column grid; the secondary controls (language picker
+              and print) sit next to each other as compact icon buttons. This
+              replaces the previous 4-wide stack of full-width bars that made
+              the page feel cluttered before you ever reached the schedule.
+            */}
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-              <Select value={filterUser} onValueChange={setFilterUser}>
-                <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">
-                  <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.allStaff}</SelectItem>
-                  {staff.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {locations.length > 1 ? (
-                <Select value={filterLocation} onValueChange={setFilterLocation}>
-                  <SelectTrigger className="h-10 w-full min-[400px]:w-[min(100%,11rem)] rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">
-                    <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
+              <div className="grid grid-cols-2 gap-2 sm:contents">
+                <Select value={filterUser} onValueChange={setFilterUser}>
+                  <SelectTrigger className="h-10 w-full rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation sm:w-[min(100%,11rem)] dark:border-border dark:bg-card/[0.03]">
+                    <Filter className="mr-1 h-3.5 w-3.5 shrink-0" />
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">
-                      {lang === "nl" ? "All locations" : lang === "es" ? "Todas las ubicaciones" : "All locations"}
-                    </SelectItem>
-                    {locations.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
+                    <SelectItem value="all">{t.allStaff}</SelectItem>
+                    {staff.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              ) : null}
 
-              <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
-                <SelectTrigger className="h-10 w-full min-[400px]:w-24 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation dark:border-border dark:bg-card/[0.03]">
-                  <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">EN</SelectItem>
-                  <SelectItem value="nl">NL</SelectItem>
-                  <SelectItem value="es">ES</SelectItem>
-                </SelectContent>
-              </Select>
+                {locations.length > 1 ? (
+                  <Select value={filterLocation} onValueChange={setFilterLocation}>
+                    <SelectTrigger className="h-10 w-full rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation sm:w-[min(100%,11rem)] dark:border-border dark:bg-card/[0.03]">
+                      <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {lang === "nl" ? "All locations" : lang === "es" ? "Todas las ubicaciones" : "All locations"}
+                      </SelectItem>
+                      {locations.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-10 w-full gap-2 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation min-[400px]:w-auto dark:border-border dark:bg-card/[0.03]"
-                onClick={() => window.print()}
-              >
-                <Printer className="h-4 w-4 shrink-0" />
-                {t.print}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={lang} onValueChange={(v) => changeLang(v as PlanningLang)}>
+                  <SelectTrigger
+                    aria-label="Language"
+                    className="h-10 w-[84px] shrink-0 rounded-xl border-border/60 bg-card text-sm shadow-sm touch-manipulation sm:w-24 dark:border-border dark:bg-card/[0.03]"
+                  >
+                    <Globe className="mr-1 h-3.5 w-3.5 shrink-0" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">EN</SelectItem>
+                    <SelectItem value="nl">NL</SelectItem>
+                    <SelectItem value="es">ES</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={t.print}
+                  className="h-10 w-10 shrink-0 rounded-xl border-border/60 bg-card text-muted-foreground shadow-sm touch-manipulation hover:text-foreground sm:w-auto sm:gap-2 sm:px-3 dark:border-border dark:bg-card/[0.03] dark:text-muted-foreground/70 dark:hover:text-foreground"
+                  onClick={() => window.print()}
+                >
+                  <Printer className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline text-sm font-medium">{t.print}</span>
+                </Button>
+              </div>
 
               <Link
                 href="/repairs"
@@ -362,7 +377,24 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
             </div>
           </div>
 
-          <p className="hidden text-xs text-muted-foreground md:block dark:text-muted-foreground/70">{t.dragHint}</p>
+          {/* Inline location legend + drag hint. The legend used to live in
+              its own card below the toolbar, which felt redundant on mobile
+              (every repair already shows a colored dot). Rendering the dots
+              as a tight chip-row keeps the meaning without the extra slab. */}
+          {(locationLegend.length > 0 || t.dragHint) && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground dark:text-muted-foreground/70 print:hidden">
+              {locationLegend.map((l) => (
+                <span
+                  key={l.id}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-foreground/80 ring-1 ring-border/50 dark:bg-card/[0.04] dark:text-foreground/80 dark:ring-border/60"
+                >
+                  <span className={`h-2 w-2 rounded-full ${l.dot}`} />
+                  {l.name}
+                </span>
+              ))}
+              <span className="hidden text-xs text-muted-foreground md:inline dark:text-muted-foreground/70">{t.dragHint}</span>
+            </div>
+          )}
         </div>
 
       {/* Print header */}
@@ -373,23 +405,6 @@ export function PlanningCalendar({ initialRepairs, initialWeekStart, initialWeek
           {filterUser !== "all" && ` — ${staff.find(u => u.id === filterUser)?.name}`}
         </p>
       </div>
-
-      {/* Location legend */}
-      {locationLegend.length > 0 && (
-        <div className={cn(dashboardPanelClass, "px-4 py-3 print:hidden")}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground">
-            {t.location}
-          </p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground dark:text-muted-foreground/70">
-            {locationLegend.map((l) => (
-              <span key={l.id} className="flex items-center gap-1.5">
-                <span className={`h-2.5 w-2.5 rounded-full ${l.dot}`} />
-                {l.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Day list */}
       <DndContext

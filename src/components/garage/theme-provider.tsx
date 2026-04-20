@@ -115,7 +115,7 @@ export function GarageThemeToggle() {
         hapticTap();
         toggleTheme();
       }}
-      className="flex h-11 w-11 items-center justify-center rounded-xl text-white/70 transition-all duration-150 hover:bg-white/[0.06] active:bg-white/[0.1]"
+      className="flex h-11 w-11 items-center justify-center rounded-xl text-white/70 transition-all duration-150 hover:bg-white/[0.06] active:bg-white/[0.1] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25"
       aria-label={
         isDark
           ? t("Switch to light mode", "Cambiar a modo claro", "Wissel naar lichte modus")

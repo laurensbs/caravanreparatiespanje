@@ -112,6 +112,8 @@
 .garage-light .ring-white\/10 { --tw-ring-color: rgb(28 25 23 / 0.1); }
 .garage-light .ring-white\/15 { --tw-ring-color: rgb(28 25 23 / 0.12); }
 .garage-light .ring-white\/20 { --tw-ring-color: rgb(28 25 23 / 0.15); }
+.garage-light .ring-white\/25 { --tw-ring-color: rgb(28 25 23 / 0.2); }
+.garage-light .focus-visible\:ring-white\/25:focus-visible { --tw-ring-color: rgb(28 25 23 / 0.2); }
 .garage-light .ring-white\/\[0\.04\] { --tw-ring-color: rgb(28 25 23 / 0.06); }
 .garage-light .ring-white\/\[0\.06\] { --tw-ring-color: rgb(28 25 23 / 0.08); }
 .garage-light .ring-white\/\[0\.08\] { --tw-ring-color: rgb(28 25 23 / 0.1); }
@@ -145,6 +147,26 @@
 /* ── Status tone pills (`bg-stone-500/15 text-stone-300 …`) ──────────── */
 .garage-light .bg-stone-500\/15 { background-color: rgb(120 113 108 / 0.15); }
 .garage-light .ring-stone-400\/20 { --tw-ring-color: rgb(168 162 158 / 0.35); }
+
+/* ── Amber accent chips (e.g. "Tool / part" CTA, ready-for-check bars) ──
+   The dark theme leans on pale amber-200/300 text, which becomes
+   unreadable on a white surface. Switch to amber-800 for contrast. */
+.garage-light .text-amber-100 { color: #78350f; }
+.garage-light .text-amber-200 { color: #92400e; }
+.garage-light .text-amber-300 { color: #9a3412; }
+.garage-light .bg-amber-500\/15 { background-color: rgb(245 158 11 / 0.16); }
+.garage-light .bg-amber-500\/20 { background-color: rgb(245 158 11 / 0.18); }
+.garage-light .hover\:bg-amber-500\/25:hover { background-color: rgb(245 158 11 / 0.22); }
+.garage-light .ring-amber-400\/25 { --tw-ring-color: rgb(180 83 9 / 0.3); }
+.garage-light .ring-amber-400\/30 { --tw-ring-color: rgb(180 83 9 / 0.35); }
+
+/* Emerald / rose / violet helper pills used on overview cards. */
+.garage-light .text-emerald-200 { color: #065f46; }
+.garage-light .text-emerald-300 { color: #047857; }
+.garage-light .text-rose-200 { color: #9f1239; }
+.garage-light .text-rose-300 { color: #be123c; }
+.garage-light .text-violet-200 { color: #5b21b6; }
+.garage-light .text-violet-300 { color: #6d28d9; }
 
 /* Sonner toast + confirm dialog already follow the OS `color-scheme` we
    set in theme-provider, so they don't need explicit overrides. */

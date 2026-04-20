@@ -5,7 +5,6 @@ import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageLoginForm } from "@/components/garage/login-form";
-import { GarageIdleLock } from "@/components/garage/idle-lock";
 import { GarageOfflineIndicator } from "@/components/garage/offline-indicator";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
@@ -67,7 +66,10 @@ export default async function GarageLayout({
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>
-        <GarageIdleLock />
+        {/* Idle-lock bewust uitgezet: werkers moeten de hele dag door
+            kunnen werken zonder dat de iPad ze terug naar de PIN stuurt
+            midden in een sync. Uitloggen kan nog steeds handmatig via
+            het menu. */}
         <GarageOfflineIndicator />
         {children}
         <Toaster

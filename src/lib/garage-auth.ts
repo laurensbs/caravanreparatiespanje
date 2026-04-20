@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 
 const COOKIE_NAME = "garage_auth";
-const SESSION_DURATION = 4 * 60 * 60; // 4 hours in seconds
+// Effectief "voor altijd" (1 jaar). De werkplaats-iPad hoort ingelogd
+// te blijven zodat werkers nooit midden in een klus terug naar de
+// PIN worden gestuurd. Uitloggen kan altijd nog expliciet via de UI
+// (zet garage-sessie-cookie leeg).
+const SESSION_DURATION = 365 * 24 * 60 * 60;
 
 /**
  * Garage shared PIN. Read from `GARAGE_PIN` env var. In development we
@@ -42,7 +46,7 @@ function constantTimeEquals(a: string, b: string): boolean {
   return timingSafeEqual(ab, bb);
 }
 
-/** Verify the garage PIN and set a signed session cookie (4 hours) */
+/** Verify the garage PIN and set a signed session cookie (1 year). */
 export async function verifyGaragePin(pin: string): Promise<boolean> {
   if (!constantTimeEquals(pin, getGaragePin())) return false;
 
@@ -77,7 +81,7 @@ export async function isGarageAuthenticated(): Promise<boolean> {
   const expectedSig = sign(`garage:${timestamp}`);
   if (!constantTimeEquals(providedSig, expectedSig)) return false;
 
-  // Check expiry (4 hours)
+  // Check expiry against the current session duration (1 year).
   const ts = parseInt(timestamp, 10);
   if (isNaN(ts)) return false;
   if (Date.now() - ts > SESSION_DURATION * 1000) return false;

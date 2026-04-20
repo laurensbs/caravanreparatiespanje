@@ -271,9 +271,21 @@ export function NewRepairDialog({
         New Work Order
       </Button>
 
-      {/* Custom modal with backdrop */}
+      {/*
+        Responsive dialog shell.
+
+        Mobile/tablet (< sm): full-screen sheet. Header and footer are
+        sticky so the "Create work order" button is always reachable,
+        and the scroll container (the <form>) lives between them. Body
+        padding respects iOS safe-area insets so nothing hides behind
+        the home indicator or a bottom tab bar.
+
+        Desktop (>= sm): centered modal constrained to 85vh. Same
+        internal header/scroll/footer pattern — just inside a rounded
+        card floating over the backdrop.
+      */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh] sm:pt-[10vh]">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-start sm:pt-[8vh]">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-in fade-in-0 duration-200"
@@ -281,13 +293,16 @@ export function NewRepairDialog({
           />
 
           {/* Modal */}
-          <div className="relative z-10 w-full max-w-2xl mx-4 animate-in fade-in-0 zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
-            <div className="bg-card dark:bg-card rounded-2xl border border-border/60 dark:border-border shadow-2xl max-h-[82vh] flex flex-col">
+          <div className="relative z-10 w-full sm:max-w-2xl sm:mx-4 animate-in fade-in-0 sm:zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
+            <div className="flex h-[100dvh] flex-col bg-card dark:bg-card sm:h-auto sm:max-h-[85vh] sm:rounded-2xl sm:border sm:border-border/60 sm:dark:border-border sm:shadow-2xl">
 
-              {/* Header */}
-              <div className="flex items-start justify-between px-7 pt-7 pb-0">
+              {/* Sticky header */}
+              <div
+                className="flex items-start justify-between border-b border-border/60 dark:border-white/5 bg-card/95 backdrop-blur px-5 sm:px-7 pb-4 sm:border-b-0"
+                style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top))" }}
+              >
                 <div>
-                  <h2 className="text-2xl font-semibold text-foreground dark:text-white">New work order</h2>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-foreground dark:text-white">New work order</h2>
                   <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-0.5">Create a new job</p>
                 </div>
                 <button
@@ -299,9 +314,9 @@ export function NewRepairDialog({
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="overflow-y-auto flex-1 overscroll-contain">
-                <form ref={formRef} onSubmit={handleSubmit} className="px-7 pb-7 pt-6 space-y-7">
+              {/* Scrollable body */}
+              <form ref={formRef} onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 pt-5 sm:pt-6 pb-6 space-y-7">
                   {error && (
                     <div className="rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-4 py-3 text-sm text-red-600 dark:text-red-400">{error}</div>
                   )}
@@ -522,32 +537,38 @@ export function NewRepairDialog({
                     )}
                   </div>
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-3 border-t border-border/60 dark:border-white/5">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenChange(false)}
-                      className="text-sm text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/80 transition-colors font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <Button
-                      type="submit"
-                      disabled={saving}
-                      className="h-10 rounded-xl px-5 text-sm font-medium bg-foreground hover:bg-foreground/90 text-background shadow-sm transition-all duration-150 hover:-translate-y-px"
-                    >
-                      {saving ? (
-                        <>
-                          <Spinner className="mr-2 h-3.5 w-3.5" />
-                          Creating...
-                        </>
-                      ) : (
-                        "Create work order"
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </div>
+                </div>
+
+                {/* Sticky footer — always reachable, even on small screens.
+                    Safe-area inset keeps the primary button clear of the iOS
+                    home indicator and any in-page bottom nav. */}
+                <div
+                  className="flex items-center justify-between gap-3 border-t border-border/60 dark:border-white/5 bg-card/95 backdrop-blur px-5 sm:px-7 pt-3"
+                  style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleOpenChange(false)}
+                    className="text-sm text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-foreground/80 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="h-11 rounded-xl px-5 text-sm font-medium bg-foreground hover:bg-foreground/90 text-background shadow-sm transition-all duration-150"
+                  >
+                    {saving ? (
+                      <>
+                        <Spinner className="mr-2 h-3.5 w-3.5" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create work order"
+                    )}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

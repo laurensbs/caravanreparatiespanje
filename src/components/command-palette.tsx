@@ -16,6 +16,7 @@ import {
   Loader2,
   LayoutDashboard,
   Settings,
+  X,
 } from "lucide-react";
 
 interface SearchResult {
@@ -196,21 +197,48 @@ export function CommandPalette() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <div className="flex items-center border-b px-4">
-          <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+      {/*
+        Mobile: full-dvh sheet anchored to the top so the iOS keyboard can
+        sit flush against the bottom without pushing the entire sheet
+        off-screen (the earlier bottom-sheet layout left only the search
+        field visible once the keyboard opened).
+        Desktop: keep the classic centered palette.
+      */}
+      <DialogContent
+        className="!flex !flex-col !gap-0 !inset-0 !top-0 !bottom-0 !left-0 !right-0 !h-[100dvh] !max-h-none !w-full max-w-lg overflow-hidden !rounded-none !p-0 [&>button]:max-sm:hidden sm:!inset-auto sm:!left-[50%] sm:!top-[50%] sm:!h-auto sm:!max-h-[min(85dvh,720px)] sm:!w-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!rounded-2xl"
+        style={{ paddingBottom: "0" }}
+      >
+        <div
+          className="flex items-center gap-2 border-b border-border/70 bg-card px-3 sm:px-4"
+          style={{ paddingTop: "max(8px, env(safe-area-inset-top))" }}
+        >
+          <Search className="ml-1 h-[18px] w-[18px] shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
           <Input
             ref={inputRef}
-            placeholder="Search repairs, contacts, units or type a command..."
-            className="border-0 shadow-none focus-visible:ring-0 h-12"
+            placeholder="Search repairs, contacts, units…"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            className="h-12 border-0 px-1 text-[16px] shadow-none focus-visible:ring-0 sm:h-12 sm:text-sm"
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
           />
           {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close search"
+            className="ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95 sm:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="max-h-[360px] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain sm:max-h-[360px]" style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
           {/* Recent — only when no query typed */}
           {!query.trim() && recents.length > 0 && (
             <div className="p-2">
@@ -336,7 +364,7 @@ export function CommandPalette() {
             filteredActions.length === 0 && (
               <div className="px-6 py-10 text-center">
                 <p className="text-sm font-medium text-foreground">
-                  No results voor <span className="font-mono">&ldquo;{query}&rdquo;</span>
+                  No results for <span className="font-mono">&ldquo;{query}&rdquo;</span>
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Try a different word, or search by customer, city, or public code.
@@ -345,14 +373,15 @@ export function CommandPalette() {
             )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/60 bg-muted/30 px-4 py-2">
+        {/* Keyboard hints footer — desktop only; meaningless on mobile. */}
+        <div className="hidden items-center justify-between border-t border-border/60 bg-muted/30 px-4 py-2 sm:flex">
           <div className="flex gap-2 text-[10px] text-muted-foreground">
             <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">↑↓</kbd>
-            <span>navigeer</span>
+            <span>navigate</span>
             <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">↵</kbd>
             <span>open</span>
             <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">esc</kbd>
-            <span>sluit</span>
+            <span>close</span>
           </div>
           <button
             type="button"
@@ -364,7 +393,7 @@ export function CommandPalette() {
             }}
             className="text-[10px] text-muted-foreground transition-colors hover:text-foreground"
           >
-            Sneltoetsen <kbd className="ml-1 rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">?</kbd>
+            Shortcuts <kbd className="ml-1 rounded bg-card px-1.5 py-0.5 font-mono shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">?</kbd>
           </button>
         </div>
       </DialogContent>

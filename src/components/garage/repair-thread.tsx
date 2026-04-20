@@ -173,9 +173,14 @@ export function GarageRepairThread({
         <ul className="mb-3 space-y-1.5">
           {visible.map((msg, idx) => {
             const fromGarage = msg.direction === "garage_to_admin";
+            // Admin-kant = altijd anoniem "Office" op de tablet. We tonen
+            // bewust NIET de naam van de admin (Laurens, etc.) — werkers
+            // zien kantoor als één entiteit, dat voorkomt verwarring
+            // (en houdt het rolmodel consistent: "office talks to
+            // garage", niet "Laurens talks to Jake").
             const author = fromGarage
               ? msg.authorName || msg.userName || t("Garage", "Taller", "Werkplaats")
-              : msg.userName || t("Office", "Oficina", "Kantoor");
+              : t("Office", "Oficina", "Kantoor");
             const showDay =
               idx === 0 ||
               new Date(visible[idx - 1].createdAt).toDateString() !==

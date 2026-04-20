@@ -23,6 +23,22 @@ function dayLabel(d: Date) {
 /** Compacte "23m"-weergave voor presence — bewust grof, want we polleren
  *  dit niet elke seconde. Boven het uur tonen we "1h 4m" zodat het
  *  signaal snel scant. */
+/** Snelle structurele vergelijking zodat we bij elke poll alleen de
+ *  state bijwerken als er echt iets nieuws is. Dit voorkomt dat de
+ *  chat-lijst onnodig re-rendert (en zo bv. scrollposities of markeert-
+ *  als-gelezen effecten opnieuw triggert). */
+function sameMessageList(a: RepairMessage[], b: RepairMessage[]) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (x.id !== y.id) return false;
+    if (x.body !== y.body) return false;
+    if ((x.readAt?.getTime?.() ?? 0) !== (y.readAt?.getTime?.() ?? 0)) return false;
+  }
+  return true;
+}
+
 function elapsedShort(start: Date) {
   const minutes = Math.max(0, Math.floor((Date.now() - start.getTime()) / 60_000));
   if (minutes < 60) return `${minutes}m`;
@@ -88,6 +104,16 @@ export function AdminRepairThread({
   // platkookt. Reset naar 8s zodra een fetch weer slaagt.
   const failCountRef = useRef(0);
 
+  // Stabiele ref naar de parent's onChange zodat we die callback niet in
+  // de dependency van `refresh` hoeven te zetten. Eerder veroorzaakte
+  // dit een loop: elke render van de parent maakte een nieuwe onChange
+  // → nieuwe refresh → useEffect draaide opnieuw → setLoading(true) →
+  // flikkerend "Loading…"-bericht tussen de berichten.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   const refresh = useCallback(async () => {
     try {
       const list = await listRepairMessages(repairJobId);
@@ -104,9 +130,14 @@ export function AdminRepairThread({
           });
           // Triggert ook een server-refresh zodat presence/timers
           // mee-verfrissen.
-          onChange?.();
+          onChangeRef.current?.();
         }
         lastGarageCountRef.current = nextGarage;
+        // Als de lijst exact gelijk is aan wat we al hadden, retourneer
+        // de vorige array — dat voorkomt onnodige re-renders in
+        // downstream components én voorkomt dat React onze chat-scroll
+        // halverwege onderbreekt.
+        if (sameMessageList(prev, list)) return prev;
         return list;
       });
       // Markeer ongelezen garage-replies als gezien zodra we ze ophalen
@@ -115,8 +146,11 @@ export function AdminRepairThread({
     } catch {
       failCountRef.current += 1;
     }
-  }, [repairJobId, onChange]);
+  }, [repairJobId]);
 
+  // Initial load — `setLoading(true)` alléén hier, NOOIT in de polling
+  // loop. Vroeger stond dit effect op `refresh` als dep, waardoor elke
+  // rebuild van de refresh-callback een kort "Loading…"-flash gaf.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -126,7 +160,8 @@ export function AdminRepairThread({
     return () => {
       cancelled = true;
     };
-  }, [refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- we alleen opnieuw laden als repairJobId wisselt
+  }, [repairJobId]);
 
   // Lichte polling — laat de admin-thread automatisch nieuwe garage-
   // replies ophalen, in dezelfde geest als `useGaragePoll` aan de

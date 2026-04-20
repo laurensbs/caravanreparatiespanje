@@ -68,8 +68,21 @@ export async function startTimer(repairJobId: string, forUserId?: string) {
   if (!job) {
     throw new Error("Repair job not found");
   }
+  // Auto-promote klus naar `in_progress` zodra iemand een timer start vanaf
+  // een "klaar om te beginnen"-status. Dit spiegelt de mentale flow van de
+  // werker: "ik pak 'm op → timer aan" zonder dat ze eerst in een ander
+  // menu de status moeten veranderen. Alleen wachtstatussen blokkeren
+  // we nog steeds expliciet (waiting_customer, waiting_parts, blocked).
+  const autoPromotableStatuses = new Set(["new", "todo", "scheduled", "in_inspection"]);
   if (!canStartGarageTimerOnRepair(job.status)) {
-    throw new Error(GARAGE_TIMER_NOT_ALLOWED);
+    if (autoPromotableStatuses.has(job.status)) {
+      await db
+        .update(repairJobs)
+        .set({ status: "in_progress", updatedAt: new Date() })
+        .where(eq(repairJobs.id, repairJobId));
+    } else {
+      throw new Error(GARAGE_TIMER_NOT_ALLOWED);
+    }
   }
 
   const [entry] = await db

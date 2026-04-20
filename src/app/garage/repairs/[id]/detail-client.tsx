@@ -328,7 +328,14 @@ export function GarageRepairDetailClient({
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
   const activeBlockers = repair.blockers.filter((b) => b.active);
   const unresolvedFindings = repair.findings.filter((f) => !f.resolvedAt);
-  const canTimer = canStartGarageTimerOnRepair(repair.status);
+  // "Mag een werker hier een timer starten?" — de server ondersteunt
+  // auto-promote van `new|todo|scheduled|in_inspection` → `in_progress`
+  // bij start, dus we tonen de knop ook in die statussen. Wachtstatus-
+  // sen (waiting_customer/waiting_parts/blocked) en done-states blijven
+  // verborgen.
+  const canTimer =
+    canStartGarageTimerOnRepair(repair.status) ||
+    ["new", "todo", "scheduled", "in_inspection"].includes(repair.status);
   const progress = repair.tasks.length > 0 ? Math.round((doneCount / repair.tasks.length) * 100) : 0;
 
   /* ── Side effects ──────────────────────────────────────────────── */
@@ -789,9 +796,14 @@ export function GarageRepairDetailClient({
             }
           >
             {repair.photos.length === 0 ? (
-              <p className="py-4 text-center text-sm text-white/40">
-                {t("No photos yet.", "Sin fotos aún.", "Nog geen foto's.")}
-              </p>
+              <div className="py-2">
+                <GaragePhotoUpload
+                  repairJobId={repair.id}
+                  photos={photosByTask.get("__unassigned__") ?? []}
+                  onUpdate={handleRefresh}
+                  t={t}
+                />
+              </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {repair.photos.map((p) => (

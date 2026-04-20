@@ -748,7 +748,12 @@ function JobCard({
   onReceivePart: () => void;
 }) {
   const { t, deviceLang } = useLanguage();
-  const canStartTimer = canStartGarageTimerOnRepair(repair.status);
+  // Zie detail-client: de server auto-promoot startable statussen naar
+  // `in_progress`, dus we tonen de knop ook in new/todo/scheduled/
+  // in_inspection.
+  const canStartTimer =
+    canStartGarageTimerOnRepair(repair.status) ||
+    ["new", "todo", "scheduled", "in_inspection"].includes(repair.status);
   const someoneIsWorking = timers.length > 0;
   const totalProblems = repair.tasks.problem;
   const tasksProgress =

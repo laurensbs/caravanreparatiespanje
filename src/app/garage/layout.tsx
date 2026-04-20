@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { LanguageProvider } from "@/components/garage/language-toggle";
+import { GarageThemeProvider } from "@/components/garage/theme-provider";
 import { Toaster } from "sonner";
 import { sonnerToastOptions } from "@/lib/sonner-toast-options";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
@@ -7,6 +8,7 @@ import { GarageLoginForm } from "@/components/garage/login-form";
 import { GarageIdleLock } from "@/components/garage/idle-lock";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
+import "./garage-theme.css";
 
 export const metadata = {
   title: "Garage — Caravan Repairs",
@@ -28,27 +30,29 @@ export default async function GarageLayout({
   if (!authed) {
     return (
       <LanguageProvider>
-        <GarageLoginForm />
-        <Toaster
-          theme="light"
-          position="top-center"
-          offset={{ top: "0.75rem" }}
-          closeButton
-          duration={4500}
-          visibleToasts={4}
-          gap={10}
-          toastOptions={sonnerToastOptions}
-        />
+        <GarageThemeProvider>
+          <GarageLoginForm />
+          <Toaster
+            theme="light"
+            position="top-center"
+            offset={{ top: "0.75rem" }}
+            closeButton
+            duration={4500}
+            visibleToasts={4}
+            gap={10}
+            toastOptions={sonnerToastOptions}
+          />
+        </GarageThemeProvider>
       </LanguageProvider>
     );
   }
 
   return (
     <LanguageProvider>
-      <Suspense fallback={null}>
-        <RouteProgress />
-      </Suspense>
-      <div className="flex min-h-screen flex-col bg-stone-950 text-white">
+      <GarageThemeProvider>
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         <GarageIdleLock />
         {children}
         <Toaster
@@ -61,8 +65,8 @@ export default async function GarageLayout({
           gap={10}
           toastOptions={sonnerToastOptions}
         />
-      </div>
-      <ConfirmDialogHost />
+        <ConfirmDialogHost />
+      </GarageThemeProvider>
     </LanguageProvider>
   );
 }

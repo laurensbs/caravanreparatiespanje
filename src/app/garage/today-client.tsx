@@ -25,6 +25,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
+import { GarageThemeToggle } from "@/components/garage/theme-provider";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { hapticTap, hapticSuccess, primeHaptics } from "@/lib/haptic";
 import { usePullToRefresh } from "@/lib/use-pull-to-refresh";
@@ -524,6 +525,7 @@ export function GarageTodayClient({
           </button>
 
           <LanguageToggle />
+          <GarageThemeToggle />
 
           <button
             type="button"

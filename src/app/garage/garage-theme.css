@@ -1,0 +1,160 @@
+/*
+ * Garage light-mode overrides.
+ *
+ * The garage UI was built dark-first with a pile of hard-coded utilities
+ * like `bg-stone-950`, `text-white`, `bg-white/[0.06]` etc. Instead of
+ * replacing every occurrence with a theme variable (hundreds of edits),
+ * we scope overrides under `.garage-light` so the existing markup keeps
+ * working and we only define the color swap in one place.
+ *
+ * Kept in sync with the three most common base palettes the garage uses:
+ *  - background:  stone-950 → stone-50
+ *  - surface:     white/[0.04-0.10] → stone-900/[0.03-0.08]
+ *  - foreground:  white/XX  → stone-900/XX (with slight contrast boost)
+ *
+ * Status accents (amber, emerald, rose, violet) stay as they are — those
+ * already work on both backgrounds.
+ */
+
+/* ── Page backgrounds ────────────────────────────────────────────────── */
+.garage-light .bg-stone-950 { background-color: #fafaf9; }
+.garage-light .bg-stone-900 { background-color: #ffffff; }
+.garage-light .bg-stone-800 { background-color: #f5f5f4; }
+.garage-light .bg-stone-950\/90 { background-color: rgb(250 250 249 / 0.9); }
+.garage-light .bg-stone-950\/95 { background-color: rgb(250 250 249 / 0.95); }
+.garage-light .bg-stone-900\/80 { background-color: rgb(255 255 255 / 0.9); }
+.garage-light .bg-stone-900\/95 { background-color: rgb(255 255 255 / 0.95); }
+
+/* Gradients used on full-screen backgrounds (login, loading, error). */
+.garage-light .from-stone-950 {
+  --tw-gradient-from: #fafaf9 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(250 250 249 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.garage-light .via-stone-950 {
+  --tw-gradient-to: rgb(250 250 249 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #fafaf9 var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+.garage-light .to-stone-900 {
+  --tw-gradient-to: #f5f5f4 var(--tw-gradient-to-position);
+}
+
+/* ── Text ────────────────────────────────────────────────────────────── */
+.garage-light .text-white { color: #1c1917; }
+.garage-light .text-white\/95 { color: rgb(28 25 23 / 0.95); }
+.garage-light .text-white\/90 { color: rgb(28 25 23 / 0.92); }
+.garage-light .text-white\/85 { color: rgb(28 25 23 / 0.88); }
+.garage-light .text-white\/80 { color: rgb(28 25 23 / 0.82); }
+.garage-light .text-white\/70 { color: rgb(28 25 23 / 0.72); }
+.garage-light .text-white\/60 { color: rgb(28 25 23 / 0.62); }
+.garage-light .text-white\/55 { color: rgb(28 25 23 / 0.58); }
+.garage-light .text-white\/50 { color: rgb(28 25 23 / 0.55); }
+.garage-light .text-white\/45 { color: rgb(28 25 23 / 0.5); }
+.garage-light .text-white\/40 { color: rgb(28 25 23 / 0.48); }
+.garage-light .text-white\/35 { color: rgb(28 25 23 / 0.44); }
+.garage-light .text-white\/30 { color: rgb(28 25 23 / 0.4); }
+.garage-light .text-white\/20 { color: rgb(28 25 23 / 0.3); }
+.garage-light .text-white\/10 { color: rgb(28 25 23 / 0.2); }
+
+/* Explicit placeholder colors used by inputs/textareas. */
+.garage-light .placeholder\:text-white\/30::placeholder { color: rgb(28 25 23 / 0.42); }
+.garage-light .placeholder\:text-white\/40::placeholder { color: rgb(28 25 23 / 0.48); }
+.garage-light .placeholder\:text-white\/50::placeholder { color: rgb(28 25 23 / 0.55); }
+
+/* Status dot + muted captions reuse stone-300 / stone-400 in the dark
+   theme; darken them so they stay legible on the light background. */
+.garage-light .text-stone-300 { color: #57534e; }
+.garage-light .text-stone-400 { color: #44403c; }
+
+/* ── Surfaces (white/alpha) ─────────────────────────────────────────── */
+.garage-light .bg-white\/5 { background-color: rgb(28 25 23 / 0.04); }
+.garage-light .bg-white\/10 { background-color: rgb(28 25 23 / 0.055); }
+.garage-light .bg-white\/15 { background-color: rgb(28 25 23 / 0.08); }
+.garage-light .bg-white\/20 { background-color: rgb(28 25 23 / 0.1); }
+.garage-light .bg-white\/25 { background-color: rgb(28 25 23 / 0.12); }
+.garage-light .bg-white\/30 { background-color: rgb(28 25 23 / 0.14); }
+
+/* Arbitrary alpha surfaces (the garage uses lots of these). */
+.garage-light .bg-white\/\[0\.03\] { background-color: rgb(28 25 23 / 0.025); }
+.garage-light .bg-white\/\[0\.04\] { background-color: rgb(28 25 23 / 0.03); }
+.garage-light .bg-white\/\[0\.05\] { background-color: rgb(28 25 23 / 0.035); }
+.garage-light .bg-white\/\[0\.06\] { background-color: rgb(28 25 23 / 0.045); }
+.garage-light .bg-white\/\[0\.08\] { background-color: rgb(28 25 23 / 0.06); }
+.garage-light .bg-white\/\[0\.10\] { background-color: rgb(28 25 23 / 0.07); }
+.garage-light .bg-white\/\[0\.12\] { background-color: rgb(28 25 23 / 0.085); }
+
+/* Hover/active variants. */
+.garage-light .hover\:bg-white\/5:hover { background-color: rgb(28 25 23 / 0.05); }
+.garage-light .hover\:bg-white\/10:hover { background-color: rgb(28 25 23 / 0.07); }
+.garage-light .hover\:bg-white\/15:hover { background-color: rgb(28 25 23 / 0.09); }
+.garage-light .hover\:bg-white\/20:hover { background-color: rgb(28 25 23 / 0.11); }
+.garage-light .hover\:bg-white\/\[0\.06\]:hover { background-color: rgb(28 25 23 / 0.055); }
+.garage-light .hover\:bg-white\/\[0\.08\]:hover { background-color: rgb(28 25 23 / 0.07); }
+.garage-light .hover\:bg-white\/\[0\.10\]:hover { background-color: rgb(28 25 23 / 0.08); }
+.garage-light .hover\:bg-white\/\[0\.12\]:hover { background-color: rgb(28 25 23 / 0.09); }
+.garage-light .active\:bg-white\/10:active { background-color: rgb(28 25 23 / 0.08); }
+.garage-light .active\:bg-white\/15:active { background-color: rgb(28 25 23 / 0.1); }
+.garage-light .active\:bg-white\/20:active { background-color: rgb(28 25 23 / 0.12); }
+.garage-light .active\:bg-white\/\[0\.1\]:active { background-color: rgb(28 25 23 / 0.08); }
+.garage-light .active\:bg-white\/\[0\.15\]:active { background-color: rgb(28 25 23 / 0.1); }
+
+/* ── Borders & rings ─────────────────────────────────────────────────── */
+.garage-light .border-white\/5 { border-color: rgb(28 25 23 / 0.06); }
+.garage-light .border-white\/10 { border-color: rgb(28 25 23 / 0.1); }
+.garage-light .border-white\/15 { border-color: rgb(28 25 23 / 0.12); }
+.garage-light .border-white\/20 { border-color: rgb(28 25 23 / 0.14); }
+.garage-light .border-white\/\[0\.04\] { border-color: rgb(28 25 23 / 0.06); }
+.garage-light .border-white\/\[0\.06\] { border-color: rgb(28 25 23 / 0.08); }
+.garage-light .border-white\/\[0\.08\] { border-color: rgb(28 25 23 / 0.1); }
+.garage-light .border-white\/\[0\.10\] { border-color: rgb(28 25 23 / 0.11); }
+
+.garage-light .ring-white\/5 { --tw-ring-color: rgb(28 25 23 / 0.06); }
+.garage-light .ring-white\/10 { --tw-ring-color: rgb(28 25 23 / 0.1); }
+.garage-light .ring-white\/15 { --tw-ring-color: rgb(28 25 23 / 0.12); }
+.garage-light .ring-white\/20 { --tw-ring-color: rgb(28 25 23 / 0.15); }
+.garage-light .ring-white\/\[0\.04\] { --tw-ring-color: rgb(28 25 23 / 0.06); }
+.garage-light .ring-white\/\[0\.06\] { --tw-ring-color: rgb(28 25 23 / 0.08); }
+.garage-light .ring-white\/\[0\.08\] { --tw-ring-color: rgb(28 25 23 / 0.1); }
+
+.garage-light .focus\:ring-white\/20:focus { --tw-ring-color: rgb(28 25 23 / 0.22); }
+.garage-light .focus\:ring-white\/25:focus { --tw-ring-color: rgb(28 25 23 / 0.24); }
+.garage-light .focus-within\:ring-white\/20:focus-within { --tw-ring-color: rgb(28 25 23 / 0.22); }
+
+/* Shadow that hugs a dark scrolled header — tone it down for light bg. */
+.garage-light .shadow-\[0_8px_24px_-12px_rgba\(0\,0\,0\,0\.6\)\] {
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.14);
+}
+
+/* ── Inversed pills (bg-white + text-stone-950) ──────────────────────── */
+/* The "Start timer" / CTA buttons use `bg-white text-stone-950` in dark
+   mode. In light mode we invert them so they still pop. */
+.garage-light .bg-white {
+  background-color: #1c1917;
+}
+.garage-light .bg-white.text-stone-950,
+.garage-light .bg-white .text-stone-950 {
+  color: #fafaf9;
+}
+.garage-light .hover\:bg-white\/95:hover { background-color: rgb(28 25 23 / 0.92); }
+.garage-light .hover\:bg-white\/90:hover { background-color: rgb(28 25 23 / 0.88); }
+
+/* Standalone text-stone-950 labels (used on inverted pills) — keep white
+   to remain readable on the newly dark pill background. */
+.garage-light .text-stone-950 { color: #fafaf9; }
+
+/* ── Status tone pills (`bg-stone-500/15 text-stone-300 …`) ──────────── */
+.garage-light .bg-stone-500\/15 { background-color: rgb(120 113 108 / 0.15); }
+.garage-light .ring-stone-400\/20 { --tw-ring-color: rgb(168 162 158 / 0.35); }
+
+/* Sonner toast + confirm dialog already follow the OS `color-scheme` we
+   set in theme-provider, so they don't need explicit overrides. */
+
+/* ── Inputs ─────────────────────────────────────────────────────────── */
+.garage-light input,
+.garage-light textarea,
+.garage-light select {
+  color-scheme: light;
+}
+
+/* Outlines on focus rings look nicer on light — let the app's ring utils
+   do the work, no extra rule needed. */

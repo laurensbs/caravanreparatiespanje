@@ -214,5 +214,11 @@
   color-scheme: light;
 }
 
+/* The dark theme renders the brand logo (black-on-white png) with a
+   CSS `invert` filter so it turns white on the dark page. In light
+   mode we don't want that inversion — the original black logo on the
+   near-white empty-state surface is what we want. */
+.garage-light .invert { filter: none; }
+
 /* Outlines on focus rings look nicer on light — let the app's ring utils
    do the work, no extra rule needed. */

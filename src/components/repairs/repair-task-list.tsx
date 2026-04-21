@@ -91,12 +91,23 @@ export function RepairTaskList({
   }
 
   function handleToggleDone(task: RepairTask) {
-    const next = task.status === "done" ? "pending" : "done";
+    const next: RepairTaskStatus = task.status === "done" ? "pending" : "done";
+    // Optimistic: direct UI bijwerken zodat de vink geen seconde vertraging
+    // voelt. Server bevestigt op achtergrond; bij fout rollen we terug.
+    const prevStatus = task.status;
+    setTasks((list) =>
+      list.map((t) => (t.id === task.id ? { ...t, status: next } : t)),
+    );
     startTransition(async () => {
-      await updateTaskStatus(task.id, next);
-      refresh();
-      router.refresh();
-      toast.success(next === "done" ? "Task completed" : "Task reopened");
+      try {
+        await updateTaskStatus(task.id, next);
+        router.refresh();
+      } catch {
+        setTasks((list) =>
+          list.map((t) => (t.id === task.id ? { ...t, status: prevStatus } : t)),
+        );
+        toast.error("Failed to update task");
+      }
     });
   }
 
@@ -519,14 +530,14 @@ function TaskPartPicker({
   const activeCats = partCategories.filter((c) => c.active);
 
   return (
-    <div className="rounded-lg border border-border/60 bg-card/60 dark:bg-card/5 p-2 space-y-2">
+    <div className="rounded-lg border border-border/60 bg-card/60 dark:bg-card/5 p-3 space-y-3">
       {/* Tabs + close */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => setTab("requested")}
           className={cn(
-            "text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded transition-colors",
+            "text-xs font-semibold uppercase tracking-wide px-2.5 py-1.5 rounded-md transition-colors",
             tab === "requested"
               ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -538,7 +549,7 @@ function TaskPartPicker({
           type="button"
           onClick={() => setTab("catalog")}
           className={cn(
-            "text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded transition-colors",
+            "text-xs font-semibold uppercase tracking-wide px-2.5 py-1.5 rounded-md transition-colors",
             tab === "catalog"
               ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -550,9 +561,9 @@ function TaskPartPicker({
         <button
           type="button"
           onClick={onClose}
-          className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground rounded"
+          className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md"
         >
-          <X className="h-3 w-3" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
@@ -560,29 +571,29 @@ function TaskPartPicker({
       {tab === "requested" && (
         <div>
           {requestedOnJob.length === 0 ? (
-            <p className="text-[10px] text-muted-foreground px-1 py-2">
+            <p className="text-sm text-muted-foreground px-1 py-2">
               No unlinked part requests on this job.
             </p>
           ) : (
-            <div className="max-h-48 overflow-y-auto rounded border border-border/40 bg-card">
+            <div className="max-h-64 overflow-y-auto rounded-md border border-border/40 bg-card">
               {requestedOnJob.map((pr) => (
                 <button
                   key={pr.id}
                   type="button"
                   onClick={() => linkExisting(pr)}
                   disabled={isPending}
-                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
                 >
-                  <span className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px]">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm">
                       {pr.status === "received" ? "✓" : pr.status === "ordered" ? "📋" : pr.status === "shipped" ? "🚚" : "⏳"}
                     </span>
                     <span className="truncate">{pr.partName}</span>
                     {pr.quantity > 1 && (
-                      <span className="text-[10px] text-muted-foreground">×{pr.quantity}</span>
+                      <span className="text-xs text-muted-foreground">×{pr.quantity}</span>
                     )}
                   </span>
-                  <span className="text-[10px] text-muted-foreground shrink-0 capitalize">
+                  <span className="text-xs text-muted-foreground shrink-0 capitalize">
                     {pr.status}
                   </span>
                 </button>
@@ -596,7 +607,7 @@ function TaskPartPicker({
       {tab === "catalog" && (
         <>
           <div className="flex items-center gap-2">
-            <Package className="h-3 w-3 text-muted-foreground/70 shrink-0" />
+            <Package className="h-4 w-4 text-muted-foreground/70 shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -612,16 +623,16 @@ function TaskPartPicker({
               }}
               placeholder="Search or type part name..."
               disabled={isPending}
-              className="flex-1 h-7 px-2 text-xs rounded border border-border bg-card dark:bg-card/5 focus:outline-none focus:ring-2 focus:ring-ring/30"
+              className="flex-1 h-9 px-3 text-sm rounded-md border border-border bg-card dark:bg-card/5 focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
             {isSearching || isPending ? (
-              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70 shrink-0" />
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/70 shrink-0" />
             ) : null}
           </div>
 
           {/* Category pills */}
           {activeCats.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {activeCats.map((cat) => {
                 const Icon = ICON_MAP[cat.icon] ?? Package;
                 const isActive = selectedCategory === cat.key;
@@ -631,13 +642,13 @@ function TaskPartPicker({
                     type="button"
                     onClick={() => setSelectedCategory(isActive ? null : cat.key)}
                     className={cn(
-                      "inline-flex items-center gap-1 h-5 px-1.5 rounded text-[10px] font-medium transition-colors",
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium transition-colors",
                       isActive
                         ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
                         : "bg-muted/40 text-muted-foreground hover:text-foreground dark:bg-foreground/[0.08]",
                     )}
                   >
-                    <Icon className="h-2.5 w-2.5" />
+                    <Icon className="h-3 w-3" />
                     {cat.label}
                   </button>
                 );
@@ -646,25 +657,25 @@ function TaskPartPicker({
           )}
 
           {results.length > 0 && (
-            <div className="max-h-48 overflow-y-auto rounded border border-border/40 bg-card">
+            <div className="max-h-64 overflow-y-auto rounded-md border border-border/40 bg-card">
               {results.slice(0, 10).map((part) => (
                 <button
                   key={part.id}
                   type="button"
                   onClick={() => addCatalogPart(part)}
                   disabled={isPending}
-                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="truncate block">{part.name}</span>
+                    <span className="truncate block font-medium">{part.name}</span>
                     {(part.partNumber || part.category) && (
-                      <span className="text-[10px] text-muted-foreground truncate block">
+                      <span className="text-xs text-muted-foreground truncate block mt-0.5">
                         {[part.partNumber, part.category].filter(Boolean).join(" · ")}
                       </span>
                     )}
                   </span>
                   {part.defaultCost && (
-                    <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0">
                       €{parseFloat(part.defaultCost).toFixed(2)}
                     </span>
                   )}
@@ -678,7 +689,7 @@ function TaskPartPicker({
               type="button"
               onClick={addCustomPart}
               disabled={isPending}
-              className="w-full text-left text-[10px] px-2 py-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+              className="w-full text-left text-sm px-3 py-2 rounded-md hover:bg-muted/40 text-muted-foreground hover:text-foreground"
             >
               + Add &ldquo;{query.trim()}&rdquo; as custom part
             </button>

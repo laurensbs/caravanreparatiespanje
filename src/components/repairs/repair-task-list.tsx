@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addRepairTask, deleteRepairTask, approveGarageTask, getRepairTasks, updateTaskStatus } from "@/actions/garage";
-import { searchParts, createPartRequest, removePartRequest } from "@/actions/parts";
+import { searchParts, createPartRequest, removePartRequest, linkPartRequestToTask } from "@/actions/parts";
+import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
+import { cn } from "@/lib/utils";
 import { TASK_STATUS_LABELS, TASK_STATUS_COLORS } from "@/types";
 import type { RepairTask, RepairTaskStatus } from "@/types";
 import { Plus, Trash2, CheckCircle, Clock, Package, X, Loader2 } from "lucide-react";
@@ -19,6 +21,7 @@ interface Props {
   totalLoggedMinutes?: number;
   partRequests?: PartRequestRow[];
   defaultMarkup?: number;
+  partCategories?: PartCategory[];
 }
 
 const DEFAULT_TASKS = [
@@ -42,6 +45,7 @@ export function RepairTaskList({
   totalLoggedMinutes = 0,
   partRequests = [],
   defaultMarkup = 0,
+  partCategories = [],
 }: Props) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
@@ -288,6 +292,8 @@ export function RepairTaskList({
                       repairJobId={repairJobId}
                       repairTaskId={task.id}
                       defaultMarkup={defaultMarkup}
+                      partCategories={partCategories}
+                      jobPartRequests={partRequests}
                       onAdded={() => {
                         router.refresh();
                       }}
@@ -370,16 +376,33 @@ function TaskPartPicker({
   repairJobId,
   repairTaskId,
   defaultMarkup,
+  partCategories,
+  jobPartRequests,
   onAdded,
   onClose,
 }: {
   repairJobId: string;
   repairTaskId: string;
   defaultMarkup: number;
+  partCategories: PartCategory[];
+  jobPartRequests: PartRequestRow[];
   onAdded: () => void;
   onClose: () => void;
 }) {
+  // Parts die al voor deze job zijn aangevraagd maar nog niet aan een
+  // task hangen (of die al binnen zijn) — makkelijk te linken zonder
+  // een dubbele request te creëren.
+  const requestedOnJob = jobPartRequests.filter(
+    (p) =>
+      p.status !== "cancelled" &&
+      p.repairTaskId == null, // nog niet gekoppeld aan een andere task
+  );
+
+  const [tab, setTab] = useState<"requested" | "catalog">(
+    requestedOnJob.length > 0 ? "requested" : "catalog",
+  );
   const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -387,11 +410,12 @@ function TaskPartPicker({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (tab === "catalog") inputRef.current?.focus();
+  }, [tab]);
 
   useEffect(() => {
-    if (query.length < 2) {
+    if (tab !== "catalog") return;
+    if (query.length < 2 && !selectedCategory) {
       setResults([]);
       return;
     }
@@ -399,7 +423,7 @@ function TaskPartPicker({
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        const data = await searchParts(query);
+        const data = await searchParts(query, selectedCategory ?? undefined);
         setResults(data);
       } catch {
         setResults([]);
@@ -408,7 +432,7 @@ function TaskPartPicker({
       }
     }, 250);
     return () => clearTimeout(debounceRef.current);
-  }, [query]);
+  }, [query, selectedCategory, tab]);
 
   function addCatalogPart(part: SearchResult) {
     startTransition(async () => {
@@ -458,30 +482,50 @@ function TaskPartPicker({
     });
   }
 
+  function linkExisting(pr: PartRequestRow) {
+    startTransition(async () => {
+      try {
+        await linkPartRequestToTask(pr.id, repairTaskId);
+        toast.success(`"${pr.partName}" linked to task`);
+        onAdded();
+        onClose();
+      } catch {
+        toast.error("Failed to link part");
+      }
+    });
+  }
+
+  const activeCats = partCategories.filter((c) => c.active);
+
   return (
-    <div className="rounded-lg border border-border/60 bg-card/60 dark:bg-card/5 p-2 space-y-1.5">
-      <div className="flex items-center gap-2">
-        <Package className="h-3 w-3 text-muted-foreground/70 shrink-0" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              if (results.length > 0) addCatalogPart(results[0]);
-              else if (query.trim()) addCustomPart();
-            }
-            if (e.key === "Escape") onClose();
-          }}
-          placeholder="Search or type part name..."
-          disabled={isPending}
-          className="flex-1 h-7 px-2 text-xs rounded border border-border bg-card dark:bg-card/5 focus:outline-none focus:ring-2 focus:ring-ring/30"
-        />
-        {isSearching || isPending ? (
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70 shrink-0" />
-        ) : null}
+    <div className="rounded-lg border border-border/60 bg-card/60 dark:bg-card/5 p-2 space-y-2">
+      {/* Tabs + close */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setTab("requested")}
+          className={cn(
+            "text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded transition-colors",
+            tab === "requested"
+              ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          Requested ({requestedOnJob.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("catalog")}
+          className={cn(
+            "text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded transition-colors",
+            tab === "catalog"
+              ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          Catalog
+        </button>
+        <div className="flex-1" />
         <button
           type="button"
           onClick={onClose}
@@ -491,36 +535,134 @@ function TaskPartPicker({
         </button>
       </div>
 
-      {results.length > 0 && (
-        <div className="max-h-40 overflow-y-auto rounded border border-border/40 bg-card">
-          {results.slice(0, 6).map((part) => (
-            <button
-              key={part.id}
-              type="button"
-              onClick={() => addCatalogPart(part)}
-              disabled={isPending}
-              className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
-            >
-              <span className="truncate">{part.name}</span>
-              {part.defaultCost && (
-                <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
-                  €{parseFloat(part.defaultCost).toFixed(2)}
-                </span>
-              )}
-            </button>
-          ))}
+      {/* Requested tab */}
+      {tab === "requested" && (
+        <div>
+          {requestedOnJob.length === 0 ? (
+            <p className="text-[10px] text-muted-foreground px-1 py-2">
+              No unlinked part requests on this job.
+            </p>
+          ) : (
+            <div className="max-h-48 overflow-y-auto rounded border border-border/40 bg-card">
+              {requestedOnJob.map((pr) => (
+                <button
+                  key={pr.id}
+                  type="button"
+                  onClick={() => linkExisting(pr)}
+                  disabled={isPending}
+                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
+                >
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px]">
+                      {pr.status === "received" ? "✓" : pr.status === "ordered" ? "📋" : pr.status === "shipped" ? "🚚" : "⏳"}
+                    </span>
+                    <span className="truncate">{pr.partName}</span>
+                    {pr.quantity > 1 && (
+                      <span className="text-[10px] text-muted-foreground">×{pr.quantity}</span>
+                    )}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground shrink-0 capitalize">
+                    {pr.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {query.trim().length >= 2 && (
-        <button
-          type="button"
-          onClick={addCustomPart}
-          disabled={isPending}
-          className="w-full text-left text-[10px] px-2 py-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-        >
-          + Add &ldquo;{query.trim()}&rdquo; as custom part
-        </button>
+      {/* Catalog tab */}
+      {tab === "catalog" && (
+        <>
+          <div className="flex items-center gap-2">
+            <Package className="h-3 w-3 text-muted-foreground/70 shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (results.length > 0) addCatalogPart(results[0]);
+                  else if (query.trim()) addCustomPart();
+                }
+                if (e.key === "Escape") onClose();
+              }}
+              placeholder="Search or type part name..."
+              disabled={isPending}
+              className="flex-1 h-7 px-2 text-xs rounded border border-border bg-card dark:bg-card/5 focus:outline-none focus:ring-2 focus:ring-ring/30"
+            />
+            {isSearching || isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70 shrink-0" />
+            ) : null}
+          </div>
+
+          {/* Category pills */}
+          {activeCats.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {activeCats.map((cat) => {
+                const Icon = ICON_MAP[cat.icon] ?? Package;
+                const isActive = selectedCategory === cat.key;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(isActive ? null : cat.key)}
+                    className={cn(
+                      "inline-flex items-center gap-1 h-5 px-1.5 rounded text-[10px] font-medium transition-colors",
+                      isActive
+                        ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
+                        : "bg-muted/40 text-muted-foreground hover:text-foreground dark:bg-foreground/[0.08]",
+                    )}
+                  >
+                    <Icon className="h-2.5 w-2.5" />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="max-h-48 overflow-y-auto rounded border border-border/40 bg-card">
+              {results.slice(0, 10).map((part) => (
+                <button
+                  key={part.id}
+                  type="button"
+                  onClick={() => addCatalogPart(part)}
+                  disabled={isPending}
+                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-muted/40 flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="truncate block">{part.name}</span>
+                    {(part.partNumber || part.category) && (
+                      <span className="text-[10px] text-muted-foreground truncate block">
+                        {[part.partNumber, part.category].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                  {part.defaultCost && (
+                    <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                      €{parseFloat(part.defaultCost).toFixed(2)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {query.trim().length >= 2 && (
+            <button
+              type="button"
+              onClick={addCustomPart}
+              disabled={isPending}
+              className="w-full text-left text-[10px] px-2 py-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+            >
+              + Add &ldquo;{query.trim()}&rdquo; as custom part
+            </button>
+          )}
+        </>
       )}
     </div>
   );

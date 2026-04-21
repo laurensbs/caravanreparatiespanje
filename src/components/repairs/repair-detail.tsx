@@ -1693,6 +1693,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   totalLoggedMinutes={timeEntries.reduce((acc, e) => acc + (e.roundedMinutes ?? 0), 0)}
                   partRequests={partRequests}
                   defaultMarkup={settings.defaultMarkup}
+                  partCategories={partCategories}
                 />
               </div>
 

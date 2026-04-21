@@ -632,6 +632,23 @@ export async function updatePartRequest(
   revalidatePath("/parts");
 }
 
+/**
+ * Link (or unlink) an existing part request to a task, without
+ * creating a duplicate request. Used by the inline task picker so
+ * admins can pull an already-requested part onto a specific task.
+ */
+export async function linkPartRequestToTask(id: string, repairTaskId: string | null) {
+  await requireRole("staff");
+  const [pr] = await db
+    .update(partRequests)
+    .set({ repairTaskId: repairTaskId, updatedAt: new Date() })
+    .where(eq(partRequests.id, id))
+    .returning({ repairJobId: partRequests.repairJobId });
+
+  if (pr) revalidatePath(`/repairs/${pr.repairJobId}`);
+  revalidatePath("/parts");
+}
+
 export async function removePartRequest(id: string) {
   await requireRole("staff");
   const [pr] = await db

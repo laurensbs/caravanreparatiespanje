@@ -40,7 +40,7 @@ import {
   refreshHoldedQuoteStatus,
 } from "@/actions/holded";
 import { deleteRepairJob, restoreRepairJob } from "@/actions/repairs";
-import { RepairPartsUsed, type PartRequestRow } from "@/components/parts/repair-parts-used";
+import { type PartRequestRow } from "@/components/parts/repair-parts-used";
 import { updatePartRequestStatus } from "@/actions/parts";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
 import { resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction } from "@/actions/garage";
@@ -1753,18 +1753,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </form>
                 </div>
               </div>
-
-              {/* ── Divider ── */}
-              <div className="border-t border-border/60 dark:border-border" />
-
-              {/* ── Parts Used ── */}
-              <RepairPartsUsed
-                repairJobId={job.id}
-                partRequests={partRequests}
-                defaultMarkup={settings.defaultMarkup}
-                partCategories={partCategories}
-                taskOptions={tasks.map((t) => ({ id: t.id, title: t.title }))}
-              />
 
               {/* ── Pending Parts Delivery ── */}
               {(() => {

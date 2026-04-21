@@ -9,6 +9,7 @@ import {
 } from "@/actions/garage-sync";
 import { Send, MessageSquare, ChevronDown, ChevronUp, Pin, X, Wrench } from "lucide-react";
 import { toast } from "sonner";
+import { VoicePlayer } from "@/components/voice-player";
 
 function timeLabel(d: Date) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -448,9 +449,21 @@ export function AdminRepairThread({
                         : "rounded-tr-sm bg-muted/60 text-foreground ring-1 ring-border dark:bg-foreground/60/[0.08] dark:text-foreground dark:ring-border"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed">
-                      {msg.body}
-                    </p>
+                    {(!msg.voice || msg.body !== "🎙 Voice message") && (
+                      <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed">
+                        {msg.body}
+                      </p>
+                    )}
+                    {msg.voice ? (
+                      <div className="mt-1.5">
+                        <VoicePlayer
+                          url={msg.voice.url}
+                          durationSeconds={msg.voice.durationSeconds}
+                          size="sm"
+                          label="voice"
+                        />
+                      </div>
+                    ) : null}
                     <p className="mt-1 text-[10px] opacity-70">
                       {author} · {timeLabel(msg.createdAt)}
                     </p>

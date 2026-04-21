@@ -11,6 +11,7 @@ import {
   users,
   customers,
   locations,
+  voiceNotes,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
@@ -188,6 +189,10 @@ export type RepairMessage = {
   userName: string | null;
   readAt: Date | null;
   createdAt: Date;
+  /** Gekoppelde voice-note (voice_notes.ownerType='repair_message'), zo
+   *  gefetched dat de chat-UI direct een <VoicePlayer/> kan renderen
+   *  zonder een tweede round-trip. */
+  voice: { url: string; durationSeconds: number } | null;
 };
 
 /** Both sides — admin and garage portal — can read the thread. */
@@ -210,6 +215,35 @@ export async function listRepairMessages(repairJobId: string): Promise<RepairMes
     .orderBy(asc(repairMessages.createdAt))
     .limit(200);
 
+  // Voice-notes voor alle berichten tegelijk ophalen (één query) en
+  // indexeren per message-id — dat vermijdt N+1 terwijl we in de chat-UI
+  // direct playback-metadata beschikbaar hebben.
+  const voiceByMsg = new Map<string, { url: string; durationSeconds: number }>();
+  if (rows.length > 0) {
+    const msgIds = rows.map((r) => r.id);
+    const vs = await db
+      .select({
+        ownerId: voiceNotes.ownerId,
+        url: voiceNotes.url,
+        durationSeconds: voiceNotes.durationSeconds,
+      })
+      .from(voiceNotes)
+      .where(
+        and(
+          eq(voiceNotes.ownerType, "repair_message"),
+          inArray(voiceNotes.ownerId, msgIds),
+        ),
+      );
+    for (const v of vs) {
+      if (v.url) {
+        voiceByMsg.set(v.ownerId, {
+          url: v.url,
+          durationSeconds: v.durationSeconds ?? 0,
+        });
+      }
+    }
+  }
+
   return rows.map((r) => ({
     id: r.id,
     direction: r.direction as "admin_to_garage" | "garage_to_admin",
@@ -218,6 +252,7 @@ export async function listRepairMessages(repairJobId: string): Promise<RepairMes
     userName: r.userName,
     readAt: r.readAt ? new Date(r.readAt) : null,
     createdAt: new Date(r.createdAt),
+    voice: voiceByMsg.get(r.id) ?? null,
   }));
 }
 
@@ -226,20 +261,28 @@ export async function listRepairMessages(repairJobId: string): Promise<RepairMes
 export async function adminReplyToGarage(repairJobId: string, body: string) {
   const session = await requireAuth();
   const trimmed = body.trim();
-  if (!trimmed) return { success: false } as const;
+  // Voice-only bericht krijgt een placeholder-body zodat niet-null en
+  // niet-leeg blijft (repairMessages.body is NOT NULL). Caller stuurt
+  // "" of bv. "🎙" wanneer alleen spraak bedoeld is; we normaliseren
+  // hier naar "🎙 Voice message" zodat admin panels die alleen body
+  // printen iets leesbaars tonen — de echte audio komt via voice_notes.
+  const finalBody = trimmed || "🎙 Voice message";
 
-  await db.insert(repairMessages).values({
-    repairJobId,
-    direction: "admin_to_garage",
-    body: trimmed,
-    userId: session.user.id,
-  });
+  const [inserted] = await db
+    .insert(repairMessages)
+    .values({
+      repairJobId,
+      direction: "admin_to_garage",
+      body: finalBody,
+      userId: session.user.id,
+    })
+    .returning({ id: repairMessages.id });
 
   // Mirror to legacy banner for the today-card visibility
   await db
     .update(repairJobs)
     .set({
-      garageAdminMessage: trimmed,
+      garageAdminMessage: finalBody,
       garageAdminMessageAt: new Date(),
       garageAdminMessageReadAt: null,
       updatedAt: new Date(),
@@ -250,12 +293,12 @@ export async function adminReplyToGarage(repairJobId: string, body: string) {
     repairJobId,
     userId: session.user.id,
     eventType: "admin_message_sent",
-    comment: trimmed,
+    comment: finalBody,
   });
 
   revalidatePath(`/garage/repairs/${repairJobId}`);
   revalidatePath(`/repairs/${repairJobId}`);
-  return { success: true } as const;
+  return { success: true, messageId: inserted?.id ?? null } as const;
 }
 
 /** Garage → admin. The garage portal uses a shared session so we accept an
@@ -267,21 +310,26 @@ export async function garageReplyToAdmin(
 ) {
   const ctx = await requireAnyAuth();
   const trimmed = body.trim();
-  if (!trimmed) return { success: false } as const;
+  // Voice-only bericht mag ook, dan nemen we "🎙 Voice message" als body
+  // zodat panels die enkel body tonen een leesbaar label zien.
+  const finalBody = trimmed || "🎙 Voice message";
 
-  await db.insert(repairMessages).values({
-    repairJobId,
-    direction: "garage_to_admin",
-    body: trimmed,
-    userId: ctx.userId ?? null,
-    authorName: authorName?.trim() || ctx.userName || null,
-  });
+  const [inserted] = await db
+    .insert(repairMessages)
+    .values({
+      repairJobId,
+      direction: "garage_to_admin",
+      body: finalBody,
+      userId: ctx.userId ?? null,
+      authorName: authorName?.trim() || ctx.userName || null,
+    })
+    .returning({ id: repairMessages.id });
 
   await db.insert(repairJobEvents).values({
     repairJobId,
     userId: ctx.userId ?? null,
     eventType: "garage_message_sent",
-    comment: trimmed,
+    comment: finalBody,
   });
 
   // Surface as admin attention so the inbox lights up.
@@ -289,7 +337,7 @@ export async function garageReplyToAdmin(
 
   revalidatePath(`/garage/repairs/${repairJobId}`);
   revalidatePath(`/repairs/${repairJobId}`);
-  return { success: true } as const;
+  return { success: true, messageId: inserted?.id ?? null } as const;
 }
 
 /** Admin marks the unread garage replies on a repair as read. */

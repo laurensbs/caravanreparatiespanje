@@ -10,6 +10,9 @@ import {
 import { X, Send, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { hapticSuccess } from "@/lib/haptic";
+import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
+import { VoicePlayer } from "@/components/voice-player";
+import { uploadVoiceNote } from "@/lib/upload-voice-note";
 
 type Lang = "en" | "es" | "nl";
 
@@ -64,6 +67,7 @@ export function GarageChatSheet({
   const [messages, setMessages] = useState<RepairMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
+  const [draftVoice, setDraftVoice] = useState<VoiceClip | null>(null);
   const [isPosting, startPostTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
   const failRef = useRef(0);
@@ -146,12 +150,31 @@ export function GarageChatSheet({
 
   async function handleSend() {
     const body = draft.trim();
-    if (!body || isPosting) return;
+    const voice = draftVoice;
+    if ((!body && !voice) || isPosting) return;
     hapticSuccess();
     startPostTransition(async () => {
       try {
-        await garageReplyToAdmin(repairJobId, body, authorName);
+        const res = await garageReplyToAdmin(repairJobId, body, authorName);
+        if (voice && res?.messageId) {
+          const ok = await uploadVoiceNote({
+            clip: voice,
+            ownerType: "repair_message",
+            ownerId: res.messageId,
+            repairJobId,
+          });
+          if (!ok) {
+            toast.warning(
+              t(
+                "Sent without voice — upload failed",
+                "Enviado sin voz — fallo de subida",
+                "Verzonden zonder spraak — upload mislukt",
+              ),
+            );
+          }
+        }
         setDraft("");
+        setDraftVoice(null);
         await refresh({ markRead: false });
         toast.success(t("Sent", "Enviado", "Verstuurd"));
       } catch {
@@ -238,13 +261,23 @@ export function GarageChatSheet({
                       className={`flex flex-col gap-0.5 ${mine ? "items-end" : "items-start"}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                        className={`flex max-w-[85%] flex-col gap-2 rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
                           mine
                             ? "bg-emerald-500 text-white"
                             : "bg-white/[0.08] text-white"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                        {(!m.voice || m.body !== "🎙 Voice message") && (
+                          <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                        )}
+                        {m.voice ? (
+                          <VoicePlayer
+                            url={m.voice.url}
+                            durationSeconds={m.voice.durationSeconds}
+                            size="sm"
+                            label={t("voice", "voz", "spraak")}
+                          />
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-1.5 px-1 text-[10.5px] text-white/45">
                         <span>{author}</span>
@@ -265,33 +298,36 @@ export function GarageChatSheet({
         className="border-t border-white/[0.08] bg-stone-950/95 px-3 py-3 backdrop-blur sm:px-4"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="mx-auto flex max-w-2xl items-end gap-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                void handleSend();
-              }
-            }}
-            rows={1}
-            placeholder={t("Message office…", "Mensaje a oficina…", "Bericht aan kantoor…")}
-            className="min-h-[48px] max-h-40 flex-1 resize-none rounded-2xl border border-white/[0.1] bg-white/[0.06] px-4 py-3 text-base text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-white/20"
-          />
-          <button
-            type="button"
-            disabled={!draft.trim() || isPosting}
-            onClick={handleSend}
-            className="inline-flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white transition-opacity active:scale-[0.97] disabled:opacity-40"
-            aria-label={t("Send", "Enviar", "Verzenden")}
-          >
-            {isPosting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-          </button>
+        <div className="mx-auto flex max-w-2xl flex-col gap-2">
+          <div className="flex items-end gap-2">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  void handleSend();
+                }
+              }}
+              rows={1}
+              placeholder={t("Message office…", "Mensaje a oficina…", "Bericht aan kantoor…")}
+              className="min-h-[48px] max-h-40 flex-1 resize-none rounded-2xl border border-white/[0.1] bg-white/[0.06] px-4 py-3 text-base text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-white/20"
+            />
+            <button
+              type="button"
+              disabled={(!draft.trim() && !draftVoice) || isPosting}
+              onClick={handleSend}
+              className="inline-flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white transition-opacity active:scale-[0.97] disabled:opacity-40"
+              aria-label={t("Send", "Enviar", "Verzenden")}
+            >
+              {isPosting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+          <VoiceRecorder value={draftVoice} onChange={setDraftVoice} t={t} />
         </div>
       </div>
     </div>

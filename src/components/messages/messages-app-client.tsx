@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
+import { VoicePlayer } from "@/components/voice-player";
+import { uploadVoiceNote } from "@/lib/upload-voice-note";
 
 type Thread = Awaited<ReturnType<typeof listMessageThreads>>[number];
 
@@ -82,6 +85,11 @@ export function MessagesAppClient({ initialThreads }: Props) {
   const [messages, setMessages] = useState<RepairMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [draft, setDraft] = useState("");
+  const [draftVoice, setDraftVoice] = useState<VoiceClip | null>(null);
+  // Dummy t() — VoiceRecorder heeft een i18n-callback uit de garage-
+  // wereld. Op admin werken we altijd in Engels; we geven de Engelse
+  // label terug en negeren de andere twee.
+  const recorderT = useCallback((en: string, _es: string, _nl: string) => en, []);
   const [isSending, startSending] = useTransition();
   const [search, setSearch] = useState("");
 
@@ -206,11 +214,25 @@ export function MessagesAppClient({ initialThreads }: Props) {
 
   async function handleSend() {
     const body = draft.trim();
-    if (!body || !activeId || isSending) return;
+    const voice = draftVoice;
+    if ((!body && !voice) || !activeId || isSending) return;
     startSending(async () => {
       try {
-        await adminReplyToGarage(activeId, body);
+        const res = await adminReplyToGarage(activeId, body);
+        // Voice na tekst-insert koppelen zodat we messageId hebben.
+        if (voice && res?.messageId) {
+          const ok = await uploadVoiceNote({
+            clip: voice,
+            ownerType: "repair_message",
+            ownerId: res.messageId,
+            repairJobId: activeId,
+          });
+          if (!ok) {
+            toast.warning("Message sent without voice — upload failed");
+          }
+        }
         setDraft("");
+        setDraftVoice(null);
         await refreshMessages(activeId, { markRead: false });
         await refreshThreads();
         toast.success("Sent");
@@ -346,6 +368,9 @@ export function MessagesAppClient({ initialThreads }: Props) {
             loading={loadingMessages}
             draft={draft}
             setDraft={setDraft}
+            draftVoice={draftVoice}
+            setDraftVoice={setDraftVoice}
+            recorderT={recorderT}
             onSend={handleSend}
             isSending={isSending}
             onBack={() => setActiveId(null)}
@@ -371,6 +396,9 @@ function ChatPanel({
   loading,
   draft,
   setDraft,
+  draftVoice,
+  setDraftVoice,
+  recorderT,
   onSend,
   isSending,
   onBack,
@@ -381,6 +409,9 @@ function ChatPanel({
   loading: boolean;
   draft: string;
   setDraft: (v: string) => void;
+  draftVoice: VoiceClip | null;
+  setDraftVoice: (v: VoiceClip | null) => void;
+  recorderT: (en: string, es: string, nl: string) => string;
   onSend: () => void;
   isSending: boolean;
   onBack: () => void;
@@ -489,13 +520,28 @@ function ChatPanel({
                     >
                       <div
                         className={cn(
-                          "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
+                          "flex max-w-[85%] flex-col gap-2 rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
                           mine
                             ? "bg-foreground text-background"
                             : "bg-muted text-foreground dark:bg-card/[0.08]",
                         )}
                       >
-                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                        {/* Toon body alleen als het niet de voice-placeholder
+                            is OF als er geen voice bij hoort. Voorkomt dat
+                            "🎙 Voice message" naast een player staat. */}
+                        {(!m.voice || m.body !== "🎙 Voice message") && (
+                          <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                        )}
+                        {m.voice ? (
+                          <div className={mine ? "-mx-0.5" : "-mx-0.5"}>
+                            <VoicePlayer
+                              url={m.voice.url}
+                              durationSeconds={m.voice.durationSeconds}
+                              size="sm"
+                              label="voice"
+                            />
+                          </div>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-1.5 px-1 text-[10.5px] text-muted-foreground/70">
                         <span>{author}</span>
@@ -513,33 +559,36 @@ function ChatPanel({
 
       {/* Composer */}
       <div className="border-t border-border/60 bg-card/60 px-3 py-3 backdrop-blur dark:bg-card/[0.02] sm:px-4">
-        <div className="mx-auto flex max-w-2xl items-end gap-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                onSend();
-              }
-            }}
-            rows={1}
-            placeholder="Message garage… (⌘/Ctrl + Enter)"
-            className="min-h-[44px] max-h-40 flex-1 resize-none rounded-xl border border-border/60 bg-background/80 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring/30"
-          />
-          <button
-            type="button"
-            disabled={!draft.trim() || isSending}
-            onClick={onSend}
-            className="inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-foreground text-background transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Send"
-          >
-            {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </button>
+        <div className="mx-auto flex max-w-2xl flex-col gap-2">
+          <div className="flex items-end gap-2">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  onSend();
+                }
+              }}
+              rows={1}
+              placeholder="Message garage… (⌘/Ctrl + Enter)"
+              className="min-h-[44px] max-h-40 flex-1 resize-none rounded-xl border border-border/60 bg-background/80 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring/30"
+            />
+            <button
+              type="button"
+              disabled={(!draft.trim() && !draftVoice) || isSending}
+              onClick={onSend}
+              className="inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-foreground text-background transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Send"
+            >
+              {isSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          <VoiceRecorder value={draftVoice} onChange={setDraftVoice} t={recorderT} />
         </div>
       </div>
     </>

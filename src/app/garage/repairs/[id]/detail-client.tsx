@@ -40,9 +40,9 @@ import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
 import { HandNeededSheet } from "@/components/garage/hand-needed-sheet";
+import { GarageChatSheet } from "@/components/garage/chat-sheet";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
-import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
 import { uploadVoiceNote } from "@/lib/upload-voice-note";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -55,7 +55,7 @@ import {
   updateFinding,
 } from "@/actions/garage";
 import { deleteRepairPhoto } from "@/actions/photos";
-import { markAdminMessageRead, garageReplyToAdmin } from "@/actions/garage-sync";
+import { markAdminMessageRead } from "@/actions/garage-sync";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { useGaragePoll } from "@/lib/use-garage-poll";
@@ -377,8 +377,6 @@ export function GarageRepairDetailClient({
   const [showBlocker, setShowBlocker] = useState(false);
   const [showHandNeeded, setShowHandNeeded] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState("");
-  const [commentVoice, setCommentVoice] = useState<VoiceClip | null>(null);
   const [suggestTitle, setSuggestTitle] = useState("");
   const [suggestDesc, setSuggestDesc] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -586,56 +584,10 @@ export function GarageRepairDetailClient({
     });
   }
 
-  async function handleAddComment() {
-    const hasText = commentText.trim().length > 0;
-    if (!hasText && !commentVoice) return;
-
-    // Afzender = de werker wiens timer op deze repair loopt. Zonder
-    // lopende timer blokkeren we de actie — dat is bewust, zodat elk
-    // bericht aan een duidelijke persoon hangt. De UI disabled de knop
-    // al, maar we dekken hier ook af als iemand via keyboard submit.
-    if (activeTimers.length === 0) {
-      toast.error(
-        t(
-          "Start your timer first — that tells office who's talking.",
-          "Primero inicia tu temporizador para identificarte.",
-          "Start eerst je timer — dan weet kantoor wie er praat.",
-        ),
-      );
-      return;
-    }
-    const author = activeTimers[0]!.userName ?? "Garage";
-
-    startTransition(async () => {
-      const finalText = hasText
-        ? commentText
-        : t("(voice note)", "(nota de voz)", "(spraakbericht)");
-      try {
-        await garageReplyToAdmin(repair.id, finalText, author);
-      } catch (e) {
-        toast.error((e as Error)?.message ?? "Could not send");
-        return;
-      }
-      if (commentVoice) {
-        // Voice notes vereisen een ownerId; de thread-rij heeft er één
-        // maar garageReplyToAdmin geeft die momenteel niet terug. Voor
-        // nu: waarschuwing dat spraak niet gekoppeld is. Volgende stap
-        // is garageReplyToAdmin laten returneren zodat we wél koppelen.
-        toast.warning(
-          t(
-            "Saved without voice — text-only messages for now.",
-            "Guardado sin voz — solo texto por ahora.",
-            "Opgeslagen zonder spraak — voorlopig alleen tekst.",
-          ),
-        );
-      }
-      setCommentText("");
-      setCommentVoice(null);
-      setShowCommentSheet(false);
-      toast.success(t("Message sent", "Mensaje enviado", "Bericht verzonden"));
-      router.refresh();
-    });
-  }
+  // handleAddComment is vervangen door <GarageChatSheet/>; de chat doet
+  // zijn eigen send via garageReplyToAdmin. Voice-notes zijn (voorlopig)
+  // niet meer onderdeel van de chat; als we ze terugwillen voegen we
+  // ownerId-round-trip toe aan garageReplyToAdmin.
 
   async function handleSuggestTask() {
     if (!suggestTitle.trim()) return;
@@ -1412,52 +1364,18 @@ export function GarageRepairDetailClient({
         />
       ) : null}
 
-      {/* Message sheet — schrijft een bericht in de office-thread. */}
-      {showCommentSheet ? (
-        <BottomSheet onClose={() => setShowCommentSheet(false)}>
-          <div>
-            <h3 className="text-base font-semibold text-white">
-              {t("Message to office", "Mensaje a oficina", "Bericht aan kantoor")}
-            </h3>
-            {activeTimers.length > 0 && activeTimers[0]!.userName ? (
-              <p className="mt-0.5 text-xs text-white/50">
-                {t("Sending as", "Enviando como", "Verzenden als")}{" "}
-                <span className="font-semibold text-white/80">
-                  {activeTimers[0]!.userName}
-                </span>
-              </p>
-            ) : null}
-          </div>
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            rows={4}
-            placeholder={t("Type your message…", "Escribe…", "Typ je bericht…")}
-            className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
-          />
-          <VoiceRecorder
-            value={commentVoice}
-            onChange={setCommentVoice}
-            t={t}
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowCommentSheet(false)}
-              className="h-12 flex-1 rounded-xl bg-white/[0.06] text-sm font-semibold text-white/80 hover:bg-white/[0.1] active:scale-[0.97]"
-            >
-              {t("Cancel", "Cancelar", "Annuleer")}
-            </button>
-            <button
-              type="button"
-              onClick={handleAddComment}
-              disabled={isPending || (!commentText.trim() && !commentVoice)}
-              className="h-12 flex-1 rounded-xl bg-emerald-500 text-sm font-bold text-white hover:bg-emerald-500/90 active:scale-[0.97] disabled:opacity-50"
-            >
-              {t("Send", "Enviar", "Verzenden")}
-            </button>
-          </div>
-        </BottomSheet>
+      {/* Volledige chat-sheet met office. Afzender = actieve timer-werker.
+          De caller (💬-knop) blokkeert dit sheet al als er geen timer loopt. */}
+      {showCommentSheet && activeTimers.length > 0 ? (
+        <GarageChatSheet
+          repairJobId={repair.id}
+          repairTitle={repair.title ?? null}
+          repairCode={repair.publicCode ?? null}
+          authorName={activeTimers[0]!.userName ?? "Garage"}
+          t={t}
+          lang={deviceLang}
+          onClose={() => setShowCommentSheet(false)}
+        />
       ) : null}
 
       {/* Suggest task sheet */}

@@ -397,6 +397,13 @@ export async function createPartRequest(data: {
   supplierId?: string;
   notes?: string;
   requestType?: "part" | "equipment";
+  /**
+   * Initial status. Default "requested" (klassieke aanvraag-flow).
+   * Als een admin een part direct vanuit de werkplaats koppelt gebruik
+   * "received" — dan telt hij niet mee als "waiting" en flipt de repair
+   * niet onnodig naar waiting_parts.
+   */
+  status?: "requested" | "ordered" | "shipped" | "received" | "cancelled";
 }) {
   await requireRole("staff");
 
@@ -448,7 +455,8 @@ export async function createPartRequest(data: {
       sellPrice: data.sellPrice ?? null,
       markupPercent: data.markupPercent ?? null,
       supplierId: data.supplierId ?? null,
-      status: "requested",
+      status: data.status ?? "requested",
+      receivedDate: data.status === "received" ? new Date() : null,
       notes: data.notes ?? null,
       requestType: data.requestType ?? "part",
     })
@@ -459,8 +467,12 @@ export async function createPartRequest(data: {
   }
   revalidatePath("/parts");
 
-  // Auto-set repair to waiting_parts if it's in a workable status (parts only)
-  if (data.repairJobId && data.requestType !== "equipment") {
+  // Auto-set repair to waiting_parts if it's in a workable status (parts only).
+  // Skip als admin de part direct aanmaakt als "received" — dan is er
+  // niks om op te wachten.
+  const waitingEligible =
+    data.status == null || (data.status !== "received" && data.status !== "cancelled");
+  if (data.repairJobId && data.requestType !== "equipment" && waitingEligible) {
     const [job] = await db
       .select({ status: repairJobs.status })
       .from(repairJobs)

@@ -481,6 +481,8 @@ function TaskPartPicker({
           sellPrice: sellPrice > 0 ? String(Math.round(sellPrice * 100) / 100) : undefined,
           markupPercent: markup > 0 ? String(markup) : undefined,
           supplierId: part.supplierId ?? undefined,
+          // Admin voegt het direct toe = part is aanwezig/gebruikt, niet aangevraagd.
+          status: "received",
         });
         toast.success(`"${part.name}" linked to task`);
         setQuery("");
@@ -502,6 +504,7 @@ function TaskPartPicker({
           repairJobId,
           repairTaskId,
           partName: name,
+          status: "received",
         });
         toast.success(`"${name}" linked to task`);
         setQuery("");

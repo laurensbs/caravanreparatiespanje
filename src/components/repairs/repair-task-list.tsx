@@ -340,7 +340,7 @@ function TaskPartChip({ pr, onRemoved }: { pr: PartRequestRow; onRemoved: () => 
 
   const isDone = pr.status === "received";
   const statusLabel =
-    pr.status === "received" ? "Received" :
+    pr.status === "received" ? "Added" :
     pr.status === "ordered" ? "Ordered" :
     pr.status === "shipped" ? "Shipped" :
     pr.status === "cancelled" ? "Cancelled" : "Requested";

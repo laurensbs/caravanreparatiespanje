@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addRepairTask, deleteRepairTask, approveGarageTask, getRepairTasks, updateTaskStatus } from "@/actions/garage";
-import { searchParts, createPartRequest, removePartRequest, linkPartRequestToTask } from "@/actions/parts";
+import { searchParts, createPartRequest, removePartRequest, linkPartRequestToTask, updatePartRequestStatus } from "@/actions/parts";
 import { ICON_MAP, type PartCategory } from "@/components/parts/parts-client";
 import { cn } from "@/lib/utils";
 import { TASK_STATUS_LABELS, TASK_STATUS_COLORS } from "@/types";
@@ -191,24 +191,30 @@ export function RepairTaskList({
             return (
               <div key={task.id}>
                 <div
-                  className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs group ${
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm group ${
                     task.status === "problem" ? "bg-red-50/60 dark:bg-red-950/20" : "bg-card/60 dark:bg-card/5"
-                  } ${task.status === "done" ? "opacity-50" : ""} border border-border/40`}
+                  } ${task.status === "done" ? "opacity-60" : ""} border border-border/40`}
                 >
                   <button
                     type="button"
                     onClick={() => handleToggleDone(task)}
                     disabled={isPending}
                     title={task.status === "done" ? "Mark as not done" : "Mark as done"}
-                    className={`h-5 w-5 flex items-center justify-center text-[11px] shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                    className={`h-5 w-5 flex items-center justify-center shrink-0 rounded-md border-2 transition-colors disabled:opacity-50 ${
                       task.status === "done"
-                        ? "text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10"
+                        ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:border-green-700"
                         : task.status === "problem"
-                        ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        ? "border-red-500 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10"
+                        : "border-muted-foreground/40 bg-transparent text-transparent hover:border-foreground hover:bg-muted"
                     }`}
                   >
-                    {task.status === "done" ? "✓" : task.status === "problem" ? "⚠" : task.status === "in_progress" ? "◐" : "○"}
+                    {task.status === "done" ? (
+                      <CheckCircle className="h-3.5 w-3.5" />
+                    ) : task.status === "problem" ? (
+                      <span className="text-xs font-bold">!</span>
+                    ) : task.status === "in_progress" ? (
+                      <span className="h-2 w-2 rounded-full bg-foreground/70" />
+                    ) : null}
                   </button>
                   <span className={`flex-1 truncate ${task.status === "done" ? "line-through" : ""}`}>
                     {task.title}
@@ -218,11 +224,11 @@ export function RepairTaskList({
                   </Badge>
                   {task.source === "garage" && !task.approvedAt && (
                     <button
-                      className="h-5 px-1 text-green-700 hover:bg-green-100 rounded transition-colors"
+                      className="h-7 px-1.5 text-green-700 hover:bg-green-100 rounded transition-colors"
                       onClick={() => handleApprove(task.id)}
                       title="Approve"
                     >
-                      <CheckCircle className="h-3 w-3" />
+                      <CheckCircle className="h-4 w-4" />
                     </button>
                   )}
                   {task.problemCategory && (
@@ -232,23 +238,23 @@ export function RepairTaskList({
                   )}
                   <button
                     onClick={() => setPickerForTaskId(pickerForTaskId === task.id ? null : task.id)}
-                    className="opacity-0 group-hover:opacity-100 text-[10px] text-muted-foreground hover:text-foreground font-medium flex items-center gap-0.5 shrink-0 transition-all"
+                    className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
                     title="Add part for this task"
                   >
-                    <Package className="h-3 w-3" /> Part
+                    <Package className="h-4 w-4" />
                   </button>
                   <button
-                    className="opacity-0 group-hover:opacity-100 h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all shrink-0"
+                    className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
                     onClick={() => handleDelete(task.id)}
                     title="Remove"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
                 {/* Parts linked to this task */}
                 {taskParts.length > 0 && (
-                  <div className="ml-6 mt-1 flex flex-wrap gap-1">
+                  <div className="ml-7 mt-1 space-y-1">
                     {taskParts.map((pr) => (
                       <TaskPartChip
                         key={pr.id}
@@ -308,26 +314,65 @@ function TaskPartChip({ pr, onRemoved }: { pr: PartRequestRow; onRemoved: () => 
     });
   }
 
-  const statusIcon =
-    pr.status === "received" ? "✓" :
-    pr.status === "ordered" ? "📋" :
-    pr.status === "shipped" ? "🚚" : "⏳";
+  function handleToggleReceived() {
+    const next = pr.status === "received" ? "requested" : "received";
+    startTransition(async () => {
+      try {
+        await updatePartRequestStatus(pr.id, next);
+        toast.success(next === "received" ? "Part received" : "Part reopened");
+        onRemoved();
+      } catch {
+        toast.error("Failed to update part");
+      }
+    });
+  }
+
+  const isDone = pr.status === "received";
+  const statusLabel =
+    pr.status === "received" ? "Received" :
+    pr.status === "ordered" ? "Ordered" :
+    pr.status === "shipped" ? "Shipped" :
+    pr.status === "cancelled" ? "Cancelled" : "Requested";
 
   return (
-    <span className="inline-flex items-center gap-1 h-5 pl-1.5 pr-0.5 rounded-md text-[10px] font-medium border border-border/60 bg-muted/30 dark:bg-foreground/[0.05] text-muted-foreground dark:text-muted-foreground/80">
-      <span>{statusIcon}</span>
-      <span className="truncate max-w-[160px]">{pr.partName}</span>
-      {pr.quantity > 1 && <span className="text-muted-foreground/70">×{pr.quantity}</span>}
+    <div
+      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm border border-border/40 ${
+        isDone ? "opacity-60 bg-card/40 dark:bg-card/[0.03]" : "bg-card/60 dark:bg-card/5"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={handleToggleReceived}
+        disabled={isPending}
+        title={isDone ? "Mark as not received" : "Mark as received"}
+        className={`h-5 w-5 flex items-center justify-center shrink-0 rounded-md border-2 transition-colors disabled:opacity-50 ${
+          isDone
+            ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:border-green-700"
+            : "border-muted-foreground/40 bg-transparent text-transparent hover:border-foreground hover:bg-muted"
+        }`}
+      >
+        {isDone && <CheckCircle className="h-3.5 w-3.5" />}
+      </button>
+      <Package className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+      <span className={`flex-1 truncate ${isDone ? "line-through" : ""}`}>
+        {pr.partName}
+      </span>
+      {pr.quantity > 1 && (
+        <span className="text-xs text-muted-foreground shrink-0 tabular-nums">×{pr.quantity}</span>
+      )}
+      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
+        {statusLabel}
+      </span>
       <button
         type="button"
         onClick={handleRemove}
         disabled={isPending}
-        className="ml-0.5 h-4 w-4 flex items-center justify-center rounded hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 disabled:opacity-30 transition-colors"
+        className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-30 transition-colors shrink-0"
         title="Remove part"
       >
-        <X className="h-2.5 w-2.5" />
+        <Trash2 className="h-4 w-4" />
       </button>
-    </span>
+    </div>
   );
 }
 

@@ -11,6 +11,20 @@ const COOKIE_NAME = "garage_auth";
 const SESSION_DURATION = 365 * 24 * 60 * 60;
 
 /**
+ * Hard schakelaar: als `GARAGE_PIN_DISABLED=true` staat (of niet gezet
+ * is zolang we deze flag standaard aan hebben) wordt het PIN-scherm
+ * overgeslagen. Garage-routes zijn dan publiek toegankelijk voor
+ * iedereen met de URL. Bewuste keuze — werkvloer wil geen login meer.
+ * Zet `GARAGE_PIN_DISABLED=false` om PIN weer in te schakelen.
+ */
+function isPinDisabled(): boolean {
+  const v = process.env.GARAGE_PIN_DISABLED?.trim().toLowerCase();
+  // Default: DISABLED. Alleen expliciete "false" / "0" zet de PIN weer aan.
+  if (v === "false" || v === "0" || v === "no") return false;
+  return true;
+}
+
+/**
  * Garage shared PIN. Read from `GARAGE_PIN` env var. In development we
  * fall back to `"1234"` so onboarding stays frictionless; in production
  * we hard-fail if it isn't set so nobody accidentally ships the default.
@@ -48,6 +62,25 @@ function constantTimeEquals(a: string, b: string): boolean {
 
 /** Verify the garage PIN and set a signed session cookie (1 year). */
 export async function verifyGaragePin(pin: string): Promise<boolean> {
+  // Als PIN uitstaat accepteren we iedere input en zetten we toch een
+  // cookie zodat eventuele legacy-code (bijv. server actions die
+  // expliciet de cookie lezen i.p.v. isGarageAuthenticated gebruiken)
+  // blijft werken.
+  if (isPinDisabled()) {
+    const timestamp = Date.now().toString();
+    const signature = sign(`garage:${timestamp}`);
+    const token = `${timestamp}.${signature}`;
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: SESSION_DURATION,
+      path: "/garage",
+    });
+    return true;
+  }
+
   if (!constantTimeEquals(pin, getGaragePin())) return false;
 
   const timestamp = Date.now().toString();
@@ -68,6 +101,9 @@ export async function verifyGaragePin(pin: string): Promise<boolean> {
 
 /** Check whether the current request has a valid garage auth cookie */
 export async function isGarageAuthenticated(): Promise<boolean> {
+  // PIN uitgeschakeld → iedereen met de URL telt als ingelogd.
+  if (isPinDisabled()) return true;
+
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return false;
@@ -91,6 +127,10 @@ export async function isGarageAuthenticated(): Promise<boolean> {
 
 /** Clear the garage session cookie (lock garage) */
 export async function clearGarageSession(): Promise<void> {
+  // PIN uitgeschakeld → uitloggen heeft geen effect meer, want de
+  // volgende pagina-load is toch weer "ingelogd". Laten we de cookie
+  // wissen om hygiëne te bewaren, maar gebruikers worden niet naar
+  // het PIN-scherm gestuurd.
   const cookieStore = await cookies();
   cookieStore.delete({ name: COOKIE_NAME, path: "/garage" });
 }

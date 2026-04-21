@@ -8,6 +8,7 @@ import { resolveCustomerIdFromHoldedContact } from "@/lib/holded/resolve-custome
 import {
   buildHoldedInvoiceHaystackLower,
   pickRepairForHoldedDocument,
+  findRepairByRefInHoldedText,
   type RepairHoldedMatchFields,
 } from "@/lib/holded/repair-ref-match";
 
@@ -250,8 +251,20 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
       const matched = chosen ? unlinkedRepairs.find((r) => r.id === chosen.id) ?? null : null;
 
       if (matched) {
+        // Strong match = publicCode of spreadsheet-id staat LETTERLIJK in
+        // de invoice-tekst. Fuzzy match (zelfde klant, lijkt op titel) is
+        // geen bewijs dat dít de juiste repair is — meerdere reparaties
+        // van dezelfde klant kunnen verkeerd geraakt worden en als de
+        // invoice later uit Holded verdwijnt blijft de repair ten onrechte
+        // op status=invoiced staan. Alleen bij een strong match promoveren
+        // we de werkelijke reparatiestatus; bij fuzzy linken we wel de
+        // invoice maar laten we status staan zodat de admin kan reviewen.
+        const strongMatch =
+          findRepairByRefInHoldedText(invText, [matchFields.find((m) => m.id === matched.id)!]) != null;
         const advanceStatus =
-          (newStatus === "paid" || newStatus === "sent") && earlyStatuses.includes(matched.status);
+          strongMatch &&
+          (newStatus === "paid" || newStatus === "sent") &&
+          earlyStatuses.includes(matched.status);
         await db
           .update(repairJobs)
           .set({
@@ -270,7 +283,7 @@ export async function executeHoldedPaymentSync(): Promise<HoldedPaymentSyncStats
           fieldChanged: "holdedInvoiceId",
           oldValue: "",
           newValue: inv.docNumber,
-          comment: `Invoice ${inv.docNumber} (€${inv.total.toFixed(2)}) linked from Holded — status: ${newStatus}`,
+          comment: `Invoice ${inv.docNumber} (€${inv.total.toFixed(2)}) linked from Holded${strongMatch ? "" : " (fuzzy match — please review)"} — status: ${newStatus}`,
         });
 
         matched.holdedInvoiceId = inv.id;

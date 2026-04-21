@@ -206,6 +206,14 @@ async function main() {
   for (const repair of withoutInvoice) {
     // If no holdedInvoiceId but invoiceStatus is paid/sent → wrong
     if (repair.invoiceStatus === "paid" || repair.invoiceStatus === "sent") {
+      // Belangrijk: als de repair-status ook al op "invoiced" staat (door
+      // een eerdere auto-advance op basis van een invoice die er nu niet
+      // meer is) moeten we die óók terugdraaien. Anders blijft de repair
+      // boekhoudkundig als "gefactureerd" in rapporten staan terwijl er
+      // in Holded helemaal niks bestaat — geldverlies door onzichtbaar
+      // werk.
+      const needsStatusRevert = repair.status === "invoiced";
+
       // Might have only a quote — that's different
       if (repair.holdedQuoteId) {
         // Has a quote but no invoice — shouldn't be "paid" or "sent"
@@ -215,6 +223,9 @@ async function main() {
           issue: `No invoice linked but invoiceStatus=${repair.invoiceStatus} (has quote only)`,
           oldInvoiceStatus: repair.invoiceStatus,
           newInvoiceStatus: "not_invoiced",
+          ...(needsStatusRevert
+            ? { oldStatus: repair.status, newStatus: "todo" }
+            : {}),
         });
       } else {
         fixes.push({
@@ -223,6 +234,9 @@ async function main() {
           issue: `No invoice linked, no quote, but invoiceStatus=${repair.invoiceStatus}`,
           oldInvoiceStatus: repair.invoiceStatus,
           newInvoiceStatus: "not_invoiced",
+          ...(needsStatusRevert
+            ? { oldStatus: repair.status, newStatus: "todo" }
+            : {}),
         });
       }
     }
@@ -257,7 +271,16 @@ async function main() {
 
     if (f.newStatus) {
       updates.status = f.newStatus;
-      updates.completedAt = new Date();
+      // Alleen completedAt zetten als we écht naar een "klaar"-status
+      // promoveren. Bij een revert naar todo/new/in_progress willen we
+      // completedAt juist wissen — anders rapporteren we een fantoom-
+      // afronding die boekhoudkundig niet klopt.
+      const completingStatuses = ["invoiced", "completed"];
+      if (completingStatuses.includes(f.newStatus)) {
+        updates.completedAt = new Date();
+      } else {
+        updates.completedAt = null;
+      }
     }
 
     await db
@@ -285,7 +308,9 @@ async function main() {
         fieldChanged: "status",
         oldValue: f.oldStatus,
         newValue: f.newStatus,
-        comment: `Auto-advanced to ${f.newStatus} — verified against Holded`,
+        comment: f.oldStatus === "invoiced" && f.newInvoiceStatus === "not_invoiced"
+          ? `Reverted to ${f.newStatus} — no Holded invoice found, prior auto-advance was incorrect`
+          : `Auto-advanced to ${f.newStatus} — verified against Holded`,
       });
     }
   }

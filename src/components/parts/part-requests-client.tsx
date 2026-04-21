@@ -9,6 +9,7 @@ import {
   createPartRequest,
   markPartRequestChased,
   unmarkPartRequestChased,
+  removePartRequest,
 } from "@/actions/parts";
 import { searchRepairJobsForPicker } from "@/actions/repairs";
 import {
@@ -21,6 +22,7 @@ import {
   ArrowRight,
   Clock,
   PhoneCall,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -146,6 +148,19 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
         );
       } catch {
         toast.error("Failed to update status");
+      }
+    });
+  }
+
+  function handleDelete(id: string, name: string | null) {
+    if (!confirm(`Delete part request "${name ?? "—"}"?`)) return;
+    startTransition(async () => {
+      try {
+        await removePartRequest(id);
+        router.refresh();
+        toast.success("Part request deleted");
+      } catch {
+        toast.error("Failed to delete");
       }
     });
   }
@@ -384,6 +399,15 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                       {aging.chaseCooldownActive ? "Reset" : "Chased"}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(req.id, req.partName)}
+                    disabled={pending}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                    title="Delete part request"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             </div>

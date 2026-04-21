@@ -27,7 +27,6 @@ import {
   Info,
   Flag,
   Sparkles,
-  HandHelping,
   Pencil,
   Trash2,
   X,
@@ -38,7 +37,6 @@ import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
-import { HandNeededSheet } from "@/components/garage/hand-needed-sheet";
 import { GarageChatSheet } from "@/components/garage/chat-sheet";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
@@ -373,7 +371,6 @@ export function GarageRepairDetailClient({
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [showSuggestSheet, setShowSuggestSheet] = useState(false);
   const [showFinding, setShowFinding] = useState(false);
-  const [showHandNeeded, setShowHandNeeded] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [suggestTitle, setSuggestTitle] = useState("");
   const [suggestDesc, setSuggestDesc] = useState("");
@@ -1254,19 +1251,10 @@ export function GarageRepairDetailClient({
             >
               <Sparkles className="h-5 w-5" />
             </button>
-            <button
-              type="button"
-              onClick={() => setShowHandNeeded(true)}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 active:scale-[0.97]"
-              aria-label={t("Hand needed", "Necesito ayuda", "Hulp nodig")}
-              title={t("Hand needed", "Necesito ayuda", "Hulp nodig")}
-            >
-              <HandHelping className="h-5 w-5" />
-            </button>
-            {/* Blokkade-knop verwijderd — gebruik "Bevinding" (📋) en
-                vink daar "Onderdeel nodig" of "Klantgoedkeuring nodig"
-                aan. Dat zet de repair automatisch op waiting_parts /
-                waiting_customer, hetzelfde gedrag als oude Blokkade. */}
+            {/* Hulp nodig-knop verwijderd — de bottom bar is nu strak:
+                hoofdactie + Bericht + Bevinding. Hulp roept de werker
+                maar via de chat. Blokkade-knop eerder al weg; zie
+                FindingDialog "Onderdeel nodig" / "Klantgoedkeuring nodig". */}
           </div>
         </div>
       ) : null}
@@ -1334,13 +1322,7 @@ export function GarageRepairDetailClient({
         />
       ) : null}
 
-      <HandNeededSheet
-        open={showHandNeeded}
-        onClose={() => setShowHandNeeded(false)}
-        onSent={handleRefresh}
-        repairJobId={repair.id}
-        repairLabel={repair.title ?? repair.publicCode ?? undefined}
-      />
+      {/* HandNeededSheet verwijderd — hulp vragen loopt nu via de chat. */}
 
       {/* BlockerDialog is verwijderd — zie FindingDialog "Onderdeel nodig". */}
 

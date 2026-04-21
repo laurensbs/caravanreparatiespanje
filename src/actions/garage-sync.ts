@@ -329,6 +329,100 @@ export async function markAdminThreadMessagesRead(repairJobId: string) {
 
 /** Compact summary across all repairs — used by the assistant inbox badge to
  *  show how many garage replies still need an admin glance. */
+/**
+ * Breedere inbox-feed voor de /messages pagina. Geeft per repairJob
+ * één rij met:
+ *  - laatste bericht (van beide kanten)
+ *  - unread count (alleen garage_to_admin & readAt IS NULL)
+ *  - totale message count
+ *  - meta (publicCode, titel, klant, status)
+ *
+ * Sorteert op laatste activiteit desc. Filter "onlyUnread" toont
+ * alleen threads waar garage iets heeft gezegd dat admin nog niet
+ * gelezen heeft; handig voor de standaard-weergave.
+ */
+export async function listMessageThreads(opts?: { onlyUnread?: boolean }) {
+  await requireAuth();
+
+  const conversationJobIds = await db
+    .selectDistinct({ id: repairMessages.repairJobId })
+    .from(repairMessages);
+
+  if (conversationJobIds.length === 0) return [];
+
+  const jobIds = conversationJobIds.map((r) => r.id);
+
+  const messageStats = await db
+    .select({
+      repairJobId: repairMessages.repairJobId,
+      lastAt: sql<Date>`max(${repairMessages.createdAt})`,
+      totalCount: sql<number>`count(*)::int`,
+      unreadCount: sql<number>`count(*) filter (where ${repairMessages.direction} = 'garage_to_admin' and ${repairMessages.readAt} is null)::int`,
+    })
+    .from(repairMessages)
+    .where(inArray(repairMessages.repairJobId, jobIds))
+    .groupBy(repairMessages.repairJobId);
+
+  // Voor elke repair het laatste bericht (body + direction + author)
+  // ophalen. Subquery per repair is simpel en blijft klein (< 100
+  // repairs realistisch).
+  const lastMessages = await db
+    .select({
+      repairJobId: repairMessages.repairJobId,
+      body: repairMessages.body,
+      direction: repairMessages.direction,
+      authorName: repairMessages.authorName,
+      createdAt: repairMessages.createdAt,
+    })
+    .from(repairMessages)
+    .where(inArray(repairMessages.repairJobId, jobIds))
+    .orderBy(desc(repairMessages.createdAt));
+
+  const lastByJob = new Map<string, (typeof lastMessages)[0]>();
+  for (const m of lastMessages) {
+    if (!lastByJob.has(m.repairJobId)) lastByJob.set(m.repairJobId, m);
+  }
+
+  const jobInfos = await db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      status: repairJobs.status,
+      customerName: customers.name,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .where(inArray(repairJobs.id, jobIds));
+
+  const jobMap = new Map(jobInfos.map((j) => [j.id, j]));
+
+  const rows = messageStats
+    .map((s) => {
+      const j = jobMap.get(s.repairJobId);
+      const last = lastByJob.get(s.repairJobId);
+      if (!j) return null;
+      return {
+        repairJobId: s.repairJobId,
+        publicCode: j.publicCode,
+        title: j.title,
+        status: j.status,
+        customerName: j.customerName,
+        totalCount: Number(s.totalCount),
+        unreadCount: Number(s.unreadCount),
+        lastAt: s.lastAt ? new Date(s.lastAt) : null,
+        lastBody: last?.body ?? null,
+        lastDirection: last?.direction ?? null,
+        lastAuthor: last?.authorName ?? null,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  const filtered = opts?.onlyUnread ? rows.filter((r) => r.unreadCount > 0) : rows;
+
+  return filtered.sort((a, b) => (b.lastAt?.getTime() ?? 0) - (a.lastAt?.getTime() ?? 0));
+}
+
 export async function getUnreadGarageRepliesSummary() {
   await requireAuth();
 

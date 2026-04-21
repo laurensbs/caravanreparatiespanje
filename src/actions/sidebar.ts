@@ -8,6 +8,7 @@ import {
   units,
   repairJobAssignments,
   toolRequests,
+  repairMessages,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { and, eq, isNull, isNotNull, sql, inArray, notInArray } from "drizzle-orm";
@@ -68,6 +69,7 @@ export async function getSidebarCounts() {
     pendingParts,
     openToolRequests,
     uninvoiced,
+    unreadGarageMessages,
   ] = await Promise.all([
       db
         .select({ c: sql<number>`count(*)::int` })
@@ -124,6 +126,20 @@ export async function getSidebarCounts() {
             isNull(repairJobs.holdedInvoiceId),
           ),
         ),
+
+      // Ongelezen berichten van garage — drijft de "Messages" badge in
+      // de sidebar. We tellen alle `garage_to_admin` messages zonder
+      // `readAt`; de mark-read gebeurt al via markGarageRepliesRead /
+      // markAdminThreadMessagesRead.
+      db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(repairMessages)
+        .where(
+          and(
+            eq(repairMessages.direction, "garage_to_admin"),
+            isNull(repairMessages.readAt),
+          ),
+        ),
     ]);
 
   return {
@@ -134,6 +150,7 @@ export async function getSidebarCounts() {
     units: unitTotal[0]?.c ?? 0,
     parts: (pendingParts[0]?.c ?? 0) + (openToolRequests[0]?.c ?? 0),
     invoices: uninvoiced[0]?.c ?? 0,
+    messages: unreadGarageMessages[0]?.c ?? 0,
   };
 }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers, timeEntries } from "@/lib/db/schema";
+import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers, timeEntries, repairMessages } from "@/lib/db/schema";
 import { requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, or, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
@@ -1560,6 +1560,45 @@ export async function addFinding(
       .update(repairJobs)
       .set({ followUpRequiredFlag: true, updatedAt: new Date() })
       .where(eq(repairJobs.id, repairJobId));
+  }
+
+  // Mirror de finding naar de berichten-thread zodat admin de volledige
+  // context in één feed ziet (Messages-sidebar). De finding zelf blijft
+  // leading in de aparte findings-sectie; dit is puur een synchronisatie
+  // zodat er niets "buiten het gesprek" gebeurt.
+  try {
+    // Afzender = actieve werker (lopende timer op deze repair) of de
+    // ingelogde user; fallback naar generiek "Garage" label.
+    const [activeTimer] = await db
+      .select({ userName: users.name })
+      .from(timeEntries)
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(and(eq(timeEntries.repairJobId, repairJobId), isNull(timeEntries.endedAt)))
+      .limit(1);
+    const author = activeTimer?.userName ?? ctx.userName ?? "Garage";
+
+    const severityTag = data.severity === "critical" ? " · critical" : "";
+    const body = `Finding [${data.category}${severityTag}]: ${data.description}`;
+    await db.insert(repairMessages).values({
+      repairJobId,
+      direction: "garage_to_admin",
+      body,
+      userId: ctx.userId ?? null,
+      authorName: author,
+    });
+
+    // Tellers voor badge + attention vlag gelijk ophogen — zelfde patroon
+    // als garageReplyToAdmin — zodat de sidebar-badge klopt.
+    await db
+      .update(repairJobs)
+      .set({
+        garageNeedsAdminAttention: true,
+        garageUnreadUpdatesCount: sql`coalesce(${repairJobs.garageUnreadUpdatesCount}, 0) + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(repairJobs.id, repairJobId));
+  } catch {
+    // Mirror mag de finding nooit breken — failure is stilletjes ok.
   }
 
   safeRevalidate(`/garage/repairs/${repairJobId}`);

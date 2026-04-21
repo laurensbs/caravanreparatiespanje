@@ -41,13 +41,13 @@ import { FindingDialog } from "@/components/garage/finding-dialog";
 import { BlockerDialog } from "@/components/garage/blocker-dialog";
 import { HandNeededSheet } from "@/components/garage/hand-needed-sheet";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
-import { GarageRepairThread } from "@/components/garage/repair-thread";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
 import { uploadVoiceNote } from "@/lib/upload-voice-note";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
-  addGarageComment,
+  // addGarageComment blijft bestaan voor legacy; de comment-button gebruikt
+  // nu garageReplyToAdmin zodat alles in de berichten-thread landt.
   suggestExtraTask,
   garageMarkDone,
   resolveBlocker as resolveBlockerAction,
@@ -55,7 +55,7 @@ import {
   updateFinding,
 } from "@/actions/garage";
 import { deleteRepairPhoto } from "@/actions/photos";
-import { markAdminMessageRead } from "@/actions/garage-sync";
+import { markAdminMessageRead, garageReplyToAdmin } from "@/actions/garage-sync";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { useGaragePoll } from "@/lib/use-garage-poll";
@@ -589,32 +589,50 @@ export function GarageRepairDetailClient({
   async function handleAddComment() {
     const hasText = commentText.trim().length > 0;
     if (!hasText && !commentVoice) return;
+
+    // Afzender = de werker wiens timer op deze repair loopt. Zonder
+    // lopende timer blokkeren we de actie — dat is bewust, zodat elk
+    // bericht aan een duidelijke persoon hangt. De UI disabled de knop
+    // al, maar we dekken hier ook af als iemand via keyboard submit.
+    if (activeTimers.length === 0) {
+      toast.error(
+        t(
+          "Start your timer first — that tells office who's talking.",
+          "Primero inicia tu temporizador para identificarte.",
+          "Start eerst je timer — dan weet kantoor wie er praat.",
+        ),
+      );
+      return;
+    }
+    const author = activeTimers[0]!.userName ?? "Garage";
+
     startTransition(async () => {
       const finalText = hasText
         ? commentText
         : t("(voice note)", "(nota de voz)", "(spraakbericht)");
-      const result = await addGarageComment(repair.id, finalText);
-      if (commentVoice && result?.id) {
-        const ok = await uploadVoiceNote({
-          clip: commentVoice,
-          ownerType: "comment",
-          ownerId: result.id,
-          repairJobId: repair.id,
-        });
-        if (!ok) {
-          toast.warning(
-            t(
-              "Saved without voice — recording failed to upload.",
-              "Guardado sin voz — error al subir.",
-              "Opgeslagen zonder spraak — uploaden mislukt.",
-            ),
-          );
-        }
+      try {
+        await garageReplyToAdmin(repair.id, finalText, author);
+      } catch (e) {
+        toast.error((e as Error)?.message ?? "Could not send");
+        return;
+      }
+      if (commentVoice) {
+        // Voice notes vereisen een ownerId; de thread-rij heeft er één
+        // maar garageReplyToAdmin geeft die momenteel niet terug. Voor
+        // nu: waarschuwing dat spraak niet gekoppeld is. Volgende stap
+        // is garageReplyToAdmin laten returneren zodat we wél koppelen.
+        toast.warning(
+          t(
+            "Saved without voice — text-only messages for now.",
+            "Guardado sin voz — solo texto por ahora.",
+            "Opgeslagen zonder spraak — voorlopig alleen tekst.",
+          ),
+        );
       }
       setCommentText("");
       setCommentVoice(null);
       setShowCommentSheet(false);
-      toast.success(t("Comment added", "Comentario añadido", "Opmerking toegevoegd"));
+      toast.success(t("Message sent", "Mensaje enviado", "Bericht verzonden"));
       router.refresh();
     });
   }
@@ -1140,18 +1158,11 @@ export function GarageRepairDetailClient({
             </button>
           )}
 
-          {/* ── Conversation thread ─────────────────────────────────
-               Collapsed by default — workers asked us to put doing-work
-               sections first. Office messages still surface as a hero
-               card above; this section is the full back-and-forth log.
+          {/* ── Conversation thread verwijderd ───────────────────────
+               Berichten lopen nu via de "Opmerking" (💬) knop onderaan.
+               De thread wordt in het admin-paneel pas zichtbaar als de
+               reparatie is afgerond (status=completed).
              ────────────────────────────────────────────────────────── */}
-          <Section
-            icon={<MessageSquare className="h-4 w-4" />}
-            title={t("Conversation", "Conversación", "Gesprek")}
-            defaultOpen={false}
-          >
-            <GarageRepairThread repairJobId={repair.id} t={t} lang={deviceLang} />
-          </Section>
 
           {/* ── Info ────────────────────────────────────────── */}
           <Section
@@ -1272,10 +1283,30 @@ export function GarageRepairDetailClient({
             )}
             <button
               type="button"
-              onClick={() => setShowCommentSheet(true)}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
-              aria-label={t("Comment", "Comentario", "Opmerking")}
-              title={t("Comment", "Comentario", "Opmerking")}
+              onClick={() => {
+                if (activeTimers.length === 0) {
+                  toast.error(
+                    t(
+                      "Start your timer first so office knows who's writing.",
+                      "Primero inicia tu temporizador para identificarte.",
+                      "Start eerst je timer — dan weet kantoor wie er schrijft.",
+                    ),
+                  );
+                  return;
+                }
+                setShowCommentSheet(true);
+              }}
+              className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all active:scale-[0.97] ${
+                activeTimers.length === 0
+                  ? "bg-white/[0.03] text-white/30 ring-1 ring-white/[0.05]"
+                  : "bg-white/[0.06] text-white/70 hover:bg-white/[0.1]"
+              }`}
+              aria-label={t("Message", "Mensaje", "Bericht")}
+              title={
+                activeTimers.length === 0
+                  ? t("Start timer first", "Inicia el temporizador primero", "Start eerst de timer")
+                  : t("Send message to office", "Enviar mensaje a oficina", "Stuur bericht naar kantoor")
+              }
             >
               <MessageSquare className="h-5 w-5" />
             </button>
@@ -1381,17 +1412,27 @@ export function GarageRepairDetailClient({
         />
       ) : null}
 
-      {/* Comment sheet */}
+      {/* Message sheet — schrijft een bericht in de office-thread. */}
       {showCommentSheet ? (
         <BottomSheet onClose={() => setShowCommentSheet(false)}>
-          <h3 className="text-base font-semibold text-white">
-            {t("Add a comment", "Añadir comentario", "Opmerking toevoegen")}
-          </h3>
+          <div>
+            <h3 className="text-base font-semibold text-white">
+              {t("Message to office", "Mensaje a oficina", "Bericht aan kantoor")}
+            </h3>
+            {activeTimers.length > 0 && activeTimers[0]!.userName ? (
+              <p className="mt-0.5 text-xs text-white/50">
+                {t("Sending as", "Enviando como", "Verzenden als")}{" "}
+                <span className="font-semibold text-white/80">
+                  {activeTimers[0]!.userName}
+                </span>
+              </p>
+            ) : null}
+          </div>
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             rows={4}
-            placeholder={t("Type your comment…", "Escribe…", "Typ je opmerking…")}
+            placeholder={t("Type your message…", "Escribe…", "Typ je bericht…")}
             className="w-full rounded-xl bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20"
           />
           <VoiceRecorder

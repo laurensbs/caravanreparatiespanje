@@ -76,6 +76,7 @@ export function AdminRepairThread({
   pinnedAt,
   onClearPin,
   activeTimers = [],
+  readOnly = false,
 }: {
   repairJobId: string;
   /** Called after a successful reply so the parent can refresh state. */
@@ -87,6 +88,10 @@ export function AdminRepairThread({
    *  ("Jake is now in the garage · 23m"). Kost niets extra omdat de
    *  page deze data al ophaalt voor de Time Log. */
   activeTimers?: ThreadActiveTimer[];
+  /** Render de thread als afgesloten archief: geen invoerveld, geen pin
+   *  actions. Gebruikt op repair-detail zodra de klus completed/invoiced
+   *  is — dan hoort het gesprek bij het historisch werkorder. */
+  readOnly?: boolean;
 }) {
   const [messages, setMessages] = useState<RepairMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -394,7 +399,7 @@ export function AdminRepairThread({
               {pinnedMessage}
             </p>
           </div>
-          {onClearPin ? (
+          {onClearPin && !readOnly ? (
             <button
               type="button"
               onClick={() => void handleClearPin()}
@@ -457,30 +462,36 @@ export function AdminRepairThread({
         </ul>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              void handleSend();
-            }
-          }}
-          rows={2}
-          placeholder="Reply to garage… (⌘/Ctrl + Enter to send)"
-          className="flex-1 min-w-0 resize-none rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-ring/40"
-        />
-        <button
-          type="button"
-          disabled={!draft.trim() || isPosting}
-          onClick={() => void handleSend()}
-          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-4 py-2.5 text-sm font-medium text-foreground dark:text-foreground transition-colors hover:bg-muted dark:hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Send className="h-3.5 w-3.5 opacity-70" />
-          Send
-        </button>
-      </div>
+      {readOnly ? (
+        <p className="rounded-xl border border-dashed border-border/60 dark:border-border px-3 py-2 text-center text-xs italic text-muted-foreground">
+          Closed conversation — archived when the job was completed.
+        </p>
+      ) : (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
+            rows={2}
+            placeholder="Reply to garage… (⌘/Ctrl + Enter to send)"
+            className="flex-1 min-w-0 resize-none rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-3 py-2.5 text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 dark:focus:ring-ring/40"
+          />
+          <button
+            type="button"
+            disabled={!draft.trim() || isPosting}
+            onClick={() => void handleSend()}
+            className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border dark:border-border bg-card dark:bg-card/[0.04] px-4 py-2.5 text-sm font-medium text-foreground dark:text-foreground transition-colors hover:bg-muted dark:hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Send className="h-3.5 w-3.5 opacity-70" />
+            Send
+          </button>
+        </div>
+      )}
       </div>)}
     </section>
   );

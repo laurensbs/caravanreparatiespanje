@@ -17,6 +17,7 @@ import {
   Warehouse,
   ExternalLink,
   ClipboardList,
+  MessageSquare,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -31,7 +32,7 @@ interface NavItem {
   external?: boolean;
   group?: string;
   /** Key into SidebarCounts — drives the count badge on the right of the row. */
-  countKey?: "workOrdersOpen" | "planning" | "contacts" | "units" | "parts" | "invoices";
+  countKey?: "workOrdersOpen" | "planning" | "contacts" | "units" | "parts" | "invoices" | "messages";
   /** Key into SidebarCounts that, if > 0, shows a small attention dot
    *  (currently only used for urgent work orders). */
   attentionKey?: "workOrdersUrgent";
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations", countKey: "workOrdersOpen", attentionKey: "workOrdersUrgent" },
   { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations", countKey: "planning" },
   { label: "Garage", href: "/api/garage-reset", icon: <Warehouse className="h-[18px] w-[18px]" />, group: "Operations" },
+  { label: "Messages", href: "/messages", icon: <MessageSquare className="h-[18px] w-[18px]" />, group: "Operations", countKey: "messages" },
   // DATA
   { label: "Contacts", href: "/customers", icon: <Users className="h-[18px] w-[18px]" />, group: "Data" },
   { label: "Units", href: "/units", icon: <Truck className="h-[18px] w-[18px]" />, group: "Data" },
@@ -61,6 +63,7 @@ export type SidebarCounts = {
   units: number;
   parts: number;
   invoices: number;
+  messages: number;
 };
 
 interface SidebarProps {

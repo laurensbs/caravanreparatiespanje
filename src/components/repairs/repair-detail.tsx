@@ -1774,23 +1774,27 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </>
               )}
 
-              {/* ── Bidirectional thread (admin ↔ garage) ──
-                  Eén kanaal: het laatste eigen bericht fungeert
-                  automatisch als banner bovenaan op de garage-tablet.
-                  De thread toont links wat er nu gepind staat met een
-                  X-knop om de banner los te koppelen zonder een nieuw
-                  bericht te sturen. */}
-              <AdminRepairThread
-                repairJobId={job.id}
-                onChange={() => router.refresh()}
-                pinnedMessage={syncState?.garageAdminMessage ?? null}
-                pinnedAt={syncState?.garageAdminMessageAt ?? null}
-                onClearPin={async () => {
-                  await clearGarageMessage(job.id);
-                  router.refresh();
-                }}
-                activeTimers={activeTimers as { userId: string | null; userName: string | null; startedAt: Date | string }[]}
-              />
+              {/* ── Thread met garage ──
+                  Lopende reparaties: de thread leeft in het centrale
+                  berichten-paneel (sidebar → Messages). Hier in de
+                  werkplaats-kaart tonen we 'm pas als archief, zodra de
+                  reparatie klaar of gefactureerd is — dan is het
+                  afgesloten gesprek een onderdeel van het historisch
+                  werkorder. */}
+              {["completed", "invoiced"].includes(job.status) ? (
+                <AdminRepairThread
+                  repairJobId={job.id}
+                  onChange={() => router.refresh()}
+                  pinnedMessage={syncState?.garageAdminMessage ?? null}
+                  pinnedAt={syncState?.garageAdminMessageAt ?? null}
+                  onClearPin={async () => {
+                    await clearGarageMessage(job.id);
+                    router.refresh();
+                  }}
+                  activeTimers={activeTimers as { userId: string | null; userName: string | null; startedAt: Date | string }[]}
+                  readOnly
+                />
+              ) : null}
 
               {/* ── Start / Schedule pills ── */}
               {startedToday ? (

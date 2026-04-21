@@ -51,7 +51,6 @@ export function RepairTaskList({
   const [tasks, setTasks] = useState(initialTasks);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newPartName, setNewPartName] = useState("");
   const [isPending, startTransition] = useTransition();
   const [pickerForTaskId, setPickerForTaskId] = useState<string | null>(null);
 
@@ -65,30 +64,20 @@ export function RepairTaskList({
   function handleAdd() {
     if (!newTitle.trim()) return;
     const match = DEFAULT_TASKS.find((d) => d.title === newTitle.trim());
-    const partName = newPartName.trim();
     startTransition(async () => {
       const task = await addRepairTask(repairJobId, {
         title: newTitle.trim(),
         titleEs: match?.titleEs,
         titleNl: match?.titleNl,
       });
-      if (partName && task?.id) {
-        try {
-          await createPartRequest({
-            repairJobId,
-            repairTaskId: task.id,
-            partName,
-          });
-        } catch {
-          // non-fatal: task is created, part failed
-        }
-      }
       setNewTitle("");
-      setNewPartName("");
       setShowAdd(false);
       refresh();
       router.refresh();
-      toast.success(partName ? "Task + part added" : "Task added");
+      toast.success("Task added");
+      // Direct de part-picker openen voor de nieuwe task, zodat de
+      // gebruiker meteen een onderdeel kan toevoegen als hij wil.
+      if (task?.id) setPickerForTaskId(task.id);
     });
   }
 
@@ -165,26 +154,13 @@ export function RepairTaskList({
               className="h-7 text-xs rounded-lg"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleAdd();
-                if (e.key === "Escape") { setShowAdd(false); setNewTitle(""); setNewPartName(""); }
+                if (e.key === "Escape") { setShowAdd(false); setNewTitle(""); }
               }}
               autoFocus
             />
             <Button size="sm" className="h-7 text-xs" onClick={handleAdd} disabled={isPending || !newTitle.trim()}>
               Add
             </Button>
-          </div>
-          <div className="flex gap-2 items-center">
-            <Package className="h-3 w-3 text-muted-foreground/70 shrink-0" />
-            <Input
-              value={newPartName}
-              onChange={(e) => setNewPartName(e.target.value)}
-              placeholder="Optional: part for this task..."
-              className="h-7 text-xs rounded-lg"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newTitle.trim()) handleAdd();
-                if (e.key === "Escape") { setShowAdd(false); setNewTitle(""); setNewPartName(""); }
-              }}
-            />
           </div>
           <div className="flex flex-wrap gap-1">
             {DEFAULT_TASKS.filter((d) => !tasks.some((t) => t.title === d.title)).map((d) => (

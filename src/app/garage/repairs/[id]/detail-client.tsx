@@ -1058,24 +1058,18 @@ export function GarageRepairDetailClient({
             )}
           </Section>
 
-          {/* ── Parts ───────────────────────────────────────── */}
-          {/* ── Findings ────────────────────────────────────── */}
+          {/* ── Findings ──────────────────────────────────────
+               De "Bevinding toevoegen"-trigger zit nu in de bottom
+               action bar (✨ knop) naast 💬 en Hulp nodig. De lijst
+               hieronder toont alleen al-aangemaakte findings; als er
+               niks is, rendert er niks — de werker gebruikt de knop
+               onderaan om een nieuwe aan te maken. */}
           {(unresolvedFindings.length > 0 || findings.length > 0) ? (
             <Section
               icon={<Sparkles className="h-4 w-4" />}
               title={t("Findings", "Hallazgos", "Bevindingen")}
               badge={unresolvedFindings.length || findings.length}
               defaultOpen={unresolvedFindings.length > 0}
-              action={
-                <button
-                  type="button"
-                  onClick={() => setShowFinding(true)}
-                  className="inline-flex h-9 items-center gap-1 rounded-lg bg-white/[0.06] px-2.5 text-xs font-semibold text-white/70 hover:bg-white/[0.1] active:scale-[0.97]"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t("Add", "Añadir", "Toevoegen")}
-                </button>
-              }
             >
               <div className="flex flex-col gap-2">
                 {findings.map((f) => (
@@ -1097,16 +1091,7 @@ export function GarageRepairDetailClient({
                 ))}
               </div>
             </Section>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowFinding(true)}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white/[0.04] text-sm font-medium text-white/60 ring-1 ring-white/[0.06] hover:bg-white/[0.06] active:scale-[0.99]"
-            >
-              <Plus className="h-4 w-4" />
-              {t("Add a finding", "Añadir hallazgo", "Bevinding toevoegen")}
-            </button>
-          )}
+          ) : null}
 
           {/* ── Conversation thread verwijderd ───────────────────────
                Berichten lopen nu via de "Opmerking" (💬) knop onderaan.
@@ -1259,6 +1244,15 @@ export function GarageRepairDetailClient({
               }
             >
               <MessageSquare className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowFinding(true)}
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 active:scale-[0.97]"
+              aria-label={t("Finding", "Hallazgo", "Bevinding")}
+              title={t("Add a finding", "Añadir hallazgo", "Bevinding toevoegen")}
+            >
+              <Sparkles className="h-5 w-5" />
             </button>
             <button
               type="button"

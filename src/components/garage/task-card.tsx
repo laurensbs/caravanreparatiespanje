@@ -233,7 +233,6 @@ export function TaskCard({
           t={t}
           deviceLang={deviceLang}
           onUpdate={onUpdate}
-          partCategories={partCategories}
           linkedParts={taskLinkedParts}
         />
       </div>

@@ -9,7 +9,7 @@ import { createAuditLog } from "./audit";
 import { autoGenerateReminder } from "./reminders";
 import { clearGarageAttention } from "./garage-sync";
 import { syncCustomerToHolded } from "./holded";
-import { SCHEDULE_NEEDS_TASKS_ADMIN_TOAST } from "./planning";
+import { SCHEDULE_NEEDS_TASKS_ADMIN_TOAST } from "@/lib/planning-schedule-errors";
 import { generatePublicCode } from "@/lib/utils";
 import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 import { eq, desc, asc, ilike, or, and, sql, count, inArray, notInArray, isNull, isNotNull, gte, lte } from "drizzle-orm";

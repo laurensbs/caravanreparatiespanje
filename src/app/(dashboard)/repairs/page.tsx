@@ -52,7 +52,7 @@ export default async function RepairsPage({ searchParams }: Props) {
   const { urgent, byStatus, byDate } = statusCounts;
 
   // "To Do" = alles wat nog niet is opgepakt (zelfde groepering als
-  // getDashboardStats). "In Garage" is letterlijk de status `in_progress`:
+  // getDashboardStats). "In Workshop" is de status `in_progress`:
   // wat er fysiek in de werkplaats ligt. Die telling expres NIET
   // uitbreiden met scheduled/inspection — anders verliest het cijfer zijn
   // betekenis voor de werker die wil weten "wat staat er nu hier?".
@@ -93,7 +93,7 @@ export default async function RepairsPage({ searchParams }: Props) {
           Elke chip toont z'n live count zodat het overzicht meetbaar is.
           "Mine" en de blokkerings-chips verbergen we als ze 0 zijn,
           zodat de rij niet onnodig wordt opgeblazen. De kern-stroom
-          (To Do / In Garage / Ready) blijft altijd staan zodat een
+          (To Do / In Workshop / Ready) blijft altijd staan zodat een
           werker die elke ochtend opent, vaste ankerpunten heeft. */}
       <RepairFocusBar filters={filters} chips={[
         { group: "when", key: "today", label: "Today", count: byDate.today, href: "/repairs?dueWithin=today", isActive: filters.dueWithin === "today" },
@@ -101,7 +101,7 @@ export default async function RepairsPage({ searchParams }: Props) {
         { group: "when", key: "overdue", label: "Overdue", count: byDate.overdue, href: "/repairs?dueWithin=overdue", isActive: filters.dueWithin === "overdue", tone: "destructive", hideIfEmpty: true },
         { group: "when", key: "unscheduled", label: "No date", count: byDate.unscheduled, href: "/repairs?dueWithin=unscheduled", isActive: filters.dueWithin === "unscheduled" },
         { group: "mine", key: "todo", label: "To Do", count: todoCount, href: "/repairs?status=todo", isActive: filters.status === "todo" },
-        { group: "mine", key: "in_progress", label: "In Garage", count: inGarageCount, href: "/repairs?status=in_progress", isActive: filters.status === "in_progress", tone: "solid" },
+        { group: "mine", key: "in_progress", label: "In Workshop", count: inGarageCount, href: "/repairs?status=in_progress", isActive: filters.status === "in_progress", tone: "solid" },
         { group: "mine", key: "ready_for_check", label: "Ready for Check", count: readyForCheckCount, href: "/repairs?status=ready_for_check", isActive: filters.status === "ready_for_check", tone: "amber" },
         { group: "mine", key: "mine", label: "My work", count: null, href: "/repairs?mine=1", isActive: filters.mine === "1" },
         { group: "waiting", key: "waiting_parts", label: "Waiting for Parts", count: waitingPartsCount, href: "/repairs?status=waiting_parts", isActive: filters.status === "waiting_parts", tone: "amber", hideIfEmpty: true },

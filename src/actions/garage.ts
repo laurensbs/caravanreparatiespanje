@@ -229,7 +229,7 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
 
 /**
  * Zodra een geplande reparatie aanbreekt (dueDate <= vandaag), beloven
- * we dat hij automatisch "In Garage" wordt — zonder dat admin hem
+ * we dat hij automatisch "In Workshop" (`in_progress`) wordt — zonder dat admin hem
  * handmatig hoeft te verplaatsen. Dit wordt idempotent uitgevoerd bij
  * elke /garage load (en is dus feitelijk een gratis daily cron):
  *

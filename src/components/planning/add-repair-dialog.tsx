@@ -8,12 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { PRIORITY_COLORS, STATUS_COLORS } from "@/types";
 import type { Priority, RepairStatus } from "@/types";
 import { type PlanningLang, getLocaleStrings, formatDateLocale } from "@/lib/planning-locale";
-import {
-  searchUnscheduledRepairs,
-  scheduleRepair,
-  SCHEDULE_NEEDS_TASKS,
-  type SearchableRepair,
-} from "@/actions/planning";
+import { searchUnscheduledRepairs, scheduleRepair, type SearchableRepair } from "@/actions/planning";
+import { SCHEDULE_NEEDS_TASKS } from "@/lib/planning-schedule-errors";
 import { toast } from "sonner";
 
 interface Props {

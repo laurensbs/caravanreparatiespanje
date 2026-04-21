@@ -4,7 +4,7 @@ import Link from "next/link";
  * Tones zijn afgestemd op de status-pills in de tabel (zie STATUS_COLORS in
  * `src/types`). Zo herkent een werker dezelfde kleur op de chip én op de
  * pill een paar pixels lager. `solid` is de donker-op-licht variant die we
- * gebruiken voor de actieve "In Garage"-status — staat tussen lichte chips
+ * gebruiken voor de actieve "In Workshop"-status — staat tussen lichte chips
  * meteen op als ankerpunt.
  */
 type Tone = "amber" | "orange" | "emerald" | "destructive" | "solid";
@@ -71,7 +71,7 @@ function FocusChipPill({ chip }: { chip: FocusChip }) {
   const target = isActive ? "/repairs" : href;
 
   // De "solid" tone is altijd donker — ook als hij niet actief is — zodat
-  // hij zich onderscheidt als anker voor de huidige werkstroom (In Garage).
+  // hij zich onderscheidt als anker voor de huidige werkstroom (In Workshop).
   // Bij actief krijgt hij dezelfde donkere kleur, dus de classes vallen samen.
   const baseChip =
     tone === "solid"

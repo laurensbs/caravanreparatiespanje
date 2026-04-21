@@ -50,8 +50,8 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [
     title: "Work Orders: one clear focus bar at the top",
     bullets: [
       "The two separate rows of filter chips (date + status) are merged into one bar: ‘When | My work | Waiting on’.",
-      "Each chip now shows how many jobs sit in that bucket — Today, This week, Overdue, In Garage, Waiting for Parts, etc.",
-      "‘In Progress’ is now called ‘In Garage’, because that’s literally what it means: the vehicle is in the workshop.",
+      "Each chip now shows how many jobs sit in that bucket — Today, This week, Overdue, In Workshop, Waiting for Parts, etc.",
+      "The in-workshop work order status is labelled In Workshop (vehicle on the floor).",
       "Chip colours match the status pills in the table itself — no more confusion about what amber or orange stands for.",
     ],
   },

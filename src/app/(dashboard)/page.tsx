@@ -55,7 +55,7 @@ export default async function DashboardPage() {
 
   const quickPills = [
     { label: "To Do", value: stats?.todo ?? 0, href: "/repairs?status=todo", dot: "bg-muted-foreground/40" },
-    { label: "In Garage", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-foreground" },
+    { label: "In Workshop", value: stats?.inProgress ?? 0, href: "/repairs?status=in_progress", dot: "bg-foreground" },
     { label: "Waiting Parts", value: stats?.waitingParts ?? 0, href: "/repairs?status=waiting_parts", dot: "bg-amber-400" },
     { label: "Waiting Customer", value: stats?.waitingCustomer ?? 0, href: "/repairs?status=waiting_customer", dot: "bg-orange-400" },
     { label: "Completed", value: stats?.completed ?? 0, href: "/repairs?status=completed", dot: "bg-emerald-400" },

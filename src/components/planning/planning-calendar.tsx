@@ -12,9 +12,9 @@ import { type PlanningLang, getLocaleStrings, formatWeekRange } from "@/lib/plan
 import {
   getPlannedRepairs,
   scheduleRepair,
-  SCHEDULE_NEEDS_TASKS,
   type PlannedRepair,
 } from "@/actions/planning";
+import { SCHEDULE_NEEDS_TASKS } from "@/lib/planning-schedule-errors";
 import { AddRepairDialog } from "./add-repair-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

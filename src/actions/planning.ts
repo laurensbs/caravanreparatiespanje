@@ -4,15 +4,9 @@ import { db } from "@/lib/db";
 import { repairJobs, repairJobEvents, customers, locations, users, units, tags, repairJobTags } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { repairJobHasTasks } from "@/lib/repair-has-tasks";
+import { SCHEDULE_NEEDS_TASKS } from "@/lib/planning-schedule-errors";
 import { eq, and, gte, lte, isNull, isNotNull, or, ilike, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-/** Stabiele foutcode — clients tonen `scheduleNeedsTasks` uit planning-locale. */
-export const SCHEDULE_NEEDS_TASKS = "SCHEDULE_NEEDS_TASKS";
-
-/** Admin repair-detail (Engels, gelijke toon als andere repair-toasts). */
-export const SCHEDULE_NEEDS_TASKS_ADMIN_TOAST =
-  "Add at least one task on this work order before you can put it on the planning calendar or in the garage.";
 
 const FUTURE_TAG_SLUG = "future-repair";
 const FUTURE_TAG_NAME = "Future Repair";

@@ -45,12 +45,8 @@ import { updatePartRequestStatus } from "@/actions/parts";
 import { RepairTimeLog } from "@/components/repairs/repair-time-log";
 import { resolveBlocker as resolveBlockerAction, resolveFinding as resolveFindingAction, deleteFinding as deleteFindingAction } from "@/actions/garage";
 import { generateEstimateFromWork, addEstimateLineItem, updateEstimateLineItem, removeEstimateLineItem, updateDiscountPercent, restoreWorkshopItem, restoreAllWorkshopItems } from "@/actions/estimates";
-import {
-  scheduleRepair,
-  unscheduleRepair,
-  SCHEDULE_NEEDS_TASKS,
-  SCHEDULE_NEEDS_TASKS_ADMIN_TOAST,
-} from "@/actions/planning";
+import { scheduleRepair, unscheduleRepair } from "@/actions/planning";
+import { SCHEDULE_NEEDS_TASKS, SCHEDULE_NEEDS_TASKS_ADMIN_TOAST } from "@/lib/planning-schedule-errors";
 import { updateCustomer } from "@/actions/customers";
 import { updateUnit } from "@/actions/units";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1039,7 +1035,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-150"
                   >
                     <Wrench className="h-3 w-3" />
-                    In workshop
+                    In Workshop
                   </Link>
                 ) : (
                   <>
@@ -1067,8 +1063,8 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     )}
                     {startedToday ? (
                       <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                        <Check className="h-3 w-3" />
-                        In garage
+                        <Wrench className="h-3 w-3" />
+                        In Workshop
                       </span>
                     ) : (
                     <Popover>
@@ -1863,19 +1859,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   <div className="border-t border-border/60 dark:border-border" />
                   <div className="flex items-center gap-2">
                     <div className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium py-2.5 px-3">
-                      <Check className="h-3.5 w-3.5" />
-                      Is in garage now
+                      <Wrench className="h-3.5 w-3.5" />
+                      In workshop now
                     </div>
                     <button
                       onClick={async () => {
                         await unscheduleRepair(job.id);
                         setStartedToday(false);
                         setStatus("todo");
-                        toast.success("Removed from garage");
+                        toast.success("Removed from workshop schedule");
                         router.refresh();
                       }}
                       className="rounded-xl border border-border dark:border-border bg-background hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 text-xs font-medium py-2.5 px-3 transition-colors"
-                      title="Remove from garage"
+                      title="Remove from workshop schedule"
                     >
                       <XIcon className="h-3.5 w-3.5" />
                     </button>
@@ -2853,7 +2849,7 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
       {inGarage && (
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-foreground">
-            {status === "in_progress" ? "Garage (today)" : "In workshop today"}
+            In Workshop today
           </span>
           <Link
             href={`/garage/repairs/${jobId}`}

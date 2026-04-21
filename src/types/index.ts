@@ -192,7 +192,7 @@ export const STATUS_LABELS: Record<RepairStatus, string> = {
   waiting_customer: "Waiting for Contact",
   waiting_parts: "Waiting for Parts",
   scheduled: "Scheduled",
-  in_progress: "In Garage",
+  in_progress: "In Workshop",
   blocked: "Blocked",
   ready_for_check: "Ready for Check",
   completed: "Completed",

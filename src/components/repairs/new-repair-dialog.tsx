@@ -285,7 +285,7 @@ export function NewRepairDialog({
         card floating over the backdrop.
       */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-start sm:pt-[8vh]">
+        <div className="fixed inset-0 z-[60] flex items-stretch justify-center lg:items-start lg:pt-[8vh]">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-in fade-in-0 duration-200"
@@ -293,8 +293,8 @@ export function NewRepairDialog({
           />
 
           {/* Modal */}
-          <div className="relative z-10 w-full sm:max-w-2xl sm:mx-4 animate-in fade-in-0 sm:zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
-            <div className="flex h-[100dvh] flex-col bg-card dark:bg-card sm:h-auto sm:max-h-[85vh] sm:rounded-2xl sm:border sm:border-border/60 sm:dark:border-border sm:shadow-2xl">
+          <div className="relative z-10 w-full lg:max-w-2xl lg:mx-4 animate-in fade-in-0 lg:zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
+            <div className="flex h-[100dvh] flex-col bg-card dark:bg-card lg:h-auto lg:max-h-[85vh] lg:rounded-2xl lg:border lg:border-border/60 lg:dark:border-border lg:shadow-2xl">
 
               {/* Sticky header */}
               <div

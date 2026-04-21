@@ -1687,7 +1687,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
 
               {/* ── Tasks (main focus) ── */}
               <div>
-                <RepairTaskList repairJobId={job.id} initialTasks={tasks} totalLoggedMinutes={timeEntries.reduce((acc, e) => acc + (e.roundedMinutes ?? 0), 0)} />
+                <RepairTaskList
+                  repairJobId={job.id}
+                  initialTasks={tasks}
+                  totalLoggedMinutes={timeEntries.reduce((acc, e) => acc + (e.roundedMinutes ?? 0), 0)}
+                  partRequests={partRequests}
+                  defaultMarkup={settings.defaultMarkup}
+                />
               </div>
 
               {/* ── Inspection Flags (always visible) ── */}

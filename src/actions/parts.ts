@@ -1,10 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { suppliers, parts, partRequests, repairJobs, partCategories } from "@/lib/db/schema";
+import { suppliers, parts, partRequests, repairJobs, repairTasks, partCategories } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
-import { eq, desc, sql, asc, and, ne, inArray } from "drizzle-orm";
+import { eq, desc, sql, asc, and, ne, inArray, isNull } from "drizzle-orm";
 import { customers, units } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit";
@@ -211,6 +211,8 @@ export async function getPartRequests(repairJobId?: string) {
       notes: partRequests.notes,
       jobTitle: repairJobs.title,
       jobRef: repairJobs.publicCode,
+      repairTaskId: partRequests.repairTaskId,
+      taskTitle: repairTasks.title,
       stockQuantity: parts.stockQuantity,
       requestType: partRequests.requestType,
       createdAt: partRequests.createdAt,
@@ -220,6 +222,7 @@ export async function getPartRequests(repairJobId?: string) {
     .leftJoin(parts, eq(partRequests.partId, parts.id))
     .leftJoin(suppliers, eq(partRequests.supplierId, suppliers.id))
     .leftJoin(repairJobs, eq(partRequests.repairJobId, repairJobs.id))
+    .leftJoin(repairTasks, eq(partRequests.repairTaskId, repairTasks.id))
     .where(repairJobId ? eq(partRequests.repairJobId, repairJobId) : undefined)
     .orderBy(desc(partRequests.createdAt));
 }
@@ -384,6 +387,7 @@ export async function listPartsToChase(): Promise<PartsToChaseRow[]> {
 
 export async function createPartRequest(data: {
   repairJobId?: string;
+  repairTaskId?: string | null;
   partId?: string;
   partName?: string;
   quantity?: number;
@@ -400,13 +404,21 @@ export async function createPartRequest(data: {
   const qty = data.quantity ?? 1;
   const totalCost = unitCost ? String(parseFloat(unitCost) * qty) : null;
 
-  // If same catalog part already exists for this job, increase quantity
+  // If same catalog part already exists for this job (and same task link), increase quantity
   if (data.partId && data.repairJobId) {
+    const taskMatch = data.repairTaskId
+      ? eq(partRequests.repairTaskId, data.repairTaskId)
+      : isNull(partRequests.repairTaskId);
     const [existing] = await db
       .select({ id: partRequests.id, quantity: partRequests.quantity })
       .from(partRequests)
       .where(
-        sql`${partRequests.repairJobId} = ${data.repairJobId} AND ${partRequests.partId} = ${data.partId} AND ${partRequests.status} != 'cancelled'`
+        and(
+          eq(partRequests.repairJobId, data.repairJobId),
+          eq(partRequests.partId, data.partId),
+          ne(partRequests.status, "cancelled"),
+          taskMatch,
+        ),
       )
       .limit(1);
 
@@ -427,6 +439,7 @@ export async function createPartRequest(data: {
     .insert(partRequests)
     .values({
       repairJobId: data.repairJobId ?? null,
+      repairTaskId: data.repairTaskId ?? null,
       partId: data.partId ?? null,
       partName: data.partName ?? "TBD",
       quantity: qty,

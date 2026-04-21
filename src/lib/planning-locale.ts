@@ -89,7 +89,7 @@ const en: PlanningStrings = {
   status: "Status",
   assignedTo: "Assigned to",
   pageSubtitle:
-    "Repairs with a due date in this week. Drag a row to another day to reschedule, or add from your backlog.",
+    "Repairs with a due date in this week. Drag a row to another day to reschedule, or add from your backlog. In the garage, workers request parts per task so requests stay clear.",
   emptyDayHint: "Nothing due — tap Add to place a repair on this day.",
   weekRepairsSome: "{n} repairs with a due date this week",
   weekRepairsNone: "No repairs with a due date this week",
@@ -129,7 +129,7 @@ const nl: PlanningStrings = {
   status: "Status",
   assignedTo: "Toegewezen aan",
   pageSubtitle:
-    "Reparaties met een streefdatum in deze week. Sleep een regel naar een andere dag om te verplaatsen, of voeg toe vanuit je wachtrij.",
+    "Reparaties met een streefdatum in deze week. Sleep een regel naar een andere dag om te verplaatsen, of voeg toe vanuit je wachtrij. In de garage vragen werkers onderdelen per taak aan.",
   emptyDayHint: "Niets ingepland — tik op Toevoegen om hier een reparatie te zetten.",
   weekRepairsSome: "{n} reparaties met streefdatum deze week",
   weekRepairsNone: "Geen reparaties met streefdatum deze week",
@@ -169,7 +169,7 @@ const es: PlanningStrings = {
   status: "Estado",
   assignedTo: "Asignado a",
   pageSubtitle:
-    "Reparaciones con fecha prevista en esta semana. Arrastra una fila a otro día para reprogramar, o añade desde el backlog.",
+    "Reparaciones con fecha prevista en esta semana. Arrastra una fila a otro día para reprogramar, o añade desde el backlog. En el taller las piezas se piden por tarea.",
   emptyDayHint: "Nada programado — pulsa Añadir para colocar una reparación en este día.",
   weekRepairsSome: "{n} reparaciones con fecha prevista esta semana",
   weekRepairsNone: "No hay reparaciones con fecha prevista esta semana",

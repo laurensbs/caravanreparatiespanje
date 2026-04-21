@@ -43,6 +43,13 @@ const PART_SYNONYMS: string[][] = [
   ["mirror", "spiegel", "espejo"],
   ["cushion", "kussen", "cojín"],
   ["curtain", "gordijn", "cortina"],
+  ["sink", "lavabo", "spoelbak", "fregadero"],
+  ["fuse", "zekering", "fusible"],
+  ["socket", "stopcontact", "enchufe", "mechero"],
+  ["awning rail", "rail", "riel", "riel toldo"],
+  ["gas", "gás", "gasfles", "bombona", "propane", "propaan"],
+  ["step", "step", "opstap", "escalón", "escalerilla"],
+  ["stabiliser", "stabilizer", "uitzetter", "pata", "patas"],
 ];
 
 /** Expand a search query with synonym matches */
@@ -75,13 +82,25 @@ type SearchResult = {
 
 interface GaragePartsPickerProps {
   repairJobId: string;
+  /** Gekoppeld aan een taak — requests verschijnen gegroepeerd per taak. */
+  repairTaskId?: string | null;
+  /** Verbergt categorie-pills + gereedschap-knop (compacte taak-context). */
+  taskScoped?: boolean;
   t: (en: string, es?: string | null, nl?: string | null) => string;
   onAdded?: () => void;
   partCategories?: { id: string; key: string; label: string; icon: string; color: string; sortOrder: number; active: boolean }[];
   workerName?: string;
 }
 
-export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, workerName }: GaragePartsPickerProps) {
+export function GaragePartsPicker({
+  repairJobId,
+  repairTaskId,
+  taskScoped = false,
+  t,
+  onAdded,
+  partCategories,
+  workerName,
+}: GaragePartsPickerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
@@ -191,6 +210,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
         unitCost: part.defaultCost ?? undefined,
         category: part.category ?? undefined,
         workerName,
+        repairTaskId: repairTaskId ?? undefined,
       });
       toast.success(t(
         `"${part.name}" requested`,
@@ -211,7 +231,10 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
     if (!partName) return;
     hapticSuccess();
     startTransition(async () => {
-      await garageRequestPart(repairJobId, partName, { workerName });
+      await garageRequestPart(repairJobId, partName, {
+        workerName,
+        repairTaskId: repairTaskId ?? undefined,
+      });
       toast.success(t(
         `"${partName}" requested`,
         `"${partName}" solicitado`,
@@ -377,7 +400,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
   return (
     <div className="space-y-4">
       {/* Category filter pills */}
-      {activeCategories.length > 0 && (
+      {!taskScoped && activeCategories.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {activeCategories.map((cat) => {
             const CatIcon = ICON_MAP[cat.icon] ?? Package;
@@ -409,16 +432,39 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
             <Plus className="h-4 w-4" />
             {t("New", "Nuevo", "Nieuw")}
           </button>
-          <button
-            type="button"
-            onClick={() => setShowEquipmentForm(!showEquipmentForm)}
-            className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-sm font-medium bg-violet-400/10 text-violet-400 border border-violet-400/20 hover:bg-violet-400/20 transition-all active:scale-[0.97]"
-          >
-            <Wrench className="h-4 w-4" />
-            {t("Equipment", "Herramienta", "Gereedschap")}
-          </button>
+          {!taskScoped ? (
+            <button
+              type="button"
+              onClick={() => setShowEquipmentForm(!showEquipmentForm)}
+              className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-sm font-medium bg-violet-400/10 text-violet-400 border border-violet-400/20 hover:bg-violet-400/20 transition-all active:scale-[0.97]"
+            >
+              <Wrench className="h-4 w-4" />
+              {t("Equipment", "Herramienta", "Gereedschap")}
+            </button>
+          ) : null}
         </div>
       )}
+
+      {taskScoped ? (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[11px] leading-snug text-white/40">
+            {t(
+              "Search below, pick a catalog line, or type a name and press Enter — requests stay under this task.",
+              "Busca abajo, elige del catálogo o escribe y pulsa Enter — el pedido queda ligado a esta tarea.",
+              "Zoek hieronder, kies uit de catalogus of typ een naam en druk Enter — aanvraag blijft bij deze taak.",
+            )}
+          </p>
+          {!showCustomForm ? (
+            <button
+              type="button"
+              onClick={() => setShowCustomForm(true)}
+              className="self-start rounded-lg border border-dashed border-white/[0.12] px-2.5 py-1 text-[11px] font-semibold text-white/50 hover:border-white/25 hover:text-white/75"
+            >
+              {t("Or type a new part name…", "O escribir nombre nuevo…", "Of typ een nieuwe naam…")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Custom part request form */}
       {showCustomForm && (
@@ -459,7 +505,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
       )}
 
       {/* Equipment request form */}
-      {showEquipmentForm && (
+      {!taskScoped && showEquipmentForm ? (
         <div className="flex items-center gap-2">
           <div className="h-12 w-12 rounded-xl bg-violet-400/10 flex items-center justify-center shrink-0">
             <Wrench className="h-5 w-5 text-violet-400" />
@@ -472,7 +518,11 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
               if (e.key === "Enter" && equipmentName.trim()) {
                 e.preventDefault();
                 startTransition(async () => {
-                  await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment", workerName });
+                  await garageRequestPart(repairJobId, equipmentName.trim(), {
+                    requestType: "equipment",
+                    workerName,
+                    repairTaskId: repairTaskId ?? undefined,
+                  });
                   toast.success(t(
                     `"${equipmentName.trim()}" requested`,
                     `"${equipmentName.trim()}" solicitado`,
@@ -500,7 +550,11 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
             onClick={() => {
               if (!equipmentName.trim()) return;
               startTransition(async () => {
-                await garageRequestPart(repairJobId, equipmentName.trim(), { requestType: "equipment", workerName });
+                await garageRequestPart(repairJobId, equipmentName.trim(), {
+                  requestType: "equipment",
+                  workerName,
+                  repairTaskId: repairTaskId ?? undefined,
+                });
                 toast.success(t(
                   `"${equipmentName.trim()}" requested`,
                   `"${equipmentName.trim()}" solicitado`,
@@ -522,7 +576,7 @@ export function GaragePartsPicker({ repairJobId, t, onAdded, partCategories, wor
             )}
           </button>
         </div>
-      )}
+      ) : null}
 
       {/* Search input */}
       <div className="relative">

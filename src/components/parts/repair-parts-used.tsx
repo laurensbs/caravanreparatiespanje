@@ -55,6 +55,8 @@ type SearchResult = {
 
 export interface PartRequestRow {
   id: string;
+  repairTaskId?: string | null;
+  taskTitle?: string | null;
   partId: string | null;
   partName: string;
   partNumber: string | null;
@@ -79,6 +81,8 @@ interface RepairPartsUsedProps {
   partRequests: PartRequestRow[];
   defaultMarkup: number;
   partCategories?: PartCategory[];
+  /** When set, office can link new part lines to a task (same as garage). */
+  taskOptions?: { id: string; title: string }[];
 }
 
 // ──────────────────────────────────────────────
@@ -90,9 +94,11 @@ export function RepairPartsUsed({
   partRequests: initialRequests,
   defaultMarkup,
   partCategories = [],
+  taskOptions = [],
 }: RepairPartsUsedProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [linkTaskId, setLinkTaskId] = useState("");
 
   // Search state
   const [query, setQuery] = useState("");
@@ -118,6 +124,8 @@ export function RepairPartsUsed({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const partRequests = initialRequests;
+  const taskRef: { repairTaskId?: string } =
+    linkTaskId.length > 0 ? { repairTaskId: linkTaskId } : {};
   const activeRequests = partRequests.filter((p) => p.status !== "cancelled");
   const receivedCount = partRequests.filter((p) => p.status === "received").length;
   const totalCount = activeRequests.length;
@@ -211,6 +219,7 @@ export function RepairPartsUsed({
 
         await createPartRequest({
           repairJobId,
+          ...taskRef,
           partId: part.id,
           partName: part.name,
           unitCost: baseCost > 0 ? String(baseCost) : undefined,
@@ -236,6 +245,7 @@ export function RepairPartsUsed({
       try {
         await createPartRequest({
           repairJobId,
+          ...taskRef,
           partName: query.trim(),
         });
         toast.success(`"${query.trim()}" added as custom part`);
@@ -261,6 +271,7 @@ export function RepairPartsUsed({
         });
         await createPartRequest({
           repairJobId,
+          ...taskRef,
           partId: newPart.id,
           partName: newPart.name,
         });
@@ -542,7 +553,27 @@ export function RepairPartsUsed({
 
       {/* Search picker */}
       {showPicker && (
-        <div className="mb-3">
+        <div className="mb-3 space-y-1.5">
+          {taskOptions.length > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              <label htmlFor="repair-parts-task-link" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/80 dark:text-muted-foreground/60">
+                Link to task (optional)
+              </label>
+              <select
+                id="repair-parts-task-link"
+                value={linkTaskId}
+                onChange={(e) => setLinkTaskId(e.target.value)}
+                className="h-8 w-full rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-xs text-foreground dark:text-foreground"
+              >
+                <option value="">Whole job / not linked</option>
+                {taskOptions.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 dark:text-muted-foreground pointer-events-none" />
             <input
@@ -681,7 +712,12 @@ export function RepairPartsUsed({
             startTransition(async () => {
               try {
                 const newPart = await createPart({ name: trimmed, category: newPartCategory ?? undefined, stockQuantity: 0, minStockLevel: 0 });
-                await createPartRequest({ repairJobId, partId: newPart.id, partName: newPart.name });
+                await createPartRequest({
+                  repairJobId,
+                  ...taskRef,
+                  partId: newPart.id,
+                  partName: newPart.name,
+                });
                 toast.success(`"${trimmed}" created & added`);
                 setNewPartName("");
                 setNewPartCategory(null);
@@ -691,6 +727,26 @@ export function RepairPartsUsed({
             });
           }}
         >
+          {taskOptions.length > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              <label htmlFor="repair-parts-task-link-new" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/80 dark:text-muted-foreground/60">
+                Link to task (optional)
+              </label>
+              <select
+                id="repair-parts-task-link-new"
+                value={linkTaskId}
+                onChange={(e) => setLinkTaskId(e.target.value)}
+                className="h-8 w-full rounded-lg border border-border dark:border-border bg-card dark:bg-card/5 px-2 text-xs text-foreground dark:text-foreground"
+              >
+                <option value="">Whole job / not linked</option>
+                {taskOptions.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           <div className="flex gap-2">
             <input
               type="text"
@@ -857,6 +913,11 @@ function PartRequestCard({
                   .join(" · ")}
               </p>
             )}
+            {pr.taskTitle ? (
+              <p className="mt-1 text-[10px] font-medium uppercase tracking-wide text-teal-600 dark:text-teal-400/90">
+                Task · {pr.taskTitle}
+              </p>
+            ) : null}
           </div>
 
           <PartStatusPicker

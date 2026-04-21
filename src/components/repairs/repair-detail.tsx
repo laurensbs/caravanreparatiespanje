@@ -1030,14 +1030,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     {repairWorkers.map(w => w.userName.split(' ')[0]).join(', ')}
                   </span>
                 )}
-                {job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status) ? (
+                {job.dueDate &&
+                format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") &&
+                ["scheduled", "blocked", "in_inspection", "waiting_parts"].includes(status) ? (
                   <Link
                     href={`/garage/repairs/${job.id}`}
                     target="_blank"
                     className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-150"
                   >
                     <Wrench className="h-3 w-3" />
-                    In Workshop
+                    In workshop
                   </Link>
                 ) : (
                   <>
@@ -1759,6 +1761,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 partRequests={partRequests}
                 defaultMarkup={settings.defaultMarkup}
                 partCategories={partCategories}
+                taskOptions={tasks.map((t) => ({ id: t.id, title: t.title }))}
               />
 
               {/* ── Pending Parts Delivery ── */}
@@ -1878,7 +1881,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     </button>
                   </div>
                 </>
-              ) : !(job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection"].includes(status)) && (
+              ) : !(job.dueDate && format(new Date(job.dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && ["scheduled", "in_progress", "blocked", "in_inspection", "waiting_parts"].includes(status)) && (
                 <>
                   <div className="border-t border-border/60 dark:border-border" />
                   <div className="flex gap-2">
@@ -2766,7 +2769,7 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
   const current = dueDate ? format(new Date(dueDate), "yyyy-MM-dd") : "";
 
   const isToday = dueDate && format(new Date(dueDate), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-  const garageStatuses = ["scheduled", "in_progress", "blocked", "in_inspection"];
+  const garageStatuses = ["scheduled", "in_progress", "blocked", "in_inspection", "waiting_parts"];
   const inGarage = garageStatuses.includes(status) && isToday;
 
   async function handleSet(dateStr: string) {
@@ -2850,7 +2853,7 @@ function PlanningDateRow({ jobId, dueDate, status, onStatusChange }: { jobId: st
       {inGarage && (
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-foreground">
-            In Workshop Today
+            {status === "in_progress" ? "Garage (today)" : "In workshop today"}
           </span>
           <Link
             href={`/garage/repairs/${jobId}`}

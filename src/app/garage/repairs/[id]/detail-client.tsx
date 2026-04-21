@@ -125,6 +125,8 @@ type RepairDetail = {
   photos: RepairPhoto[];
   partRequests: {
     id: string;
+    repairTaskId: string | null;
+    taskTitle: string | null;
     partName: string;
     quantity: number;
     status: string;
@@ -664,6 +666,22 @@ export function GarageRepairDetailClient({
     return m;
   }, [repair.photos]);
 
+  const partsByTask = useMemo(() => {
+    const m = new Map<string, RepairDetail["partRequests"]>();
+    for (const pr of repair.partRequests) {
+      if (!pr.repairTaskId) continue;
+      const list = m.get(pr.repairTaskId) ?? [];
+      list.push(pr);
+      m.set(pr.repairTaskId, list);
+    }
+    return m;
+  }, [repair.partRequests]);
+
+  const generalPartRequests = useMemo(
+    () => repair.partRequests.filter((p) => !p.repairTaskId),
+    [repair.partRequests],
+  );
+
   /* ── Render ────────────────────────────────────────────────────── */
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-stone-950 text-white">
@@ -987,6 +1005,9 @@ export function GarageRepairDetailClient({
                       return w ? w.id : null;
                     }}
                     photos={photosByTask.get(task.id) ?? []}
+                    taskLinkedParts={partsByTask.get(task.id) ?? []}
+                    partCategories={partCategories}
+                    deviceLang={deviceLang}
                   />
                 ))}
               </div>
@@ -1076,44 +1097,106 @@ export function GarageRepairDetailClient({
           {/* ── Parts ───────────────────────────────────────── */}
           <Section
             icon={<Package className="h-4 w-4" />}
-            title={t("Parts", "Piezas", "Onderdelen")}
+            title={t("Parts (overview)", "Piezas (resumen)", "Onderdelen (overzicht)")}
             badge={repair.partRequests.filter((p) => p.status !== "received" && p.status !== "cancelled").length}
-            defaultOpen={repair.partRequests.length > 0}
+            defaultOpen={false}
           >
+            <p className="mb-3 text-[11px] leading-snug text-white/45">
+              {t(
+                "Request parts from each task above — this list is the full job overview.",
+                "Pide piezas desde cada tarea arriba — aquí ves todo el trabajo.",
+                "Vraag onderdelen per taak hierboven — dit is het totaaloverzicht.",
+              )}
+            </p>
             {repair.partRequests.length > 0 ? (
-              <div className="mb-3 flex flex-col gap-1.5 overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06]">
-                {repair.partRequests.map((pr) => (
-                  <div key={pr.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white/90">
-                        {pr.partName}
-                        {pr.quantity > 1 ? <span className="ml-1 text-white/40">×{pr.quantity}</span> : null}
+              <div className="flex flex-col gap-3">
+                {repair.tasks.map((tk) => {
+                  const rows = partsByTask.get(tk.id);
+                  if (!rows?.length) return null;
+                  const taskLabel = t(tk.title, tk.titleEs, tk.titleNl);
+                  return (
+                    <div key={tk.id} className="overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+                      <p className="border-b border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-teal-300/90">
+                        {t("Task", "Tarea", "Taak")}: {taskLabel}
                       </p>
-                      {pr.supplierName ? (
-                        <p className="truncate text-[11px] text-white/40">{pr.supplierName}</p>
-                      ) : null}
+                      <div className="flex flex-col gap-0 divide-y divide-white/[0.05]">
+                        {rows.map((pr) => (
+                          <div key={pr.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-white/90">
+                                {pr.partName}
+                                {pr.quantity > 1 ? <span className="ml-1 text-white/40">×{pr.quantity}</span> : null}
+                              </p>
+                              {pr.supplierName ? (
+                                <p className="truncate text-[11px] text-white/40">{pr.supplierName}</p>
+                              ) : null}
+                            </div>
+                            <span
+                              className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                pr.status === "received"
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : pr.status === "shipped"
+                                    ? "bg-indigo-500/15 text-indigo-300"
+                                    : pr.status === "ordered"
+                                      ? "bg-blue-500/15 text-blue-300"
+                                      : pr.status === "cancelled"
+                                        ? "bg-white/[0.06] text-white/40"
+                                        : "bg-amber-500/15 text-amber-300"
+                              }`}
+                            >
+                              {t(
+                                pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
+                                pr.status === "received" ? "Recibida" : pr.status === "shipped" ? "Enviada" : pr.status === "ordered" ? "Pedida" : pr.status === "cancelled" ? "Cancelada" : "Solicitada",
+                                pr.status === "received" ? "Ontvangen" : pr.status === "shipped" ? "Onderweg" : pr.status === "ordered" ? "Besteld" : pr.status === "cancelled" ? "Geannuleerd" : "Aangevraagd",
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        pr.status === "received"
-                          ? "bg-emerald-500/15 text-emerald-300"
-                          : pr.status === "shipped"
-                            ? "bg-indigo-500/15 text-indigo-300"
-                            : pr.status === "ordered"
-                              ? "bg-blue-500/15 text-blue-300"
-                              : pr.status === "cancelled"
-                                ? "bg-white/[0.06] text-white/40"
-                                : "bg-amber-500/15 text-amber-300"
-                      }`}
-                    >
-                      {t(
-                        pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
-                        pr.status === "received" ? "Recibida" : pr.status === "shipped" ? "Enviada" : pr.status === "ordered" ? "Pedida" : pr.status === "cancelled" ? "Cancelada" : "Solicitada",
-                        pr.status === "received" ? "Ontvangen" : pr.status === "shipped" ? "Onderweg" : pr.status === "ordered" ? "Besteld" : pr.status === "cancelled" ? "Geannuleerd" : "Aangevraagd",
-                      )}
-                    </span>
+                  );
+                })}
+                {generalPartRequests.length > 0 ? (
+                  <div className="overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+                    <p className="border-b border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                      {t("General / job-wide", "General / toda la orden", "Algemeen / hele klus")}
+                    </p>
+                    <div className="flex flex-col gap-0 divide-y divide-white/[0.05]">
+                      {generalPartRequests.map((pr) => (
+                        <div key={pr.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-white/90">
+                              {pr.partName}
+                              {pr.quantity > 1 ? <span className="ml-1 text-white/40">×{pr.quantity}</span> : null}
+                            </p>
+                            {pr.supplierName ? (
+                              <p className="truncate text-[11px] text-white/40">{pr.supplierName}</p>
+                            ) : null}
+                          </div>
+                          <span
+                            className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              pr.status === "received"
+                                ? "bg-emerald-500/15 text-emerald-300"
+                                : pr.status === "shipped"
+                                  ? "bg-indigo-500/15 text-indigo-300"
+                                  : pr.status === "ordered"
+                                    ? "bg-blue-500/15 text-blue-300"
+                                    : pr.status === "cancelled"
+                                      ? "bg-white/[0.06] text-white/40"
+                                      : "bg-amber-500/15 text-amber-300"
+                            }`}
+                          >
+                            {t(
+                              pr.status.charAt(0).toUpperCase() + pr.status.slice(1),
+                              pr.status === "received" ? "Recibida" : pr.status === "shipped" ? "Enviada" : pr.status === "ordered" ? "Pedida" : pr.status === "cancelled" ? "Cancelada" : "Solicitada",
+                              pr.status === "received" ? "Ontvangen" : pr.status === "shipped" ? "Onderweg" : pr.status === "ordered" ? "Besteld" : pr.status === "cancelled" ? "Geannuleerd" : "Aangevraagd",
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                ) : null}
               </div>
             ) : null}
             {isActive ? (

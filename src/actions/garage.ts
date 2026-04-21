@@ -233,7 +233,7 @@ export async function garageMarkNotDone(repairJobId: string, reason: string) {
  * handmatig hoeft te verplaatsen. Dit wordt idempotent uitgevoerd bij
  * elke /garage load (en is dus feitelijk een gratis daily cron):
  *
- *   status IN (new | todo | scheduled | in_inspection)
+ *   status IN (new | todo | scheduled | in_inspection | waiting_parts)
  *   AND dueDate::date <= CURRENT_DATE
  *   AND minstens één taak (lege checklist → blijft gepland tot kantoor
  *     taken toevoegt; zo komen er geen "lege" klussen in /garage)
@@ -254,7 +254,7 @@ export async function autoPromoteDueRepairsToInProgress(): Promise<number> {
       and(
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
-        inArray(repairJobs.status, ["new", "todo", "scheduled", "in_inspection"]),
+        inArray(repairJobs.status, ["new", "todo", "scheduled", "in_inspection", "waiting_parts"]),
         sql`${repairJobs.dueDate}::date <= CURRENT_DATE`,
         sql`exists (select 1 from repair_tasks rt where rt.repair_job_id = ${repairJobs.id})`,
       ),
@@ -637,6 +637,8 @@ export async function getGarageRepairDetail(id: string) {
   const jobPartRequests = await db
     .select({
       id: partRequests.id,
+      repairTaskId: partRequests.repairTaskId,
+      taskTitle: repairTasks.title,
       partName: partRequests.partName,
       quantity: partRequests.quantity,
       status: partRequests.status,
@@ -648,6 +650,7 @@ export async function getGarageRepairDetail(id: string) {
     .from(partRequests)
     .leftJoin(parts, eq(partRequests.partId, parts.id))
     .leftJoin(suppliers, eq(parts.supplierId, suppliers.id))
+    .leftJoin(repairTasks, eq(partRequests.repairTaskId, repairTasks.id))
     .where(eq(partRequests.repairJobId, id))
     .orderBy(desc(partRequests.createdAt));
 
@@ -956,6 +959,8 @@ export async function garageRequestPart(
     category?: string;
     requestType?: "part" | "equipment";
     workerName?: string;
+    /** Gekoppeld aan een taak — garage UI groepeert per taak. */
+    repairTaskId?: string | null;
   }
 ) {
   const ctx = await requireAnyAuth();
@@ -967,6 +972,7 @@ export async function garageRequestPart(
     .insert(partRequests)
     .values({
       repairJobId,
+      repairTaskId: options?.repairTaskId ?? null,
       partId: options?.partId ?? null,
       partName,
       quantity: options?.quantity ?? 1,
@@ -978,13 +984,14 @@ export async function garageRequestPart(
     .returning();
 
   // Log event
+  const taskHint = options?.repairTaskId ? " (linked to a task)" : "";
   await db.insert(repairJobEvents).values({
     repairJobId,
     userId: ctx.userId,
     eventType: "part_requested",
     comment: isEquipment
-      ? `Garage requested equipment: "${partName}"`
-      : `Garage requested part: "${partName}"`,
+      ? `Garage requested equipment: "${partName}"${taskHint}`
+      : `Garage requested part: "${partName}"${taskHint}`,
   });
 
   // Notify office
@@ -1008,6 +1015,71 @@ export async function garageRequestPart(
   await recordGarageUpdate(repairJobId, "part_requested", ctx.userId);
 
   return request;
+}
+
+/**
+ * Werkplaats logt verbruik / "gebruikt" — vrije tekst, optioneel gekoppeld
+ * aan catalogus-onderdeel. Wordt direct op `received` gezet (geen
+ * bestel-flow); wijzigt géén voorraad in `parts` — alleen zichtbaarheid
+ * voor kantoor op de werkorder.
+ */
+export async function garageLogPartUse(
+  repairJobId: string,
+  repairTaskId: string,
+  description: string,
+  options?: { partId?: string | null; workerName?: string },
+) {
+  const ctx = await requireAnyAuth();
+  const trimmed = description.trim();
+  if (!trimmed) throw new Error("Description is required");
+  const requesterName = options?.workerName ?? ctx.userName ?? "technician";
+
+  const [task] = await db
+    .select({ id: repairTasks.id })
+    .from(repairTasks)
+    .where(and(eq(repairTasks.id, repairTaskId), eq(repairTasks.repairJobId, repairJobId)))
+    .limit(1);
+  if (!task) throw new Error("Task not found on this repair");
+
+  const [row] = await db
+    .insert(partRequests)
+    .values({
+      repairJobId,
+      repairTaskId,
+      partId: options?.partId ?? null,
+      partName: trimmed,
+      quantity: 1,
+      status: "received",
+      receivedDate: new Date(),
+      requestType: "part",
+      notes: `Used / logged by ${requesterName} (workshop) — not synced to parts stock.`,
+    })
+    .returning();
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    userId: ctx.userId,
+    eventType: "part_requested",
+    comment: `Garage logged part use on task: "${trimmed}"`,
+  });
+
+  const [jobInfo] = await db
+    .select({ publicCode: repairJobs.publicCode })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId));
+  await notifyOffice(
+    repairJobId,
+    `🔩 Part used / logged — ${jobInfo?.publicCode ?? ""}`,
+    `"${trimmed}" (task-linked)`,
+    "garage_part_request",
+  );
+
+  safeRevalidate(`/garage/repairs/${repairJobId}`);
+  safeRevalidate(`/repairs/${repairJobId}`);
+  safeRevalidate("/parts");
+  await recordGarageUpdate(repairJobId, "part_requested", ctx.userId);
+
+  return row;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -7,8 +7,10 @@ import { startTimer, GARAGE_TIMER_NO_TASKS } from "@/actions/time-entries";
 import { GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { garageTimerBlockedReason } from "@/lib/garage-timer-policy";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
+import { TaskPartRow } from "@/components/garage/task-part-row";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import type { RepairTask, RepairTaskStatus } from "@/types";
+import type { Language } from "@/components/garage/language-toggle";
 import { toast } from "sonner";
 
 const STATUS_ICONS: Record<RepairTaskStatus, string> = {
@@ -38,9 +40,33 @@ interface TaskCardProps {
    *  afgevinkt worden — dat voorkomt dat werkers vergeten te klokken
    *  en er achteraf gaten in de factuurtijd zitten. */
   hasActiveTimer?: boolean;
+  /** Onderdelen gekoppeld aan deze taak (uit part_requests.repair_task_id). */
+  taskLinkedParts?: { id: string; partName: string; quantity: number; status: string }[];
+  partCategories?: {
+    id: string;
+    key: string;
+    label: string;
+    icon: string;
+    color: string;
+    sortOrder: number;
+    active: boolean;
+  }[];
+  deviceLang?: Language;
 }
 
-export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProblem, onBeforeStart, photos = [], hasActiveTimer = false }: TaskCardProps) {
+export function TaskCard({
+  task,
+  repairJobId,
+  repairJobStatus,
+  onUpdate,
+  onProblem,
+  onBeforeStart,
+  photos = [],
+  hasActiveTimer = false,
+  taskLinkedParts = [],
+  partCategories,
+  deviceLang = "en",
+}: TaskCardProps) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
@@ -199,6 +225,16 @@ export function TaskCard({ task, repairJobId, repairJobStatus, onUpdate, onProbl
             ))}
           </div>
         )}
+
+        <TaskPartRow
+          repairJobId={repairJobId}
+          taskId={task.id}
+          t={t}
+          deviceLang={deviceLang}
+          onUpdate={onUpdate}
+          partCategories={partCategories}
+          linkedParts={taskLinkedParts}
+        />
       </div>
     </div>
   );

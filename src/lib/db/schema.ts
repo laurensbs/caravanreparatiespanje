@@ -757,6 +757,10 @@ export const partRequests = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     repairJobId: uuid("repair_job_id")
       .references(() => repairJobs.id, { onDelete: "cascade" }),
+    /** Optioneel: welke taak deze aanvraag betreft (garage denkt per taak). */
+    repairTaskId: uuid("repair_task_id").references(() => repairTasks.id, {
+      onDelete: "set null",
+    }),
     partId: uuid("part_id").references(() => parts.id, {
       onDelete: "set null",
     }),
@@ -790,6 +794,7 @@ export const partRequests = pgTable(
   },
   (table) => [
     index("part_requests_job_idx").on(table.repairJobId),
+    index("part_requests_repair_task_id_idx").on(table.repairTaskId),
     index("part_requests_status_idx").on(table.status),
     index("part_requests_supplier_idx").on(table.supplierId),
   ]
@@ -1288,6 +1293,10 @@ export const partRequestsRelations = relations(partRequests, ({ one }) => ({
     fields: [partRequests.repairJobId],
     references: [repairJobs.id],
   }),
+  repairTask: one(repairTasks, {
+    fields: [partRequests.repairTaskId],
+    references: [repairTasks.id],
+  }),
   part: one(parts, {
     fields: [partRequests.partId],
     references: [parts.id],
@@ -1418,7 +1427,7 @@ export const repairTasks = pgTable(
   ]
 );
 
-export const repairTasksRelations = relations(repairTasks, ({ one }) => ({
+export const repairTasksRelations = relations(repairTasks, ({ one, many }) => ({
   repairJob: one(repairJobs, {
     fields: [repairTasks.repairJobId],
     references: [repairJobs.id],
@@ -1427,6 +1436,7 @@ export const repairTasksRelations = relations(repairTasks, ({ one }) => ({
     fields: [repairTasks.assignedUserId],
     references: [users.id],
   }),
+  partRequests: many(partRequests),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

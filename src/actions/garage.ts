@@ -1469,6 +1469,15 @@ export async function addFinding(
     severity: string;
     requiresFollowUp?: boolean;
     requiresCustomerApproval?: boolean;
+    /**
+     * Als gezet creëren we automatisch een part_request voor deze job:
+     * werker vinkt in de FindingDialog "onderdeel nodig" aan en typt een
+     * naam. Zo vervangen we het oude "Blokkade → waiting_parts" kanaal:
+     * een finding met needsPart = werker heeft iets nodig, admin ziet
+     * het op één plek (Part Requests + chips), en de repair flipt naar
+     * waiting_parts net zoals blocker deed.
+     */
+    needsPart?: { partName: string; quantity?: number } | null;
   }
 ) {
   const ctx = await requireAnyAuth();
@@ -1493,6 +1502,39 @@ export async function addFinding(
     eventType: "finding_added",
     comment: `${data.severity} finding (${data.category}): ${data.description}`,
   });
+
+  // Maak direct een part_request aan als de werker "onderdeel nodig"
+  // aangevinkt heeft. Status = requested zodat hij in het admin
+  // Part Requests paneel verschijnt. De job wordt door createPartRequest
+  // zelf naar waiting_parts gezet als hij in een werkbare status staat.
+  if (data.needsPart && data.needsPart.partName.trim()) {
+    const partName = data.needsPart.partName.trim();
+    const qty = Math.max(1, data.needsPart.quantity ?? 1);
+    await db.insert(partRequests).values({
+      repairJobId,
+      partName,
+      quantity: qty,
+      status: "requested",
+      requestType: "part",
+      notes: `Requested via finding: ${data.description}`.slice(0, 500),
+    });
+    await db
+      .update(repairJobs)
+      .set({ partsRequiredFlag: true, updatedAt: new Date() })
+      .where(eq(repairJobs.id, repairJobId));
+    // Status-flip zoals de oude blocker deed: repair naar waiting_parts
+    // als hij nu in een werkbare status zit.
+    const [job] = await db
+      .select({ status: repairJobs.status })
+      .from(repairJobs)
+      .where(eq(repairJobs.id, repairJobId));
+    if (job && ["new", "todo", "scheduled", "in_progress"].includes(job.status)) {
+      await db
+        .update(repairJobs)
+        .set({ status: "waiting_parts", updatedAt: new Date() })
+        .where(eq(repairJobs.id, repairJobId));
+    }
+  }
 
   // Auto-behaviors based on severity/flags
   if (data.severity === "critical") {

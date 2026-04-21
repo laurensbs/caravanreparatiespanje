@@ -1697,6 +1697,54 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 />
               </div>
 
+              {/* Job-wide parts: requests zonder repairTaskId. Gebeurt als
+                  garage in een Finding "Onderdeel nodig" aanvinkt — die
+                  zou anders nergens meer op de admin-detail verschijnen
+                  (alle task-chips zitten per task). Compacte rij zodat je
+                  de part meteen ziet, incl. status. */}
+              {(() => {
+                const jobWideParts = partRequests.filter(
+                  (p) => !p.repairTaskId && p.status !== "cancelled",
+                );
+                if (jobWideParts.length === 0) return null;
+                return (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold mb-2">
+                      Parts requested for this job
+                    </p>
+                    <div className="space-y-1.5">
+                      {jobWideParts.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-muted/40 dark:bg-card/[0.04] px-3 py-2 text-sm"
+                        >
+                          <span className="text-xs">📦</span>
+                          <span className="flex-1 truncate font-medium">
+                            {p.partName}
+                            {p.quantity > 1 ? (
+                              <span className="ml-1 text-muted-foreground">×{p.quantity}</span>
+                            ) : null}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                              p.status === "received"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                                : p.status === "ordered"
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+                                  : p.status === "shipped"
+                                    ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300"
+                                    : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+                            }`}
+                          >
+                            {p.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ── Inspection Flags (always visible) ── */}
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold mb-2">Flags</p>

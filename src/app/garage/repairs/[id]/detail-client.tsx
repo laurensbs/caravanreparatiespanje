@@ -38,7 +38,6 @@ import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
 import { FindingDialog } from "@/components/garage/finding-dialog";
-import { BlockerDialog } from "@/components/garage/blocker-dialog";
 import { HandNeededSheet } from "@/components/garage/hand-needed-sheet";
 import { GarageChatSheet } from "@/components/garage/chat-sheet";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";
@@ -374,7 +373,6 @@ export function GarageRepairDetailClient({
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [showSuggestSheet, setShowSuggestSheet] = useState(false);
   const [showFinding, setShowFinding] = useState(false);
-  const [showBlocker, setShowBlocker] = useState(false);
   const [showHandNeeded, setShowHandNeeded] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [suggestTitle, setSuggestTitle] = useState("");
@@ -1271,15 +1269,10 @@ export function GarageRepairDetailClient({
             >
               <HandHelping className="h-5 w-5" />
             </button>
-            <button
-              type="button"
-              onClick={() => setShowBlocker(true)}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 active:scale-[0.97]"
-              aria-label={t("Block", "Bloquear", "Blokkeer")}
-              title={t("Block", "Bloquear", "Blokkeer")}
-            >
-              <OctagonX className="h-5 w-5" />
-            </button>
+            {/* Blokkade-knop verwijderd — gebruik "Bevinding" (📋) en
+                vink daar "Onderdeel nodig" of "Klantgoedkeuring nodig"
+                aan. Dat zet de repair automatisch op waiting_parts /
+                waiting_customer, hetzelfde gedrag als oude Blokkade. */}
           </div>
         </div>
       ) : null}
@@ -1355,14 +1348,7 @@ export function GarageRepairDetailClient({
         repairLabel={repair.title ?? repair.publicCode ?? undefined}
       />
 
-      {showBlocker ? (
-        <BlockerDialog
-          repairJobId={repair.id}
-          open={showBlocker}
-          onClose={() => setShowBlocker(false)}
-          onComplete={handleRefresh}
-        />
-      ) : null}
+      {/* BlockerDialog is verwijderd — zie FindingDialog "Onderdeel nodig". */}
 
       {/* Volledige chat-sheet met office. Afzender = actieve timer-werker.
           De caller (💬-knop) blokkeert dit sheet al als er geen timer loopt. */}

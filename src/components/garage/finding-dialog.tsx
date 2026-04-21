@@ -102,6 +102,9 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
   const [requiresFollowUp, setRequiresFollowUp] = useState(false);
   const [requiresCustomerApproval, setRequiresCustomerApproval] = useState(false);
   const [voice, setVoice] = useState<VoiceClip | null>(null);
+  const [needsPart, setNeedsPart] = useState(false);
+  const [partName, setPartName] = useState("");
+  const [partQuantity, setPartQuantity] = useState(1);
   const [isPending, startTransition] = useTransition();
 
   function reset() {
@@ -111,10 +114,18 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
     setRequiresFollowUp(false);
     setRequiresCustomerApproval(false);
     setVoice(null);
+    setNeedsPart(false);
+    setPartName("");
+    setPartQuantity(1);
   }
 
   function handleSubmit() {
     if (!category || !description.trim()) return;
+    // Part is alleen relevant als vinkje AAN én een naam ingevuld.
+    const partPayload =
+      needsPart && partName.trim()
+        ? { partName: partName.trim(), quantity: Math.max(1, partQuantity) }
+        : null;
     startTransition(async () => {
       const finding = await addFinding(repairJobId, {
         category,
@@ -122,6 +133,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
         severity,
         requiresFollowUp,
         requiresCustomerApproval,
+        needsPart: partPayload,
       });
       if (voice && finding?.id) {
         const ok = await uploadVoiceNote({
@@ -232,6 +244,59 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
           </div>
 
           <div className="space-y-2">
+            {/* "Onderdeel nodig" vervangt de oude Blokkade-knop. Aangevinkt
+                 = repair gaat automatisch naar waiting_parts, part komt in
+                 het admin Part Requests paneel. */}
+            <div
+              className={`rounded-xl border transition-all ${
+                needsPart
+                  ? "border-orange-400/40 bg-orange-400/10"
+                  : "border-white/[0.06] hover:bg-white/[0.04]"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setNeedsPart(!needsPart)}
+                className="flex w-full items-center gap-3 p-3 text-left"
+              >
+                <span className="text-lg">{needsPart ? "☑" : "☐"}</span>
+                <span
+                  className={`font-medium text-sm ${
+                    needsPart ? "text-orange-300" : "text-white/50"
+                  }`}
+                >
+                  📦 {t("Part needed", "Pieza necesaria", "Onderdeel nodig")}
+                </span>
+              </button>
+              {needsPart ? (
+                <div className="flex flex-col gap-2 border-t border-orange-400/20 p-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={partName}
+                    onChange={(e) => setPartName(e.target.value)}
+                    placeholder={t(
+                      "Part name (e.g. Beading strip)",
+                      "Nombre de pieza",
+                      "Naam onderdeel (bv. Beading strip)",
+                    )}
+                    className="flex-1 min-w-0 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400/30"
+                    autoFocus
+                  />
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-xs font-medium text-white/50">
+                      {t("Qty", "Cant.", "Aantal")}
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={partQuantity}
+                      onChange={(e) => setPartQuantity(parseInt(e.target.value, 10) || 1)}
+                      className="w-16 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 py-2.5 text-sm text-white text-center focus:outline-none focus:ring-2 focus:ring-orange-400/30"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <button
               onClick={() => setRequiresFollowUp(!requiresFollowUp)}
               className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-all active:scale-[0.98] ${

@@ -33,6 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
+import { GarageThemeToggle } from "@/components/garage/theme-provider";
 import { TaskCard } from "@/components/garage/task-card";
 import { ProblemDialog } from "@/components/garage/problem-dialog";
 import { FinalCheckDialog } from "@/components/garage/final-check";
@@ -695,6 +696,7 @@ export function GarageRepairDetailClient({
           </button>
           <div className="flex-1" />
           <LanguageToggle />
+          <GarageThemeToggle />
           <button
             type="button"
             onClick={handleRefresh}

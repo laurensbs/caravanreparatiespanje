@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { garageLogin } from "@/actions/garage-auth";
 import Image from "next/image";
@@ -58,6 +58,44 @@ export function GarageLoginForm() {
     setDigits((prev) => prev.slice(0, -1));
     setError("");
   }
+
+  // Toetsenbord-invoer: op een gedeelde iPad met hardware keyboard of
+  // desktop-browser wil je cijfertoetsen / backspace / escape kunnen
+  // gebruiken in plaats van alleen de on-screen knoppen te tikken.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (isPending) return;
+      // Negeer modifier-combo's (cmd+r, ctrl+l e.d.)
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        if (digits.length >= PIN_LENGTH) return;
+        primeHaptics();
+        hapticKey();
+        setError("");
+        setDigits((prev) => {
+          const next = [...prev, e.key];
+          if (next.length === PIN_LENGTH) submitPin(next.join(""));
+          return next;
+        });
+        return;
+      }
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        hapticKey();
+        setDigits((prev) => prev.slice(0, -1));
+        setError("");
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setDigits([]);
+        setError("");
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [digits.length, isPending, submitPin]);
 
   const langs: { code: "en" | "es" | "nl"; flag: string }[] = [
     { code: "en", flag: "🇬🇧" },

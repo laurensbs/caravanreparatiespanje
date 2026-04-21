@@ -320,12 +320,23 @@ export async function getGarageRepairsToday() {
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
         or(
-          inArray(repairJobs.status, [
-            "in_progress",
-            "waiting_parts",
-            "blocked",
-            "ready_for_check",
-          ]),
+          // Actieve werkvloer-statussen alleen tonen als ze ook echt
+          // NU aan de beurt zijn. Toekomstig ingeplande jobs (dueDate
+          // > vandaag) horen op /planning, niet in de garage-overview —
+          // ook niet als iemand hun status toevallig al op in_progress
+          // heeft gezet. Jobs zonder dueDate gelden als "altijd actief".
+          and(
+            inArray(repairJobs.status, [
+              "in_progress",
+              "waiting_parts",
+              "blocked",
+              "ready_for_check",
+            ]),
+            or(
+              isNull(repairJobs.dueDate),
+              sql`${repairJobs.dueDate}::date <= CURRENT_DATE`,
+            ),
+          ),
           // Vandaag afgeronde reparaties blijven zichtbaar in de
           // "Done" tab zodat de werker ziet wat er net klaar is en er
           // een bevestigingsgevoel ontstaat. Alles wat langer dan

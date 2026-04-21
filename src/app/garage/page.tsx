@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { isGarageAuthenticated } from "@/lib/garage-auth";
 import { GarageTodayClient } from "./today-client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * If a sub-fetch fails (DB hiccup, transient Neon timeout, schema
  * drift on a single column) we don't want the whole garage portal

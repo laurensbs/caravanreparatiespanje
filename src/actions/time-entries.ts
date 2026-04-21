@@ -5,16 +5,10 @@ import { timeEntries, users, repairJobs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
+import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { repairJobHasTasks } from "@/lib/repair-has-tasks";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-/**
- * Foutcode die de garage-UI herkent om een vriendelijke toast te tonen
- * wanneer een werker een timer probeert te starten op een reparatie
- * zonder taken. Export zodat client-components kunnen matchen op string.
- */
-export const GARAGE_TIMER_NO_TASKS = "GARAGE_TIMER_NO_TASKS";
 
 /**
  * Server Actions are POST requests. If anything inside them — including

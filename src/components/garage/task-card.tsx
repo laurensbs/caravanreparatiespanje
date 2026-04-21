@@ -3,7 +3,8 @@
 import { useTransition } from "react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
-import { startTimer, GARAGE_TIMER_NO_TASKS } from "@/actions/time-entries";
+import { startTimer } from "@/actions/time-entries";
+import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { garageTimerBlockedReason } from "@/lib/garage-timer-policy";
 import { GaragePhotoUpload } from "@/components/garage/photo-upload";

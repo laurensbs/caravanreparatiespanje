@@ -57,7 +57,8 @@ import {
 } from "@/actions/garage";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { markAdminMessageRead } from "@/actions/garage-sync";
-import { startTimer, stopTimer, GARAGE_TIMER_NO_TASKS } from "@/actions/time-entries";
+import { startTimer, stopTimer } from "@/actions/time-entries";
+import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import {

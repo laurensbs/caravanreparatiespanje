@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { addRepairTask, deleteRepairTask, approveGarageTask, getRepairTasks } from "@/actions/garage";
+import { addRepairTask, deleteRepairTask, approveGarageTask, getRepairTasks, updateTaskStatus } from "@/actions/garage";
 import { searchParts, createPartRequest, removePartRequest } from "@/actions/parts";
 import { TASK_STATUS_LABELS, TASK_STATUS_COLORS } from "@/types";
 import type { RepairTask, RepairTaskStatus } from "@/types";
@@ -94,6 +94,16 @@ export function RepairTaskList({
       refresh();
       router.refresh();
       toast.success("Task removed");
+    });
+  }
+
+  function handleToggleDone(task: RepairTask) {
+    const next = task.status === "done" ? "pending" : "done";
+    startTransition(async () => {
+      await updateTaskStatus(task.id, next);
+      refresh();
+      router.refresh();
+      toast.success(next === "done" ? "Task completed" : "Task reopened");
     });
   }
 
@@ -205,9 +215,21 @@ export function RepairTaskList({
                     task.status === "problem" ? "bg-red-50/60 dark:bg-red-950/20" : "bg-card/60 dark:bg-card/5"
                   } ${task.status === "done" ? "opacity-50" : ""} border border-border/40`}
                 >
-                  <span className="text-[11px] shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleDone(task)}
+                    disabled={isPending}
+                    title={task.status === "done" ? "Mark as not done" : "Mark as done"}
+                    className={`h-5 w-5 flex items-center justify-center text-[11px] shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                      task.status === "done"
+                        ? "text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10"
+                        : task.status === "problem"
+                        ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
                     {task.status === "done" ? "✓" : task.status === "problem" ? "⚠" : task.status === "in_progress" ? "◐" : "○"}
-                  </span>
+                  </button>
                   <span className={`flex-1 truncate ${task.status === "done" ? "line-through" : ""}`}>
                     {task.title}
                   </span>

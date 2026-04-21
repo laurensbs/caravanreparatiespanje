@@ -399,6 +399,14 @@ export function PartRequestsClient({ requests }: { requests: PartRequest[] }) {
                       {aging.chaseCooldownActive ? "Reset" : "Chased"}
                     </button>
                   )}
+                  <Link
+                    href={`/repairs/${req.repairJobId}`}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg bg-blue-500/10 px-2.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-500/20 dark:text-blue-300"
+                    title="Open repair"
+                  >
+                    Open
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                   <button
                     type="button"
                     onClick={() => handleDelete(req.id, req.partName)}

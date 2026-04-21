@@ -775,7 +775,7 @@ export async function getDashboardStats() {
           sql`CASE WHEN ${repairJobs.status} IN ('new', 'todo') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         inProgress: count(
-          sql`CASE WHEN ${repairJobs.status} IN ('in_progress', 'in_inspection', 'scheduled') AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
+          sql`CASE WHEN ${repairJobs.status} = 'in_progress' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`
         ),
         waitingParts: count(
           sql`CASE WHEN ${repairJobs.status} = 'waiting_parts' AND ${repairJobs.archivedAt} IS NULL AND ${repairJobs.deletedAt} IS NULL THEN 1 END`

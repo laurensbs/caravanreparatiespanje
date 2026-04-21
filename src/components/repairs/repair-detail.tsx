@@ -1755,62 +1755,6 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 </div>
               </div>
 
-              {/* ── Pending Parts Delivery ── */}
-              {(() => {
-                const pending = partRequests.filter(p => !["received", "cancelled"].includes(p.status));
-                const received = partRequests.filter(p => p.status === "received");
-                if (partRequests.length === 0) return null;
-                return (
-                  <div className={cn(
-                    "rounded-xl border p-3.5",
-                    pending.length > 0
-                      ? "bg-amber-50/60 dark:bg-amber-500/5 border-amber-200/60 dark:border-amber-700/30"
-                      : "bg-emerald-50/60 dark:bg-emerald-500/5 border-emerald-200/60 dark:border-emerald-700/30"
-                  )}>
-                    <p className={cn(
-                      "text-[10px] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5",
-                      pending.length > 0
-                        ? "text-amber-700/60 dark:text-amber-400/50"
-                        : "text-emerald-700/60 dark:text-emerald-400/50"
-                    )}>
-                      <Package className="h-3 w-3" />
-                      {pending.length > 0
-                        ? `Waiting for ${pending.length} part${pending.length !== 1 ? "s" : ""}`
-                        : `All ${received.length} part${received.length !== 1 ? "s" : ""} received`}
-                    </p>
-                    {pending.length > 0 && (
-                      <div className="space-y-1">
-                        {pending.map((p) => (
-                          <div key={p.id} className="flex items-center gap-2.5 group/part">
-                            <button
-                              onClick={async () => {
-                                await updatePartRequestStatus(p.id, "received");
-                                router.refresh();
-                                toast.success(`${p.partName} marked as received`);
-                              }}
-                              className="h-4 w-4 rounded border border-amber-300 dark:border-amber-600 bg-card/80 dark:bg-card/5 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors shrink-0"
-                              title="Mark as received"
-                            >
-                              <Check className="h-2.5 w-2.5 text-amber-300/0 group-hover/part:text-emerald-500 transition-colors" />
-                            </button>
-                            <span className="text-xs text-amber-900/70 dark:text-amber-200/70 font-medium">{p.partName}</span>
-                            {p.quantity > 1 && <span className="text-[10px] text-amber-700/40 dark:text-amber-400/30">×{p.quantity}</span>}
-                            <span className={cn(
-                              "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                              p.status === "ordered" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                : p.status === "shipped" ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
-                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                            )}>
-                              {p.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
               {/* ── Divider ── */}
               <div className="border-t border-border/60 dark:border-border" />
 

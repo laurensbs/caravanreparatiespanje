@@ -212,7 +212,25 @@ export async function updateCustomer(id: string, data: unknown) {
 
 export async function getAllCustomers() {
   await requireAuth();
-  return db.select({ id: customers.id, name: customers.name }).from(customers).orderBy(customers.name);
+  // Extra velden voor de picker search: kenteken (via units), btw-nummer
+  // (functioneert als klantnummer), telefoon en email. Een klant kan
+  // meerdere units hebben — we vouwen plates tot een komma-string.
+  const rows = await db
+    .select({
+      id: customers.id,
+      name: customers.name,
+      vatnumber: customers.vatnumber,
+      phone: customers.phone,
+      mobile: customers.mobile,
+      email: customers.email,
+      holdedContactId: customers.holdedContactId,
+      plates: sql<string | null>`string_agg(distinct ${units.registration}, ', ') filter (where ${units.registration} is not null)`,
+    })
+    .from(customers)
+    .leftJoin(units, eq(units.customerId, customers.id))
+    .groupBy(customers.id)
+    .orderBy(customers.name);
+  return rows;
 }
 
 export async function deleteCustomer(id: string, deleteFromHolded?: boolean, password?: string) {

@@ -12,6 +12,13 @@ import { toast } from "sonner";
 interface Customer {
   id: string;
   name: string;
+  // Optionele search-velden — leeg in legacy callers, de picker werkt nog.
+  vatnumber?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  holdedContactId?: string | null;
+  plates?: string | null; // komma-gescheiden kentekens
 }
 
 interface CustomerSearchProps {
@@ -49,9 +56,26 @@ export function CustomerSearch({ customers, value, onSelect }: CustomerSearchPro
   }, []);
 
   const filtered = query.length >= 1
-    ? customers.filter((c) =>
-        c.name.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
+    ? (() => {
+        // Normaliseer kentekens: spaties/streepjes weghalen voor de match
+        // zodat "XR AB 42", "XR-AB-42" en "xrab42" gelijk matchen.
+        const q = query.toLowerCase().trim();
+        const qPlate = q.replace(/[\s-]/g, "");
+        return customers.filter((c) => {
+          if (c.name.toLowerCase().includes(q)) return true;
+          if (c.vatnumber && c.vatnumber.toLowerCase().includes(q)) return true;
+          if (c.holdedContactId && c.holdedContactId.toLowerCase().includes(q)) return true;
+          if (c.phone && c.phone.toLowerCase().includes(q)) return true;
+          if (c.mobile && c.mobile.toLowerCase().includes(q)) return true;
+          if (c.email && c.email.toLowerCase().includes(q)) return true;
+          if (
+            c.plates &&
+            c.plates.toLowerCase().replace(/[\s-]/g, "").includes(qPlate)
+          )
+            return true;
+          return false;
+        }).slice(0, 8);
+      })()
     : [];
 
   function handleSelect(customer: Customer) {
@@ -109,7 +133,7 @@ export function CustomerSearch({ customers, value, onSelect }: CustomerSearchPro
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Type to search contacts..."
+          placeholder="Search by name, plate, phone or VAT…"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -122,17 +146,29 @@ export function CustomerSearch({ customers, value, onSelect }: CustomerSearchPro
 
       {open && !showCreate && filtered.length > 0 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-lg animate-fade-in">
-          {filtered.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => handleSelect(c)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
-            >
-              <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="truncate">{c.name}</span>
-            </button>
-          ))}
+          {filtered.map((c) => {
+            const meta = [c.plates, c.phone ?? c.mobile, c.vatnumber]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => handleSelect(c)}
+                className="flex w-full items-start gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+              >
+                <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <span className="min-w-0 flex-1">
+                  <span className="truncate block">{c.name}</span>
+                  {meta && (
+                    <span className="block text-[11px] text-muted-foreground truncate">
+                      {meta}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
           <button
             type="button"
             onClick={() => setShowCreate(true)}

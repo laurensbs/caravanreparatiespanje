@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Check, Package } from "lucide-react";
 import { toast } from "sonner";
-import { garageLogPartUse } from "@/actions/garage";
+import { garageLogPartUse, garageMarkPartReceived } from "@/actions/garage";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import type { Language } from "@/components/garage/language-toggle";
 
@@ -29,6 +29,11 @@ interface TaskPartRowProps {
  * catalogus-picker meer — de werker hoeft niet te zoeken. Als er echt
  * iets aangevraagd moet worden gebruikt de werker de "Problema"-knop,
  * dat signaleert naar het kantoorpaneel.
+ *
+ * Kleurkeuze: alleen tokens die door garage-theme.css worden geïnverteerd
+ * in light mode (text-white → zwart, bg-white/X → lichte tinten). Dus
+ * geen harde text-white/75 of text-teal-200 op grote koppen — die geven
+ * witte tekst op witte achtergrond in light mode.
  */
 export function TaskPartRow({
   repairJobId,
@@ -40,6 +45,7 @@ export function TaskPartRow({
 }: TaskPartRowProps) {
   const [useText, setUseText] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [checkingId, setCheckingId] = useState<string | null>(null);
 
   function submitUse() {
     const trimmed = useText.trim();
@@ -64,10 +70,109 @@ export function TaskPartRow({
     });
   }
 
+  function checkOffPart(p: TaskPartLite) {
+    if (p.status === "received") return;
+    hapticTap();
+    setCheckingId(p.id);
+    startTransition(async () => {
+      try {
+        await garageMarkPartReceived(p.id);
+        hapticSuccess();
+        toast.success(
+          deviceLang === "es"
+            ? `"${p.partName}" recibida`
+            : deviceLang === "nl"
+              ? `"${p.partName}" ontvangen`
+              : `"${p.partName}" received`,
+        );
+        onUpdate();
+      } catch (e) {
+        toast.error((e as Error)?.message ?? "Could not update");
+      } finally {
+        setCheckingId(null);
+      }
+    });
+  }
+
   return (
-    <div className="mt-2 space-y-3 rounded-xl bg-white/[0.02] p-3 ring-1 ring-white/[0.05]">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-white/50 sm:w-28">
+    <div className="mt-2 space-y-3 rounded-xl bg-white/[0.02] p-3 ring-1 ring-white/[0.06]">
+      {/* ── Grote afvinkbare rijen voor parts die admin heeft toegevoegd / aangevraagd ── */}
+      {linkedParts.length > 0 ? (
+        <ul className="space-y-2">
+          {linkedParts.map((p) => {
+            const isDone = p.status === "received";
+            const isWaiting = p.status === "requested" || p.status === "ordered" || p.status === "shipped";
+            const statusLabel =
+              p.status === "received"
+                ? t("Ready", "Lista", "Klaar")
+                : p.status === "ordered"
+                  ? t("Ordered", "Pedida", "Besteld")
+                  : p.status === "shipped"
+                    ? t("On the way", "En camino", "Onderweg")
+                    : p.status === "cancelled"
+                      ? t("Cancelled", "Cancelada", "Geannuleerd")
+                      : t("Requested", "Solicitada", "Aangevraagd");
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => checkOffPart(p)}
+                  disabled={isDone || checkingId === p.id}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ring-1 active:scale-[0.99] disabled:opacity-100 ${
+                    isDone
+                      ? "bg-emerald-500/15 ring-emerald-400/30"
+                      : isWaiting
+                        ? "bg-amber-500/10 ring-amber-400/25 hover:bg-amber-500/15"
+                        : "bg-white/[0.04] ring-white/[0.08]"
+                  }`}
+                >
+                  {/* Big tick box */}
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                      isDone
+                        ? "bg-emerald-500 text-white"
+                        : "border-2 border-white/30 bg-transparent text-transparent"
+                    }`}
+                    aria-hidden
+                  >
+                    <Check className="h-5 w-5" strokeWidth={3} />
+                  </span>
+
+                  <Package className="h-5 w-5 shrink-0 text-white/60" aria-hidden />
+
+                  {/* Part name — uses text-white so it stays contrasted in both modes */}
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block text-base font-semibold text-white ${isDone ? "line-through decoration-white/40" : ""}`}
+                    >
+                      {p.partName}
+                    </span>
+                    {p.quantity > 1 ? (
+                      <span className="text-xs text-white/50">×{p.quantity}</span>
+                    ) : null}
+                  </span>
+
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${
+                      isDone
+                        ? "bg-emerald-500/25 text-emerald-200"
+                        : isWaiting
+                          ? "bg-amber-500/20 text-amber-200"
+                          : "bg-white/[0.08] text-white/70"
+                    }`}
+                  >
+                    {statusLabel}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {/* ── Vrije-tekst invoer: wat heb je gebruikt? ── */}
+      <div className="flex flex-col gap-2 rounded-xl bg-white/[0.04] p-2.5 ring-1 ring-white/[0.06] sm:flex-row sm:items-center">
+        <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-white/60 sm:w-28">
           {t("Used / note", "Usado / nota", "Gebruikt / notitie")}
         </span>
         <input
@@ -86,7 +191,7 @@ export function TaskPartRow({
             "Wat heb je gebruikt? (elke taal)",
           )}
           disabled={isPending}
-          className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
+          className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-white/[0.06] px-3 py-2.5 text-base text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
         />
         <button
           type="button"
@@ -98,26 +203,6 @@ export function TaskPartRow({
           {t("Save", "Guardar", "Opslaan")}
         </button>
       </div>
-
-      {linkedParts.length > 0 ? (
-        <ul className="space-y-1.5 border-t border-white/[0.05] pt-3">
-          {linkedParts.map((p) => (
-            <li key={p.id} className="flex items-center justify-between gap-2 text-sm text-white/75">
-              <span className="truncate">
-                {p.partName}
-                {p.quantity > 1 ? <span className="text-white/45"> ×{p.quantity}</span> : null}
-              </span>
-              <span className="shrink-0 rounded bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold uppercase text-white/55">
-                {p.status === "received"
-                  ? t("Done", "Listo", "Klaar")
-                  : p.status === "requested"
-                    ? t("Req.", "Ped.", "Aanv.")
-                    : p.status}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </div>
   );
 }

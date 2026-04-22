@@ -350,6 +350,9 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   const costLinesTotalInclTax = costLinesTotal * (1 + settings.defaultTax / 100);
 
   const panelInvoiceStage = ["sent", "paid", "our_costs"].includes(invoiceStatus);
+  // Detail-query levert `job.assignedUser` (relatie-object); list-query's
+  // leveren `job.assignedUserName`. Pak wat er is.
+  const assignedName: string | null = job.assignedUser?.name ?? job.assignedUserName ?? null;
 
   // Auto-compute next action from status when no manual override
   const computedNextAction = (() => {
@@ -975,10 +978,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   type="button"
                   onClick={() => setShowUserAssigner(true)}
                   className="inline-flex items-center gap-1 text-xs text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150"
-                  title={job.assignedUserName ? `Assigned to ${job.assignedUserName}` : "Not yet assigned"}
+                  title={assignedName ? `Assigned to ${assignedName}` : "Not yet assigned"}
                 >
                   <User className="h-3 w-3" />
-                  {job.assignedUserName ?? <span className="italic">Unassigned</span>}
+                  {assignedName ?? <span className="italic">Unassigned</span>}
                 </button>
               </div>
 
@@ -1711,14 +1714,14 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     }}
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal ring-1 transition-colors",
-                      job.assignedUserName
+                      assignedName
                         ? "bg-sky-50 text-sky-700 ring-sky-200 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-800 dark:hover:bg-sky-950/60"
                         : "bg-muted/40 text-muted-foreground ring-border hover:bg-muted/60 dark:bg-foreground/[0.04] dark:ring-border dark:hover:bg-foreground/[0.08]",
                     )}
-                    title={job.assignedUserName ? `Assigned to ${job.assignedUserName}` : "Unassigned — click to assign"}
+                    title={assignedName ? `Assigned to ${assignedName}` : "Unassigned — click to assign"}
                   >
                     <User className="h-3 w-3" />
-                    {job.assignedUserName ?? "Unassigned"}
+                    {assignedName ?? "Unassigned"}
                   </span>
                   {job.assignedUserId && (
                     <span

@@ -2245,10 +2245,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 />
               </div>
           </div>
-          {(job.holdedQuoteId || job.holdedInvoiceId) && (
+          {(job.holdedQuoteId || job.holdedInvoiceId || canLinkHoldedDocuments) && (
           <div className="bg-card dark:bg-card/[0.03] rounded-2xl shadow-sm border border-border/60 dark:border-border p-6 space-y-3">
             <h3 className="text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold">Documents</h3>
               <div className="space-y-2.5">
+                {!job.holdedQuoteId && !job.holdedInvoiceId && (
+                  <p className="text-xs text-muted-foreground/70 dark:text-muted-foreground">
+                    No Holded documents linked yet. Paste a Holded quote or invoice link below to attach one.
+                  </p>
+                )}
                 {job.holdedQuoteId && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
@@ -2313,6 +2318,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 )}
               </div>
+              {canLinkHoldedDocuments && (!job.holdedQuoteId || !job.holdedInvoiceId) && (
+                <HoldedManualLinkForm
+                  repairJobId={job.id}
+                  allowQuote={!job.holdedQuoteId}
+                  allowInvoice={!job.holdedInvoiceId}
+                  variant="compact"
+                  className="mt-2"
+                />
+              )}
           </div>
           )}
 

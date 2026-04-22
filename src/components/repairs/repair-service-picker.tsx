@@ -3,8 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Sparkles } from "lucide-react";
+import { Plus, Search, Trash2, Sparkles, Wrench } from "lucide-react";
 import { createServiceRequest, removeServiceRequest } from "@/actions/services";
+import { ServiceExtraWorkDialog } from "@/components/repairs/service-extra-work-dialog";
 import { cn } from "@/lib/utils";
 
 export type CatalogService = {
@@ -43,6 +44,7 @@ export function RepairServicesSection({
 }) {
   const router = useRouter();
   const [showPicker, setShowPicker] = useState(false);
+  const [extraWorkFor, setExtraWorkFor] = useState<RepairServiceRequest | null>(null);
   const [, startTransition] = useTransition();
 
   const totalExcl = requests.reduce(
@@ -106,6 +108,14 @@ export function RepairServicesSection({
                 </span>
                 <button
                   type="button"
+                  onClick={() => setExtraWorkFor(r)}
+                  className="text-muted-foreground/70 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                  title="Extra work needed (part or task)"
+                >
+                  <Wrench className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleRemove(r.id)}
                   className="text-muted-foreground/70 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                   title="Remove"
@@ -134,6 +144,15 @@ export function RepairServicesSection({
             onCancel={() => setShowPicker(false)}
           />
         </div>
+      )}
+
+      {extraWorkFor && (
+        <ServiceExtraWorkDialog
+          open={!!extraWorkFor}
+          onClose={() => setExtraWorkFor(null)}
+          repairJobId={repairJobId}
+          serviceName={extraWorkFor.serviceName}
+        />
       )}
     </div>
   );

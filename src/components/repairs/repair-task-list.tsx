@@ -75,9 +75,6 @@ export function RepairTaskList({
       refresh();
       router.refresh();
       toast.success("Task added");
-      // Direct de part-picker openen voor de nieuwe task, zodat de
-      // gebruiker meteen een onderdeel kan toevoegen als hij wil.
-      if (task?.id) setPickerForTaskId(task.id);
     });
   }
 

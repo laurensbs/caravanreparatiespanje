@@ -1692,7 +1692,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <div className="bg-card dark:bg-card/[0.03] rounded-2xl shadow-sm border border-border/60 dark:border-border overflow-hidden">
             <details open>
               <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150">
-                Workshop
+                Garage
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
             <div className="px-6 pb-7 space-y-7">

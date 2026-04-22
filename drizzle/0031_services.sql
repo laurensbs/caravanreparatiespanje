@@ -73,8 +73,10 @@ INSERT INTO "services" ("name", "category", "default_price", "tax_percent", "sor
   ('Inside cleaning with ozon (≤4.5m, before season)', 'cleaning', 250, 21, 30),
   ('Deepclean (>4.5m)', 'cleaning', 300, 21, 40),
   ('Servicebeurt uitgebreid (excl. repairs)', 'maintenance', 225, 21, 50),
+  ('Airco maintenance (clean in/out filters, run test)', 'maintenance', 100, 21, 55),
   ('Ozone treatment', 'care', 75, 21, 60),
   ('Charging battery / mover', 'maintenance', 25, 21, 70),
+  ('Greasing legs', 'maintenance', 75, 21, 75),
   ('Outside wash after holiday / before storing', 'care', 75, 21, 80),
   ('Quick inside check (photo audit)', 'inspection', 40, 21, 90)
 ON CONFLICT DO NOTHING;

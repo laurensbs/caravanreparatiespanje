@@ -201,12 +201,12 @@ export async function syncEstimateTotals(repairJobId: string) {
 export async function addEstimateLineItem(
   repairJobId: string,
   data: {
-    type: "labour" | "part" | "custom";
+    type: "labour" | "part" | "custom" | "service";
     description: string;
     quantity: number;
     unitPrice: number;
     internalCost?: number;
-    sourceType?: "task" | "part_request" | "manual";
+    sourceType?: "task" | "part_request" | "manual" | "service_request";
     sourceId?: string;
   },
 ) {

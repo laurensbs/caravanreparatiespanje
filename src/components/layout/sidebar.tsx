@@ -18,6 +18,7 @@ import {
   ExternalLink,
   ClipboardList,
   MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import type { UserRole } from "@/types";
 import { hasMinRole } from "@/lib/auth-utils";
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
   // Parts keeps its count: it represents pending part requests, an
   // actionable signal (not just 'how many records exist').
   { label: "Parts", href: "/parts", icon: <Package className="h-[18px] w-[18px]" />, group: "Data", countKey: "parts" },
+  { label: "Services", href: "/services", icon: <Sparkles className="h-[18px] w-[18px]" />, group: "Data" },
   // FINANCE
   { label: "Quotes / Invoices", href: "/invoices", icon: <Receipt className="h-[18px] w-[18px]" />, group: "Finance" },
 ];

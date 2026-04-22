@@ -8,6 +8,7 @@ import { getAllCustomers } from "@/actions/customers";
 import { getRepairTasks, getRepairWorkers, getActiveUsers, getRepairFindings, getRepairBlockers } from "@/actions/garage";
 import { getRepairSyncState, getGarageActivity, markGarageUpdatesRead } from "@/actions/garage-sync";
 import { getEstimateLineItems, getDismissedWorkshopItems } from "@/actions/estimates";
+import { getServices, getServiceRequestsForRepair } from "@/actions/services";
 import { getRepairPhotos } from "@/actions/photos";
 import { getJobTimeEntries, getJobActiveTimers } from "@/actions/time-entries";
 import { notFound } from "next/navigation";
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RepairDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
-  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers, dismissedWorkshopItems, syncState, garageActivity] = await Promise.all([
+  const [job, communicationLogs, partsList, settings, allTags, repairTags, usersList, allCustomers, tasks, partRequests, repairWorkers, activeUsers, findings, blockers, estimateLines, partCategories, photos, timeEntries, activeTimers, dismissedWorkshopItems, syncState, garageActivity, servicesCatalog, serviceRequests] = await Promise.all([
     getRepairJobById(id),
     getCommunicationLogs(id),
     getParts(),
@@ -56,6 +57,8 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
     getDismissedWorkshopItems(id),
     getRepairSyncState(id),
     getGarageActivity(id, 10),
+    getServices({ activeOnly: true }).catch(() => []),
+    getServiceRequestsForRepair(id).catch(() => []),
   ]);
 
   // Voice notes attached to this job's comments / blockers / findings.
@@ -103,6 +106,8 @@ export default async function RepairDetailPage({ params, searchParams }: Props) 
       syncState={syncState}
       garageActivity={garageActivity}
       voiceNotesByOwner={voiceNotesByOwner}
+      servicesCatalog={servicesCatalog}
+      serviceRequests={serviceRequests}
       settings={{
         hourlyRate: parseFloat(settings.hourly_rate ?? "42.50"),
         defaultMarkup: parseFloat(settings.default_markup_percent ?? "25"),

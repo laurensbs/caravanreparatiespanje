@@ -73,6 +73,7 @@ import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-syn
 import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-form";
 import { clearGarageMessage } from "@/actions/garage-sync";
 import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
+import { RepairServicesSection, type CatalogService, type RepairServiceRequest } from "@/components/repairs/repair-service-picker";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import type { RepairTask } from "@/types";
 
@@ -189,6 +190,8 @@ interface RepairDetailProps {
   voiceNotesByOwner?: Record<string, Array<{ id: string; ownerType: string; ownerId: string; durationSeconds: number; url: string; uploadedByLabel: string | null; createdAt: Date | string }>>;
   /** Manager+ — show “link existing Holded document” in Financial */
   canLinkHoldedDocuments?: boolean;
+  servicesCatalog?: CatalogService[];
+  serviceRequests?: RepairServiceRequest[];
 }
 
 /* ─── Add Item Dropdown ─── */
@@ -284,7 +287,7 @@ function AddItemDropdown({ onLabour, onCustom, onPart }: { onLabour: () => void;
   );
 }
 
-export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [], voiceNotesByOwner = {}, canLinkHoldedDocuments = false }: RepairDetailProps) {
+export function RepairDetail({ job, communicationLogs = [], partsList = [], backTo, settings = { hourlyRate: 42.50, defaultMarkup: 25, defaultTax: 21 }, allTags = [], repairTags = [], customerRepairs = [], users = [], allCustomers = [], tasks = [], partRequests = [], repairWorkers = [], activeUsers = [], findings = [], blockers = [], estimateLines = [], dismissedWorkshopItems: initialDismissed = [], partCategories = [], photos = [], timeEntries = [], activeTimers = [], syncState = null, garageActivity = [], voiceNotesByOwner = {}, canLinkHoldedDocuments = false, servicesCatalog = [], serviceRequests = [] }: RepairDetailProps) {
   const router = useRouter();
   const { setRepairContext } = useAssistantContext();
   const [saving, setSaving] = useState(false);
@@ -1815,6 +1818,13 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   </div>
                 );
               })()}
+
+              {/* ── Services (waxing, cleaning, ozon, etc.) ── */}
+              <RepairServicesSection
+                repairJobId={job.id}
+                requests={serviceRequests}
+                catalog={servicesCatalog}
+              />
 
               {/* ── Inspection Flags (always visible) ── */}
               <div>

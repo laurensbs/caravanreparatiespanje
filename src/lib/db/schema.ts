@@ -152,12 +152,14 @@ export const estimateLineTypeEnum = pgEnum("estimate_line_type", [
   "labour",
   "part",
   "custom",
+  "service",
 ]);
 
 export const estimateLineSourceEnum = pgEnum("estimate_line_source", [
   "task",
   "part_request",
   "manual",
+  "service_request",
 ]);
 
 export const finalCheckStatusEnum = pgEnum("final_check_status", [
@@ -797,6 +799,61 @@ export const partRequests = pgTable(
     index("part_requests_repair_task_id_idx").on(table.repairTaskId),
     index("part_requests_status_idx").on(table.status),
     index("part_requests_supplier_idx").on(table.supplierId),
+  ]
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVICES (catalog) — labour-style fixed-price services like waxing,
+// ozon-treatment, deepclean, etc. Parallel aan parts maar zonder stock.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const services = pgTable(
+  "services",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 500 }).notNull(),
+    description: text("description"),
+    category: varchar("category", { length: 50 }),
+    defaultPrice: numeric("default_price", { precision: 10, scale: 2 }).notNull(),
+    taxPercent: numeric("tax_percent", { precision: 5, scale: 2 }).notNull().default("21"),
+    holdedProductId: varchar("holded_product_id", { length: 255 }),
+    active: boolean("active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(100),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("services_category_idx").on(table.category),
+    index("services_active_idx").on(table.active),
+  ]
+);
+
+export const serviceRequests = pgTable(
+  "service_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repairJobId: uuid("repair_job_id")
+      .notNull()
+      .references(() => repairJobs.id, { onDelete: "cascade" }),
+    serviceId: uuid("service_id").references(() => services.id, {
+      onDelete: "set null",
+    }),
+    serviceName: varchar("service_name", { length: 500 }).notNull(),
+    quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
+    unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+    taxPercent: numeric("tax_percent", { precision: 5, scale: 2 }).notNull().default("21"),
+    notes: text("notes"),
+    includeInEstimate: boolean("include_in_estimate").notNull().default(true),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("service_requests_job_idx").on(table.repairJobId),
+    index("service_requests_service_idx").on(table.serviceId),
   ]
 );
 

@@ -975,10 +975,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                   type="button"
                   onClick={() => setShowUserAssigner(true)}
                   className="inline-flex items-center gap-1 text-xs text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150"
-                  title={job.assignedUserName ? `Toegewezen aan ${job.assignedUserName}` : "Nog niet toegewezen"}
+                  title={job.assignedUserName ? `Assigned to ${job.assignedUserName}` : "Not yet assigned"}
                 >
                   <User className="h-3 w-3" />
-                  {job.assignedUserName ?? <span className="italic">Niet toegewezen</span>}
+                  {job.assignedUserName ?? <span className="italic">Unassigned</span>}
                 </button>
               </div>
 
@@ -1715,10 +1715,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         ? "bg-sky-50 text-sky-700 ring-sky-200 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-800 dark:hover:bg-sky-950/60"
                         : "bg-muted/40 text-muted-foreground ring-border hover:bg-muted/60 dark:bg-foreground/[0.04] dark:ring-border dark:hover:bg-foreground/[0.08]",
                     )}
-                    title={job.assignedUserName ? `Toegewezen aan ${job.assignedUserName}` : "Niet toegewezen — klik om toe te wijzen"}
+                    title={job.assignedUserName ? `Assigned to ${job.assignedUserName}` : "Unassigned — click to assign"}
                   >
                     <User className="h-3 w-3" />
-                    {job.assignedUserName ?? "Niet toegewezen"}
+                    {job.assignedUserName ?? "Unassigned"}
                   </span>
                   {job.assignedUserId && (
                     <span
@@ -1732,7 +1732,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           toast.error(res.message);
                           return;
                         }
-                        toast.success("Toewijzing verwijderd");
+                        toast.success("Unassigned");
                         router.refresh();
                       }}
                       onKeyDown={(e) => {
@@ -1742,10 +1742,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         }
                       }}
                       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-muted-foreground/70 ring-1 ring-border hover:bg-muted/60 dark:ring-border dark:hover:bg-foreground/[0.06]"
-                      title="Niet toewijzen — vrij voor iedereen"
+                      title="Unassign — free for anyone"
                     >
                       <XIcon className="h-3 w-3" />
-                      Niet toewijzen
+                      Unassign
                     </span>
                   )}
                 </span>
@@ -2486,7 +2486,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     toast.error(res.message);
                     return;
                   }
-                  toast.success("Toewijzing verwijderd");
+                  toast.success("Unassigned");
                   setShowUserAssigner(false);
                   router.refresh();
                 }}
@@ -2508,7 +2508,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     toast.error(res.message);
                     return;
                   }
-                  toast.success(`Toegewezen aan ${u.name}`);
+                  toast.success(`Assigned to ${u.name}`);
                   setShowUserAssigner(false);
                   router.refresh();
                 }}
@@ -2520,7 +2520,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             {getSelectableGarageUsers(
               users.map((u) => ({ id: u.id, name: u.name, role: u.role ?? null })),
             ).length === 0 && (
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 py-2">Geen technici beschikbaar</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 py-2">No technicians available</p>
             )}
           </div>
         </DialogContent>

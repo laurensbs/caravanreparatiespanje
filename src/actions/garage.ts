@@ -1262,6 +1262,9 @@ export async function addRepairTask(
     hourlyRate?: number;
     billable?: boolean;
     includeInEstimate?: boolean;
+    /** Optional label — if this call came from the "extra work needed"
+     *  dialog on a service line, we use it in the audit-event comment. */
+    spawnedFromServiceName?: string | null;
   }
 ) {
   const ctx = await requireAnyAuth();
@@ -1288,6 +1291,32 @@ export async function addRepairTask(
       approvedAt: new Date(),
     })
     .returning();
+
+  // A new repair-task on a non-repair work-order means the job has
+  // grown past its original category. Flip jobType to "repair" so the
+  // list/filter/badge match reality. No-op if already repair.
+  const [job] = await db
+    .select({ jobType: repairJobs.jobType })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+  if (job && job.jobType !== "repair") {
+    await db
+      .update(repairJobs)
+      .set({ jobType: "repair", updatedAt: new Date() })
+      .where(eq(repairJobs.id, repairJobId));
+    await db.insert(repairJobEvents).values({
+      repairJobId,
+      userId: ctx.userId,
+      eventType: "job_type_changed",
+      fieldChanged: "jobType",
+      oldValue: job.jobType,
+      newValue: "repair",
+      comment: data.spawnedFromServiceName
+        ? `Auto-flipped to repair — task "${data.title}" added from service "${data.spawnedFromServiceName}"`
+        : `Auto-flipped to repair — task "${data.title}" added`,
+    });
+  }
 
   return task;
 }

@@ -69,6 +69,7 @@ export function ServiceExtraWorkDialog({
             quantity: Math.max(1, partQty),
             notes: `Added from service: ${serviceName}`,
             status: "requested",
+            spawnedFromServiceName: serviceName,
           });
           toast.success("Part requested — repair flipped to waiting parts");
           reset();
@@ -89,6 +90,7 @@ export function ServiceExtraWorkDialog({
           await addRepairTask(repairJobId, {
             title: trimmed,
             description: taskDescription.trim() || `Spawned from service: ${serviceName}`,
+            spawnedFromServiceName: serviceName,
           });
           toast.success("Task added");
           reset();

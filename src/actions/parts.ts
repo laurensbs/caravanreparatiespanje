@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { suppliers, parts, partRequests, repairJobs, repairTasks, partCategories } from "@/lib/db/schema";
+import { suppliers, parts, partRequests, repairJobs, repairTasks, partCategories, repairJobEvents } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, desc, sql, asc, and, ne, inArray, isNull } from "drizzle-orm";
@@ -404,6 +404,10 @@ export async function createPartRequest(data: {
    * niet onnodig naar waiting_parts.
    */
   status?: "requested" | "ordered" | "shipped" | "received" | "cancelled";
+  /** Optional label — if this call came from the "extra work needed"
+   *  dialog on a service line, we note the service name in the job_type
+   *  audit event so the timeline shows which service spawned the flip. */
+  spawnedFromServiceName?: string | null;
 }) {
   await requireRole("staff");
 
@@ -486,7 +490,48 @@ export async function createPartRequest(data: {
     }
   }
 
+  // Part = concreet bewijs dat er gerepareerd wordt. Als de work-order
+  // nog een ander jobType had (maintenance/wax/inspection) flippen we
+  // hem naar "repair" zodat lijst, filter en badges kloppen.
+  if (data.repairJobId && data.requestType !== "equipment") {
+    await autoFlipJobTypeToRepair(
+      data.repairJobId,
+      data.spawnedFromServiceName
+        ? `Part "${data.partName ?? "TBD"}" added from service "${data.spawnedFromServiceName}"`
+        : `Part "${data.partName ?? "TBD"}" added`,
+    );
+  }
+
   return request;
+}
+
+/**
+ * Flip a work-order's jobType to "repair" when extra repair-style work
+ * (a part request or an admin-added task) appears on it. No-op if the
+ * job is already "repair". Writes a repair_job_events audit row so the
+ * timeline explains why.
+ */
+async function autoFlipJobTypeToRepair(repairJobId: string, reason: string) {
+  const [job] = await db
+    .select({ jobType: repairJobs.jobType })
+    .from(repairJobs)
+    .where(eq(repairJobs.id, repairJobId))
+    .limit(1);
+  if (!job || job.jobType === "repair") return;
+
+  await db
+    .update(repairJobs)
+    .set({ jobType: "repair", updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+
+  await db.insert(repairJobEvents).values({
+    repairJobId,
+    eventType: "job_type_changed",
+    fieldChanged: "jobType",
+    oldValue: job.jobType,
+    newValue: "repair",
+    comment: `Auto-flipped to repair — ${reason}`,
+  });
 }
 
 /**
@@ -535,6 +580,13 @@ export async function createPartRequestFromGarage(input: {
         .set({ status: "waiting_parts", updatedAt: new Date() })
         .where(eq(repairJobs.id, input.repairJobId));
     }
+  } catch {
+    // best-effort
+  }
+
+  // Mirror admin flow: a part needed = repair job, flip the type.
+  try {
+    await autoFlipJobTypeToRepair(input.repairJobId, `Part "${partName}" requested from garage`);
   } catch {
     // best-effort
   }

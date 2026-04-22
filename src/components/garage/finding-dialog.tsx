@@ -80,6 +80,9 @@ interface FindingDialogProps {
   open: boolean;
   onClose: () => void;
   repairJobId: string;
+  /** Naam van het actieve iPad-profiel — doorgegeven aan addFinding
+   *  zodat de berichten-mirror de juiste afzender toont. */
+  authorName?: string | null;
   /** Fired once the finding has been persisted server-side. The
    *  optional payload lets the caller render the entry optimistically
    *  without waiting for a full page refresh. */
@@ -94,7 +97,7 @@ interface FindingDialogProps {
   }) => void;
 }
 
-export function FindingDialog({ open, onClose, repairJobId, onComplete }: FindingDialogProps) {
+export function FindingDialog({ open, onClose, repairJobId, onComplete, authorName }: FindingDialogProps) {
   const { t } = useLanguage();
   const [category, setCategory] = useState<FindingCategory | null>(null);
   const [severity, setSeverity] = useState<FindingSeverity>("normal");
@@ -134,6 +137,7 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete }: Findin
         requiresFollowUp,
         requiresCustomerApproval,
         needsPart: partPayload,
+        authorName: authorName ?? null,
       });
       if (voice && finding?.id) {
         const ok = await uploadVoiceNote({

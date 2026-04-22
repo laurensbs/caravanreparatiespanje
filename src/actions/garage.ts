@@ -1478,6 +1478,9 @@ export async function addFinding(
      * waiting_parts net zoals blocker deed.
      */
     needsPart?: { partName: string; quantity?: number } | null;
+    /** Optional iPad-profile name — overrides active-timer fallback
+     *  for the repair_messages mirror. */
+    authorName?: string | null;
   }
 ) {
   const ctx = await requireAnyAuth();
@@ -1611,13 +1614,16 @@ export async function addFinding(
   try {
     // Afzender = actieve werker (lopende timer op deze repair) of de
     // ingelogde user; fallback naar generiek "Garage" label.
-    const [activeTimer] = await db
-      .select({ userName: users.name })
-      .from(timeEntries)
-      .leftJoin(users, eq(timeEntries.userId, users.id))
-      .where(and(eq(timeEntries.repairJobId, repairJobId), isNull(timeEntries.endedAt)))
-      .limit(1);
-    const author = activeTimer?.userName ?? ctx.userName ?? "Garage";
+    let author = data.authorName?.trim() || null;
+    if (!author) {
+      const [activeTimer] = await db
+        .select({ userName: users.name })
+        .from(timeEntries)
+        .leftJoin(users, eq(timeEntries.userId, users.id))
+        .where(and(eq(timeEntries.repairJobId, repairJobId), isNull(timeEntries.endedAt)))
+        .limit(1);
+      author = activeTimer?.userName ?? ctx.userName ?? "Garage";
+    }
 
     const severityTag = data.severity === "critical" ? " · critical" : "";
     const body = `Finding [${data.category}${severityTag}]: ${data.description}`;

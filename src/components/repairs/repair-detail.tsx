@@ -73,6 +73,7 @@ import { GarageSyncStrip, GarageActivityTimeline } from "@/components/garage-syn
 import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-form";
 import { clearGarageMessage } from "@/actions/garage-sync";
 import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
+import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import type { RepairTask } from "@/types";
 
 function toastScheduleRepairError(err: unknown, fallback: string) {
@@ -120,6 +121,7 @@ type PartRequestItem = PartRequestRow;
 interface UserItem {
   id: string;
   name: string | null;
+  role?: string | null;
 }
 
 interface WorkerItem {
@@ -968,6 +970,16 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     <span className="text-muted-foreground dark:text-muted-foreground/70 text-xs">{job.location.slug ? job.location.slug.toUpperCase() : job.location.name}</span>
                   </>
                 )}
+                <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>
+                <button
+                  type="button"
+                  onClick={() => setShowUserAssigner(true)}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150"
+                  title={job.assignedUserName ? `Toegewezen aan ${job.assignedUserName}` : "Nog niet toegewezen"}
+                >
+                  <User className="h-3 w-3" />
+                  {job.assignedUserName ?? <span className="italic">Niet toegewezen</span>}
+                </button>
               </div>
 
               {/* Badges */}
@@ -2408,7 +2420,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
             <DialogTitle>Assign to</DialogTitle>
           </DialogHeader>
           <div className="space-y-1">
-            {users.map((u) => (
+            {job.assignedUserId && (
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/40 dark:hover:bg-card/5 transition-all duration-150"
+                onClick={async () => {
+                  const res = await updateRepairJob(job.id, { assignedUserId: null });
+                  if (!res.ok) {
+                    toast.error(res.message);
+                    return;
+                  }
+                  toast.success("Toewijzing verwijderd");
+                  setShowUserAssigner(false);
+                  router.refresh();
+                }}
+              >
+                <XIcon className="h-4 w-4 text-muted-foreground/70 dark:text-muted-foreground" />
+                Unassign
+              </button>
+            )}
+            {getSelectableGarageUsers(
+              users.map((u) => ({ id: u.id, name: u.name, role: u.role ?? null })),
+            ).map((u) => (
               <button
                 key={u.id}
                 type="button"
@@ -2419,7 +2452,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     toast.error(res.message);
                     return;
                   }
-                  toast.success(`Assigned to ${u.name}`);
+                  toast.success(`Toegewezen aan ${u.name}`);
                   setShowUserAssigner(false);
                   router.refresh();
                 }}
@@ -2428,8 +2461,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 {u.name}
               </button>
             ))}
-            {users.length === 0 && (
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 py-2">No users available</p>
+            {getSelectableGarageUsers(
+              users.map((u) => ({ id: u.id, name: u.name, role: u.role ?? null })),
+            ).length === 0 && (
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 py-2">Geen technici beschikbaar</p>
             )}
           </div>
         </DialogContent>

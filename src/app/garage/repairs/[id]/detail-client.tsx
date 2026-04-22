@@ -75,6 +75,7 @@ import type {
   BlockerReason,
 } from "@/types";
 import { canStartGarageTimerOnRepair } from "@/lib/garage-timer-policy";
+import { useGarageActiveUser } from "@/lib/use-garage-active-user";
 
 /* ───────────────────────────────────────────────────────────────────── */
 /* Types                                                                  */
@@ -376,13 +377,35 @@ export function GarageRepairDetailClient({
   const [suggestDesc, setSuggestDesc] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  /* Persistent iPad-profile (who's using this device). Also triggers
+     the bootstrap picker if no profile is set. */
+  const { user: activeUser, hydrated: activeUserHydrated, pick: pickActiveUser } = useGarageActiveUser();
+
   /* Worker picker state — every action that needs an actor opens this. */
   const [picker, setPicker] = useState<{
-    purpose: "startTimer" | "taskStart";
+    purpose: "startTimer" | "taskStart" | "switch" | "bootstrap";
     onPick: (worker: WorkerOption) => void;
     onCancel?: () => void;
     title?: string;
   } | null>(null);
+
+  // Auto-open bootstrap picker when no profile is set on this iPad.
+  useEffect(() => {
+    if (!activeUserHydrated || activeUser || picker) return;
+    setPicker({
+      purpose: "bootstrap",
+      title: t("Who is using this iPad?", "¿Quién usa este iPad?", "Wie gebruikt deze iPad?"),
+      onPick: (w) => {
+        pickActiveUser({
+          id: w.id,
+          name: w.name ?? "Garage",
+          preferredLanguage: (w.preferredLanguage ?? "en") as "en" | "es" | "nl",
+        });
+        setPicker(null);
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeUserHydrated, activeUser]);
 
   /* ── Derived ───────────────────────────────────────────────────── */
   const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
@@ -662,6 +685,39 @@ export function GarageRepairDetailClient({
           <div className="flex-1" />
           <LanguageToggle />
           <GarageThemeToggle />
+          {activeUser && (
+            <button
+              type="button"
+              onClick={() => {
+                hapticTap();
+                setPicker({
+                  purpose: "switch",
+                  title: t("Switch profile", "Cambiar perfil", "Profiel wisselen"),
+                  onPick: (w) => {
+                    pickActiveUser({
+                      id: w.id,
+                      name: w.name ?? "Garage",
+                      preferredLanguage: (w.preferredLanguage ?? "en") as "en" | "es" | "nl",
+                    });
+                    setPicker(null);
+                  },
+                });
+              }}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white/[0.06] px-2.5 text-sm font-semibold text-white ring-1 ring-white/[0.06] hover:bg-white/[0.10] active:scale-[0.97]"
+              aria-label={t("Switch profile", "Cambiar perfil", "Profiel wisselen")}
+              title={t("Switch profile", "Cambiar perfil", "Profiel wisselen")}
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/50 to-sky-500/20 text-[11px] font-bold">
+                {activeUser.name
+                  .split(/\s+/)
+                  .map((p) => p[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+              <span className="hidden max-w-[7rem] truncate sm:inline">{activeUser.name}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleRefresh}
@@ -823,6 +879,15 @@ export function GarageRepairDetailClient({
                       type="button"
                       onClick={() => {
                         hapticTap();
+                        if (activeUser) {
+                          handleStartTimer({
+                            id: activeUser.id,
+                            name: activeUser.name,
+                            role: null,
+                            preferredLanguage: activeUser.preferredLanguage,
+                          });
+                          return;
+                        }
                         setPicker({
                           purpose: "startTimer",
                           onPick: (w) => {
@@ -843,6 +908,15 @@ export function GarageRepairDetailClient({
                     type="button"
                     onClick={() => {
                       hapticTap();
+                      if (activeUser) {
+                        handleStartTimer({
+                          id: activeUser.id,
+                          name: activeUser.name,
+                          role: null,
+                          preferredLanguage: activeUser.preferredLanguage,
+                        });
+                        return;
+                      }
                       setPicker({
                         purpose: "startTimer",
                         onPick: (w) => {
@@ -1216,29 +1290,22 @@ export function GarageRepairDetailClient({
             <button
               type="button"
               onClick={() => {
-                if (activeTimers.length === 0) {
+                if (!activeUser) {
+                  // Bootstrap picker is already opening via effect; nudge.
                   toast.error(
                     t(
-                      "Start your timer first so office knows who's writing.",
-                      "Primero inicia tu temporizador para identificarte.",
-                      "Start eerst je timer — dan weet kantoor wie er schrijft.",
+                      "Pick your profile first.",
+                      "Elige tu perfil primero.",
+                      "Kies eerst je profiel.",
                     ),
                   );
                   return;
                 }
                 setShowCommentSheet(true);
               }}
-              className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all active:scale-[0.97] ${
-                activeTimers.length === 0
-                  ? "bg-white/[0.03] text-white/30 ring-1 ring-white/[0.05]"
-                  : "bg-white/[0.06] text-white/70 hover:bg-white/[0.1]"
-              }`}
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06] text-white/70 hover:bg-white/[0.1] transition-all active:scale-[0.97]"
               aria-label={t("Message", "Mensaje", "Bericht")}
-              title={
-                activeTimers.length === 0
-                  ? t("Start timer first", "Inicia el temporizador primero", "Start eerst de timer")
-                  : t("Send message to office", "Enviar mensaje a oficina", "Stuur bericht naar kantoor")
-              }
+              title={t("Send message to office", "Enviar mensaje a oficina", "Stuur bericht naar kantoor")}
             >
               <MessageSquare className="h-5 w-5" />
             </button>
@@ -1263,13 +1330,19 @@ export function GarageRepairDetailClient({
       <WorkerPicker
         open={!!picker}
         onClose={() => {
+          // Bootstrap must be completed — no closing without picking.
+          if (picker?.purpose === "bootstrap") return;
           picker?.onCancel?.();
           setPicker(null);
         }}
         onPick={(worker) => picker?.onPick(worker)}
         workers={allUsers}
         title={picker?.title}
-        subtitle={repair.title ?? repair.publicCode ?? undefined}
+        subtitle={
+          picker?.purpose === "bootstrap" || picker?.purpose === "switch"
+            ? undefined
+            : repair.title ?? repair.publicCode ?? undefined
+        }
       />
 
       {/* ─── Dialogs ─────────────────────────────────────── */}
@@ -1296,6 +1369,7 @@ export function GarageRepairDetailClient({
           repairJobId={repair.id}
           open={showFinding}
           onClose={() => setShowFinding(false)}
+          authorName={activeUser?.name ?? null}
           onComplete={(newFinding) => {
             // Meteen zichtbaar tonen in "Findings" zodat de werker
             // directe feedback krijgt dat z'n bevinding is genoteerd
@@ -1326,14 +1400,14 @@ export function GarageRepairDetailClient({
 
       {/* BlockerDialog is verwijderd — zie FindingDialog "Onderdeel nodig". */}
 
-      {/* Volledige chat-sheet met office. Afzender = actieve timer-werker.
-          De caller (💬-knop) blokkeert dit sheet al als er geen timer loopt. */}
-      {showCommentSheet && activeTimers.length > 0 ? (
+      {/* Volledige chat-sheet met office. Afzender = actieve iPad-profiel
+          (persistent, eenmaal gekozen). Ook bruikbaar zonder lopende timer. */}
+      {showCommentSheet && activeUser ? (
         <GarageChatSheet
           repairJobId={repair.id}
           repairTitle={repair.title ?? null}
           repairCode={repair.publicCode ?? null}
-          authorName={activeTimers[0]!.userName ?? "Garage"}
+          authorName={activeUser.name}
           t={t}
           lang={deviceLang}
           onClose={() => setShowCommentSheet(false)}

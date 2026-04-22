@@ -36,6 +36,7 @@ import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { ToolRequestSheet } from "@/components/garage/tool-request-sheet";
+import { useGarageActiveUser } from "@/lib/use-garage-active-user";
 
 /* ─────────────────────────────────────────────────────────────────────────
    Today screen — shared garage iPad
@@ -243,13 +244,27 @@ export function GarageTodayClient({
     } catch {}
   }, []);
 
-  /* Worker picker — opened with a "purpose" callback so any action
-     that needs an actor can route through one component. */
-  const [pickerState, setPickerState] = useState<{
-    purpose: "startTimer";
-    repairId: string;
-    repairTitle: string;
-  } | null>(null);
+  /* Persistent iPad-profile: who's using this device. One localStorage
+     entry — switch via header chip. Used as the actor for timer/messages. */
+  const { user: activeUser, hydrated: activeUserHydrated, pick: pickActiveUser } = useGarageActiveUser();
+
+  /* Worker picker — one component, three purposes:
+       - "bootstrap": first-time setup, cannot be dismissed
+       - "switch": tap the header chip to change profiles
+       - "startTimer": fallback when activeUser is somehow missing */
+  type PickerState =
+    | { purpose: "bootstrap" }
+    | { purpose: "switch" }
+    | { purpose: "startTimer"; repairId: string; repairTitle: string };
+  const [pickerState, setPickerState] = useState<PickerState | null>(null);
+
+  // Auto-open bootstrap picker the first time we realize there's no profile.
+  useEffect(() => {
+    if (!activeUserHydrated) return;
+    if (!activeUser && !pickerState) {
+      setPickerState({ purpose: "bootstrap" });
+    }
+  }, [activeUserHydrated, activeUser, pickerState]);
 
   /* Tool request sheet — global "need a tool / part / supply" button. */
   const [toolSheetOpen, setToolSheetOpen] = useState(false);
@@ -551,6 +566,29 @@ export function GarageTodayClient({
           <LanguageToggle />
           <GarageThemeToggle />
 
+          {activeUser && (
+            <button
+              type="button"
+              onClick={() => {
+                hapticTap();
+                setPickerState({ purpose: "switch" });
+              }}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white/[0.06] px-2.5 text-sm font-semibold text-white ring-1 ring-white/[0.08] hover:bg-white/[0.10] active:scale-[0.97]"
+              aria-label={t("Switch profile", "Cambiar perfil", "Profiel wisselen")}
+              title={t("Switch profile", "Cambiar perfil", "Profiel wisselen")}
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/50 to-sky-500/20 text-[11px] font-bold">
+                {activeUser.name
+                  .split(/\s+/)
+                  .map((p) => p[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+              <span className="hidden max-w-[8rem] truncate sm:inline">{activeUser.name}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleRefresh}
@@ -705,13 +743,22 @@ export function GarageTodayClient({
                 timers={timersByRepair.get(r.id) ?? []}
                 now={now}
                 onOpen={() => router.push(`/garage/repairs/${r.id}`)}
-                onStartTimer={() =>
+                onStartTimer={() => {
+                  if (activeUser) {
+                    handleStartTimer(r, {
+                      id: activeUser.id,
+                      name: activeUser.name,
+                      role: null,
+                      preferredLanguage: activeUser.preferredLanguage,
+                    });
+                    return;
+                  }
                   setPickerState({
                     purpose: "startTimer",
                     repairId: r.id,
                     repairTitle: r.title ?? r.publicCode ?? "Repair",
-                  })
-                }
+                  });
+                }}
                 onStopTimer={handleStopTimer}
                 onTickTask={() => handleTickTask(r)}
                 onReceivePart={() => handleReceivePart(r)}
@@ -721,19 +768,37 @@ export function GarageTodayClient({
         )}
       </main>
 
-      {/* ── Worker picker (used for timer start) ───────────────────── */}
+      {/* ── Worker picker (bootstrap, switch, or timer-start fallback) ── */}
       <WorkerPicker
         open={!!pickerState}
-        onClose={() => setPickerState(null)}
+        onClose={() => {
+          // Bootstrap must be completed — no closing without picking.
+          if (pickerState?.purpose === "bootstrap") return;
+          setPickerState(null);
+        }}
         onPick={(worker) => {
           if (!pickerState) return;
-          const repair = repairs.find((r) => r.id === pickerState.repairId);
-          if (!repair) return;
-          handleStartTimer(repair, worker);
+          // Persist the iPad profile on every pick so the choice sticks.
+          pickActiveUser({
+            id: worker.id,
+            name: worker.name ?? "Garage",
+            preferredLanguage: (worker.preferredLanguage ?? "en") as "en" | "es" | "nl",
+          });
+          if (pickerState.purpose === "startTimer") {
+            const repair = repairs.find((r) => r.id === pickerState.repairId);
+            if (repair) handleStartTimer(repair, worker);
+          }
+          setPickerState(null);
         }}
         workers={allUsers}
-        title={t("Who's starting?", "¿Quién empieza?", "Wie begint?")}
-        subtitle={pickerState?.repairTitle}
+        title={
+          pickerState?.purpose === "bootstrap"
+            ? t("Who is using this iPad?", "¿Quién usa este iPad?", "Wie gebruikt deze iPad?")
+            : pickerState?.purpose === "switch"
+              ? t("Switch profile", "Cambiar perfil", "Profiel wisselen")
+              : t("Who's starting?", "¿Quién empieza?", "Wie begint?")
+        }
+        subtitle={pickerState?.purpose === "startTimer" ? pickerState.repairTitle : undefined}
       />
 
       {/* ── Tool request sheet (global) ───────────────────────────── */}

@@ -893,6 +893,11 @@ function JobCard({
           className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[repair.status] ?? "bg-stone-500"}`}
         />
         <div className="min-w-0 flex-1">
+          {repair.assignedUserName ? (
+            <p className="mb-0.5 truncate text-[10px] font-medium uppercase tracking-wider text-sky-300/80">
+              {t("For", "Para", "Voor")} {repair.assignedUserName}
+            </p>
+          ) : null}
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm font-bold tracking-wide text-white">
               {repair.unitRegistration ?? repair.publicCode ?? "—"}

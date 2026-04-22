@@ -433,6 +433,10 @@ function TaskPartPicker({
   const [tab, setTab] = useState<"requested" | "catalog">(
     requestedOnJob.length > 0 ? "requested" : "catalog",
   );
+  // Mode: voegt admin het onderdeel toe als "al aanwezig / klaar voor de
+  // werkvloer" (received) of als "moet nog besteld" (requested). Keuze
+  // wordt onthouden per dialog-open.
+  const [mode, setMode] = useState<"in_stock" | "order">("in_stock");
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -466,6 +470,13 @@ function TaskPartPicker({
     return () => clearTimeout(debounceRef.current);
   }, [query, selectedCategory, tab]);
 
+  // Mode bepaalt de initial status van de part_request. "in_stock" = de
+  // werkplaats heeft het onderdeel al, gaat meteen gebruiken. "order" =
+  // moet nog besteld (verschijnt in Part Requests paneel, flipt job
+  // naar waiting_parts via createPartRequest's eigen logica).
+  const initialStatus = mode === "in_stock" ? "received" : "requested";
+  const successCopy = mode === "in_stock" ? "added — in stock" : "added to order list";
+
   function addCatalogPart(part: SearchResult) {
     startTransition(async () => {
       try {
@@ -481,10 +492,9 @@ function TaskPartPicker({
           sellPrice: sellPrice > 0 ? String(Math.round(sellPrice * 100) / 100) : undefined,
           markupPercent: markup > 0 ? String(markup) : undefined,
           supplierId: part.supplierId ?? undefined,
-          // Admin voegt het direct toe = part is aanwezig/gebruikt, niet aangevraagd.
-          status: "received",
+          status: initialStatus,
         });
-        toast.success(`"${part.name}" linked to task`);
+        toast.success(`"${part.name}" ${successCopy}`);
         setQuery("");
         setResults([]);
         onAdded();
@@ -504,9 +514,9 @@ function TaskPartPicker({
           repairJobId,
           repairTaskId,
           partName: name,
-          status: "received",
+          status: initialStatus,
         });
-        toast.success(`"${name}" linked to task`);
+        toast.success(`"${name}" ${successCopy}`);
         setQuery("");
         setResults([]);
         onAdded();
@@ -609,6 +619,35 @@ function TaskPartPicker({
       {/* Catalog tab */}
       {tab === "catalog" && (
         <>
+          {/* Mode-toggle: part is "al in stock" (garage gebruikt het meteen)
+              of "moet nog besteld" (verschijnt in Part Requests, job flipt
+              naar waiting_parts). */}
+          <div className="flex items-center gap-1 rounded-md bg-muted/40 p-0.5 dark:bg-card/[0.04]">
+            <button
+              type="button"
+              onClick={() => setMode("in_stock")}
+              className={cn(
+                "flex-1 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors",
+                mode === "in_stock"
+                  ? "bg-emerald-500 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              ✓ In stock — garage uses it
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("order")}
+              className={cn(
+                "flex-1 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors",
+                mode === "order"
+                  ? "bg-amber-500 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              ⏳ Need to order
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-muted-foreground/70 shrink-0" />
             <input

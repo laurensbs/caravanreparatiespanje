@@ -1692,7 +1692,63 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
           <div className="bg-card dark:bg-card/[0.03] rounded-2xl shadow-sm border border-border/60 dark:border-border overflow-hidden">
             <details open>
               <summary className="px-6 py-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground/70 dark:text-muted-foreground font-semibold hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150">
-                Garage
+                <span className="flex items-center gap-3">
+                  <span>Garage</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowUserAssigner(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowUserAssigner(true);
+                      }
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal ring-1 transition-colors",
+                      job.assignedUserName
+                        ? "bg-sky-50 text-sky-700 ring-sky-200 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-800 dark:hover:bg-sky-950/60"
+                        : "bg-muted/40 text-muted-foreground ring-border hover:bg-muted/60 dark:bg-foreground/[0.04] dark:ring-border dark:hover:bg-foreground/[0.08]",
+                    )}
+                    title={job.assignedUserName ? `Toegewezen aan ${job.assignedUserName}` : "Niet toegewezen — klik om toe te wijzen"}
+                  >
+                    <User className="h-3 w-3" />
+                    {job.assignedUserName ?? "Niet toegewezen"}
+                  </span>
+                  {job.assignedUserId && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const res = await updateRepairJob(job.id, { assignedUserId: null });
+                        if (!res.ok) {
+                          toast.error(res.message);
+                          return;
+                        }
+                        toast.success("Toewijzing verwijderd");
+                        router.refresh();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-muted-foreground/70 ring-1 ring-border hover:bg-muted/60 dark:ring-border dark:hover:bg-foreground/[0.06]"
+                      title="Niet toewijzen — vrij voor iedereen"
+                    >
+                      <XIcon className="h-3 w-3" />
+                      Niet toewijzen
+                    </span>
+                  )}
+                </span>
                 <ChevronDown className="h-3.5 w-3.5 opacity-40" />
               </summary>
             <div className="px-6 pb-7 space-y-7">

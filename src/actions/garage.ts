@@ -100,6 +100,23 @@ export async function updateRepairTitle(repairJobId: string, title: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ASSIGN / UNASSIGN (from garage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Wijs een reparatie toe aan een technicus, of haal de toewijzing weg
+ *  (userId = null) zodat de klus weer "van iedereen" is. */
+export async function assignGarageRepair(repairJobId: string, userId: string | null) {
+  await requireAnyAuth();
+  await db
+    .update(repairJobs)
+    .set({ assignedUserId: userId, updatedAt: new Date() })
+    .where(eq(repairJobs.id, repairJobId));
+  safeRevalidate(`/garage/repairs/${repairJobId}`);
+  safeRevalidate(`/repairs/${repairJobId}`);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MARK DONE / NOT DONE (from garage)
 // ─────────────────────────────────────────────────────────────────────────────
 

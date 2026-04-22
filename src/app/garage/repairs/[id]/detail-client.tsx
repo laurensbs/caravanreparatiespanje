@@ -29,6 +29,7 @@ import {
   Sparkles,
   Pencil,
   Trash2,
+  User,
   X,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
@@ -50,6 +51,7 @@ import {
   resolveBlocker as resolveBlockerAction,
   deleteFinding,
   updateFinding,
+  assignGarageRepair,
 } from "@/actions/garage";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { markAdminMessageRead } from "@/actions/garage-sync";
@@ -383,11 +385,40 @@ export function GarageRepairDetailClient({
 
   /* Worker picker state — every action that needs an actor opens this. */
   const [picker, setPicker] = useState<{
-    purpose: "startTimer" | "taskStart" | "switch" | "bootstrap";
+    purpose: "startTimer" | "taskStart" | "switch" | "bootstrap" | "assign";
     onPick: (worker: WorkerOption) => void;
     onCancel?: () => void;
     title?: string;
   } | null>(null);
+
+  /* Lokaal kopie van assignee zodat we na assign direct UI kunnen updaten
+     zonder te wachten op router.refresh. */
+  const [assignedName, setAssignedName] = useState<string | null>(repair.assignedUserName);
+  const [assignedId, setAssignedId] = useState<string | null>(repair.assignedUserId);
+  useEffect(() => {
+    setAssignedName(repair.assignedUserName);
+    setAssignedId(repair.assignedUserId);
+  }, [repair.assignedUserName, repair.assignedUserId]);
+
+  async function handleAssign(userId: string | null, name: string | null) {
+    const prevName = assignedName;
+    const prevId = assignedId;
+    setAssignedName(name);
+    setAssignedId(userId);
+    try {
+      await assignGarageRepair(repair.id, userId);
+      toast.success(
+        name
+          ? t(`Assigned to ${name}`, `Asignado a ${name}`, `Toegewezen aan ${name}`)
+          : t("Unassigned", "Sin asignar", "Toewijzing weggehaald"),
+      );
+      router.refresh();
+    } catch {
+      setAssignedName(prevName);
+      setAssignedId(prevId);
+      toast.error(t("Could not save", "No se pudo guardar", "Opslaan mislukt"));
+    }
+  }
 
   // Auto-open bootstrap picker when no profile is set on this iPad.
   useEffect(() => {
@@ -776,6 +807,47 @@ export function GarageRepairDetailClient({
                     {repair.unitCurrentPosition ?? repair.unitStorageLocation}
                   </span>
                 ) : null}
+              </div>
+
+              {/* Toewijzing — zichtbaar voor iedereen op de iPad. Geen toewijzing
+                  = iedereen mag hem oppakken. Wisselen/wissen in één tap. */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticTap();
+                    setPicker({
+                      purpose: "assign",
+                      title: t("Assign to", "Asignar a", "Toewijzen aan"),
+                      onPick: (w) => {
+                        setPicker(null);
+                        handleAssign(w.id, w.name ?? null);
+                      },
+                    });
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 transition-colors active:scale-[0.97] ${
+                    assignedName
+                      ? "bg-sky-500/15 text-sky-200 ring-sky-400/20 hover:bg-sky-500/25"
+                      : "bg-white/[0.04] text-white/55 ring-white/[0.08] hover:bg-white/[0.08]"
+                  }`}
+                >
+                  <User className="h-3 w-3" />
+                  {assignedName ?? t("Unassigned", "Sin asignar", "Niet toegewezen")}
+                </button>
+                {assignedId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hapticTap();
+                      handleAssign(null, null);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2 py-1 text-white/45 ring-1 ring-white/[0.06] hover:bg-white/[0.08] active:scale-[0.97]"
+                    title={t("Unassign — free for anyone", "Sin asignar — libre para todos", "Niet toewijzen — vrij voor iedereen")}
+                  >
+                    <X className="h-3 w-3" />
+                    {t("Unassign", "Sin asignar", "Niet toewijzen")}
+                  </button>
+                )}
               </div>
 
               {hasTasks ? (

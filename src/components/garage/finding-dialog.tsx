@@ -209,64 +209,60 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete, authorNa
             </div>
           </div>
 
-          {/* Prominent Part-needed bar — hoog in het scherm omdat dit de
-              meest-gebruikte optie is. Aangevinkt = repair flipt naar
-              waiting_parts, part komt in het admin Part Requests paneel. */}
+          {/* Prominent Part-needed bar. Geen checkbox meer: typ je een
+              naam, dan wordt het onderdeel meegestuurd en flipt de
+              repair naar waiting_parts. Leeg laten = geen onderdeel.
+              Grote bar zodat hij op tablet niet wegvalt. */}
           <div
-            className={`rounded-xl border-2 transition-all ${
-              needsPart
-                ? "border-orange-400/60 bg-orange-400/15 shadow-[0_0_0_3px_rgba(251,146,60,0.1)]"
-                : "border-orange-400/25 bg-orange-400/5 hover:bg-orange-400/10"
+            className={`rounded-2xl border-2 transition-all ${
+              partName.trim()
+                ? "border-orange-400/70 bg-orange-400/15 shadow-[0_0_0_3px_rgba(251,146,60,0.15)]"
+                : "border-orange-400/35 bg-orange-400/5"
             }`}
           >
-            <button
-              type="button"
-              onClick={() => setNeedsPart(!needsPart)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left"
-            >
-              <span className="text-xl">{needsPart ? "☑" : "☐"}</span>
-              <span className="text-xl">📦</span>
-              <span
-                className={`flex-1 font-bold text-base ${
-                  needsPart ? "text-orange-200" : "text-orange-300/80"
-                }`}
-              >
-                {t("Part needed", "Pieza necesaria", "Onderdeel nodig")}
-              </span>
-              {!needsPart && (
-                <span className="text-[11px] font-medium text-orange-300/50">
-                  {t("tap if needed", "toca si necesario", "aantikken indien nodig")}
-                </span>
-              )}
-            </button>
-            {needsPart ? (
-              <div className="flex flex-col gap-2 border-t border-orange-400/30 p-3 sm:flex-row">
-                <input
-                  type="text"
-                  value={partName}
-                  onChange={(e) => setPartName(e.target.value)}
-                  placeholder={t(
-                    "Part name (e.g. Beading strip)",
-                    "Nombre de pieza",
-                    "Naam onderdeel (bv. Beading strip)",
+            <div className="flex items-center gap-3 px-4 pt-3">
+              <span className="text-2xl">📦</span>
+              <div className="flex-1">
+                <p className="text-base font-bold text-orange-200">
+                  {t("Part needed?", "¿Pieza necesaria?", "Onderdeel nodig?")}
+                </p>
+                <p className="text-[11px] font-medium text-orange-300/60">
+                  {t(
+                    "Type a part name — the repair flips to waiting parts automatically.",
+                    "Escribe el nombre de la pieza — la reparación pasa a 'esperando piezas'.",
+                    "Typ een onderdeelnaam — de reparatie gaat automatisch naar 'wacht op onderdelen'.",
                   )}
-                  className="flex-1 min-w-0 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400/30"
-                  autoFocus
-                />
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-xs font-medium text-white/50">
-                    {t("Qty", "Cant.", "Aantal")}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    value={partQuantity}
-                    onChange={(e) => setPartQuantity(parseInt(e.target.value, 10) || 1)}
-                    className="w-16 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 py-2 text-sm text-white text-center focus:outline-none focus:ring-2 focus:ring-orange-400/30"
-                  />
-                </div>
+                </p>
               </div>
-            ) : null}
+            </div>
+            <div className="flex flex-col gap-2 p-3 pt-2 sm:flex-row sm:items-center">
+              <input
+                type="text"
+                value={partName}
+                onChange={(e) => {
+                  setPartName(e.target.value);
+                  setNeedsPart(e.target.value.trim().length > 0);
+                }}
+                placeholder={t(
+                  "Part name (e.g. Beading strip)",
+                  "Nombre de pieza (p.ej. tira de sellado)",
+                  "Naam onderdeel (bv. Beading strip)",
+                )}
+                className="flex-1 min-w-0 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-3 text-base text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400/40"
+              />
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-white/50">
+                  {t("Qty", "Cant.", "Aantal")}
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={partQuantity}
+                  onChange={(e) => setPartQuantity(parseInt(e.target.value, 10) || 1)}
+                  className="w-20 rounded-xl border border-white/[0.1] bg-white/[0.04] px-2 py-3 text-base text-white text-center focus:outline-none focus:ring-2 focus:ring-orange-400/40"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Description — compacter dan voorheen (kleinere textarea). */}

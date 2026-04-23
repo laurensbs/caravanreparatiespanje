@@ -30,6 +30,21 @@ function readStored(): GarageActiveUser | null {
  * use this as the source of authorship for timers, messages and
  * findings — no more ad-hoc WorkerPicker popups per action.
  */
+/**
+ * The iPad defaults to Spanish because the shop-floor workforce is
+ * predominantly Spanish-speaking. Rolf and Mark (the Dutch-speaking
+ * office/owner profiles) are the only named exceptions — when they're
+ * the active iPad profile the UI flips back to Dutch. Consumers call
+ * `preferredLangForWorker(activeUser.name)` and pipe the result into
+ * `setDeviceLang` in a useEffect. Centralising the rule here so we
+ * only ever change the exception list in one place.
+ */
+export function preferredLangForWorker(name: string | null | undefined): "nl" | "es" {
+  if (!name) return "es";
+  const firstToken = name.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  return firstToken === "rolf" || firstToken === "mark" ? "nl" : "es";
+}
+
 export function useGarageActiveUser() {
   const [user, setUser] = useState<GarageActiveUser | null>(null);
   const [hydrated, setHydrated] = useState(false);

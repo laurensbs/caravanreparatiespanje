@@ -77,7 +77,7 @@ import type {
   BlockerReason,
 } from "@/types";
 import { canStartGarageTimerOnRepair } from "@/lib/garage-timer-policy";
-import { useGarageActiveUser } from "@/lib/use-garage-active-user";
+import { useGarageActiveUser, preferredLangForWorker } from "@/lib/use-garage-active-user";
 
 /* ───────────────────────────────────────────────────────────────────── */
 /* Types                                                                  */
@@ -383,14 +383,11 @@ export function GarageRepairDetailClient({
      the bootstrap picker if no profile is set. */
   const { user: activeUser, hydrated: activeUserHydrated, pick: pickActiveUser } = useGarageActiveUser();
 
-  /* Taal volgt automatisch de actieve werker op dit repair-scherm:
-     Rolf en Mark zien alles in Nederlands, iedereen anders in Spaans.
-     De global language-toggle blijft werken als override. */
+  /* Taal volgt automatisch de actieve werker:
+     Rolf en Mark = Nederlands, iedereen anders = Spaans. */
   useEffect(() => {
     if (!activeUserHydrated || !activeUser?.name) return;
-    const firstToken = activeUser.name.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
-    const wantsNl = firstToken === "rolf" || firstToken === "mark";
-    setDeviceLang(wantsNl ? "nl" : "es");
+    setDeviceLang(preferredLangForWorker(activeUser.name));
   }, [activeUserHydrated, activeUser?.name, setDeviceLang]);
 
   /* Worker picker state — every action that needs an actor opens this. */

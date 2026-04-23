@@ -36,7 +36,7 @@ import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { ToolRequestSheet } from "@/components/garage/tool-request-sheet";
-import { useGarageActiveUser } from "@/lib/use-garage-active-user";
+import { useGarageActiveUser, preferredLangForWorker } from "@/lib/use-garage-active-user";
 
 /* ─────────────────────────────────────────────────────────────────────────
    Today screen — shared garage iPad
@@ -181,7 +181,7 @@ export function GarageTodayClient({
   allUsers,
 }: Props) {
   const router = useRouter();
-  const { t, deviceLang, tFor } = useLanguage();
+  const { t, deviceLang, tFor, setDeviceLang } = useLanguage();
 
   /* ── Optimistic state for tick-task / mark-part ──────────────────── */
   type OptimisticAction =
@@ -247,6 +247,13 @@ export function GarageTodayClient({
   /* Persistent iPad-profile: who's using this device. One localStorage
      entry — switch via header chip. Used as the actor for timer/messages. */
   const { user: activeUser, hydrated: activeUserHydrated, pick: pickActiveUser } = useGarageActiveUser();
+
+  /* Taal volgt automatisch de actieve werker:
+     Rolf en Mark = Nederlands, iedereen anders = Spaans. */
+  useEffect(() => {
+    if (!activeUserHydrated || !activeUser?.name) return;
+    setDeviceLang(preferredLangForWorker(activeUser.name));
+  }, [activeUserHydrated, activeUser?.name, setDeviceLang]);
 
   /* Worker picker — one component, three purposes:
        - "bootstrap": first-time setup, cannot be dismissed

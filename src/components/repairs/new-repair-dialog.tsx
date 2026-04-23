@@ -312,17 +312,24 @@ export function NewRepairDialog({
         card floating over the backdrop.
       */}
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-stretch justify-center lg:items-center lg:p-4">
+        <div className="fixed inset-0 z-[60] flex items-stretch justify-center p-0 sm:items-center sm:p-4">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-in fade-in-0 duration-200"
             onClick={() => handleOpenChange(false)}
           />
 
-          {/* Modal — op lg expliciet height-constrained zodat de sticky
-              footer altijd in beeld staat, ook bij veel services-chips. */}
-          <div className="relative z-10 flex w-full min-h-0 lg:max-w-2xl lg:h-[min(92vh,920px)] animate-in fade-in-0 lg:zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
-            <div className="flex h-[100dvh] min-h-0 w-full flex-col bg-card dark:bg-card lg:h-full lg:rounded-2xl lg:border lg:border-border/60 lg:dark:border-border lg:shadow-2xl">
+          {/* Modal card: full-screen op mobiel, gecentreerd met max-h op
+              sm+ zodat de sticky footer altijd zichtbaar blijft. */}
+          <div
+            className={cn(
+              "relative z-10 flex w-full flex-col bg-card text-foreground shadow-2xl dark:bg-card",
+              "h-[100dvh] max-h-[100dvh]",
+              "sm:h-auto sm:max-h-[min(92vh,920px)] sm:max-w-2xl sm:rounded-2xl sm:border sm:border-border/60 dark:sm:border-border",
+              "animate-in fade-in-0 sm:zoom-in-[0.98] slide-in-from-bottom-2 duration-200",
+            )}
+          >
+            <div className="flex min-h-0 w-full flex-1 flex-col">
 
               {/* Sticky header */}
               <div

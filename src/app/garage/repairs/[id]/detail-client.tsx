@@ -455,7 +455,13 @@ export function GarageRepairDetailClient({
   }, [activeUserHydrated, activeUser]);
 
   /* ── Derived ───────────────────────────────────────────────────── */
-  const allDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
+  const allTasksDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
+  const servicesDone = repair.services.length > 0 && repair.services.every((s) => s.completedAt != null);
+  // Voor service-only jobs: "allDone" = alle services afgevinkt. Voor
+  // repairs: alle tasks done. Mixed: allebei af.
+  const allDone = repair.tasks.length > 0
+    ? allTasksDone && (repair.services.length === 0 || servicesDone)
+    : servicesDone;
   const doneCount = repair.tasks.filter((t) => t.status === "done").length;
   const hasTasks = repair.tasks.length > 0;
   const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
@@ -812,7 +818,9 @@ export function GarageRepairDetailClient({
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${STATUS_TONE[repair.status] ?? "bg-white/[0.06] text-white/60 ring-white/10"}`}
                 >
-                  {STATUS_LABELS[repair.status as RepairStatus]}
+                  {isService && repair.status === "in_progress"
+                    ? t("Service", "Servicio", "Service")
+                    : STATUS_LABELS[repair.status as RepairStatus]}
                 </span>
                 {(repair.priority === "urgent" || repair.priority === "high") ? (
                   <span
@@ -1116,26 +1124,26 @@ export function GarageRepairDetailClient({
                       key={s.id}
                       type="button"
                       onClick={() => handleToggleService(s.id)}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors active:scale-[0.99] ${
-                        done
-                          ? "bg-emerald-500/20 text-emerald-50 hover:bg-emerald-500/30"
-                          : "bg-white/[0.04] text-white/85 hover:bg-white/[0.08]"
-                      }`}
+                      className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5 text-left text-[15px] transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
                     >
                       <span
                         aria-hidden
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                           done
-                            ? "border-emerald-300 bg-emerald-400/50"
-                            : "border-white/25 bg-transparent"
+                            ? "border-emerald-400 bg-emerald-500 text-white"
+                            : "border-white/30 bg-transparent text-transparent"
                         }`}
                       >
-                        {done ? <CheckCircle2 className="h-4 w-4 text-emerald-50" /> : null}
+                        <CheckCircle2 className="h-3.5 w-3.5" />
                       </span>
-                      <span className={`flex-1 ${done ? "line-through opacity-75" : ""}`}>
+                      <span
+                        className={`flex-1 ${
+                          done ? "text-white/50 line-through" : "text-white/90"
+                        }`}
+                      >
                         {s.serviceName}
                         {Number(s.quantity) > 1 ? (
-                          <span className="ml-1 text-white/50">×{s.quantity}</span>
+                          <span className="ml-1 text-white/40">×{s.quantity}</span>
                         ) : null}
                       </span>
                     </button>

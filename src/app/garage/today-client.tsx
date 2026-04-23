@@ -812,32 +812,34 @@ export function GarageTodayClient({
               const serviceJobs = visibleRepairs.filter((r) => r.jobType === "service");
               const repairJobs = visibleRepairs.filter((r) => r.jobType !== "service");
               return (
-                <div key={tab} className="flex flex-col gap-6 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
+                <div key={tab} className="flex flex-col gap-4 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
                   {serviceJobs.length > 0 && (
-                    <section>
-                      <h2 className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300">
+                    <details open className="group/sect">
+                      <summary className="mb-2 flex cursor-pointer select-none items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300 list-none [&::-webkit-details-marker]:hidden">
+                        <ChevronRight className="h-3 w-3 transition-transform group-open/sect:rotate-90" />
                         {t("Services", "Servicios", "Services")}
                         <span className="rounded-full bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-bold text-sky-200">
                           {serviceJobs.length}
                         </span>
-                      </h2>
+                      </summary>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {serviceJobs.map(renderCard)}
                       </div>
-                    </section>
+                    </details>
                   )}
                   {repairJobs.length > 0 && (
-                    <section>
-                      <h2 className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                    <details open className="group/sect">
+                      <summary className="mb-2 flex cursor-pointer select-none items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 list-none [&::-webkit-details-marker]:hidden">
+                        <ChevronRight className="h-3 w-3 transition-transform group-open/sect:rotate-90" />
                         {t("Repairs", "Reparaciones", "Reparaties")}
                         <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-white/60">
                           {repairJobs.length}
                         </span>
-                      </h2>
+                      </summary>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {repairJobs.map(renderCard)}
                       </div>
-                    </section>
+                    </details>
                   )}
                 </div>
               );

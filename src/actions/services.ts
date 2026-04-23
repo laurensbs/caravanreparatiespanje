@@ -300,6 +300,37 @@ export async function toggleServiceRequestCompleted(id: string) {
     }
   }
 
+  // Un-check flow: als de werker een service per ongeluk afvinkte en
+  // de job inmiddels op ready_for_check staat, haal 'm terug naar
+  // in_progress zodat de klus weer actief is en de checkbox opnieuw
+  // betekenis heeft.
+  if (!willBeCompleted) {
+    const [job] = await db
+      .select({ status: repairJobs.status })
+      .from(repairJobs)
+      .where(eq(repairJobs.id, existing.repairJobId))
+      .limit(1);
+    if (job && job.status === "ready_for_check") {
+      await db
+        .update(repairJobs)
+        .set({
+          status: "in_progress",
+          finalCheckStatus: "pending",
+          updatedAt: new Date(),
+        })
+        .where(eq(repairJobs.id, existing.repairJobId));
+      await db.insert(repairJobEvents).values({
+        repairJobId: existing.repairJobId,
+        userId: ctx.userId ?? null,
+        eventType: "status_changed",
+        fieldChanged: "status",
+        oldValue: "ready_for_check",
+        newValue: "in_progress",
+        comment: "Service unchecked — back to active",
+      });
+    }
+  }
+
   revalidatePath(`/repairs/${existing.repairJobId}`);
   revalidatePath(`/garage/repairs/${existing.repairJobId}`);
   revalidatePath("/garage");

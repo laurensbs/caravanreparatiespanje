@@ -366,7 +366,7 @@ export function GarageRepairDetailClient({
   recordedMinutes,
 }: Props) {
   const router = useRouter();
-  const { t, deviceLang, tFor } = useLanguage();
+  const { t, deviceLang, tFor, setDeviceLang } = useLanguage();
 
   /* ── State ─────────────────────────────────────────────────────── */
   const [problemTaskId, setProblemTaskId] = useState<string | null>(null);
@@ -382,6 +382,16 @@ export function GarageRepairDetailClient({
   /* Persistent iPad-profile (who's using this device). Also triggers
      the bootstrap picker if no profile is set. */
   const { user: activeUser, hydrated: activeUserHydrated, pick: pickActiveUser } = useGarageActiveUser();
+
+  /* Taal volgt automatisch de actieve werker op dit repair-scherm:
+     Rolf en Mark zien alles in Nederlands, iedereen anders in Spaans.
+     De global language-toggle blijft werken als override. */
+  useEffect(() => {
+    if (!activeUserHydrated || !activeUser?.name) return;
+    const firstToken = activeUser.name.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+    const wantsNl = firstToken === "rolf" || firstToken === "mark";
+    setDeviceLang(wantsNl ? "nl" : "es");
+  }, [activeUserHydrated, activeUser?.name, setDeviceLang]);
 
   /* Worker picker state — every action that needs an actor opens this. */
   const [picker, setPicker] = useState<{

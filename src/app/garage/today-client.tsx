@@ -809,20 +809,24 @@ export function GarageTodayClient({
       />
 
       {/* ── Tool request sheet (global) ───────────────────────────── */}
+      {/* Alleen actieve reparaties — tool-requests aan afgeronde of
+          wachtende klussen zijn niet nuttig en alleen maar extra ruis. */}
       <ToolRequestSheet
         open={toolSheetOpen}
         onClose={() => setToolSheetOpen(false)}
         onSent={() => router.refresh()}
-        repairOptions={repairs.map((r) => ({
-          id: r.id,
-          label:
-            r.unitRegistration ||
-            r.publicCode ||
-            r.title ||
-            r.customerName ||
-            "—",
-          sublabel: r.title ?? r.customerName ?? null,
-        }))}
+        repairOptions={repairs
+          .filter((r) => classify(r) === "active")
+          .map((r) => ({
+            id: r.id,
+            label:
+              r.unitRegistration ||
+              r.publicCode ||
+              r.title ||
+              r.customerName ||
+              "—",
+            sublabel: r.title ?? r.customerName ?? null,
+          }))}
       />
     </div>
   );

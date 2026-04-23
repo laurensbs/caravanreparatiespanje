@@ -1,10 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { services, serviceRequests, estimateLineItems, repairJobs } from "@/lib/db/schema";
+import { services, serviceRequests, estimateLineItems, repairJobs, repairJobEvents } from "@/lib/db/schema";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
-import { asc, eq, and } from "drizzle-orm";
+import { asc, eq, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncEstimateTotals } from "./estimates";
 
@@ -238,20 +238,69 @@ export async function removeServiceRequest(id: string) {
 }
 
 export async function toggleServiceRequestCompleted(id: string) {
-  await requireAnyAuth();
+  const ctx = await requireAnyAuth();
   const [existing] = await db
     .select({ completedAt: serviceRequests.completedAt, repairJobId: serviceRequests.repairJobId })
     .from(serviceRequests)
     .where(eq(serviceRequests.id, id))
     .limit(1);
   if (!existing) return;
+
+  const willBeCompleted = !existing.completedAt;
   await db
     .update(serviceRequests)
     .set({
-      completedAt: existing.completedAt ? null : new Date(),
+      completedAt: willBeCompleted ? new Date() : null,
       updatedAt: new Date(),
     })
     .where(eq(serviceRequests.id, id));
+
+  // Als hier iets net is afgevinkt én alle andere services voor deze
+  // job inmiddels ook af zijn, flippen we de job naar ready_for_check
+  // zodat admin 'm in de "Check"-tab terugziet — zelfde mechanisme
+  // als wanneer een werker "Klaar voor controle" tapt op een repair.
+  if (willBeCompleted) {
+    const stillOpen = await db
+      .select({ id: serviceRequests.id })
+      .from(serviceRequests)
+      .where(
+        and(
+          eq(serviceRequests.repairJobId, existing.repairJobId),
+          isNull(serviceRequests.completedAt),
+        ),
+      )
+      .limit(1);
+
+    if (stillOpen.length === 0) {
+      const [job] = await db
+        .select({ status: repairJobs.status })
+        .from(repairJobs)
+        .where(eq(repairJobs.id, existing.repairJobId))
+        .limit(1);
+      if (job && !["completed", "invoiced", "ready_for_check"].includes(job.status)) {
+        await db
+          .update(repairJobs)
+          .set({
+            status: "ready_for_check",
+            finalCheckStatus: "pending",
+            updatedAt: new Date(),
+          })
+          .where(eq(repairJobs.id, existing.repairJobId));
+
+        await db.insert(repairJobEvents).values({
+          repairJobId: existing.repairJobId,
+          userId: ctx.userId ?? null,
+          eventType: "status_changed",
+          fieldChanged: "status",
+          oldValue: job.status,
+          newValue: "ready_for_check",
+          comment: "All services completed — awaiting admin check",
+        });
+      }
+    }
+  }
+
   revalidatePath(`/repairs/${existing.repairJobId}`);
   revalidatePath(`/garage/repairs/${existing.repairJobId}`);
+  revalidatePath("/garage");
 }

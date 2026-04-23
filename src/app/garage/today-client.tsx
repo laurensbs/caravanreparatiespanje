@@ -33,6 +33,7 @@ import { PullToRefreshIndicator } from "@/components/garage/pull-to-refresh-indi
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
+import { toggleServiceRequestCompleted } from "@/actions/services";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { ToolRequestSheet } from "@/components/garage/tool-request-sheet";
@@ -90,6 +91,11 @@ type RepairItem = {
     status: "requested" | "ordered" | "shipped";
     expectedDelivery: Date | string | null;
   } | null;
+  services: Array<{
+    id: string;
+    name: string;
+    completedAt: Date | string | null;
+  }>;
 };
 
 interface QuickStats {
@@ -186,7 +192,8 @@ export function GarageTodayClient({
   /* ── Optimistic state for tick-task / mark-part ──────────────────── */
   type OptimisticAction =
     | { type: "tickTask"; repairId: string; taskId: string }
-    | { type: "receivePart"; repairId: string; partId: string };
+    | { type: "receivePart"; repairId: string; partId: string }
+    | { type: "toggleService"; repairId: string; serviceId: string };
 
   const [repairs, applyOptimistic] = useOptimistic(
     serverRepairs,
@@ -202,6 +209,19 @@ export function GarageTodayClient({
           return state.map((r) =>
             r.id === action.repairId && r.nextPart?.id === action.partId
               ? { ...r, nextPart: null }
+              : r,
+          );
+        case "toggleService":
+          return state.map((r) =>
+            r.id === action.repairId
+              ? {
+                  ...r,
+                  services: r.services.map((s) =>
+                    s.id === action.serviceId
+                      ? { ...s, completedAt: s.completedAt ? null : new Date() }
+                      : s,
+                  ),
+                }
               : r,
           );
       }
@@ -510,6 +530,21 @@ export function GarageTodayClient({
     });
   }
 
+  async function handleToggleService(repair: RepairItem, serviceId: string) {
+    hapticTap();
+    startActionTransition(async () => {
+      applyOptimistic({ type: "toggleService", repairId: repair.id, serviceId });
+      try {
+        await toggleServiceRequestCompleted(serviceId);
+        hapticSuccess();
+        router.refresh();
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not update service");
+        router.refresh();
+      }
+    });
+  }
+
   /* ── Greeting / clock ────────────────────────────────────────────── */
   const greeting = useMemo(() => {
     const h = now.getHours();
@@ -739,11 +774,11 @@ export function GarageTodayClient({
             </p>
           </div>
         ) : (
-          <div
-            key={tab}
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]"
-          >
-            {visibleRepairs.map((r) => (
+          (() => {
+            // Splits Active-tab in Services (bovenaan) en Repairs. Andere
+            // tabs tonen één gemengde lijst; de SERVICE-badge op de kaart
+            // blijft het onderscheid maken.
+            const renderCard = (r: RepairItem) => (
               <JobCard
                 key={r.id}
                 repair={r}
@@ -769,9 +804,54 @@ export function GarageTodayClient({
                 onStopTimer={handleStopTimer}
                 onTickTask={() => handleTickTask(r)}
                 onReceivePart={() => handleReceivePart(r)}
+                onToggleService={(sid) => handleToggleService(r, sid)}
               />
-            ))}
-          </div>
+            );
+
+            if (tab === "active") {
+              const serviceJobs = visibleRepairs.filter((r) => r.jobType === "service");
+              const repairJobs = visibleRepairs.filter((r) => r.jobType !== "service");
+              return (
+                <div key={tab} className="flex flex-col gap-6 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
+                  {serviceJobs.length > 0 && (
+                    <section>
+                      <h2 className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300">
+                        {t("Services", "Servicios", "Services")}
+                        <span className="rounded-full bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-bold text-sky-200">
+                          {serviceJobs.length}
+                        </span>
+                      </h2>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {serviceJobs.map(renderCard)}
+                      </div>
+                    </section>
+                  )}
+                  {repairJobs.length > 0 && (
+                    <section>
+                      <h2 className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                        {t("Repairs", "Reparaciones", "Reparaties")}
+                        <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-white/60">
+                          {repairJobs.length}
+                        </span>
+                      </h2>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {repairJobs.map(renderCard)}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={tab}
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]"
+              >
+                {visibleRepairs.map(renderCard)}
+              </div>
+            );
+          })()
         )}
       </main>
 
@@ -845,6 +925,7 @@ function JobCard({
   onStopTimer,
   onTickTask,
   onReceivePart,
+  onToggleService,
 }: {
   repair: RepairItem;
   timers: ActiveTimerItem[];
@@ -854,6 +935,7 @@ function JobCard({
   onStopTimer: (t: ActiveTimerItem) => void;
   onTickTask: () => void;
   onReceivePart: () => void;
+  onToggleService: (serviceId: string) => void;
 }) {
   const { t, deviceLang } = useLanguage();
   // Zie detail-client: de server auto-promoot startable statussen naar
@@ -869,6 +951,9 @@ function JobCard({
       ? `${repair.tasks.done}/${repair.tasks.total}`
       : null;
   const partsPending = repair.parts.pending;
+  const servicesDone = repair.services.filter((s) => s.completedAt != null).length;
+  const servicesTotal = repair.services.length;
+  const servicesProgress = servicesTotal > 0 ? `${servicesDone}/${servicesTotal}` : null;
 
   /* Live total minutes for this repair = recorded (already-rounded
      finished entries) + sum of currently-running timers. This number is
@@ -913,6 +998,11 @@ function JobCard({
             <span className="font-mono text-sm font-bold tracking-wide text-white">
               {repair.unitRegistration ?? repair.publicCode ?? "—"}
             </span>
+            {repair.jobType === "service" ? (
+              <span className="inline-flex items-center rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-300">
+                {t("Service", "Servicio", "Service")}
+              </span>
+            ) : null}
             {/* Priority badges intentionally hidden for the garage view —
                 "urgent / high" is admin-only triage. Workers should treat
                 the queue as one shared list and start whatever is next. */}
@@ -945,6 +1035,11 @@ function JobCard({
 
       {/* ── Progress chips ────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        {servicesProgress ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-1 text-sky-300">
+            <Check className="h-3 w-3 text-sky-300" /> {servicesProgress} {t("services", "servicios", "services")}
+          </span>
+        ) : null}
         {tasksProgress ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2 py-1 text-white/70">
             <Check className="h-3 w-3 text-emerald-400" /> {tasksProgress}
@@ -961,6 +1056,50 @@ function JobCard({
           </span>
         ) : null}
       </div>
+
+      {/* ── Services checklist (alleen zichtbaar als er services hangen) ── */}
+      {servicesTotal > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {repair.services.slice(0, 4).map((s) => {
+            const done = s.completedAt != null;
+            return (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleService(s.id);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
+                    done
+                      ? "bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
+                      : "bg-white/[0.03] text-white/80 hover:bg-white/[0.08]"
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                      done
+                        ? "border-sky-400/60 bg-sky-400/30"
+                        : "border-white/25 bg-transparent"
+                    }`}
+                  >
+                    {done ? <Check className="h-3.5 w-3.5 text-sky-100" /> : null}
+                  </span>
+                  <span className={`line-clamp-1 flex-1 ${done ? "line-through opacity-70" : ""}`}>
+                    {s.name}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {repair.services.length > 4 ? (
+            <li className="px-2 pt-0.5 text-[11px] text-white/45">
+              + {repair.services.length - 4} {t("more", "más", "meer")}
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
 
       {/* ── Paused state — toon opgebouwde tijd zodat een werker
           nooit denkt "waar is m'n tijd gebleven?" als niemand nu

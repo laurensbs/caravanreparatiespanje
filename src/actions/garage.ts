@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers, timeEntries, repairMessages } from "@/lib/db/schema";
+import { repairJobs, repairTasks, repairPhotos, customers, units, users, repairJobEvents, communicationLogs, actionReminders, partRequests, parts, suppliers, repairWorkers, repairFindings, repairBlockers, timeEntries, repairMessages, serviceRequests } from "@/lib/db/schema";
 import { requireRole } from "@/lib/auth-utils";
 import { requireAnyAuth } from "@/lib/garage-auth";
 import { eq, and, or, isNull, gte, lte, desc, asc, count, sql, inArray } from "drizzle-orm";
@@ -354,6 +354,26 @@ export async function getGarageRepairsToday() {
               sql`${repairJobs.dueDate}::date <= CURRENT_DATE`,
             ),
           ),
+          // Service-werkorders krijgen een 7-dagen vooruitblik zodat
+          // werkers kunnen voorsorteren (transport cleaning, waxing,
+          // ozon e.d. plannen we los van actuele repairs). Andere
+          // jobtypes blijven strikt "vandaag of eerder".
+          and(
+            eq(repairJobs.jobType, "service"),
+            inArray(repairJobs.status, [
+              "new",
+              "todo",
+              "scheduled",
+              "in_progress",
+              "waiting_parts",
+              "blocked",
+              "ready_for_check",
+            ]),
+            or(
+              isNull(repairJobs.dueDate),
+              sql`${repairJobs.dueDate}::date <= CURRENT_DATE + INTERVAL '7 days'`,
+            ),
+          ),
           // Vandaag afgeronde reparaties blijven zichtbaar in de
           // "Done" tab zodat de werker ziet wat er net klaar is en er
           // een bevestigingsgevoel ontstaat. Alles wat langer dan
@@ -560,6 +580,31 @@ export async function getGarageRepairsToday() {
 
   const timeMap = new Map(timeTotals.map((t) => [t.repairJobId, Number(t.totalMinutes)]));
 
+  // Haal services per job op zodat de kaart op /garage meteen
+  // rijen met afvinkbare services kan tonen. Gesorteerd op createdAt
+  // zodat de volgorde stabiel is tussen polls.
+  const serviceRows = await db
+    .select({
+      id: serviceRequests.id,
+      repairJobId: serviceRequests.repairJobId,
+      serviceName: serviceRequests.serviceName,
+      completedAt: serviceRequests.completedAt,
+      createdAt: serviceRequests.createdAt,
+    })
+    .from(serviceRequests)
+    .where(inArray(serviceRequests.repairJobId, jobIds))
+    .orderBy(asc(serviceRequests.createdAt));
+
+  const servicesMap = new Map<
+    string,
+    { id: string; name: string; completedAt: Date | null }[]
+  >();
+  for (const s of serviceRows) {
+    const list = servicesMap.get(s.repairJobId) ?? [];
+    list.push({ id: s.id, name: s.serviceName, completedAt: s.completedAt });
+    servicesMap.set(s.repairJobId, list);
+  }
+
   return jobs.map((job) => {
     const np = nextPartMap.get(job.id);
     return {
@@ -577,6 +622,7 @@ export async function getGarageRepairsToday() {
             expectedDelivery: np.expectedDelivery,
           }
         : null,
+      services: servicesMap.get(job.id) ?? [],
     };
   });
 }
@@ -696,7 +742,29 @@ export async function getGarageRepairDetail(id: string) {
     .where(eq(repairWorkers.repairJobId, id))
     .orderBy(asc(repairWorkers.createdAt));
 
-  return { ...job, tasks, photos: mappedPhotos, partRequests: jobPartRequests, workers: jobWorkers };
+  // Services gekoppeld aan deze job zodat de iPad detail-view ze
+  // als afvinkbare rijen kan tonen boven de tasks.
+  const jobServices = await db
+    .select({
+      id: serviceRequests.id,
+      serviceName: serviceRequests.serviceName,
+      quantity: serviceRequests.quantity,
+      unitPrice: serviceRequests.unitPrice,
+      completedAt: serviceRequests.completedAt,
+      createdAt: serviceRequests.createdAt,
+    })
+    .from(serviceRequests)
+    .where(eq(serviceRequests.repairJobId, id))
+    .orderBy(asc(serviceRequests.createdAt));
+
+  return {
+    ...job,
+    tasks,
+    photos: mappedPhotos,
+    partRequests: jobPartRequests,
+    workers: jobWorkers,
+    services: jobServices,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -56,6 +56,7 @@ import {
 import { deleteRepairPhoto } from "@/actions/photos";
 import { markAdminMessageRead } from "@/actions/garage-sync";
 import { startTimer, stopTimer } from "@/actions/time-entries";
+import { toggleServiceRequestCompleted } from "@/actions/services";
 import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { useGaragePoll } from "@/lib/use-garage-poll";
 import { hapticTap, hapticSuccess } from "@/lib/haptic";
@@ -161,6 +162,14 @@ type RepairDetail = {
     createdAt: Date | string;
     resolvedAt: Date | string | null;
     createdByName: string | null;
+  }[];
+  services: {
+    id: string;
+    serviceName: string;
+    quantity: string | number;
+    unitPrice: string | number;
+    completedAt: Date | string | null;
+    createdAt: Date | string;
   }[];
   garageAdminMessage: string | null;
   garageAdminMessageAt: Date | string | null;
@@ -517,6 +526,19 @@ export function GarageRepairDetailClient({
 
   /* ── Actions ───────────────────────────────────────────────────── */
   const handleRefresh = () => router.refresh();
+
+  async function handleToggleService(serviceId: string) {
+    hapticTap();
+    startTransition(async () => {
+      try {
+        await toggleServiceRequestCompleted(serviceId);
+        hapticSuccess();
+        router.refresh();
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not update service");
+      }
+    });
+  }
 
   async function handleStartTimer(worker: WorkerOption) {
     hapticTap();
@@ -1071,6 +1093,50 @@ export function GarageRepairDetailClient({
                     </button>
                   </div>
                 ))}
+              </div>
+            </Section>
+          ) : null}
+
+          {/* ── Services (indien aanwezig) ───────────────────── */}
+          {repair.services.length > 0 ? (
+            <Section
+              icon={<Sparkles className="h-4 w-4" />}
+              title={t("Services", "Servicios", "Services")}
+              badge={`${repair.services.filter((s) => s.completedAt != null).length}/${repair.services.length}`}
+            >
+              <div className="flex flex-col gap-1.5">
+                {repair.services.map((s) => {
+                  const done = s.completedAt != null;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleToggleService(s.id)}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors active:scale-[0.99] ${
+                        done
+                          ? "bg-sky-500/15 text-sky-100 hover:bg-sky-500/25"
+                          : "bg-white/[0.04] text-white/85 hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
+                          done
+                            ? "border-sky-300 bg-sky-400/40"
+                            : "border-white/25 bg-transparent"
+                        }`}
+                      >
+                        {done ? <CheckCircle2 className="h-4 w-4 text-sky-50" /> : null}
+                      </span>
+                      <span className={`flex-1 ${done ? "line-through opacity-75" : ""}`}>
+                        {s.serviceName}
+                        {Number(s.quantity) > 1 ? (
+                          <span className="ml-1 text-white/50">×{s.quantity}</span>
+                        ) : null}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </Section>
           ) : null}

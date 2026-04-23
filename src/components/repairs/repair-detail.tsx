@@ -74,6 +74,7 @@ import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-fo
 import { clearGarageMessage } from "@/actions/garage-sync";
 import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
 import { RepairServicesSection, type CatalogService, type RepairServiceRequest } from "@/components/repairs/repair-service-picker";
+import { UnitSearch } from "@/components/units/unit-search";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import type { RepairTask } from "@/types";
 
@@ -713,6 +714,28 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
   // ── Smart suggestion action states ──
   const [showCustomerLinker, setShowCustomerLinker] = useState(false);
   const [showUserAssigner, setShowUserAssigner] = useState(false);
+  const [showUnitLinker, setShowUnitLinker] = useState(false);
+  const [unitOptions, setUnitOptions] = useState<Array<{
+    id: string;
+    registration: string | null;
+    brand: string | null;
+    model: string | null;
+    year: number | null;
+    customerId: string | null;
+  }>>([]);
+  const [unitOptionsLoaded, setUnitOptionsLoaded] = useState(false);
+
+  async function ensureUnitOptionsLoaded() {
+    if (unitOptionsLoaded) return;
+    try {
+      const { getAllUnits } = await import("@/actions/units");
+      const rows = await getAllUnits();
+      setUnitOptions(rows);
+      setUnitOptionsLoaded(true);
+    } catch {
+      toast.error("Could not load units");
+    }
+  }
   const [inlineHoldedLinkOpen, setInlineHoldedLinkOpen] = useState(false);
   const descriptionRef = useRef<HTMLDivElement>(null);
   const communicationRef = useRef<HTMLDivElement>(null);
@@ -959,7 +982,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                     No customer
                   </button>
                 )}
-                {job.unit && (
+                {job.unit ? (
                   <>
                     <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>
                     <button
@@ -967,6 +990,19 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                       className="font-mono text-xs text-muted-foreground dark:text-muted-foreground/70 hover:text-foreground/90 dark:hover:text-muted-foreground/50 transition-all duration-150"
                     >
                       {job.unit.registration || 'No plate'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-muted-foreground/50 dark:text-muted-foreground">·</span>
+                    <button
+                      onClick={async () => {
+                        await ensureUnitOptionsLoaded();
+                        setShowUnitLinker(true);
+                      }}
+                      className="font-mono text-xs text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/50 italic transition-all duration-150"
+                    >
+                      No unit — link one
                     </button>
                   </>
                 )}
@@ -2182,7 +2218,15 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
               ) : (
                 <div className="flex items-start justify-between py-0.5">
                   <span className="text-muted-foreground">Unit</span>
-                  <button onClick={() => setExpandUnit((v) => !v)} className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic">No info</button>
+                  <button
+                    onClick={async () => {
+                      await ensureUnitOptionsLoaded();
+                      setShowUnitLinker(true);
+                    }}
+                    className="text-muted-foreground/70 dark:text-muted-foreground hover:text-foreground/80 dark:hover:text-foreground/80 transition-colors italic"
+                  >
+                    Link unit
+                  </button>
                 </div>
               )}
               {expandUnit && job.unit && (
@@ -2454,6 +2498,34 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
       </div>
 
       {/* Dialogs */}
+      <Dialog open={showUnitLinker} onOpenChange={setShowUnitLinker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link a unit</DialogTitle>
+            <DialogDescription>
+              {job.customer?.name
+                ? <>Pick one of {job.customer.name}&apos;s caravans, or search the full list.</>
+                : "Pick a caravan to attach to this work order."}
+            </DialogDescription>
+          </DialogHeader>
+          <UnitSearch
+            units={unitOptions}
+            customerId={job.customerId ?? null}
+            onSelect={async (id) => {
+              if (!id) return;
+              const res = await updateRepairJob(job.id, { unitId: id });
+              if (!res.ok) {
+                toast.error(res.message);
+                return;
+              }
+              toast.success("Unit linked");
+              setShowUnitLinker(false);
+              router.refresh();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showCustomerLinker} onOpenChange={setShowCustomerLinker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

@@ -14,7 +14,7 @@ import { LocationSelect } from "@/components/repairs/location-select";
 import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
 import { UnitSearch } from "@/components/units/unit-search";
 import { createPartRequest } from "@/actions/parts";
-import { JOB_TYPE_LABELS, type JobType } from "@/types";
+import { JOB_TYPE_LABELS, SELECTABLE_JOB_TYPES, type JobType } from "@/types";
 import { Plus, X, Wrench, Sparkles, Settings, ClipboardCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { PrioritySelect } from "@/components/repairs/priority-select";
@@ -55,6 +55,7 @@ const JOB_TYPE_CONFIG: Record<JobType, { icon: React.ElementType; color: string;
   wax: { icon: Sparkles, color: "text-amber-600", bg: "bg-amber-50 border-amber-200", descLabel: "Work description", descPlaceholder: "Any special instructions for the wax job...", partsDefault: "collapsed" },
   maintenance: { icon: Settings, color: "text-foreground/80", bg: "bg-muted/60 border-border", descLabel: "Work description", descPlaceholder: "Describe the maintenance needed...", partsDefault: "collapsed" },
   inspection: { icon: ClipboardCheck, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", descLabel: "Notes", descPlaceholder: "Inspection notes and observations...", partsDefault: "hidden" },
+  service: { icon: Sparkles, color: "text-sky-600", bg: "bg-sky-50 border-sky-200", descLabel: "Service description", descPlaceholder: "Which services apply? (waxing, cleaning, ozon, etc.)", partsDefault: "collapsed" },
 };
 
 // Quick statuses for creation — only the common starting ones
@@ -327,7 +328,8 @@ export function NewRepairDialog({
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Work type</Label>
                       <div className="flex gap-2">
-                        {(Object.entries(JOB_TYPE_LABELS) as [JobType, string][]).map(([val, label]) => {
+                        {SELECTABLE_JOB_TYPES.map((val) => {
+                          const label = JOB_TYPE_LABELS[val];
                           const c = JOB_TYPE_CONFIG[val];
                           const Icon = c.icon;
                           const active = jobType === val;

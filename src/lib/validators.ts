@@ -27,7 +27,7 @@ export const repairJobSchema = z.object({
     "repair", "follow_up", "quote", "parts_order", "trailer_sale",
     "trailer_disposal", "inspection", "planning", "relocation", "service", "unknown",
   ]).optional(),
-  jobType: z.enum(["repair", "wax", "maintenance", "inspection"]).optional(),
+  jobType: z.enum(["repair", "wax", "maintenance", "inspection", "service"]).optional(),
   assignedUserId: z.string().uuid().nullable().optional(),
   estimatedCost: z.string().nullable().optional(),
   actualCost: z.string().nullable().optional(),

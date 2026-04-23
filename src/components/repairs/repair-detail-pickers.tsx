@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { JOB_TYPE_COLORS, JOB_TYPE_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/types";
+import { JOB_TYPE_COLORS, JOB_TYPE_LABELS, SELECTABLE_JOB_TYPES, STATUS_COLORS, STATUS_LABELS } from "@/types";
 import type { JobType, RepairStatus } from "@/types";
 import { deleteRepairPhoto } from "@/actions/photos";
 import { toast } from "sonner";
@@ -197,6 +197,7 @@ const JOB_TYPE_ICON: Record<JobType, React.ElementType> = {
   wax: Sparkles,
   maintenance: Settings,
   inspection: ClipboardCheck,
+  service: Sparkles,
 };
 
 export function JobTypePicker({
@@ -237,7 +238,11 @@ export function JobTypePicker({
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-card dark:bg-foreground border border-border dark:border-border rounded-xl shadow-lg p-1 min-w-[160px]">
-          {(Object.keys(JOB_TYPE_LABELS) as JobType[]).map((type) => {
+          {/* Legacy job-types blijven als value zichtbaar, maar de
+              dropdown laat alleen nog de huidige keuzes toe. Als de
+              work-order op een legacy-type staat verschijnt hij ook
+              in de lijst zodat je hem kunt wisselen. */}
+          {Array.from(new Set<JobType>([...SELECTABLE_JOB_TYPES, value])).map((type) => {
             const TypeIcon = JOB_TYPE_ICON[type];
             const active = value === type;
             return (

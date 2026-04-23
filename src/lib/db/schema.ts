@@ -101,6 +101,7 @@ export const jobTypeEnum = pgEnum("job_type", [
   "wax",
   "maintenance",
   "inspection",
+  "service",
 ]);
 
 export const contactTypeEnum = pgEnum("contact_type", [

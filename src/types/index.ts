@@ -86,7 +86,7 @@ export type BusinessProcessType =
   | "service"
   | "unknown";
 
-export type JobType = "repair" | "wax" | "maintenance" | "inspection";
+export type JobType = "repair" | "wax" | "maintenance" | "inspection" | "service";
 
 export type UnitType = "caravan" | "trailer" | "camper" | "unknown";
 
@@ -350,6 +350,7 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   wax: "Wax",
   maintenance: "Maintenance",
   inspection: "Inspection",
+  service: "Service",
 };
 
 export const JOB_TYPE_COLORS: Record<JobType, string> = {
@@ -357,7 +358,13 @@ export const JOB_TYPE_COLORS: Record<JobType, string> = {
   wax: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
   maintenance: "bg-foreground/[0.06] text-foreground/80",
   inspection: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  service: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
 };
+
+/** JobTypes die in de "new work order" modal en JobTypePicker
+ *  getoond worden. Legacy values (wax/maintenance/inspection) bestaan
+ *  nog op oude work-orders maar zijn niet meer kiesbaar voor nieuwe. */
+export const SELECTABLE_JOB_TYPES: JobType[] = ["repair", "service"];
 
 export const UNIT_TYPE_LABELS: Record<UnitType, string> = {
   caravan: "Caravan",

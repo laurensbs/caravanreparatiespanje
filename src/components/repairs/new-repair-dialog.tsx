@@ -279,7 +279,7 @@ export function NewRepairDialog({
     setOpen(nextOpen);
     if (nextOpen) {
       // Focus title after animation
-      setTimeout(() => titleRef.current?.focus(), 150);
+      setTimeout(() => titleRef.current?.focus({ preventScroll: true }), 150);
     } else {
       resetForm();
     }
@@ -323,14 +323,12 @@ export function NewRepairDialog({
               sm+ zodat de sticky footer altijd zichtbaar blijft. */}
           <div
             className={cn(
-              "relative z-10 flex w-full flex-col bg-card text-foreground shadow-2xl dark:bg-card",
+              "relative z-10 flex min-h-0 w-full flex-col overflow-hidden bg-card text-foreground shadow-2xl dark:bg-card",
               "h-[100dvh] max-h-[100dvh]",
               "sm:h-auto sm:max-h-[min(92vh,920px)] sm:max-w-2xl sm:rounded-2xl sm:border sm:border-border/60 dark:sm:border-border",
               "animate-in fade-in-0 sm:zoom-in-[0.98] slide-in-from-bottom-2 duration-200",
             )}
           >
-            <div className="flex min-h-0 w-full flex-1 flex-col">
-
               {/* Sticky header */}
               <div
                 className="flex items-start justify-between border-b border-border/60 dark:border-white/5 bg-card/95 backdrop-blur px-5 sm:px-7 pb-4 sm:border-b-0"
@@ -647,7 +645,6 @@ export function NewRepairDialog({
                   </Button>
                 </div>
               </form>
-            </div>
           </div>
         </div>
       )}

@@ -37,6 +37,7 @@ import { startTimer, stopTimer } from "@/actions/time-entries";
 import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
 import { updateTaskStatus, garageMarkPartReceived, garageMarkDone } from "@/actions/garage";
 import { toggleServiceRequestCompleted } from "@/actions/services";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { ToolRequestSheet } from "@/components/garage/tool-request-sheet";
@@ -612,6 +613,29 @@ export function GarageTodayClient({
 
   async function handleMarkReady(repair: RepairItem) {
     hapticTap();
+    // Per-ongeluk klikken moet kunnen — vooral op de iPad waar een tap
+    // zo gedaan is. Confirm-dialog laat de werker nog één keer checken,
+    // met context (plate / titel) zodat je ziet welke klus je bevestigt.
+    const label =
+      repair.unitRegistration ||
+      repair.publicCode ||
+      repair.title ||
+      (repair.customerName ?? "");
+    const ok = await confirmDialog({
+      title: t(
+        "Mark ready for check?",
+        "¿Marcar listo para revisión?",
+        "Klaarmelden voor controle?",
+      ),
+      description: t(
+        `Send "${label}" to admin for final check? You can't undo this from the iPad.`,
+        `¿Enviar "${label}" a la oficina para la revisión final? No se puede deshacer desde el iPad.`,
+        `"${label}" naar kantoor sturen voor eindcontrole? Kan niet ongedaan worden op de iPad.`,
+      ),
+      confirmLabel: t("Yes, send", "Sí, enviar", "Ja, versturen"),
+      cancelLabel: t("Cancel", "Cancelar", "Annuleren"),
+    });
+    if (!ok) return;
     startActionTransition(async () => {
       try {
         await garageMarkDone(repair.id);

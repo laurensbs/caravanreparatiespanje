@@ -123,14 +123,20 @@ interface Props {
   allUsers: { id: string; name: string | null; role: string | null; preferredLanguage?: Language | null }[];
 }
 
-type FilterTab = "active" | "waiting" | "check" | "done";
+type FilterTab = "all" | "services" | "repairs";
 
-function classify(r: RepairItem): FilterTab {
-  if ((r.status === "completed" && r.finalCheckStatus !== "pending") || r.status === "invoiced") return "done";
-  if (r.status === "ready_for_check") return "check";
-  if (r.status === "completed" && r.finalCheckStatus === "pending") return "check";
-  if (["waiting_customer", "waiting_parts", "blocked"].includes(r.status)) return "waiting";
-  return "active";
+/** Geldt de klus nog actief (dus hoort hij in de lijst)?
+ *  Afgeronde en gefactureerde klussen vallen eruit — admin ziet die
+ *  in het back-office panel. Check-states blijven zichtbaar zodat
+ *  werkers direct zien welke klus admin nog moet bekijken. */
+function isStillRelevant(r: RepairItem): boolean {
+  if (r.status === "invoiced") return false;
+  if (r.status === "completed" && r.finalCheckStatus !== "pending") return false;
+  return true;
+}
+
+function tabFor(r: RepairItem): FilterTab {
+  return r.jobType === "service" ? "services" : "repairs";
 }
 
 /**
@@ -280,7 +286,7 @@ export function GarageTodayClient({
 
   const [now, setNow] = useState(() => new Date());
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<FilterTab>("active");
+  const [tab, setTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
 
   // Unlock the AudioContext on the first user gesture so haptic clicks are
@@ -377,8 +383,12 @@ export function GarageTodayClient({
 
   /* ── Tab counts ──────────────────────────────────────────────────── */
   const counts = useMemo(() => {
-    const c = { active: 0, waiting: 0, check: 0, done: 0 };
-    for (const r of repairs) c[classify(r)]++;
+    const c = { all: 0, services: 0, repairs: 0 };
+    for (const r of repairs) {
+      if (!isStillRelevant(r)) continue;
+      c.all++;
+      c[tabFor(r)]++;
+    }
     return c;
   }, [repairs]);
 
@@ -386,7 +396,8 @@ export function GarageTodayClient({
   const visibleRepairs = useMemo(() => {
     const q = search.trim().toLowerCase();
     return repairs.filter((r) => {
-      if (classify(r) !== tab) return false;
+      if (!isStillRelevant(r)) return false;
+      if (tab !== "all" && tabFor(r) !== tab) return false;
       if (!q) return true;
       const hay = [
         r.publicCode,
@@ -739,10 +750,9 @@ export function GarageTodayClient({
         {/* Tab bar — sliding pill, like iOS segmented control */}
         {(() => {
           const tabs = [
-            { id: "active" as const, label: t("Active", "Activos", "Actief"), count: counts.active },
-            { id: "waiting" as const, label: t("Waiting", "Esperando", "Wachtend"), count: counts.waiting },
-            { id: "check" as const, label: t("Check", "Revisión", "Check"), count: counts.check },
-            { id: "done" as const, label: t("Done", "Hecho", "Klaar"), count: counts.done },
+            { id: "all" as const, label: t("All", "Todos", "Alles"), count: counts.all },
+            { id: "services" as const, label: t("Services", "Servicios", "Services"), count: counts.services },
+            { id: "repairs" as const, label: t("Repairs", "Reparaciones", "Reparaties"), count: counts.repairs },
           ];
           const activeIdx = tabs.findIndex((it) => it.id === tab);
           return (
@@ -832,9 +842,7 @@ export function GarageTodayClient({
             <p className="mt-4 text-base text-white/50">
               {search
                 ? t("No repairs match your search.", "Sin resultados.", "Geen resultaten.")
-                : tab === "done"
-                  ? t("Nothing finished yet today.", "Aún no hay terminados.", "Nog niets afgerond vandaag.")
-                  : t("Nothing here right now.", "Nada aquí ahora.", "Hier staat nu niets.")}
+                : t("Nothing here right now.", "Nada aquí ahora.", "Hier staat nu niets.")}
             </p>
           </div>
         ) : (
@@ -873,7 +881,7 @@ export function GarageTodayClient({
               />
             );
 
-            if (tab === "active") {
+            if (tab === "all") {
               // Sorteer service-jobs op transport-datum (dichtstbijzijnde
               // eerst). Jobs zonder dueDate landen onderaan.
               const serviceJobs = visibleRepairs
@@ -925,12 +933,22 @@ export function GarageTodayClient({
               );
             }
 
+            // Services-only tab: sorteer op transport-datum (dichtstbijzijnde
+            // eerst). Repairs-only tab: originele volgorde.
+            const shown =
+              tab === "services"
+                ? visibleRepairs.slice().sort((a, b) => {
+                    const ta = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                    const tb = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                    return ta - tb;
+                  })
+                : visibleRepairs;
             return (
               <div
                 key={tab}
                 className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]"
               >
-                {visibleRepairs.map(renderCard)}
+                {shown.map(renderCard)}
               </div>
             );
           })()
@@ -978,7 +996,10 @@ export function GarageTodayClient({
         onClose={() => setToolSheetOpen(false)}
         onSent={() => router.refresh()}
         repairOptions={repairs
-          .filter((r) => classify(r) === "active")
+          .filter((r) =>
+            isStillRelevant(r) &&
+            ["new", "todo", "scheduled", "in_progress", "in_inspection"].includes(r.status),
+          )
           .map((r) => ({
             id: r.id,
             label:

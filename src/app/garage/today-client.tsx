@@ -1379,73 +1379,86 @@ function JobCard({
       ) : null}
 
       {/* ── Quick actions ─────────────────────────────────────────── */}
-      <div className="mt-auto flex flex-col gap-2 pt-1">
-        <div className="flex flex-wrap items-center gap-2">
-          {canStartTimer && !someoneIsWorking ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartTimer();
-              }}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
-            >
-              <Play className="h-4 w-4 fill-current" />
-              {liveTotalMinutes > 0
-                ? t("Resume", "Seguir", "Hervatten")
-                : t("Start timer", "Iniciar timer", "Start timer")}
-            </button>
-          ) : null}
-          {nextTaskTitle ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTickTask();
-              }}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3 text-sm font-medium text-emerald-200 ring-1 ring-emerald-400/20 hover:bg-emerald-500/25 active:scale-[0.98]"
-              title={nextTaskTitle}
-            >
-              <Check className="h-4 w-4" />
-              <span className="line-clamp-1">{nextTaskTitle}</span>
-            </button>
-          ) : repair.nextPart ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReceivePart();
-              }}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500/15 px-3 text-sm font-medium text-orange-200 ring-1 ring-orange-400/20 hover:bg-orange-500/25 active:scale-[0.98]"
-              title={repair.nextPart.name}
-            >
-              <Package className="h-4 w-4" />
-              <span className="line-clamp-1">
-                {t("Got", "Recibido", "Ontvangen")}: {repair.nextPart.name}
-              </span>
-            </button>
-          ) : null}
-        </div>
+      {(() => {
+        const hasTopRow =
+          (canStartTimer && !someoneIsWorking) || nextTaskTitle || repair.nextPart;
+        const showReadyButton = [
+          "new",
+          "todo",
+          "scheduled",
+          "in_progress",
+          "in_inspection",
+        ].includes(repair.status);
+        if (!hasTopRow && !showReadyButton) return null;
+        return (
+          <div className="mt-auto flex flex-col gap-2 pt-1">
+            {hasTopRow ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {canStartTimer && !someoneIsWorking ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStartTimer();
+                    }}
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
+                  >
+                    <Play className="h-4 w-4 fill-current" />
+                    {liveTotalMinutes > 0
+                      ? t("Resume", "Seguir", "Hervatten")
+                      : t("Start timer", "Iniciar timer", "Start timer")}
+                  </button>
+                ) : null}
+                {nextTaskTitle ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTickTask();
+                    }}
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3 text-sm font-medium text-emerald-200 ring-1 ring-emerald-400/20 hover:bg-emerald-500/25 active:scale-[0.98]"
+                    title={nextTaskTitle}
+                  >
+                    <Check className="h-4 w-4" />
+                    <span className="line-clamp-1">{nextTaskTitle}</span>
+                  </button>
+                ) : repair.nextPart ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReceivePart();
+                    }}
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500/15 px-3 text-sm font-medium text-orange-200 ring-1 ring-orange-400/20 hover:bg-orange-500/25 active:scale-[0.98]"
+                    title={repair.nextPart.name}
+                  >
+                    <Package className="h-4 w-4" />
+                    <span className="line-clamp-1">
+                      {t("Got", "Recibido", "Ontvangen")}: {repair.nextPart.name}
+                    </span>
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
-        {/* "Klaar voor controle" — alleen tonen voor actieve klussen
-            (niet voor ready_for_check/completed). Eén tap flipt de job
-            naar ready_for_check en admin ziet het direct. */}
-        {["new", "todo", "scheduled", "in_progress", "waiting_parts", "blocked"].includes(
-          repair.status,
-        ) ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMarkReady();
-            }}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-bold text-white shadow-sm hover:bg-emerald-500/90 active:scale-[0.98]"
-          >
-            <Check className="h-4 w-4" />
-            {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
-          </button>
-        ) : null}
-      </div>
+            {/* "Klaar voor controle" — altijd zichtbaar voor actieve
+                klussen. Eén tap (na confirm) flipt naar ready_for_check. */}
+            {showReadyButton ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkReady();
+                }}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-bold text-white shadow-sm hover:bg-emerald-500/90 active:scale-[0.98]"
+              >
+                <Check className="h-4 w-4" />
+                {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
+              </button>
+            ) : null}
+          </div>
+        );
+      })()}
     </article>
   );
 }

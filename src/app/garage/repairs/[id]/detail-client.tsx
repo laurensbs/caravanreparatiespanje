@@ -485,9 +485,13 @@ export function GarageRepairDetailClient({
   // bij start, dus we tonen de knop ook in die statussen. Wachtstatus-
   // sen (waiting_customer/waiting_parts/blocked) en done-states blijven
   // verborgen.
+  // Service-jobs tikken op 'afvinken' ipv op 'klokken' — die tijd is al
+  // fixed-price — dus de hele timer-sectie valt weg voor services.
+  const isService = (repair as { jobType?: string }).jobType === "service";
   const canTimer =
-    canStartGarageTimerOnRepair(repair.status) ||
-    ["new", "todo", "scheduled", "in_inspection"].includes(repair.status);
+    !isService &&
+    (canStartGarageTimerOnRepair(repair.status) ||
+      ["new", "todo", "scheduled", "in_inspection"].includes(repair.status));
   const progress = repair.tasks.length > 0 ? Math.round((doneCount / repair.tasks.length) * 100) : 0;
 
   /* ── Side effects ──────────────────────────────────────────────── */
@@ -914,7 +918,7 @@ export function GarageRepairDetailClient({
                 of er iets loopt, hoe lang, en wie — en pauzeren of
                 starten zonder te scrollen. Weggaan via Back is altijd
                 veilig: de timer blijft server-side doortikken. */}
-            {(activeTimers.length > 0 || canTimer) ? (
+            {!isService && (activeTimers.length > 0 || canTimer) ? (
               <div className="flex shrink-0 flex-col gap-2 sm:w-[280px] sm:border-l sm:border-white/[0.05] sm:pl-4">
                 {activeTimers.length > 0 ? (
                   <div className="flex h-full flex-col gap-2 rounded-2xl bg-emerald-500/[0.08] p-3 ring-1 ring-emerald-500/20">
@@ -1114,7 +1118,7 @@ export function GarageRepairDetailClient({
                       onClick={() => handleToggleService(s.id)}
                       className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors active:scale-[0.99] ${
                         done
-                          ? "bg-sky-500/15 text-sky-100 hover:bg-sky-500/25"
+                          ? "bg-emerald-500/20 text-emerald-50 hover:bg-emerald-500/30"
                           : "bg-white/[0.04] text-white/85 hover:bg-white/[0.08]"
                       }`}
                     >
@@ -1122,11 +1126,11 @@ export function GarageRepairDetailClient({
                         aria-hidden
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
                           done
-                            ? "border-sky-300 bg-sky-400/40"
+                            ? "border-emerald-300 bg-emerald-400/50"
                             : "border-white/25 bg-transparent"
                         }`}
                       >
-                        {done ? <CheckCircle2 className="h-4 w-4 text-sky-50" /> : null}
+                        {done ? <CheckCircle2 className="h-4 w-4 text-emerald-50" /> : null}
                       </span>
                       <span className={`flex-1 ${done ? "line-through opacity-75" : ""}`}>
                         {s.serviceName}

@@ -938,13 +938,15 @@ function JobCard({
   onToggleService: (serviceId: string) => void;
 }) {
   const { t, deviceLang } = useLanguage();
+  const isService = repair.jobType === "service";
   // Zie detail-client: de server auto-promoot startable statussen naar
   // `in_progress`, dus we tonen de knop ook in new/todo/scheduled/
-  // in_inspection.
+  // in_inspection. Service-jobs hebben geen timer; afvinken is genoeg.
   const canStartTimer =
-    canStartGarageTimerOnRepair(repair.status) ||
-    ["new", "todo", "scheduled", "in_inspection"].includes(repair.status);
-  const someoneIsWorking = timers.length > 0;
+    !isService &&
+    (canStartGarageTimerOnRepair(repair.status) ||
+      ["new", "todo", "scheduled", "in_inspection"].includes(repair.status));
+  const someoneIsWorking = !isService && timers.length > 0;
   const totalProblems = repair.tasks.problem;
   const tasksProgress =
     repair.tasks.total > 0
@@ -1036,8 +1038,8 @@ function JobCard({
       {/* ── Progress chips ────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
         {servicesProgress ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-1 text-sky-300">
-            <Check className="h-3 w-3 text-sky-300" /> {servicesProgress} {t("services", "servicios", "services")}
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-emerald-300">
+            <Check className="h-3 w-3 text-emerald-300" /> {servicesProgress} {t("services", "servicios", "services")}
           </span>
         ) : null}
         {tasksProgress ? (
@@ -1072,7 +1074,7 @@ function JobCard({
                   }}
                   className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
                     done
-                      ? "bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
+                      ? "bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25"
                       : "bg-white/[0.03] text-white/80 hover:bg-white/[0.08]"
                   }`}
                 >
@@ -1080,11 +1082,11 @@ function JobCard({
                     aria-hidden
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                       done
-                        ? "border-sky-400/60 bg-sky-400/30"
+                        ? "border-emerald-400/70 bg-emerald-400/40"
                         : "border-white/25 bg-transparent"
                     }`}
                   >
-                    {done ? <Check className="h-3.5 w-3.5 text-sky-100" /> : null}
+                    {done ? <Check className="h-3.5 w-3.5 text-emerald-50" /> : null}
                   </span>
                   <span className={`line-clamp-1 flex-1 ${done ? "line-through opacity-70" : ""}`}>
                     {s.name}

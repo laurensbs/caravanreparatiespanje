@@ -388,7 +388,15 @@ export function GarageTodayClient({
     for (const r of repairs) {
       if (!isStillRelevant(r)) continue;
       c.all++;
-      c[tabFor(r)]++;
+      const bucket = tabFor(r);
+      // Repair-tab sluit wachtend werk uit (zie filter in visibleRepairs).
+      if (
+        bucket === "repairs" &&
+        ["waiting_parts", "waiting_customer", "blocked"].includes(r.status)
+      ) {
+        continue;
+      }
+      c[bucket]++;
     }
     return c;
   }, [repairs]);
@@ -399,6 +407,16 @@ export function GarageTodayClient({
     return repairs.filter((r) => {
       if (!isStillRelevant(r)) return false;
       if (tab !== "all" && tabFor(r) !== tab) return false;
+      // Reparaciones-tab toont alleen actieve klussen — waiting-parts,
+      // blocked en waiting-customer zijn wachtkamer-statussen; die
+      // horen bij admin, niet op de werkvloer-lijst. Onder Todos
+      // blijven ze wel zichtbaar voor context.
+      if (
+        tab === "repairs" &&
+        ["waiting_parts", "waiting_customer", "blocked"].includes(r.status)
+      ) {
+        return false;
+      }
       if (!q) return true;
       const hay = [
         r.publicCode,
@@ -1108,7 +1126,7 @@ function JobCard({
         : repair.nextTask.title
     : null;
 
-  const serviceDateInfo = isService && repair.dueDate
+  const dateInfo = repair.dueDate
     ? transportDateInfo(new Date(repair.dueDate), deviceLang)
     : null;
 
@@ -1116,25 +1134,26 @@ function JobCard({
     <article
       className="tap-press group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset ring-white/[0.06] hover:bg-white/[0.05]"
     >
-      {/* ── Transport-datum banner voor service-kaarten ─────────────
-           Prominent genoeg om op een iPad van 2m afstand te zien
-           welke klussen vandaag/morgen staan. */}
-      {serviceDateInfo ? (
+      {/* ── Datum-banner — services labelen 'Transport' (ophaaldatum),
+           repairs labelen 'Planned' (werkdatum). Kleur volgt urgentie. */}
+      {dateInfo ? (
         <div
           className={`-mx-4 -mt-4 mb-1 flex items-center gap-2 px-4 py-2 text-sm font-bold ${
-            serviceDateInfo.tone === "today"
+            dateInfo.tone === "today"
               ? "bg-emerald-500/25 text-emerald-100"
-              : serviceDateInfo.tone === "tomorrow"
+              : dateInfo.tone === "tomorrow"
                 ? "bg-amber-500/25 text-amber-100"
-                : serviceDateInfo.tone === "overdue"
+                : dateInfo.tone === "overdue"
                   ? "bg-rose-500/25 text-rose-100"
                   : "bg-sky-500/20 text-sky-100"
           }`}
         >
           <CalendarDays className="h-4 w-4" />
-          <span className="uppercase tracking-wide">{serviceDateInfo.label}</span>
+          <span className="uppercase tracking-wide">{dateInfo.label}</span>
           <span className="ml-auto text-xs font-medium opacity-75">
-            {t("Transport", "Transporte", "Transport")}
+            {isService
+              ? t("Transport", "Transporte", "Transport")
+              : t("Planned", "Planificado", "Gepland")}
           </span>
         </div>
       ) : null}

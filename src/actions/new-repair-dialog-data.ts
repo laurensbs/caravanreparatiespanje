@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { customers, units, parts, partCategories } from "@/lib/db/schema";
+import { customers, units, parts, partCategories, services } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-utils";
 import { asc } from "drizzle-orm";
 
@@ -17,7 +17,7 @@ import { asc } from "drizzle-orm";
 export async function getNewRepairDialogData() {
   await requireAuth();
 
-  const [customerRows, unitRows, partRows, categoryRows] = await Promise.all([
+  const [customerRows, unitRows, partRows, categoryRows, serviceRows] = await Promise.all([
     db
       .select({ id: customers.id, name: customers.name })
       .from(customers)
@@ -48,6 +48,16 @@ export async function getNewRepairDialogData() {
       .select()
       .from(partCategories)
       .orderBy(asc(partCategories.sortOrder), asc(partCategories.label)),
+    db
+      .select({
+        id: services.id,
+        name: services.name,
+        category: services.category,
+        defaultPrice: services.defaultPrice,
+        active: services.active,
+      })
+      .from(services)
+      .orderBy(asc(services.sortOrder), asc(services.name)),
   ]);
 
   return {
@@ -55,5 +65,6 @@ export async function getNewRepairDialogData() {
     units: unitRows,
     partsCatalog: partRows,
     partCategories: categoryRows,
+    servicesCatalog: serviceRows.filter((s) => s.active),
   };
 }

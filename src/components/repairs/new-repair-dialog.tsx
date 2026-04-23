@@ -14,6 +14,7 @@ import { LocationSelect } from "@/components/repairs/location-select";
 import { PartsPicker, type SelectedPart } from "@/components/parts/parts-picker";
 import { UnitSearch } from "@/components/units/unit-search";
 import { createPartRequest } from "@/actions/parts";
+import { createServiceRequest } from "@/actions/services";
 import { JOB_TYPE_LABELS, SELECTABLE_JOB_TYPES, type JobType } from "@/types";
 import { Plus, X, Wrench, Sparkles, Settings, ClipboardCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +37,14 @@ interface UnitOption {
   model: string | null;
   year: number | null;
   customerId: string | null;
+}
+
+interface CatalogServiceOption {
+  id: string;
+  name: string;
+  category: string | null;
+  defaultPrice: string;
+  active: boolean;
 }
 
 import type { PartCategory } from "@/components/parts/parts-client";
@@ -80,6 +89,8 @@ export function NewRepairDialog({
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [unitId, setUnitId] = useState<string | null>(null);
   const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([]);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [servicesCatalog, setServicesCatalog] = useState<CatalogServiceOption[]>([]);
   const [jobType, setJobType] = useState<JobType>("repair");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [partsExpanded, setPartsExpanded] = useState(true);
@@ -109,6 +120,9 @@ export function NewRepairDialog({
         setUnits(data.units);
         setPartsCatalog(data.partsCatalog);
         setPartCategories(data.partCategories as unknown as PartCategory[]);
+        if (Array.isArray(data.servicesCatalog)) {
+          setServicesCatalog(data.servicesCatalog);
+        }
         bootstrappedRef.current = true;
       } catch {
         toast.error("Could not load lists. Close and retry.");
@@ -199,6 +213,7 @@ export function NewRepairDialog({
     setCustomerId(null);
     setUnitId(null);
     setSelectedParts([]);
+    setSelectedServiceIds([]);
     setJobType("repair");
     setShowAdvanced(false);
     setPartsExpanded(true);
@@ -238,6 +253,17 @@ export function NewRepairDialog({
           })
         )
       );
+      // Create service requests from the services picked in the Service
+      // work-type tab. Runs in parallel; errors bubble up but the job
+      // itself has already been persisted so worst case the user adds
+      // them manually from the repair-detail.
+      if (selectedServiceIds.length > 0) {
+        await Promise.all(
+          selectedServiceIds.map((id) =>
+            createServiceRequest({ repairJobId: job.id, serviceId: id }),
+          ),
+        );
+      }
       setOpen(false);
       resetForm();
       toast.success("Work order created");
@@ -442,6 +468,48 @@ export function NewRepairDialog({
                         className="rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 py-3 min-h-[100px] shadow-none resize-none focus:ring-ring/30 focus:border-ring"
                       />
                     </div>
+
+                    {/* Services — only visible on the Service work-type */}
+                    {jobType === "service" && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">
+                          Services{selectedServiceIds.length > 0 ? ` · ${selectedServiceIds.length} selected` : ""}
+                        </Label>
+                        {servicesCatalog.length === 0 ? (
+                          <p className="text-xs text-muted-foreground italic">
+                            No services in catalog yet. Add some in /services.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {servicesCatalog.map((s) => {
+                              const active = selectedServiceIds.includes(s.id);
+                              return (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedServiceIds((prev) =>
+                                      active ? prev.filter((id) => id !== s.id) : [...prev, s.id],
+                                    )
+                                  }
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
+                                    active
+                                      ? "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                                      : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground/90 dark:hover:border-white/20",
+                                  )}
+                                >
+                                  <span className="truncate max-w-[18rem]">{s.name}</span>
+                                  <span className="tabular-nums text-[11px] opacity-70">
+                                    €{parseFloat(s.defaultPrice).toFixed(0)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Parts — adaptive visibility */}
                     {showPartsSection && (

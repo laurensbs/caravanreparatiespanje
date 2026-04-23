@@ -615,6 +615,15 @@ function RepairRow({
           <Badge className={`${STATUS_COLORS[repair.status as RepairStatus] ?? "bg-muted text-muted-foreground"} rounded-full text-[9px] px-1.5 py-0 shrink-0 print:hidden`}>
             {repairStatusLabel(repair.status)}
           </Badge>
+          {repair.jobType === "service" ? (
+            <Badge className="shrink-0 rounded-full bg-sky-100 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
+              Service
+            </Badge>
+          ) : repair.jobType === "repair" ? (
+            <Badge className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+              Repair
+            </Badge>
+          ) : null}
         </div>
 
         {/* Meta: customer, unit, location */}

@@ -43,6 +43,7 @@ export interface PlannedRepair {
   dueDate: Date;
   status: string;
   priority: string;
+  jobType: string;
   estimatedHours: string | null;
   customerName: string | null;
   locationName: string | null;
@@ -67,6 +68,7 @@ export async function getPlannedRepairs(
       dueDate: repairJobs.dueDate,
       status: repairJobs.status,
       priority: repairJobs.priority,
+      jobType: repairJobs.jobType,
       estimatedHours: repairJobs.estimatedHours,
       customerName: customers.name,
       locationName: locations.name,
@@ -101,6 +103,7 @@ export async function getPlannedRepairs(
       dueDate: r.dueDate!,
       status: r.status,
       priority: r.priority,
+      jobType: r.jobType,
       estimatedHours: r.estimatedHours,
       customerName: r.customerName,
       locationName: r.locationName,

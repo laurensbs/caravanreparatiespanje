@@ -128,12 +128,16 @@ interface Props {
 type FilterTab = "all" | "services" | "repairs";
 
 /** Geldt de klus nog actief (dus hoort hij in de lijst)?
- *  Afgeronde en gefactureerde klussen vallen eruit — admin ziet die
- *  in het back-office panel. Check-states blijven zichtbaar zodat
- *  werkers direct zien welke klus admin nog moet bekijken. */
+ *  Afgeronde/gefactureerde klussen vallen eruit — die horen bij admin.
+ *  Wachtende klussen (waiting_parts, waiting_customer, blocked) óók:
+ *  die liggen fysiek in de werkplaats maar er kan niks mee, dus op
+ *  de werkvloer-lijst zijn ze alleen ruis. Admin ziet ze in het
+ *  back-office panel. Ready_for_check blijft wel zichtbaar want
+ *  admin moet nog even goedkeuren en de werker wil dat zien. */
 function isStillRelevant(r: RepairItem): boolean {
   if (r.status === "invoiced") return false;
   if (r.status === "completed" && r.finalCheckStatus !== "pending") return false;
+  if (["waiting_parts", "waiting_customer", "blocked"].includes(r.status)) return false;
   return true;
 }
 
@@ -389,15 +393,7 @@ export function GarageTodayClient({
     for (const r of repairs) {
       if (!isStillRelevant(r)) continue;
       c.all++;
-      const bucket = tabFor(r);
-      // Repair-tab sluit wachtend werk uit (zie filter in visibleRepairs).
-      if (
-        bucket === "repairs" &&
-        ["waiting_parts", "waiting_customer", "blocked"].includes(r.status)
-      ) {
-        continue;
-      }
-      c[bucket]++;
+      c[tabFor(r)]++;
     }
     return c;
   }, [repairs]);
@@ -408,16 +404,6 @@ export function GarageTodayClient({
     return repairs.filter((r) => {
       if (!isStillRelevant(r)) return false;
       if (tab !== "all" && tabFor(r) !== tab) return false;
-      // Reparaciones-tab toont alleen actieve klussen — waiting-parts,
-      // blocked en waiting-customer zijn wachtkamer-statussen; die
-      // horen bij admin, niet op de werkvloer-lijst. Onder Todos
-      // blijven ze wel zichtbaar voor context.
-      if (
-        tab === "repairs" &&
-        ["waiting_parts", "waiting_customer", "blocked"].includes(r.status)
-      ) {
-        return false;
-      }
       if (!q) return true;
       const hay = [
         r.publicCode,

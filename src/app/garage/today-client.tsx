@@ -23,6 +23,7 @@ import {
   MapPin,
   X,
   Wrench,
+  CalendarDays,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { GarageThemeToggle } from "@/components/garage/theme-provider";
@@ -129,6 +130,54 @@ function classify(r: RepairItem): FilterTab {
   if (r.status === "completed" && r.finalCheckStatus === "pending") return "check";
   if (["waiting_customer", "waiting_parts", "blocked"].includes(r.status)) return "waiting";
   return "active";
+}
+
+/**
+ * Slimme transport-datum label voor service-kaarten. Laat vandaag/
+ * morgen direct zien en voor verdere dagen de dag-naam + dag-getal.
+ * Werkers kijken naar deze banner om te plannen. Returns { label, tone }
+ * waarbij tone de kleur-intensiteit aangeeft: 'today' = emerald, 'tomorrow'
+ * = amber, 'later' = sky, 'overdue' = rose.
+ */
+function transportDateInfo(
+  date: Date,
+  lang: Language,
+): { label: string; tone: "today" | "tomorrow" | "later" | "overdue" } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+
+  if (diffDays < 0) {
+    return {
+      label:
+        lang === "es" ? "Atrasado" : lang === "nl" ? "Te laat" : "Overdue",
+      tone: "overdue",
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      label: lang === "es" ? "Hoy" : lang === "nl" ? "Vandaag" : "Today",
+      tone: "today",
+    };
+  }
+  if (diffDays === 1) {
+    return {
+      label:
+        lang === "es" ? "Mañana" : lang === "nl" ? "Morgen" : "Tomorrow",
+      tone: "tomorrow",
+    };
+  }
+  const locale = lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-GB";
+  return {
+    label: target.toLocaleDateString(locale, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }),
+    tone: "later",
+  };
 }
 
 function fmtDuration(min: number, lang: Language): string {
@@ -809,7 +858,16 @@ export function GarageTodayClient({
             );
 
             if (tab === "active") {
-              const serviceJobs = visibleRepairs.filter((r) => r.jobType === "service");
+              // Sorteer service-jobs op transport-datum (dichtstbijzijnde
+              // eerst). Jobs zonder dueDate landen onderaan.
+              const serviceJobs = visibleRepairs
+                .filter((r) => r.jobType === "service")
+                .slice()
+                .sort((a, b) => {
+                  const ta = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                  const tb = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                  return ta - tb;
+                });
               const repairJobs = visibleRepairs.filter((r) => r.jobType !== "service");
               return (
                 <div key={tab} className="flex flex-col gap-4 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
@@ -978,10 +1036,37 @@ function JobCard({
         : repair.nextTask.title
     : null;
 
+  const serviceDateInfo = isService && repair.dueDate
+    ? transportDateInfo(new Date(repair.dueDate), deviceLang)
+    : null;
+
   return (
     <article
       className="tap-press group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset ring-white/[0.06] hover:bg-white/[0.05]"
     >
+      {/* ── Transport-datum banner voor service-kaarten ─────────────
+           Prominent genoeg om op een iPad van 2m afstand te zien
+           welke klussen vandaag/morgen staan. */}
+      {serviceDateInfo ? (
+        <div
+          className={`-mx-4 -mt-4 mb-1 flex items-center gap-2 px-4 py-2 text-sm font-bold ${
+            serviceDateInfo.tone === "today"
+              ? "bg-emerald-500/25 text-emerald-100"
+              : serviceDateInfo.tone === "tomorrow"
+                ? "bg-amber-500/25 text-amber-100"
+                : serviceDateInfo.tone === "overdue"
+                  ? "bg-rose-500/25 text-rose-100"
+                  : "bg-sky-500/20 text-sky-100"
+          }`}
+        >
+          <CalendarDays className="h-4 w-4" />
+          <span className="uppercase tracking-wide">{serviceDateInfo.label}</span>
+          <span className="ml-auto text-xs font-medium opacity-75">
+            {t("Transport", "Transporte", "Transport")}
+          </span>
+        </div>
+      ) : null}
+
       {/* ── Header row: status, code, chevron ─────────────────────── */}
       <button
         type="button"

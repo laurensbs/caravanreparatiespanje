@@ -31,6 +31,7 @@ import {
   Trash2,
   User,
   X,
+  Calendar,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { GarageThemeToggle } from "@/components/garage/theme-provider";
@@ -843,6 +844,50 @@ export function GarageRepairDetailClient({
               {repair.title ? (
                 <p className="text-base text-white/85">{repair.title}</p>
               ) : null}
+
+              {/* Grote transport-datum banner voor service-jobs zodat de
+                  werker meteen ziet wanneer de caravan wordt opgehaald. */}
+              {isService && repair.dueDate ? (() => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const target = new Date(repair.dueDate);
+                target.setHours(0, 0, 0, 0);
+                const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+                const locale = deviceLang === "es" ? "es-ES" : deviceLang === "nl" ? "nl-NL" : "en-GB";
+                const fullLabel = target.toLocaleDateString(locale, {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                });
+                const rel =
+                  diff < 0 ? t("Overdue", "Atrasado", "Te laat") :
+                  diff === 0 ? t("Today", "Hoy", "Vandaag") :
+                  diff === 1 ? t("Tomorrow", "Mañana", "Morgen") :
+                  `${t("In", "En", "Over")} ${diff} ${t("days", "días", "dagen")}`;
+                const tone = diff < 0
+                  ? "bg-rose-500/25 text-rose-100 ring-rose-400/30"
+                  : diff === 0
+                    ? "bg-emerald-500/25 text-emerald-100 ring-emerald-400/30"
+                    : diff === 1
+                      ? "bg-amber-500/25 text-amber-100 ring-amber-400/30"
+                      : "bg-sky-500/25 text-sky-100 ring-sky-400/30";
+                return (
+                  <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ring-1 ${tone}`}>
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest opacity-80">
+                        {t("Transport", "Transporte", "Transport")}
+                      </p>
+                      <p className="text-sm font-bold capitalize leading-tight">
+                        {fullLabel}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase">
+                      {rel}
+                    </span>
+                  </div>
+                );
+              })() : null}
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
                 {repair.customerName ? <span>{repair.customerName}</span> : null}

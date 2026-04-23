@@ -354,12 +354,10 @@ export async function getGarageRepairsToday() {
               sql`${repairJobs.dueDate}::date <= CURRENT_DATE`,
             ),
           ),
-          // Service-werkorders krijgen een 1-dag vooruitblik: ze
-          // verschijnen op de garage-overview vanaf de dag vóór hun
-          // dueDate. Zo blijft de werkvloer rustig — niet alle services
-          // van de komende week staan tegelijk in beeld. Services
-          // zonder dueDate tonen we sowieso. Andere jobtypes blijven
-          // strikt "vandaag of eerder".
+          // Service-werkorders krijgen 7 dagen vooruitblik zodat werkers
+          // kunnen voorsorteren (transport cleaning, waxing, ozon). We
+          // tonen de dueDate prominent op elke kaart en sorteren op
+          // datum zodat de dichtstbijzijnde klus altijd bovenaan staat.
           and(
             eq(repairJobs.jobType, "service"),
             inArray(repairJobs.status, [
@@ -373,7 +371,7 @@ export async function getGarageRepairsToday() {
             ]),
             or(
               isNull(repairJobs.dueDate),
-              sql`${repairJobs.dueDate}::date <= CURRENT_DATE + INTERVAL '1 day'`,
+              sql`${repairJobs.dueDate}::date <= CURRENT_DATE + INTERVAL '7 days'`,
             ),
           ),
           // Vandaag afgeronde reparaties blijven zichtbaar in de

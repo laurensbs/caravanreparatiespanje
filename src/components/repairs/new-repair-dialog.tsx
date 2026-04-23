@@ -312,16 +312,17 @@ export function NewRepairDialog({
         card floating over the backdrop.
       */}
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-stretch justify-center lg:items-start lg:pt-[3vh]">
+        <div className="fixed inset-0 z-[60] flex items-stretch justify-center lg:items-center lg:p-4">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-in fade-in-0 duration-200"
             onClick={() => handleOpenChange(false)}
           />
 
-          {/* Modal */}
-          <div className="relative z-10 w-full lg:max-w-2xl lg:mx-4 animate-in fade-in-0 lg:zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
-            <div className="flex h-[100dvh] flex-col bg-card dark:bg-card lg:h-auto lg:max-h-[94vh] lg:rounded-2xl lg:border lg:border-border/60 lg:dark:border-border lg:shadow-2xl">
+          {/* Modal — op lg expliciet height-constrained zodat de sticky
+              footer altijd in beeld staat, ook bij veel services-chips. */}
+          <div className="relative z-10 flex w-full min-h-0 lg:max-w-2xl lg:h-[min(92vh,920px)] animate-in fade-in-0 lg:zoom-in-[0.98] slide-in-from-bottom-2 duration-200">
+            <div className="flex h-[100dvh] min-h-0 w-full flex-col bg-card dark:bg-card lg:h-full lg:rounded-2xl lg:border lg:border-border/60 lg:dark:border-border lg:shadow-2xl">
 
               {/* Sticky header */}
               <div

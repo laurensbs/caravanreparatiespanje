@@ -110,6 +110,7 @@ type RepairDetail = {
   unitCurrentPosition: string | null;
   assignedUserName: string | null;
   assignedUserId: string | null;
+  jobType?: string | null;
   finalCheckStatus: string | null;
   finalCheckNotes: string | null;
   waterDamageRiskFlag: boolean;
@@ -493,7 +494,7 @@ export function GarageRepairDetailClient({
   // verborgen.
   // Service-jobs tikken op 'afvinken' ipv op 'klokken' — die tijd is al
   // fixed-price — dus de hele timer-sectie valt weg voor services.
-  const isService = (repair as { jobType?: string }).jobType === "service";
+  const isService = repair.jobType === "service";
   const canTimer =
     !isService &&
     (canStartGarageTimerOnRepair(repair.status) ||
@@ -816,9 +817,13 @@ export function GarageRepairDetailClient({
                   {repair.unitRegistration ?? repair.publicCode ?? "—"}
                 </h1>
                 <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${STATUS_TONE[repair.status] ?? "bg-white/[0.06] text-white/60 ring-white/10"}`}
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1 ${
+                    isService
+                      ? "bg-sky-500/15 text-sky-300 ring-sky-400/20"
+                      : STATUS_TONE[repair.status] ?? "bg-white/[0.06] text-white/60 ring-white/10"
+                  }`}
                 >
-                  {isService && repair.status === "in_progress"
+                  {isService
                     ? t("Service", "Servicio", "Service")
                     : STATUS_LABELS[repair.status as RepairStatus]}
                 </span>
@@ -1109,55 +1114,14 @@ export function GarageRepairDetailClient({
             </Section>
           ) : null}
 
-          {/* ── Services (indien aanwezig) ───────────────────── */}
-          {repair.services.length > 0 ? (
-            <Section
-              icon={<Sparkles className="h-4 w-4" />}
-              title={t("Services", "Servicios", "Services")}
-              badge={`${repair.services.filter((s) => s.completedAt != null).length}/${repair.services.length}`}
-            >
-              <div className="flex flex-col gap-1.5">
-                {repair.services.map((s) => {
-                  const done = s.completedAt != null;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => handleToggleService(s.id)}
-                      className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5 text-left text-[15px] transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
-                    >
-                      <span
-                        aria-hidden
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                          done
-                            ? "border-emerald-400 bg-emerald-500 text-white"
-                            : "border-white/30 bg-transparent text-transparent"
-                        }`}
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      </span>
-                      <span
-                        className={`flex-1 ${
-                          done ? "text-white/50 line-through" : "text-white/90"
-                        }`}
-                      >
-                        {s.serviceName}
-                        {Number(s.quantity) > 1 ? (
-                          <span className="ml-1 text-white/40">×{s.quantity}</span>
-                        ) : null}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </Section>
-          ) : null}
-
-          {/* ── Tasks ───────────────────────────────────────── */}
+          {/* ── Tasks + Services ─────────────────────────────
+               Services worden gepresenteerd als taken binnen dezelfde
+               sectie, met dezelfde afvink-UI als TaskCard. Zo hoeft
+               de werker maar op één plek te kijken. */}
           <Section
             icon={<ClipboardList className="h-4 w-4" />}
             title={t("Tasks", "Tareas", "Taken")}
-            badge={hasTasks ? `${doneCount}/${repair.tasks.length}` : 0}
+            badge={`${doneCount + repair.services.filter((s) => s.completedAt != null).length}/${repair.tasks.length + repair.services.length}`}
             action={
               <button
                 type="button"
@@ -1169,8 +1133,55 @@ export function GarageRepairDetailClient({
               </button>
             }
           >
-            {hasTasks ? (
+            {hasTasks || repair.services.length > 0 ? (
               <div className="flex flex-col gap-2">
+                {/* Services eerst — ze verschijnen als 'taak' met dezelfde
+                    afvink-UI als TaskCard zodat de werker één lijst ziet. */}
+                {repair.services.map((s) => {
+                  const done = s.completedAt != null;
+                  return (
+                    <div
+                      key={s.id}
+                      className={`rounded-2xl border bg-white/[0.03] transition-all duration-150 ${
+                        done ? "border-emerald-400/15 opacity-60" : "border-white/[0.06]"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 px-4 py-3.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleService(s.id)}
+                          aria-label={done
+                            ? t("Mark as not done", "Marcar como no hecho", "Markeer als niet klaar")
+                            : t("Mark as done", "Marcar como hecho", "Afvinken")}
+                          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm leading-none transition-all active:scale-90 ${
+                            done
+                              ? "bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20"
+                              : "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
+                          }`}
+                        >
+                          {done ? "✓" : "○"}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`text-sm font-medium leading-snug ${
+                                done ? "text-white/30 line-through" : "text-white/90"
+                              }`}
+                            >
+                              {s.serviceName}
+                              {Number(s.quantity) > 1 ? (
+                                <span className="ml-1 text-white/40">×{s.quantity}</span>
+                              ) : null}
+                            </span>
+                            <span className="inline-flex shrink-0 items-center rounded-md bg-sky-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-300">
+                              {t("Service", "Servicio", "Service")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
                 {repair.tasks.map((task) => (
                   <TaskCard
                     key={task.id}

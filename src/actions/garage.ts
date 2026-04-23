@@ -663,6 +663,7 @@ export async function getGarageRepairDetail(id: string) {
       unitCurrentPosition: units.currentPosition,
       assignedUserName: users.name,
       assignedUserId: repairJobs.assignedUserId,
+      jobType: repairJobs.jobType,
       finalCheckStatus: repairJobs.finalCheckStatus,
       finalCheckNotes: repairJobs.finalCheckNotes,
       // Flags

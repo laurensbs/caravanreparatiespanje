@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import { useRef, useState } from "react";
+import { AlertCircle, Pause, Play } from "lucide-react";
 
 /**
  * Compact, button-shaped audio player for voice notes recorded by the
- * garage. Renders as a single tap target showing duration; tapping
- * starts/stops playback. Loads metadata lazily so a long list of
- * comments doesn't fire dozens of audio decoders up-front.
+ * garage. We lazy-instantiate the HTMLAudioElement on first tap (not
+ * on mount) so a list of 20 voice notes doesn't fire 20 network
+ * requests for metadata. Also keeps state handling simple — if playback
+ * fails (codec mismatch, network) we surface an error icon instead of
+ * silently doing nothing.
  */
 function fmtSec(s: number): string {
   if (!Number.isFinite(s) || s < 0) s = 0;
@@ -28,25 +30,47 @@ export function VoicePlayer({
   size?: "sm" | "md";
 }) {
   const [playing, setPlaying] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [error, setError] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    const el = new Audio(url);
-    el.preload = "metadata";
-    el.onended = () => setPlaying(false);
-    el.onpause = () => setPlaying(false);
-    el.onplay = () => setPlaying(true);
-    setAudio(el);
-    return () => {
-      el.pause();
-      el.src = "";
-    };
-  }, [url]);
+  function ensureAudio(): HTMLAudioElement {
+    if (!audioRef.current) {
+      const el = new Audio();
+      el.preload = "metadata";
+      el.src = url;
+      el.addEventListener("ended", () => setPlaying(false));
+      el.addEventListener("pause", () => setPlaying(false));
+      el.addEventListener("play", () => setPlaying(true));
+      el.addEventListener("error", () => {
+        setPlaying(false);
+        setError(true);
+        if (typeof window !== "undefined") {
+          // eslint-disable-next-line no-console
+          console.warn("voice-player: audio error", url, el.error);
+        }
+      });
+      audioRef.current = el;
+    }
+    return audioRef.current;
+  }
 
-  function toggle() {
-    if (!audio) return;
-    if (playing) audio.pause();
-    else audio.play().catch(() => setPlaying(false));
+  async function toggle() {
+    const audio = ensureAudio();
+    setError(false);
+    try {
+      if (playing) {
+        audio.pause();
+      } else {
+        await audio.play();
+      }
+    } catch (err) {
+      setPlaying(false);
+      setError(true);
+      if (typeof window !== "undefined") {
+        // eslint-disable-next-line no-console
+        console.warn("voice-player: play failed", url, err);
+      }
+    }
   }
 
   const sizeClass =
@@ -59,8 +83,11 @@ export function VoicePlayer({
       type="button"
       onClick={toggle}
       className={`inline-flex items-center rounded-lg bg-muted font-semibold text-foreground transition-colors hover:bg-muted/80 active:scale-95 ${sizeClass}`}
+      title={error ? "Playback failed — tap to retry" : undefined}
     >
-      {playing ? (
+      {error ? (
+        <AlertCircle className="h-3 w-3 text-red-500" />
+      ) : playing ? (
         <Pause className="h-3 w-3 fill-current" />
       ) : (
         <Play className="ml-0.5 h-3 w-3 fill-current" />

@@ -62,39 +62,34 @@ export async function GET(
     const token = await getAccessToken();
     const email = process.env.ONEDRIVE_USER_EMAIL!;
 
-    const res = await fetch(
-      `${GRAPH_BASE}/users/${email}/drive/items/${row.onedriveItemId}/content`,
-      { headers: { Authorization: `Bearer ${token}` }, redirect: "manual" },
-    );
-
-    if (res.status === 302) {
-      const location = res.headers.get("location");
-      if (location) {
-        return NextResponse.redirect(location, {
-          status: 302,
-          headers: {
-            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-          },
-        });
-      }
-    }
-
+    // Always stream the audio through our server — redirecting the
+    // browser to a pre-signed OneDrive download URL tends to fail:
+    // some clients can't follow the redirect because of audio-element
+    // CORS quirks, and the pre-signed URL itself sets headers that
+    // confuse the HTMLAudioElement (e.g. content-disposition attachment).
     const contentRes = await fetch(
       `${GRAPH_BASE}/users/${email}/drive/items/${row.onedriveItemId}/content`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!contentRes.ok) {
+      const text = await contentRes.text().catch(() => "");
+      console.error("voice proxy fetch failed", contentRes.status, text);
       return new NextResponse("Failed to fetch audio", { status: 502 });
     }
-    return new NextResponse(contentRes.body, {
-      headers: {
-        "Content-Type":
-          contentRes.headers.get("content-type") ||
-          row.mimeType ||
-          "audio/webm",
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-      },
-    });
+
+    const sourceType =
+      contentRes.headers.get("content-type")?.split(";")[0] ?? null;
+    const contentType = sourceType ?? row.mimeType ?? "audio/webm";
+    const contentLength = contentRes.headers.get("content-length");
+
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      "Accept-Ranges": "bytes",
+    };
+    if (contentLength) headers["Content-Length"] = contentLength;
+
+    return new NextResponse(contentRes.body, { headers });
   } catch (err) {
     console.error("Voice note proxy error:", err);
     return new NextResponse("Failed to fetch audio", { status: 500 });

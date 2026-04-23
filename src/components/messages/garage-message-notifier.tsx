@@ -50,15 +50,18 @@ export function GarageMessageNotifier() {
           }
         })();
 
-        // First load primes the watermark without showing a toast so
-        // admins don't get bombarded when they first log in.
+        // On first tick, don't pop for messages we've already notified
+        // in a previous session — but do pop for any id newer than the
+        // watermark. That way an admin who comes back from lunch sees
+        // the messages they missed.
         if (!hasPrimed.current) {
           hasPrimed.current = true;
-          try {
-            window.localStorage.setItem(STORAGE_KEY, msg.id);
-          } catch {}
-          schedule();
-          return;
+          // If this message is the same as the one we last showed, stay
+          // quiet. Otherwise fall through and show it once.
+          if (lastSeen === msg.id) {
+            schedule();
+            return;
+          }
         }
 
         const alreadyShown = lastSeen === msg.id || lastToastId.current === msg.id;
@@ -99,7 +102,13 @@ export function GarageMessageNotifier() {
             `💬 ${who} — ${header}`,
             {
               description: body,
-              duration: 15_000,
+              duration: 30_000,
+              closeButton: true,
+              style: {
+                // Emerald accent band + subtle bump so the message popup
+                // is distinguishable from regular toasts.
+                borderLeft: "4px solid rgb(16 185 129)",
+              },
               action: {
                 label: "View",
                 onClick: () => router.push(`/messages?repair=${msg.repairJobId}`),
@@ -107,8 +116,11 @@ export function GarageMessageNotifier() {
             },
           );
         }
-      } catch {
-        // Ignore transient errors; we'll try again next tick.
+      } catch (err) {
+        if (typeof window !== "undefined") {
+          // eslint-disable-next-line no-console
+          console.warn("garage-message-notifier poll failed", err);
+        }
       } finally {
         schedule();
       }

@@ -1136,10 +1136,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                               await scheduleRepair(job.id, today.toISOString());
                               setStatus("scheduled");
                               setStartedToday(true);
-                              toast.success("Repair started for today");
+                              toast.success(jobType === "service" ? "Service started for today" : "Repair started for today");
                               router.refresh();
                             } catch (err) {
-                              toastScheduleRepairError(err, "Failed to start repair");
+                              toastScheduleRepairError(err, jobType === "service" ? "Failed to start service" : "Failed to start repair");
                             }
                           }}
                           className="w-full flex items-center gap-2 rounded-lg bg-foreground text-background text-xs font-medium py-2 px-3 transition-colors hover:bg-foreground/90"
@@ -1156,7 +1156,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                             className="w-full flex items-center gap-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2 px-3 transition-colors"
                           >
                             <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                            Schedule Repair
+                            {jobType === "service" ? "Schedule Service" : "Schedule Repair"}
                           </button>
                           <input
                             id="header-schedule-picker"
@@ -1996,7 +1996,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                           await scheduleRepair(job.id, today.toISOString());
                           setStatus("scheduled");
                           setStartedToday(true);
-                          toast.success("Repair started for today");
+                          toast.success(jobType === "service" ? "Service started for today" : "Repair started for today");
                           router.refresh();
                         } catch (err) {
                           toastScheduleRepairError(err, "Failed to start repair");
@@ -2016,7 +2016,7 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                         className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-xs font-medium py-2.5 px-3 transition-colors"
                       >
                         <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                        Schedule Repair
+                        {jobType === "service" ? "Schedule Service" : "Schedule Repair"}
                       </button>
                       <input
                         id="workshop-schedule-picker"

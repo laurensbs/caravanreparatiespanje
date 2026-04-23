@@ -176,31 +176,32 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete, authorNa
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto !bg-stone-900 border-white/[0.08] text-white shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-lg text-white">
+      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto !bg-stone-900 border-white/[0.08] text-white shadow-2xl p-5">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-base text-white">
             🔍 {t("Add Finding", "Añadir Hallazgo", "Bevinding Toevoegen")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-2">
+        <div className="space-y-3">
+          {/* Category grid — compacter tiles zodat alles in beeld past. */}
           <div>
-            <p className="text-sm font-medium text-white/40 mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">
               {t("Category", "Categoría", "Categorie")}
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-6 gap-1.5">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all active:scale-[0.97] ${
+                  className={`flex flex-col items-center gap-0.5 rounded-lg border py-1.5 px-1 text-center transition-all active:scale-[0.97] ${
                     category === cat
                       ? "border-teal-400/40 bg-teal-400/10 ring-1 ring-teal-400/20"
                       : "border-white/[0.06] hover:bg-white/[0.04]"
                   }`}
                 >
-                  <span className="text-2xl">{FINDING_CATEGORY_EMOJI[cat]}</span>
-                  <span className="text-[11px] font-bold leading-tight text-white/70">
+                  <span className="text-lg leading-none">{FINDING_CATEGORY_EMOJI[cat]}</span>
+                  <span className="text-[9.5px] font-bold leading-tight text-white/70 truncate w-full">
                     {t(FINDING_CATEGORY_LABELS[cat], CATEGORY_ES[cat], CATEGORY_NL[cat])}
                   </span>
                 </button>
@@ -208,8 +209,69 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete, authorNa
             </div>
           </div>
 
+          {/* Prominent Part-needed bar — hoog in het scherm omdat dit de
+              meest-gebruikte optie is. Aangevinkt = repair flipt naar
+              waiting_parts, part komt in het admin Part Requests paneel. */}
+          <div
+            className={`rounded-xl border-2 transition-all ${
+              needsPart
+                ? "border-orange-400/60 bg-orange-400/15 shadow-[0_0_0_3px_rgba(251,146,60,0.1)]"
+                : "border-orange-400/25 bg-orange-400/5 hover:bg-orange-400/10"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setNeedsPart(!needsPart)}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left"
+            >
+              <span className="text-xl">{needsPart ? "☑" : "☐"}</span>
+              <span className="text-xl">📦</span>
+              <span
+                className={`flex-1 font-bold text-base ${
+                  needsPart ? "text-orange-200" : "text-orange-300/80"
+                }`}
+              >
+                {t("Part needed", "Pieza necesaria", "Onderdeel nodig")}
+              </span>
+              {!needsPart && (
+                <span className="text-[11px] font-medium text-orange-300/50">
+                  {t("tap if needed", "toca si necesario", "aantikken indien nodig")}
+                </span>
+              )}
+            </button>
+            {needsPart ? (
+              <div className="flex flex-col gap-2 border-t border-orange-400/30 p-3 sm:flex-row">
+                <input
+                  type="text"
+                  value={partName}
+                  onChange={(e) => setPartName(e.target.value)}
+                  placeholder={t(
+                    "Part name (e.g. Beading strip)",
+                    "Nombre de pieza",
+                    "Naam onderdeel (bv. Beading strip)",
+                  )}
+                  className="flex-1 min-w-0 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400/30"
+                  autoFocus
+                />
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-xs font-medium text-white/50">
+                    {t("Qty", "Cant.", "Aantal")}
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={partQuantity}
+                    onChange={(e) => setPartQuantity(parseInt(e.target.value, 10) || 1)}
+                    className="w-16 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 py-2 text-sm text-white text-center focus:outline-none focus:ring-2 focus:ring-orange-400/30"
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Description — compacter dan voorheen (kleinere textarea). */}
           <div>
-            <p className="text-sm font-medium text-white/40 mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">
               {t("What did you find?", "¿Qué encontraste?", "Wat heb je gevonden?")}
             </p>
             <textarea
@@ -220,23 +282,24 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete, authorNa
                 "Describe lo que encontraste...",
                 "Beschrijf wat je hebt gevonden..."
               )}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-sm text-white placeholder:text-white/20 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 text-sm text-white placeholder:text-white/20 h-16 resize-none focus:outline-none focus:ring-2 focus:ring-white/10"
             />
-            <div className="mt-2">
+            <div className="mt-1.5">
               <VoiceRecorder value={voice} onChange={setVoice} t={t} />
             </div>
           </div>
 
+          {/* Severity + follow-up + approval — naast elkaar waar mogelijk. */}
           <div>
-            <p className="text-sm font-medium text-white/40 mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">
               {t("Severity", "Gravedad", "Ernst")}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {SEVERITIES.map((sev) => (
                 <button
                   key={sev}
                   onClick={() => setSeverity(sev)}
-                  className={`flex-1 rounded-xl border p-3 text-sm font-bold transition-all active:scale-[0.97] ${
+                  className={`flex-1 rounded-lg border py-2 text-sm font-bold transition-all active:scale-[0.97] ${
                     severity === sev ? SEVERITY_SELECTED[sev] : SEVERITY_COLORS[sev]
                   }`}
                 >
@@ -247,100 +310,47 @@ export function FindingDialog({ open, onClose, repairJobId, onComplete, authorNa
             </div>
           </div>
 
-          <div className="space-y-2">
-            {/* "Onderdeel nodig" vervangt de oude Blokkade-knop. Aangevinkt
-                 = repair gaat automatisch naar waiting_parts, part komt in
-                 het admin Part Requests paneel. */}
-            <div
-              className={`rounded-xl border transition-all ${
-                needsPart
-                  ? "border-orange-400/40 bg-orange-400/10"
-                  : "border-white/[0.06] hover:bg-white/[0.04]"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => setNeedsPart(!needsPart)}
-                className="flex w-full items-center gap-3 p-3 text-left"
-              >
-                <span className="text-lg">{needsPart ? "☑" : "☐"}</span>
-                <span
-                  className={`font-medium text-sm ${
-                    needsPart ? "text-orange-300" : "text-white/50"
-                  }`}
-                >
-                  📦 {t("Part needed", "Pieza necesaria", "Onderdeel nodig")}
-                </span>
-              </button>
-              {needsPart ? (
-                <div className="flex flex-col gap-2 border-t border-orange-400/20 p-3 sm:flex-row">
-                  <input
-                    type="text"
-                    value={partName}
-                    onChange={(e) => setPartName(e.target.value)}
-                    placeholder={t(
-                      "Part name (e.g. Beading strip)",
-                      "Nombre de pieza",
-                      "Naam onderdeel (bv. Beading strip)",
-                    )}
-                    className="flex-1 min-w-0 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400/30"
-                    autoFocus
-                  />
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs font-medium text-white/50">
-                      {t("Qty", "Cant.", "Aantal")}
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={partQuantity}
-                      onChange={(e) => setPartQuantity(parseInt(e.target.value, 10) || 1)}
-                      className="w-16 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 py-2.5 text-sm text-white text-center focus:outline-none focus:ring-2 focus:ring-orange-400/30"
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </div>
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setRequiresFollowUp(!requiresFollowUp)}
-              className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-all active:scale-[0.98] ${
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs text-left transition-all active:scale-[0.98] ${
                 requiresFollowUp
-                  ? "border-violet-400/40 bg-violet-400/10 text-violet-400"
+                  ? "border-violet-400/40 bg-violet-400/10 text-violet-300"
                   : "border-white/[0.06] text-white/50 hover:bg-white/[0.04]"
               }`}
             >
-              <span className="text-lg">{requiresFollowUp ? "☑" : "☐"}</span>
-              <span className="font-medium">
-                {t("Requires follow-up", "Requiere seguimiento", "Vervolg nodig")}
+              <span>{requiresFollowUp ? "☑" : "☐"}</span>
+              <span className="font-medium leading-tight">
+                {t("Follow-up", "Seguimiento", "Vervolg nodig")}
               </span>
             </button>
             <button
               onClick={() => setRequiresCustomerApproval(!requiresCustomerApproval)}
-              className={`w-full flex items-center gap-3 rounded-xl border p-3 text-sm text-left transition-all active:scale-[0.98] ${
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs text-left transition-all active:scale-[0.98] ${
                 requiresCustomerApproval
-                  ? "border-amber-400/40 bg-amber-400/10 text-amber-400"
+                  ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
                   : "border-white/[0.06] text-white/50 hover:bg-white/[0.04]"
               }`}
             >
-              <span className="text-lg">{requiresCustomerApproval ? "☑" : "☐"}</span>
-              <span className="font-medium">
-                {t("Needs customer approval", "Necesita aprobación del cliente", "Klantgoedkeuring nodig")}
+              <span>{requiresCustomerApproval ? "☑" : "☐"}</span>
+              <span className="font-medium leading-tight">
+                {t("Customer approval", "Aprobación cliente", "Klantgoedkeuring")}
               </span>
             </button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <button
               onClick={() => { reset(); onClose(); }}
               disabled={isPending}
-              className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/60 font-medium text-sm transition-all hover:bg-white/[0.04] active:scale-[0.97] disabled:opacity-40"
+              className="flex-1 h-11 rounded-xl border border-white/[0.08] text-white/60 font-medium text-sm transition-all hover:bg-white/[0.04] active:scale-[0.97] disabled:opacity-40"
             >
               {t("Cancel", "Cancelar", "Annuleren")}
             </button>
             <button
               onClick={handleSubmit}
               disabled={!category || !description.trim() || isPending}
-              className="flex-1 h-12 rounded-xl bg-teal-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
+              className="flex-[2] h-11 rounded-xl bg-teal-500 text-white font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
             >
               {isPending
                 ? t("Saving...", "Guardando...", "Opslaan...")

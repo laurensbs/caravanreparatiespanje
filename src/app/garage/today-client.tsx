@@ -24,6 +24,7 @@ import {
   X,
   Wrench,
   CalendarDays,
+  Sparkles,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { GarageThemeToggle } from "@/components/garage/theme-provider";
@@ -33,7 +34,7 @@ import { usePullToRefresh } from "@/lib/use-pull-to-refresh";
 import { PullToRefreshIndicator } from "@/components/garage/pull-to-refresh-indicator";
 import { startTimer, stopTimer } from "@/actions/time-entries";
 import { GARAGE_TIMER_NO_TASKS } from "@/lib/garage-timer-errors";
-import { updateTaskStatus, garageMarkPartReceived } from "@/actions/garage";
+import { updateTaskStatus, garageMarkPartReceived, garageMarkDone } from "@/actions/garage";
 import { toggleServiceRequestCompleted } from "@/actions/services";
 import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/garage-timer-policy";
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
@@ -579,6 +580,20 @@ export function GarageTodayClient({
     });
   }
 
+  async function handleMarkReady(repair: RepairItem) {
+    hapticTap();
+    startActionTransition(async () => {
+      try {
+        await garageMarkDone(repair.id);
+        hapticSuccess();
+        toast.success(t("Ready for check", "Listo para revisión", "Klaar voor controle"));
+        router.refresh();
+      } catch (err) {
+        toast.error((err as Error)?.message ?? "Could not mark ready");
+      }
+    });
+  }
+
   async function handleToggleService(repair: RepairItem, serviceId: string) {
     hapticTap();
     startActionTransition(async () => {
@@ -854,6 +869,7 @@ export function GarageTodayClient({
                 onTickTask={() => handleTickTask(r)}
                 onReceivePart={() => handleReceivePart(r)}
                 onToggleService={(sid) => handleToggleService(r, sid)}
+                onMarkReady={() => handleMarkReady(r)}
               />
             );
 
@@ -870,13 +886,16 @@ export function GarageTodayClient({
                 });
               const repairJobs = visibleRepairs.filter((r) => r.jobType !== "service");
               return (
-                <div key={tab} className="flex flex-col gap-4 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
+                <div key={tab} className="flex flex-col gap-6 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
                   {serviceJobs.length > 0 && (
                     <details open className="group/sect">
-                      <summary className="mb-2 flex cursor-pointer select-none items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300 list-none [&::-webkit-details-marker]:hidden">
-                        <ChevronRight className="h-3 w-3 transition-transform group-open/sect:rotate-90" />
-                        {t("Services", "Servicios", "Services")}
-                        <span className="rounded-full bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-bold text-sky-200">
+                      <summary className="mb-3 flex cursor-pointer select-none items-center gap-3 rounded-xl border-l-4 border-sky-400 bg-sky-500/[0.08] px-3 py-2.5 list-none [&::-webkit-details-marker]:hidden hover:bg-sky-500/[0.12] transition-colors">
+                        <ChevronRight className="h-4 w-4 text-sky-300 transition-transform group-open/sect:rotate-90" />
+                        <Sparkles className="h-4 w-4 text-sky-300" />
+                        <h2 className="text-lg font-bold uppercase tracking-wider text-sky-200">
+                          {t("Services", "Servicios", "Services")}
+                        </h2>
+                        <span className="ml-auto rounded-full bg-sky-400/25 px-2.5 py-0.5 text-sm font-bold text-sky-100">
                           {serviceJobs.length}
                         </span>
                       </summary>
@@ -887,10 +906,13 @@ export function GarageTodayClient({
                   )}
                   {repairJobs.length > 0 && (
                     <details open className="group/sect">
-                      <summary className="mb-2 flex cursor-pointer select-none items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 list-none [&::-webkit-details-marker]:hidden">
-                        <ChevronRight className="h-3 w-3 transition-transform group-open/sect:rotate-90" />
-                        {t("Repairs", "Reparaciones", "Reparaties")}
-                        <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-white/60">
+                      <summary className="mb-3 flex cursor-pointer select-none items-center gap-3 rounded-xl border-l-4 border-amber-400/60 bg-white/[0.05] px-3 py-2.5 list-none [&::-webkit-details-marker]:hidden hover:bg-white/[0.08] transition-colors">
+                        <ChevronRight className="h-4 w-4 text-white/60 transition-transform group-open/sect:rotate-90" />
+                        <Wrench className="h-4 w-4 text-amber-300" />
+                        <h2 className="text-lg font-bold uppercase tracking-wider text-white/85">
+                          {t("Repairs", "Reparaciones", "Reparaties")}
+                        </h2>
+                        <span className="ml-auto rounded-full bg-white/[0.12] px-2.5 py-0.5 text-sm font-bold text-white/80">
                           {repairJobs.length}
                         </span>
                       </summary>
@@ -986,6 +1008,7 @@ function JobCard({
   onTickTask,
   onReceivePart,
   onToggleService,
+  onMarkReady,
 }: {
   repair: RepairItem;
   timers: ActiveTimerItem[];
@@ -996,6 +1019,7 @@ function JobCard({
   onTickTask: () => void;
   onReceivePart: () => void;
   onToggleService: (serviceId: string) => void;
+  onMarkReady: () => void;
 }) {
   const { t, deviceLang } = useLanguage();
   const isService = repair.jobType === "service";
@@ -1278,49 +1302,70 @@ function JobCard({
       ) : null}
 
       {/* ── Quick actions ─────────────────────────────────────────── */}
-      <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-        {canStartTimer && !someoneIsWorking ? (
+      <div className="mt-auto flex flex-col gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {canStartTimer && !someoneIsWorking ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartTimer();
+              }}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
+            >
+              <Play className="h-4 w-4 fill-current" />
+              {liveTotalMinutes > 0
+                ? t("Resume", "Seguir", "Hervatten")
+                : t("Start timer", "Iniciar timer", "Start timer")}
+            </button>
+          ) : null}
+          {nextTaskTitle ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTickTask();
+              }}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3 text-sm font-medium text-emerald-200 ring-1 ring-emerald-400/20 hover:bg-emerald-500/25 active:scale-[0.98]"
+              title={nextTaskTitle}
+            >
+              <Check className="h-4 w-4" />
+              <span className="line-clamp-1">{nextTaskTitle}</span>
+            </button>
+          ) : repair.nextPart ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReceivePart();
+              }}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500/15 px-3 text-sm font-medium text-orange-200 ring-1 ring-orange-400/20 hover:bg-orange-500/25 active:scale-[0.98]"
+              title={repair.nextPart.name}
+            >
+              <Package className="h-4 w-4" />
+              <span className="line-clamp-1">
+                {t("Got", "Recibido", "Ontvangen")}: {repair.nextPart.name}
+              </span>
+            </button>
+          ) : null}
+        </div>
+
+        {/* "Klaar voor controle" — alleen tonen voor actieve klussen
+            (niet voor ready_for_check/completed). Eén tap flipt de job
+            naar ready_for_check en admin ziet het direct. */}
+        {["new", "todo", "scheduled", "in_progress", "waiting_parts", "blocked"].includes(
+          repair.status,
+        ) ? (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onStartTimer();
+              onMarkReady();
             }}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-stone-950 shadow-sm hover:bg-white/95 active:scale-[0.98]"
-          >
-            <Play className="h-4 w-4 fill-current" />
-            {liveTotalMinutes > 0
-              ? t("Resume", "Seguir", "Hervatten")
-              : t("Start timer", "Iniciar timer", "Start timer")}
-          </button>
-        ) : null}
-        {nextTaskTitle ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTickTask();
-            }}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3 text-sm font-medium text-emerald-200 ring-1 ring-emerald-400/20 hover:bg-emerald-500/25 active:scale-[0.98]"
-            title={nextTaskTitle}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-bold text-white shadow-sm hover:bg-emerald-500/90 active:scale-[0.98]"
           >
             <Check className="h-4 w-4" />
-            <span className="line-clamp-1">{nextTaskTitle}</span>
-          </button>
-        ) : repair.nextPart ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReceivePart();
-            }}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500/15 px-3 text-sm font-medium text-orange-200 ring-1 ring-orange-400/20 hover:bg-orange-500/25 active:scale-[0.98]"
-            title={repair.nextPart.name}
-          >
-            <Package className="h-4 w-4" />
-            <span className="line-clamp-1">
-              {t("Got", "Recibido", "Ontvangen")}: {repair.nextPart.name}
-            </span>
+            {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
           </button>
         ) : null}
       </div>

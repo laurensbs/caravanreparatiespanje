@@ -329,6 +329,47 @@ export async function deleteRepairMessage(messageId: string) {
   return { success: true } as const;
 }
 
+/**
+ * Delete every message in the conversation for a single repair. Admin-
+ * only. Cascades to voice_notes owned by those messages. The underlying
+ * OneDrive audio files are left alone (cheap to keep, useful if a
+ * bulk-delete was a mistake).
+ *
+ * Ook resetten we garage_needs_admin_attention + unread-count zodat de
+ * sidebar-badge meteen klopt na het leegmaken.
+ */
+export async function deleteRepairThread(repairJobId: string) {
+  await requireAuth();
+
+  const msgIds = await db
+    .select({ id: repairMessages.id })
+    .from(repairMessages)
+    .where(eq(repairMessages.repairJobId, repairJobId));
+
+  if (msgIds.length > 0) {
+    const ids = msgIds.map((m) => m.id);
+    await db
+      .delete(voiceNotes)
+      .where(
+        and(eq(voiceNotes.ownerType, "repair_message"), inArray(voiceNotes.ownerId, ids)),
+      );
+    await db.delete(repairMessages).where(eq(repairMessages.repairJobId, repairJobId));
+  }
+
+  await db
+    .update(repairJobs)
+    .set({
+      garageNeedsAdminAttention: false,
+      garageUnreadUpdatesCount: 0,
+      updatedAt: new Date(),
+    })
+    .where(eq(repairJobs.id, repairJobId));
+
+  revalidatePath(`/repairs/${repairJobId}`);
+  revalidatePath("/messages");
+  return { success: true, deleted: msgIds.length } as const;
+}
+
 /** Garage → admin. The garage portal uses a shared session so we accept an
  *  optional worker name typed by the technician. */
 export async function garageReplyToAdmin(

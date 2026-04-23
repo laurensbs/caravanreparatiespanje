@@ -15,6 +15,7 @@ import {
   listRepairMessages,
   adminReplyToGarage,
   deleteRepairMessage,
+  deleteRepairThread,
   markGarageRepliesRead,
   type RepairMessage,
 } from "@/actions/garage-sync";
@@ -180,6 +181,35 @@ export function MessagesAppClient({ initialThreads }: Props) {
     [activeId, refreshMessages],
   );
 
+  const handleDeleteThread = useCallback(
+    async (repairJobId: string, label: string) => {
+      const ok = await confirmDialog({
+        title: `Delete entire conversation?`,
+        description: `All messages for ${label} are removed for both admins and the garage thread. This cannot be undone.`,
+        confirmLabel: "Delete conversation",
+        tone: "destructive",
+      });
+      if (!ok) return;
+      // Optimistic: remove from thread list + clear selection.
+      setThreads((prev) => prev.filter((t) => t.repairJobId !== repairJobId));
+      if (activeId === repairJobId) {
+        setActiveId(null);
+        setMessages([]);
+      }
+      try {
+        const res = await deleteRepairThread(repairJobId);
+        if (!res.success) {
+          toast.error("Could not delete — refresh.");
+          refreshThreads();
+        }
+      } catch {
+        toast.error("Could not delete");
+        refreshThreads();
+      }
+    },
+    [activeId, refreshThreads],
+  );
+
   // Eerste load + wisselen van gesprek
   useEffect(() => {
     if (!activeId) {
@@ -331,12 +361,12 @@ export function MessagesAppClient({ initialThreads }: Props) {
           ) : (
             <ul className="divide-y divide-border/60">
               {filteredThreads.map((t) => (
-                <li key={t.repairJobId}>
+                <li key={t.repairJobId} className="group/thread relative">
                   <button
                     type="button"
                     onClick={() => setActiveId(t.repairJobId)}
                     className={cn(
-                      "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors",
+                      "flex w-full items-start gap-3 px-4 py-3 pr-10 text-left transition-colors",
                       t.repairJobId === activeId
                         ? "bg-muted/70 dark:bg-card/[0.08]"
                         : t.unreadCount > 0
@@ -385,6 +415,20 @@ export function MessagesAppClient({ initialThreads }: Props) {
                         </p>
                       ) : null}
                     </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDeleteThread(
+                        t.repairJobId,
+                        t.customerName ?? t.publicCode ?? "this repair",
+                      )
+                    }
+                    title="Delete entire conversation"
+                    aria-label="Delete entire conversation"
+                    className="absolute right-2 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/50 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 group-hover/thread:opacity-100 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </li>
               ))}

@@ -14,6 +14,7 @@ import {
   listMessageThreads,
   listRepairMessages,
   adminReplyToGarage,
+  deleteRepairMessage,
   markGarageRepliesRead,
   type RepairMessage,
 } from "@/actions/garage-sync";
@@ -25,7 +26,9 @@ import {
   Search,
   Wrench,
   Loader2,
+  Trash2,
 } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { VoiceRecorder, type VoiceClip } from "@/components/garage/voice-recorder";
@@ -150,6 +153,31 @@ export function MessagesAppClient({ initialThreads }: Props) {
       }
     },
     [],
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      const ok = await confirmDialog({
+        title: "Delete this message?",
+        description: "The message disappears for both admins and the garage thread.",
+        confirmLabel: "Delete",
+        tone: "destructive",
+      });
+      if (!ok) return;
+      // Optimistisch verwijderen zodat het direct voelt; rollback bij fout.
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      try {
+        const res = await deleteRepairMessage(messageId);
+        if (!res.success) {
+          toast.error("Could not delete — refresh.");
+          if (activeId) refreshMessages(activeId, { markRead: false });
+        }
+      } catch {
+        toast.error("Could not delete");
+        if (activeId) refreshMessages(activeId, { markRead: false });
+      }
+    },
+    [activeId, refreshMessages],
   );
 
   // Eerste load + wisselen van gesprek
@@ -386,6 +414,7 @@ export function MessagesAppClient({ initialThreads }: Props) {
             isSending={isSending}
             onBack={() => setActiveId(null)}
             scrollRef={scrollRef}
+            onDeleteMessage={handleDeleteMessage}
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-muted-foreground">
@@ -414,6 +443,7 @@ function ChatPanel({
   isSending,
   onBack,
   scrollRef,
+  onDeleteMessage,
 }: {
   thread: Thread;
   messages: RepairMessage[];
@@ -427,6 +457,7 @@ function ChatPanel({
   isSending: boolean;
   onBack: () => void;
   scrollRef: React.RefObject<HTMLDivElement | null>;
+  onDeleteMessage: (id: string) => void;
 }) {
   // Groepeer per dag voor eenvoudige day-separators
   const grouped = useMemo(() => {
@@ -525,7 +556,7 @@ function ChatPanel({
                     <div
                       key={m.id}
                       className={cn(
-                        "flex flex-col gap-0.5",
+                        "group/msg flex flex-col gap-0.5",
                         mine ? "items-end" : "items-start",
                       )}
                     >
@@ -558,6 +589,15 @@ function ChatPanel({
                         <span>{author}</span>
                         <span>·</span>
                         <span>{fullTime(new Date(m.createdAt))}</span>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteMessage(m.id)}
+                          title="Delete message"
+                          aria-label="Delete message"
+                          className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/50 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 group-hover/msg:opacity-100 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
                   );

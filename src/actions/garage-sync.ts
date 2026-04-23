@@ -301,6 +301,34 @@ export async function adminReplyToGarage(repairJobId: string, body: string) {
   return { success: true, messageId: inserted?.id ?? null } as const;
 }
 
+/**
+ * Delete a single message from the thread. Admin-only. Cascades to the
+ * attached voice-note row (if any) so orphaned audio doesn't accumulate.
+ * The underlying OneDrive file is kept; we already pay for storage and
+ * keeping the original lets us recover if a delete was a mistake.
+ */
+export async function deleteRepairMessage(messageId: string) {
+  await requireAuth();
+
+  const [msg] = await db
+    .select({ repairJobId: repairMessages.repairJobId })
+    .from(repairMessages)
+    .where(eq(repairMessages.id, messageId))
+    .limit(1);
+  if (!msg) return { success: false, reason: "not_found" } as const;
+
+  await db
+    .delete(voiceNotes)
+    .where(
+      and(eq(voiceNotes.ownerType, "repair_message"), eq(voiceNotes.ownerId, messageId)),
+    );
+  await db.delete(repairMessages).where(eq(repairMessages.id, messageId));
+
+  revalidatePath(`/repairs/${msg.repairJobId}`);
+  revalidatePath("/messages");
+  return { success: true } as const;
+}
+
 /** Garage → admin. The garage portal uses a shared session so we accept an
  *  optional worker name typed by the technician. */
 export async function garageReplyToAdmin(

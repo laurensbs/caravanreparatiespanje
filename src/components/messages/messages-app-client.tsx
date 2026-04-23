@@ -9,6 +9,7 @@ import {
   useTransition,
 } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   listMessageThreads,
   listRepairMessages,
@@ -78,10 +79,20 @@ function statusLabel(status: string): string {
  * onzichtbaar is.
  */
 export function MessagesAppClient({ initialThreads }: Props) {
+  const searchParams = useSearchParams();
+  const deepLinkRepair = searchParams?.get("repair") ?? null;
   const [threads, setThreads] = useState<Thread[]>(initialThreads);
   const [activeId, setActiveId] = useState<string | null>(
-    initialThreads[0]?.repairJobId ?? null,
+    deepLinkRepair ?? initialThreads[0]?.repairJobId ?? null,
   );
+
+  // If the deep-link target arrives later (e.g. after polling refresh),
+  // still honour it the first time we see it in the thread list.
+  useEffect(() => {
+    if (!deepLinkRepair) return;
+    setActiveId(deepLinkRepair);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkRepair]);
   const [messages, setMessages] = useState<RepairMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [draft, setDraft] = useState("");

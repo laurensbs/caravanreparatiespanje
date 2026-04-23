@@ -471,6 +471,58 @@ export async function listMessageThreads(opts?: { onlyUnread?: boolean }) {
   return filtered.sort((a, b) => (b.lastAt?.getTime() ?? 0) - (a.lastAt?.getTime() ?? 0));
 }
 
+/**
+ * Single newest unread garage→admin message with enough context to
+ * show a notifier popup. Returns null when the inbox is clean. Cheap
+ * query — used by the global GarageMessageNotifier polling every ~15s.
+ */
+export async function getLatestUnreadGarageMessage() {
+  await requireAuth();
+
+  const [row] = await db
+    .select({
+      id: repairMessages.id,
+      repairJobId: repairMessages.repairJobId,
+      body: repairMessages.body,
+      authorName: repairMessages.authorName,
+      createdAt: repairMessages.createdAt,
+    })
+    .from(repairMessages)
+    .where(
+      and(
+        eq(repairMessages.direction, "garage_to_admin"),
+        isNull(repairMessages.readAt),
+      ),
+    )
+    .orderBy(desc(repairMessages.createdAt))
+    .limit(1);
+
+  if (!row) return null;
+
+  const [job] = await db
+    .select({
+      id: repairJobs.id,
+      publicCode: repairJobs.publicCode,
+      title: repairJobs.title,
+      customerName: customers.name,
+    })
+    .from(repairJobs)
+    .leftJoin(customers, eq(repairJobs.customerId, customers.id))
+    .where(eq(repairJobs.id, row.repairJobId))
+    .limit(1);
+
+  return {
+    id: row.id,
+    repairJobId: row.repairJobId,
+    body: row.body,
+    authorName: row.authorName,
+    createdAt: row.createdAt,
+    publicCode: job?.publicCode ?? null,
+    title: job?.title ?? null,
+    customerName: job?.customerName ?? null,
+  };
+}
+
 export async function getUnreadGarageRepliesSummary() {
   await requireAuth();
 

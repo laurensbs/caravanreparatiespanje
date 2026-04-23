@@ -14,6 +14,7 @@ import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { SessionKeepAlive } from "@/components/session-keep-alive";
 import { HoldedAutoSync } from "@/components/holded-auto-sync";
+import { GarageMessageNotifier } from "@/components/messages/garage-message-notifier";
 import { PageTransition } from "@/components/layout/page-transition";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { Toaster } from "sonner";
@@ -87,6 +88,7 @@ export default async function DashboardLayout({
         <KeyboardShortcuts />
         <SessionKeepAlive />
         <HoldedAutoSync />
+        <GarageMessageNotifier />
       </AssistantProvider>
     </SidebarProvider>
   );

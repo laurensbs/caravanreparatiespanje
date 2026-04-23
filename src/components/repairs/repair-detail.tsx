@@ -74,7 +74,6 @@ import { HoldedManualLinkForm } from "@/components/repairs/holded-manual-link-fo
 import { clearGarageMessage } from "@/actions/garage-sync";
 import { AdminRepairThread } from "@/components/repairs/admin-repair-thread";
 import { RepairServicesSection, type CatalogService, type RepairServiceRequest } from "@/components/repairs/repair-service-picker";
-import { UnitSearch } from "@/components/units/unit-search";
 import { getSelectableGarageUsers } from "@/lib/garage-workers";
 import type { RepairTask } from "@/types";
 
@@ -2508,11 +2507,10 @@ export function RepairDetail({ job, communicationLogs = [], partsList = [], back
                 : "Pick a caravan to attach to this work order."}
             </DialogDescription>
           </DialogHeader>
-          <UnitSearch
+          <InlineUnitLinker
             units={unitOptions}
             customerId={job.customerId ?? null}
-            onSelect={async (id) => {
-              if (!id) return;
+            onPick={async (id) => {
               const res = await updateRepairJob(job.id, { unitId: id });
               if (!res.ok) {
                 toast.error(res.message);
@@ -3895,4 +3893,115 @@ function FinancialWorkflow({
 // The picker + widget components were moved to `./repair-detail-pickers`
 // to isolate their re-render scope from this file (the parent component
 // has 70+ useState calls and was triggering full re-walks of them).
+
+// ─── Inline unit-linker used from inside a Dialog ───
+// We use our own list/picker here instead of the floating `UnitSearch`
+// dropdown because that one renders `absolute` children that get
+// clipped by DialogContent's own scroll container. Flat inline list
+// avoids z-index / overflow fights entirely.
+
+function InlineUnitLinker({
+  units,
+  customerId,
+  onPick,
+}: {
+  units: Array<{
+    id: string;
+    registration: string | null;
+    brand: string | null;
+    model: string | null;
+    year: number | null;
+    customerId: string | null;
+  }>;
+  customerId: string | null;
+  onPick: (unitId: string) => Promise<void>;
+}) {
+  const [query, setQuery] = useState("");
+
+  const customerUnits = customerId ? units.filter((u) => u.customerId === customerId) : [];
+  const others = customerId
+    ? units.filter((u) => u.customerId !== customerId)
+    : units;
+
+  const q = query.trim().toLowerCase();
+  const matches = (u: { registration: string | null; brand: string | null; model: string | null }) =>
+    !q ||
+    (u.registration ?? "").toLowerCase().includes(q) ||
+    (u.brand ?? "").toLowerCase().includes(q) ||
+    (u.model ?? "").toLowerCase().includes(q);
+
+  const filteredOwn = customerUnits.filter(matches);
+  const filteredOther = others.filter(matches);
+
+  function unitLabel(u: { registration: string | null; brand: string | null; model: string | null; year: number | null }) {
+    const parts: string[] = [];
+    if (u.registration) parts.push(u.registration);
+    const brandModel = [u.brand, u.model].filter(Boolean).join(" ");
+    if (brandModel) parts.push(brandModel);
+    if (u.year) parts.push(String(u.year));
+    return parts.join(" · ") || "Unknown unit";
+  }
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="search"
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by plate, brand, model…"
+        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+      />
+
+      <div className="max-h-[50vh] overflow-y-auto space-y-4">
+        {filteredOwn.length > 0 && (
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1.5 px-1">
+              This customer&apos;s caravans
+            </p>
+            <div className="space-y-1">
+              {filteredOwn.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => onPick(u.id)}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-left hover:bg-muted/50 dark:hover:bg-foreground/[0.04] transition-colors"
+                >
+                  <span className="truncate flex-1">{unitLabel(u)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {filteredOther.length > 0 && (
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1.5 px-1">
+              {customerId ? "Other caravans" : "All caravans"}
+            </p>
+            <div className="space-y-1">
+              {filteredOther.slice(0, 50).map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => onPick(u.id)}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-left hover:bg-muted/50 dark:hover:bg-foreground/[0.04] transition-colors"
+                >
+                  <span className="truncate flex-1">{unitLabel(u)}</span>
+                </button>
+              ))}
+              {filteredOther.length > 50 && (
+                <p className="text-xs text-muted-foreground italic px-1">
+                  Showing first 50 — refine your search to see more.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+        {filteredOwn.length === 0 && filteredOther.length === 0 && (
+          <p className="text-sm text-muted-foreground italic py-4 text-center">No caravans match.</p>
+        )}
+      </div>
+    </div>
+  );
+}
 

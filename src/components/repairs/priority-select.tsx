@@ -16,15 +16,16 @@ interface PrioritySelectProps {
   name?: string;
   onValueChange?: (value: string) => void;
   className?: string;
+  contentClassName?: string;
 }
 
-export function PrioritySelect({ value, defaultValue, name, onValueChange, className }: PrioritySelectProps) {
+export function PrioritySelect({ value, defaultValue, name, onValueChange, className, contentClassName }: PrioritySelectProps) {
   return (
     <Select value={value} defaultValue={defaultValue} name={name} onValueChange={onValueChange}>
       <SelectTrigger className={className}>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className={contentClassName}>
         {Object.entries(PRIORITY_LABELS).map(([val, label]) => (
           <SelectItem key={val} value={val}>
             <span className="flex items-center gap-2">

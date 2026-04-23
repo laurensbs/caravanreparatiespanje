@@ -38,6 +38,7 @@ interface UnitOption {
   model: string | null;
   year: number | null;
   customerId: string | null;
+  storageLocation?: string | null;
 }
 
 interface CatalogServiceOption {
@@ -92,6 +93,8 @@ export function NewRepairDialog({
   const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [servicesCatalog, setServicesCatalog] = useState<CatalogServiceOption[]>([]);
+  const [locationId, setLocationId] = useState<string>("none");
+  const [title, setTitle] = useState("");
   const [jobType, setJobType] = useState<JobType>("repair");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [partsExpanded, setPartsExpanded] = useState(true);
@@ -135,14 +138,28 @@ export function NewRepairDialog({
 
   const config = JOB_TYPE_CONFIG[jobType];
 
-  // When unit is selected, auto-fill customer
+  // When unit is selected, auto-fill customer and (if still empty)
+  // the Location dropdown by matching the unit's `storageLocation`
+  // string against the available location names.
   const handleUnitSelect = useCallback((id: string | null) => {
     setUnitId(id);
-    if (id && !customerId) {
-      const unit = units.find((u) => u.id === id);
-      if (unit?.customerId) setCustomerId(unit.customerId);
+    if (!id) return;
+    const unit = units.find((u) => u.id === id);
+    if (!unit) return;
+    if (unit.customerId && !customerId) {
+      setCustomerId(unit.customerId);
     }
-  }, [units, customerId]);
+    // Auto-vul de Location-dropdown op basis van de unit's
+    // `storageLocation` string (Cruïllas / Peratallada / Sant Climent)
+    // door 'm te matchen tegen de namen in de locations-tabel.
+    if (locationId === "none" && unit.storageLocation) {
+      const needle = unit.storageLocation.toLowerCase().trim();
+      const match = locations.find(
+        (l) => l.name.toLowerCase().trim() === needle || l.name.toLowerCase().includes(needle),
+      );
+      if (match) setLocationId(match.id);
+    }
+  }, [units, customerId, locationId, locations]);
 
   // When customer changes, clear unit if it doesn't belong
   const handleCustomerSelect = useCallback((id: string | null) => {
@@ -215,6 +232,8 @@ export function NewRepairDialog({
     setUnitId(null);
     setSelectedParts([]);
     setSelectedServiceIds([]);
+    setLocationId("none");
+    setTitle("");
     setJobType("repair");
     setShowAdvanced(false);
     setPartsExpanded(true);
@@ -236,7 +255,8 @@ export function NewRepairDialog({
       }
     }
 
-    if (data.locationId === "none") data.locationId = null;
+    data.locationId = locationId === "none" ? null : locationId;
+    data.title = title.trim();
     data.customerId = customerId;
     data.unitId = unitId;
     data.jobType = jobType;
@@ -398,6 +418,8 @@ export function NewRepairDialog({
                       <Input
                         ref={titleRef}
                         name="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                         placeholder={jobType === "wax" ? "e.g. Full wax treatment" : jobType === "inspection" ? "e.g. Annual inspection" : "Brief summary of the work"}
                         className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm px-4 shadow-none focus:ring-ring/30 focus:border-ring"
                       />
@@ -411,7 +433,7 @@ export function NewRepairDialog({
                           <SelectTrigger className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="z-[80]">
                             {QUICK_STATUSES.map((s) => (
                               <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                             ))}
@@ -420,11 +442,17 @@ export function NewRepairDialog({
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Priority</Label>
-                        <PrioritySelect name="priority" defaultValue="normal" className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none" />
+                        <PrioritySelect name="priority" defaultValue="normal" className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none" contentClassName="z-[80]" />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">Location</Label>
-                        <LocationSelect name="locationId" locations={locations} className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none" />
+                        <LocationSelect
+                          value={locationId}
+                          onValueChange={setLocationId}
+                          locations={locations}
+                          className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none"
+                          contentClassName="z-[80]"
+                        />
                       </div>
                     </div>
                   </div>
@@ -494,11 +522,17 @@ export function NewRepairDialog({
                                 <button
                                   key={s.id}
                                   type="button"
-                                  onClick={() =>
+                                  onClick={() => {
                                     setSelectedServiceIds((prev) =>
                                       active ? prev.filter((id) => id !== s.id) : [...prev, s.id],
-                                    )
-                                  }
+                                    );
+                                    // Vul de titel automatisch met de service-naam
+                                    // bij de eerste selectie als het titelveld nog
+                                    // leeg is — scheelt de admin een tikje typen.
+                                    if (!active && !title.trim()) {
+                                      setTitle(s.name);
+                                    }
+                                  }}
                                   className={cn(
                                     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
                                     active

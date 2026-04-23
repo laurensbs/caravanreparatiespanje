@@ -19,6 +19,9 @@ interface LocationSelectProps {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   className?: string;
+  /** Extra classes voor de SelectContent (bv. z-index bumpen als
+   *  de select binnen een modal boven z-50 moet uitsteken). */
+  contentClassName?: string;
 }
 
 export function LocationSelect({
@@ -27,6 +30,7 @@ export function LocationSelect({
   defaultValue = "none",
   onValueChange,
   className,
+  contentClassName,
   locations,
 }: LocationSelectProps & { locations: { id: string; name: string }[] }) {
   const main = locations.filter((loc) =>
@@ -46,7 +50,7 @@ export function LocationSelect({
       <SelectTrigger className={className}>
         <SelectValue placeholder="Select location" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className={contentClassName}>
         <SelectItem value="none">No location</SelectItem>
         <SelectSeparator />
         <SelectGroup>

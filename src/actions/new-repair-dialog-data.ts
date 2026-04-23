@@ -30,6 +30,7 @@ export async function getNewRepairDialogData() {
         model: units.model,
         year: units.year,
         customerId: units.customerId,
+        storageLocation: units.storageLocation,
       })
       .from(units)
       .orderBy(asc(units.registration)),

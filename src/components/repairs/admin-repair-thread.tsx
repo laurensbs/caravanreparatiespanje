@@ -4,12 +4,14 @@ import { useEffect, useRef, useState, useTransition, useCallback } from "react";
 import {
   listRepairMessages,
   adminReplyToGarage,
+  deleteRepairMessage,
   markGarageRepliesRead,
   type RepairMessage,
 } from "@/actions/garage-sync";
-import { Send, MessageSquare, ChevronDown, ChevronUp, Pin, X, Wrench } from "lucide-react";
+import { Send, MessageSquare, ChevronDown, ChevronUp, Pin, X, Wrench, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { VoicePlayer } from "@/components/voice-player";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 function timeLabel(d: Date) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -246,6 +248,29 @@ export function AdminRepairThread({
     });
   }
 
+  async function handleDelete(messageId: string) {
+    const ok = await confirmDialog({
+      title: "Delete this message?",
+      description: "The message disappears for both admin and the garage thread.",
+      confirmLabel: "Delete",
+      tone: "destructive",
+    });
+    if (!ok) return;
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    try {
+      const res = await deleteRepairMessage(messageId);
+      if (!res.success) {
+        toast.error("Could not delete — refresh.");
+        refresh();
+      } else {
+        onChange?.();
+      }
+    } catch {
+      toast.error("Could not delete");
+      refresh();
+    }
+  }
+
   const visible = expanded ? messages : messages.slice(-4);
   const hiddenCount = Math.max(0, messages.length - visible.length);
 
@@ -435,7 +460,7 @@ export function AdminRepairThread({
               new Date(visible[idx - 1].createdAt).toDateString() !==
                 msg.createdAt.toDateString();
             return (
-              <li key={msg.id}>
+              <li key={msg.id} className="group/msg">
                 {showDay ? (
                   <p className="my-2 text-center text-[10px] uppercase tracking-wider text-muted-foreground/70 dark:text-muted-foreground">
                     {dayLabel(msg.createdAt)}
@@ -464,9 +489,20 @@ export function AdminRepairThread({
                         />
                       </div>
                     ) : null}
-                    <p className="mt-1 text-[10px] opacity-70">
-                      {author} · {timeLabel(msg.createdAt)}
-                    </p>
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-70">
+                      <span>{author} · {timeLabel(msg.createdAt)}</span>
+                      {!readOnly ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(msg.id)}
+                          title="Delete message"
+                          aria-label="Delete message"
+                          className="ml-auto inline-flex h-4 w-4 items-center justify-center rounded-full text-current/50 opacity-0 transition-opacity hover:text-red-600 focus-visible:opacity-100 group-hover/msg:opacity-100 dark:hover:text-red-400"
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </li>

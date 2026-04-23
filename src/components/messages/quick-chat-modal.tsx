@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Send, X, ArrowUpRight } from "lucide-react";
+import { Loader2, Send, X, ArrowUpRight, Trash2 } from "lucide-react";
 import {
   adminReplyToGarage,
+  deleteRepairMessage,
   listRepairMessages,
   markGarageRepliesRead,
   type RepairMessage,
 } from "@/actions/garage-sync";
 import { VoicePlayer } from "@/components/voice-player";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 /**
  * Popup chat-drawer that opens on top of whatever admin page the user
@@ -133,6 +135,27 @@ export function QuickChatModal({
     });
   }
 
+  async function handleDelete(messageId: string) {
+    const ok = await confirmDialog({
+      title: "Delete this message?",
+      description: "The message disappears for both admin and the garage thread.",
+      confirmLabel: "Delete",
+      tone: "destructive",
+    });
+    if (!ok) return;
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    try {
+      const res = await deleteRepairMessage(messageId);
+      if (!res.success) {
+        toast.error("Could not delete — refresh.");
+        refresh({ markRead: false });
+      }
+    } catch {
+      toast.error("Could not delete");
+      refresh({ markRead: false });
+    }
+  }
+
   return (
     <div
       role="dialog"
@@ -204,7 +227,7 @@ export function QuickChatModal({
                     return (
                       <div
                         key={m.id}
-                        className={`flex flex-col gap-0.5 ${mine ? "items-end" : "items-start"}`}
+                        className={`group/msg flex flex-col gap-0.5 ${mine ? "items-end" : "items-start"}`}
                       >
                         <div
                           className={`flex max-w-[85%] flex-col gap-2 rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
@@ -229,6 +252,15 @@ export function QuickChatModal({
                           <span>{author}</span>
                           <span>·</span>
                           <span>{time}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(m.id)}
+                            title="Delete message"
+                            aria-label="Delete message"
+                            className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/50 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 group-hover/msg:opacity-100 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
                         </div>
                       </div>
                     );

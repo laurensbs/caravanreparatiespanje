@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { getLatestUnreadGarageMessage } from "@/actions/garage-sync";
+import { QuickChatModal } from "@/components/messages/quick-chat-modal";
 
 const STORAGE_KEY = "admin:last-seen-garage-msg";
 const POLL_MS = 15_000;
@@ -19,10 +20,10 @@ const POLL_MS_HIDDEN = 60_000;
  * /messages page — the thread list handles unread surfacing there.
  */
 export function GarageMessageNotifier() {
-  const router = useRouter();
   const pathname = usePathname();
   const lastToastId = useRef<string | null>(null);
   const hasPrimed = useRef(false);
+  const [openChat, setOpenChat] = useState<{ repairJobId: string; label: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,20 +99,26 @@ export function GarageMessageNotifier() {
           const header = customer ? `${code}${customer}` : `${code}${msg.title ?? "Repair"}`;
           const body = msg.body.length > 140 ? `${msg.body.slice(0, 137)}…` : msg.body;
 
-          toast(
+          // Big emerald-banded toast. Clicking the "Open chat" action
+          // opens the inline chat-drawer so admins can reply without
+          // losing their current page context.
+          let toastId: string | number | null = null;
+          toastId = toast(
             `💬 ${who} — ${header}`,
             {
               description: body,
               duration: 30_000,
               closeButton: true,
+              className: "cursor-pointer",
               style: {
-                // Emerald accent band + subtle bump so the message popup
-                // is distinguishable from regular toasts.
                 borderLeft: "4px solid rgb(16 185 129)",
               },
               action: {
-                label: "View",
-                onClick: () => router.push(`/messages?repair=${msg.repairJobId}`),
+                label: "Open chat",
+                onClick: () => {
+                  setOpenChat({ repairJobId: msg.repairJobId, label: header });
+                  if (toastId != null) toast.dismiss(toastId);
+                },
               },
             },
           );
@@ -139,7 +146,14 @@ export function GarageMessageNotifier() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [pathname, router]);
+  }, [pathname]);
 
-  return null;
+  if (!openChat) return null;
+  return (
+    <QuickChatModal
+      repairJobId={openChat.repairJobId}
+      repairLabel={openChat.label}
+      onClose={() => setOpenChat(null)}
+    />
+  );
 }

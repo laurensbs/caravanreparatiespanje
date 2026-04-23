@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createRepairJob } from "@/actions/repairs";
 import { Button } from "@/components/ui/button";
@@ -311,7 +312,7 @@ export function NewRepairDialog({
         internal header/scroll/footer pattern — just inside a rounded
         card floating over the backdrop.
       */}
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[60] flex items-stretch justify-center p-0 sm:items-center sm:p-4">
           {/* Backdrop */}
           <div
@@ -646,7 +647,8 @@ export function NewRepairDialog({
                 </div>
               </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

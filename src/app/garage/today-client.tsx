@@ -25,6 +25,7 @@ import {
   Wrench,
   CalendarDays,
   Sparkles,
+  ClipboardList,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { GarageThemeToggle } from "@/components/garage/theme-provider";
@@ -747,47 +748,73 @@ export function GarageTodayClient({
           </label>
         </div>
 
-        {/* Tab bar — sliding pill, like iOS segmented control */}
+        {/* Tab bar — grote, kleurgecodeerde tabs zodat je op een iPad
+            van 2m afstand meteen ziet welk type je bekijkt. Elke tab
+            heeft eigen kleur (stone/sky/amber) voor herkenbaarheid
+            en een eigen icoon. Actieve tab wordt 'solid' gekleurd. */}
         {(() => {
           const tabs = [
-            { id: "all" as const, label: t("All", "Todos", "Alles"), count: counts.all },
-            { id: "services" as const, label: t("Services", "Servicios", "Services"), count: counts.services },
-            { id: "repairs" as const, label: t("Repairs", "Reparaciones", "Reparaties"), count: counts.repairs },
+            {
+              id: "all" as const,
+              label: t("All", "Todos", "Alles"),
+              icon: ClipboardList,
+              count: counts.all,
+              activeClass: "bg-white text-stone-950 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.45)]",
+              inactiveClass: "bg-white/[0.04] text-white/70 ring-1 ring-white/[0.06] hover:bg-white/[0.07]",
+              badgeActiveClass: "bg-stone-950/10 text-stone-950",
+              badgeInactiveClass: "bg-white/[0.08] text-white/80",
+            },
+            {
+              id: "services" as const,
+              label: t("Services", "Servicios", "Services"),
+              icon: Sparkles,
+              count: counts.services,
+              activeClass: "bg-sky-500 text-white shadow-[0_6px_18px_-6px_rgba(14,165,233,0.65)]",
+              inactiveClass: "bg-sky-500/[0.08] text-sky-200 ring-1 ring-sky-400/20 hover:bg-sky-500/[0.14]",
+              badgeActiveClass: "bg-white/20 text-white",
+              badgeInactiveClass: "bg-sky-400/25 text-sky-100",
+            },
+            {
+              id: "repairs" as const,
+              label: t("Repairs", "Reparaciones", "Reparaties"),
+              icon: Wrench,
+              count: counts.repairs,
+              activeClass: "bg-amber-500 text-stone-950 shadow-[0_6px_18px_-6px_rgba(245,158,11,0.65)]",
+              inactiveClass: "bg-amber-500/[0.08] text-amber-200 ring-1 ring-amber-400/20 hover:bg-amber-500/[0.14]",
+              badgeActiveClass: "bg-stone-950/20 text-stone-950",
+              badgeInactiveClass: "bg-amber-400/25 text-amber-100",
+            },
           ];
-          const activeIdx = tabs.findIndex((it) => it.id === tab);
           return (
             <div className="px-2 pb-2 sm:px-4">
-              <div className="relative flex items-stretch gap-1 rounded-xl bg-white/[0.04] p-1">
-                <div
-                  aria-hidden
-                  className="absolute inset-y-1 rounded-lg bg-white shadow-[0_1px_3px_rgba(0,0,0,0.25)] transition-all duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
-                  style={{
-                    width: `calc((100% - 0.5rem) / ${tabs.length})`,
-                    transform: `translateX(calc(${activeIdx} * (100% + 0.25rem)))`,
-                  }}
-                />
-                {tabs.map((it) => (
-                  <button
-                    key={it.id}
-                    type="button"
-                    onClick={() => {
-                      hapticTap();
-                      setTab(it.id);
-                    }}
-                    className={`relative z-[1] flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors duration-200 ${
-                      tab === it.id ? "text-stone-950" : "text-white/60 active:text-white/80"
-                    }`}
-                  >
-                    <span>{it.label}</span>
-                    <span
-                      className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold transition-colors duration-200 ${
-                        tab === it.id ? "bg-stone-950/15 text-stone-950" : "bg-white/[0.08] text-white/70"
+              <div className="grid grid-cols-3 gap-2">
+                {tabs.map((it) => {
+                  const Icon = it.icon;
+                  const isActive = tab === it.id;
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => {
+                        hapticTap();
+                        setTab(it.id);
+                      }}
+                      className={`flex h-14 items-center justify-center gap-2 rounded-2xl px-3 text-base font-bold transition-all duration-200 active:scale-[0.97] ${
+                        isActive ? it.activeClass : it.inactiveClass
                       }`}
                     >
-                      {it.count}
-                    </span>
-                  </button>
-                ))}
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="truncate">{it.label}</span>
+                      <span
+                        className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold tabular-nums ${
+                          isActive ? it.badgeActiveClass : it.badgeInactiveClass
+                        }`}
+                      >
+                        {it.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );

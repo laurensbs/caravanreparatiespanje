@@ -427,7 +427,7 @@ export function GarageRepairDetailClient({
       purpose: "bootstrap",
       title: t("Who is using this iPad?", "¿Quién usa este iPad?", "Wie gebruikt deze iPad?"),
       onPick: (w) => {
-        purpose: "startTimer" | "taskStart" | "switch" | "bootstrap";
+        pickActiveUser({
           id: w.id,
           name: w.name ?? "Garage",
           preferredLanguage: (w.preferredLanguage ?? "en") as "en" | "es" | "nl",
@@ -439,6 +439,24 @@ export function GarageRepairDetailClient({
   }, [activeUserHydrated, activeUser]);
 
   /* ── Derived ───────────────────────────────────────────────────── */
+
+  /* Lokale overlay voor zojuist toegevoegde findings zodat ze meteen
+     zichtbaar zijn zonder een server-refresh af te wachten. Zodra het
+     volgende `router.refresh` binnenkomt vervangt `repair.findings`
+     (vanuit props) effectief deze entries — dedupe op id. */
+  const [optimisticFindings, setOptimisticFindings] = useState<typeof repair.findings>([]);
+  const findings = useMemo(() => {
+    const seen = new Set(repair.findings.map((f) => f.id));
+    const extras = optimisticFindings.filter((f) => !seen.has(f.id));
+    return [...extras, ...repair.findings];
+  }, [repair.findings, optimisticFindings]);
+  useEffect(() => {
+    // Als alle optimistische entries binnen zijn gekomen via props,
+    // ruim ze op zodat we geen achtergelaten state blijven meezeulen.
+    setOptimisticFindings((prev) =>
+      prev.filter((f) => !repair.findings.some((r) => r.id === f.id)),
+    );
+  }, [repair.findings]);
 
   const unresolvedFindings = findings.filter((f) => !f.resolvedAt);
   // "Mag een werker hier een timer starten?" — de server ondersteunt
@@ -1461,7 +1479,7 @@ export function GarageRepairDetailClient({
                 <CheckCircle2 className="h-4 w-4" />
                 {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
               </button>
-            )}
+            ) : null}
             <button
               type="button"
               onClick={() => {

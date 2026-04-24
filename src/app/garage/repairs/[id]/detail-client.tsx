@@ -459,6 +459,18 @@ export function GarageRepairDetailClient({
   }, [repair.findings]);
 
   const unresolvedFindings = findings.filter((f) => !f.resolvedAt);
+  const allTasksDone = repair.tasks.length > 0 && repair.tasks.every((t) => t.status === "done");
+  const servicesDone = repair.services.length > 0 && repair.services.every((s) => s.completedAt != null);
+  // Voor service-only jobs: "allDone" = alle services afgevinkt. Voor
+  // repairs: alle tasks done. Mixed: allebei af.
+  const allDone = repair.tasks.length > 0
+    ? allTasksDone && (repair.services.length === 0 || servicesDone)
+    : servicesDone;
+  const doneCount = repair.tasks.filter((t) => t.status === "done").length;
+  const hasTasks = repair.tasks.length > 0;
+  const isActive = ["new", "todo", "scheduled", "in_progress", "in_inspection", "blocked"].includes(repair.status);
+  const activeBlockers = repair.blockers.filter((b) => b.active);
+
   // "Mag een werker hier een timer starten?" — de server ondersteunt
   // auto-promote van `new|todo|scheduled|in_inspection` → `in_progress`
   // bij start, dus we tonen de knop ook in die statussen. Wachtstatus-

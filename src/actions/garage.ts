@@ -590,6 +590,8 @@ export async function getGarageRepairsToday() {
       id: serviceRequests.id,
       repairJobId: serviceRequests.repairJobId,
       serviceName: serviceRequests.serviceName,
+      serviceNameEs: serviceRequests.serviceNameEs,
+      serviceNameNl: serviceRequests.serviceNameNl,
       completedAt: serviceRequests.completedAt,
       createdAt: serviceRequests.createdAt,
     })
@@ -599,11 +601,23 @@ export async function getGarageRepairsToday() {
 
   const servicesMap = new Map<
     string,
-    { id: string; name: string; completedAt: Date | null }[]
+    {
+      id: string;
+      name: string;
+      nameEs: string | null;
+      nameNl: string | null;
+      completedAt: Date | null;
+    }[]
   >();
   for (const s of serviceRows) {
     const list = servicesMap.get(s.repairJobId) ?? [];
-    list.push({ id: s.id, name: s.serviceName, completedAt: s.completedAt });
+    list.push({
+      id: s.id,
+      name: s.serviceName,
+      nameEs: s.serviceNameEs,
+      nameNl: s.serviceNameNl,
+      completedAt: s.completedAt,
+    });
     servicesMap.set(s.repairJobId, list);
   }
 
@@ -755,6 +769,8 @@ export async function getGarageRepairDetail(id: string) {
     .select({
       id: serviceRequests.id,
       serviceName: serviceRequests.serviceName,
+      serviceNameEs: serviceRequests.serviceNameEs,
+      serviceNameNl: serviceRequests.serviceNameNl,
       quantity: serviceRequests.quantity,
       unitPrice: serviceRequests.unitPrice,
       completedAt: serviceRequests.completedAt,

@@ -822,6 +822,8 @@ export const services = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 500 }).notNull(),
+    nameEs: varchar("name_es", { length: 500 }),
+    nameNl: varchar("name_nl", { length: 500 }),
     description: text("description"),
     category: varchar("category", { length: 50 }),
     defaultPrice: numeric("default_price", { precision: 10, scale: 2 }).notNull(),
@@ -849,6 +851,8 @@ export const serviceRequests = pgTable(
       onDelete: "set null",
     }),
     serviceName: varchar("service_name", { length: 500 }).notNull(),
+    serviceNameEs: varchar("service_name_es", { length: 500 }),
+    serviceNameNl: varchar("service_name_nl", { length: 500 }),
     quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
     unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
     taxPercent: numeric("tax_percent", { precision: 5, scale: 2 }).notNull().default("21"),

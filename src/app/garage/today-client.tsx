@@ -100,6 +100,8 @@ type RepairItem = {
   services: Array<{
     id: string;
     name: string;
+    nameEs?: string | null;
+    nameNl?: string | null;
     completedAt: Date | string | null;
   }>;
 };
@@ -1279,7 +1281,7 @@ function JobCard({
                     {done ? <Check className="h-3.5 w-3.5 text-emerald-50" /> : null}
                   </span>
                   <span className={`line-clamp-1 flex-1 ${done ? "line-through opacity-70" : ""}`}>
-                    {s.name}
+                    {t(s.name, s.nameEs ?? null, s.nameNl ?? null)}
                   </span>
                 </button>
               </li>

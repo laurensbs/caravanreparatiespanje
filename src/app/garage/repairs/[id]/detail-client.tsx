@@ -174,6 +174,8 @@ type RepairDetail = {
   services: {
     id: string;
     serviceName: string;
+    serviceNameEs?: string | null;
+    serviceNameNl?: string | null;
     quantity: string | number;
     unitPrice: string | number;
     completedAt: Date | string | null;
@@ -1221,7 +1223,7 @@ export function GarageRepairDetailClient({
                                 done ? "text-white/30 line-through" : "text-white/90"
                               }`}
                             >
-                              {s.serviceName}
+                              {t(s.serviceName, s.serviceNameEs ?? null, s.serviceNameNl ?? null)}
                               {Number(s.quantity) > 1 ? (
                                 <span className="ml-1 text-white/40">×{s.quantity}</span>
                               ) : null}

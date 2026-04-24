@@ -122,12 +122,16 @@ export async function createServiceRequest(data: {
 
   // Resolve fields from catalog when serviceId is given.
   let serviceName = data.serviceName?.trim();
+  let serviceNameEs: string | null = null;
+  let serviceNameNl: string | null = null;
   let unitPrice = data.unitPrice;
   let taxPercent = data.taxPercent;
   if (data.serviceId) {
     const [cat] = await db.select().from(services).where(eq(services.id, data.serviceId)).limit(1);
     if (!cat) throw new Error("Service not found");
     if (!serviceName) serviceName = cat.name;
+    serviceNameEs = cat.nameEs;
+    serviceNameNl = cat.nameNl;
     if (unitPrice === undefined) unitPrice = Number(cat.defaultPrice);
     if (taxPercent === undefined) taxPercent = Number(cat.taxPercent);
   }
@@ -141,6 +145,8 @@ export async function createServiceRequest(data: {
       repairJobId: data.repairJobId,
       serviceId: data.serviceId ?? null,
       serviceName,
+      serviceNameEs,
+      serviceNameNl,
       quantity: String(qty),
       unitPrice: String(unitPrice),
       taxPercent: String(taxPercent ?? 21),

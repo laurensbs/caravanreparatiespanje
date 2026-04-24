@@ -144,6 +144,9 @@ function isStillRelevant(r: RepairItem): boolean {
   if (r.status === "invoiced") return false;
   if (r.status === "completed") return false;
   if (["waiting_parts", "waiting_customer", "blocked"].includes(r.status)) return false;
+  // Service-jobs (transport cleaning etc.) need no admin check — hide
+  // them once the garage marks them ready_for_check.
+  if (r.status === "ready_for_check" && r.jobType === "service") return false;
   return true;
 }
 

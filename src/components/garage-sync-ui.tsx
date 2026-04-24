@@ -563,6 +563,16 @@ export function GarageSyncChip({
       </span>
     );
   }
+    // When status is ready_for_check, only show the chip if there are unread
+    // messages — the status badge already communicates "ready for check".
+    if (status === "ready_for_check") {
+      if (unreadCount === 0) return null;
+      return (
+        <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-sky-500 text-white text-[9px] font-bold px-0.5">
+          +{unreadCount}
+        </span>
+      );
+    }
 
   // Show sync chip only if needs attention or has unread updates
   if (!needsAttention && unreadCount === 0) return null;

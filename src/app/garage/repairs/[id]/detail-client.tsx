@@ -1483,7 +1483,22 @@ export function GarageRepairDetailClient({
       </main>
 
       {/* ─── Sticky bottom action bar ─────────────────────── */}
-      {isActive ? (
+      {repair.status === "ready_for_check" ? (
+        <div
+          className="sticky bottom-0 z-30 border-t border-amber-400/20 bg-stone-950/95 backdrop-blur-xl"
+          style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-3 sm:px-5">
+            <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />
+            </span>
+            <span className="flex-1 text-base font-semibold text-amber-200">
+              {t("Being checked by office", "Siendo revisado por la oficina", "Wordt gecontroleerd door kantoor")}
+            </span>
+          </div>
+        </div>
+      ) : isActive ? (
         <div
           className="sticky bottom-0 z-30 border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl"
           style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
@@ -1552,6 +1567,7 @@ export function GarageRepairDetailClient({
           </div>
         </div>
       ) : null}
+
 
       {/* ─── Worker picker (overlay) ─────────────────────── */}
       <WorkerPicker

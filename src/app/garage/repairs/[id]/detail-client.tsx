@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Play,
   Pause,
+  Check,
   AlertTriangle,
   MessageSquare,
   Plus,

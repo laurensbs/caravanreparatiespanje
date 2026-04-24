@@ -262,9 +262,8 @@ export async function toggleServiceRequestCompleted(id: string) {
     .where(eq(serviceRequests.id, id));
 
   // Als hier iets net is afgevinkt én alle andere services voor deze
-  // job inmiddels ook af zijn, flippen we de job naar ready_for_check
-  // zodat admin 'm in de "Check"-tab terugziet — zelfde mechanisme
-  // als wanneer een werker "Klaar voor controle" tapt op een repair.
+  // job inmiddels ook af zijn, markeren we de service-job direct als
+  // completed. Transport cleaning e.d. hoeven niet via admin-check.
   if (willBeCompleted) {
     const stillOpen = await db
       .select({ id: serviceRequests.id })
@@ -283,12 +282,13 @@ export async function toggleServiceRequestCompleted(id: string) {
         .from(repairJobs)
         .where(eq(repairJobs.id, existing.repairJobId))
         .limit(1);
-      if (job && !["completed", "invoiced", "ready_for_check"].includes(job.status)) {
+      if (job && !["completed", "invoiced"].includes(job.status)) {
         await db
           .update(repairJobs)
           .set({
-            status: "ready_for_check",
-            finalCheckStatus: "pending",
+            status: "completed",
+            completedAt: new Date(),
+            finalCheckStatus: "passed",
             updatedAt: new Date(),
           })
           .where(eq(repairJobs.id, existing.repairJobId));
@@ -299,28 +299,28 @@ export async function toggleServiceRequestCompleted(id: string) {
           eventType: "status_changed",
           fieldChanged: "status",
           oldValue: job.status,
-          newValue: "ready_for_check",
-          comment: "All services completed — awaiting admin check",
+          newValue: "completed",
+          comment: "All services completed — marked complete automatically",
         });
       }
     }
   }
 
   // Un-check flow: als de werker een service per ongeluk afvinkte en
-  // de job inmiddels op ready_for_check staat, haal 'm terug naar
-  // in_progress zodat de klus weer actief is en de checkbox opnieuw
-  // betekenis heeft.
+  // de job hierdoor al completed was, haal 'm terug naar in_progress
+  // zodat de klus weer actief is en de checkbox opnieuw betekenis heeft.
   if (!willBeCompleted) {
     const [job] = await db
       .select({ status: repairJobs.status })
       .from(repairJobs)
       .where(eq(repairJobs.id, existing.repairJobId))
       .limit(1);
-    if (job && job.status === "ready_for_check") {
+    if (job && job.status === "completed") {
       await db
         .update(repairJobs)
         .set({
           status: "in_progress",
+          completedAt: null,
           finalCheckStatus: "pending",
           updatedAt: new Date(),
         })
@@ -330,9 +330,9 @@ export async function toggleServiceRequestCompleted(id: string) {
         userId: ctx.userId ?? null,
         eventType: "status_changed",
         fieldChanged: "status",
-        oldValue: "ready_for_check",
+          oldValue: "completed",
         newValue: "in_progress",
-        comment: "Service unchecked — back to active",
+          comment: "Service unchecked — job reopened",
       });
     }
   }

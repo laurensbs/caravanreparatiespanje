@@ -551,8 +551,15 @@ export function GarageSyncChip({
   // Show a chip for ready_for_check status always
   if (status === "ready_for_check") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-        Ready for check
+      <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+          Ready for check
+        </span>
+        {unreadCount > 0 && (
+          <span className="inline-flex items-center justify-center h-3.5 min-w-3.5 rounded-full bg-sky-500 text-white text-[9px] font-bold px-0.5">
+            +{unreadCount}
+          </span>
+        )}
       </span>
     );
   }

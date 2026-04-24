@@ -142,7 +142,7 @@ type FilterTab = "all" | "services" | "repairs";
  *  admin moet nog even goedkeuren en de werker wil dat zien. */
 function isStillRelevant(r: RepairItem): boolean {
   if (r.status === "invoiced") return false;
-  if (r.status === "completed" && r.finalCheckStatus !== "pending") return false;
+  if (r.status === "completed") return false;
   if (["waiting_parts", "waiting_customer", "blocked"].includes(r.status)) return false;
   return true;
 }
@@ -1440,7 +1440,8 @@ function JobCard({
           "in_progress",
           "in_inspection",
         ].includes(repair.status);
-        if (!hasTopRow && !showReadyButton) return null;
+        const showBeingChecked = repair.status === "ready_for_check";
+        if (!hasTopRow && !showReadyButton && !showBeingChecked) return null;
         return (
           <div className="mt-auto flex flex-col gap-2 pt-1">
             {hasTopRow ? (
@@ -1506,6 +1507,17 @@ function JobCard({
                 <Check className="h-4 w-4" />
                 {t("Ready for check", "Listo para revisión", "Klaar voor controle")}
               </button>
+            ) : null}
+            {showBeingChecked ? (
+              <div className="flex items-center gap-2.5 rounded-xl bg-amber-500/[0.12] px-3 py-2.5 ring-1 ring-amber-400/25">
+                <span className="relative inline-flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+                </span>
+                <span className="text-sm font-semibold text-amber-200">
+                  {t("Being checked by office", "Siendo revisado por la oficina", "Wordt gecontroleerd door kantoor")}
+                </span>
+              </div>
             ) : null}
           </div>
         );

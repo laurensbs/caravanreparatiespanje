@@ -339,6 +339,10 @@ export async function getGarageRepairsToday() {
       and(
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt),
+        // Service-jobs horen nooit in ready_for_check te blijven;
+        // die worden direct completed. Deze guard houdt legacy-rows
+        // ook uit de garage-UI.
+        sql`NOT (${repairJobs.jobType} = 'service' AND ${repairJobs.status} = 'ready_for_check')`,
         or(
           // Actieve werkvloer-statussen alleen tonen als ze ook echt
           // NU aan de beurt zijn. Toekomstig ingeplande jobs (dueDate
@@ -370,7 +374,6 @@ export async function getGarageRepairsToday() {
               "in_progress",
               "waiting_parts",
               "blocked",
-              "ready_for_check",
             ]),
             or(
               isNull(repairJobs.dueDate),

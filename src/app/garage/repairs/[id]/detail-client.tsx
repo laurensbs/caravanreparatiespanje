@@ -6,6 +6,7 @@ import {
   useTransition,
   useMemo,
   useCallback,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -80,6 +81,7 @@ import type {
 } from "@/types";
 import { canStartGarageTimerOnRepair } from "@/lib/garage-timer-policy";
 import { useGarageActiveUser, preferredLangForWorker } from "@/lib/use-garage-active-user";
+import { launchConfettiBurst } from "@/lib/confetti-burst";
 
 /* ───────────────────────────────────────────────────────────────────── */
 /* Types                                                                  */
@@ -421,6 +423,7 @@ export function GarageRepairDetailClient({
      zonder te wachten op router.refresh. */
   const [assignedName, setAssignedName] = useState<string | null>(repair.assignedUserName);
   const [assignedId, setAssignedId] = useState<string | null>(repair.assignedUserId);
+  const prevStatusRef = useRef<{ status: string; finalCheckStatus: string | null } | null>(null);
   useEffect(() => {
     setAssignedName(repair.assignedUserName);
     setAssignedId(repair.assignedUserId);
@@ -519,6 +522,31 @@ export function GarageRepairDetailClient({
     }
   }, [repair.id, repair.garageAdminMessage, repair.garageAdminMessageReadAt]);
 
+  // If office approves a ready_for_check job while the worker is on the
+  // detail page, celebrate and show a translated confirmation.
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    if (
+      prev &&
+      prev.status === "ready_for_check" &&
+      repair.status === "completed" &&
+      repair.finalCheckStatus === "passed"
+    ) {
+      launchConfettiBurst();
+      toast.success(
+        t(
+          "Approved by office — done!",
+          "Aprobado por oficina — ¡listo!",
+          "Goedgekeurd door kantoor — klaar!",
+        ),
+      );
+    }
+    prevStatusRef.current = {
+      status: repair.status,
+      finalCheckStatus: repair.finalCheckStatus,
+    };
+  }, [repair.status, repair.finalCheckStatus, t]);
+
   /* ── Worker-picker promise helper ──────────────────────────────── */
   const askWorker = useCallback(
     (title?: string) =>
@@ -551,8 +579,12 @@ export function GarageRepairDetailClient({
     hapticTap();
     startTransition(async () => {
       try {
-        await toggleServiceRequestCompleted(serviceId);
+        const res = await toggleServiceRequestCompleted(serviceId);
         hapticSuccess();
+        if (res?.jobCompleted) {
+          launchConfettiBurst();
+          toast.success(t("Done!", "¡Listo!", "Klaar!"));
+        }
         router.refresh();
       } catch (err) {
         toast.error((err as Error)?.message ?? "Could not update service");

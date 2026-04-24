@@ -250,7 +250,13 @@ export async function toggleServiceRequestCompleted(id: string) {
     .from(serviceRequests)
     .where(eq(serviceRequests.id, id))
     .limit(1);
-  if (!existing) return;
+  if (!existing) {
+    return {
+      serviceCompleted: false,
+      jobCompleted: false,
+      jobReopened: false,
+    };
+  }
 
   const willBeCompleted = !existing.completedAt;
   await db
@@ -260,6 +266,9 @@ export async function toggleServiceRequestCompleted(id: string) {
       updatedAt: new Date(),
     })
     .where(eq(serviceRequests.id, id));
+
+  let jobCompleted = false;
+  let jobReopened = false;
 
   // Als hier iets net is afgevinkt én alle andere services voor deze
   // job inmiddels ook af zijn, markeren we de service-job direct als
@@ -302,6 +311,7 @@ export async function toggleServiceRequestCompleted(id: string) {
           newValue: "completed",
           comment: "All services completed — marked complete automatically",
         });
+        jobCompleted = true;
       }
     }
   }
@@ -334,10 +344,17 @@ export async function toggleServiceRequestCompleted(id: string) {
         newValue: "in_progress",
           comment: "Service unchecked — job reopened",
       });
+      jobReopened = true;
     }
   }
 
   revalidatePath(`/repairs/${existing.repairJobId}`);
   revalidatePath(`/garage/repairs/${existing.repairJobId}`);
   revalidatePath("/garage");
+
+  return {
+    serviceCompleted: willBeCompleted,
+    jobCompleted,
+    jobReopened,
+  };
 }

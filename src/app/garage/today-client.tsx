@@ -43,6 +43,7 @@ import { canStartGarageTimerOnRepair, GARAGE_TIMER_NOT_ALLOWED } from "@/lib/gar
 import { WorkerPicker, type WorkerOption } from "@/components/garage/worker-picker";
 import { ToolRequestSheet } from "@/components/garage/tool-request-sheet";
 import { useGarageActiveUser, preferredLangForWorker } from "@/lib/use-garage-active-user";
+import { launchConfettiBurst } from "@/lib/confetti-burst";
 
 /* ─────────────────────────────────────────────────────────────────────────
    Today screen — shared garage iPad
@@ -667,8 +668,12 @@ export function GarageTodayClient({
     startActionTransition(async () => {
       applyOptimistic({ type: "toggleService", repairId: repair.id, serviceId });
       try {
-        await toggleServiceRequestCompleted(serviceId);
+        const res = await toggleServiceRequestCompleted(serviceId);
         hapticSuccess();
+        if (res?.jobCompleted) {
+          launchConfettiBurst();
+          toast.success(t("Done!", "¡Listo!", "Klaar!"));
+        }
         router.refresh();
       } catch (err) {
         toast.error((err as Error)?.message ?? "Could not update service");

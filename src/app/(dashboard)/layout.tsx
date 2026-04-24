@@ -5,6 +5,7 @@ import { getUnreadFeedbackReplyCount } from "@/actions/feedback";
 import { getSidebarCounts } from "@/actions/sidebar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { GarageAdminStrip } from "@/components/layout/garage-admin-strip";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { DashboardContent } from "@/components/layout/dashboard-content";
 import { AssistantProvider } from "@/components/assistant-context";
@@ -60,6 +61,10 @@ export default async function DashboardLayout({
               userEmail={session.user.email}
               userRole={session.user.role as UserRole}
               feedbackUnreadReplyCount={feedbackUnreadReplyCount}
+            />
+            <GarageAdminStrip
+              readyForCheck={sidebarCounts?.readyForCheck ?? 0}
+              unreadMessages={sidebarCounts?.messages ?? 0}
             />
             <main
               id="main-content"

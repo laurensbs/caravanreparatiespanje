@@ -153,6 +153,7 @@ export async function getSidebarCounts() {
             isNull(repairJobs.archivedAt),
             isNull(repairJobs.deletedAt),
             eq(repairJobs.status, "ready_for_check"),
+            notInArray(repairJobs.jobType, ["service"]),
           ),
         ),
     ]);

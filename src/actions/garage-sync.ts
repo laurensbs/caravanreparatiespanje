@@ -709,6 +709,7 @@ export async function getGarageAttentionItems() {
       .where(
         and(
           eq(repairJobs.status, "ready_for_check"),
+          notInArray(repairJobs.jobType, ["service"]),
           isNull(repairJobs.deletedAt),
           isNull(repairJobs.archivedAt)
         )
@@ -751,6 +752,10 @@ export async function getGarageAttentionItems() {
     .where(
       and(
         eq(repairJobs.garageNeedsAdminAttention, true),
+        or(
+          notInArray(repairJobs.jobType, ["service"]),
+          notInArray(repairJobs.status, ["ready_for_check"]),
+        ),
         isNull(repairJobs.deletedAt),
         isNull(repairJobs.archivedAt)
       )

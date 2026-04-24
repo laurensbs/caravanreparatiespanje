@@ -288,6 +288,16 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     conditions.push(eq(repairJobs.jobType, filters.jobType as any));
   }
 
+  // Service-jobs like transport cleaning may temporarily hit
+  // ready_for_check, but they do not require office approval and should
+  // not appear in the admin review queue.
+  if (filters.status) {
+    const statuses = filters.status.split(",").filter(Boolean);
+    if (statuses.length === 1 && statuses[0] === "ready_for_check") {
+      conditions.push(notInArray(repairJobs.jobType, ["service"]));
+    }
+  }
+
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const sortColumn: Record<string, any> = {
@@ -748,7 +758,16 @@ export async function getRepairStatusCounts() {
     db
       .select({ status: repairJobs.status, count: count() })
       .from(repairJobs)
-      .where(and(isNull(repairJobs.archivedAt), isNull(repairJobs.deletedAt)))
+      .where(
+        and(
+          isNull(repairJobs.archivedAt),
+          isNull(repairJobs.deletedAt),
+          or(
+            notInArray(repairJobs.jobType, ["service"]),
+            notInArray(repairJobs.status, ["ready_for_check"]),
+          ),
+        )
+      )
       .groupBy(repairJobs.status),
     db
       .select({
@@ -1339,6 +1358,7 @@ export async function adminApproveRepair(repairJobId: string) {
   await clearGarageAttention(repairJobId);
 
   revalidatePath("/");
+  revalidatePath("/repairs");
   revalidatePath(`/repairs/${repairJobId}`);
   return { success: true };
 }
@@ -1370,6 +1390,7 @@ export async function adminSendBackRepair(repairJobId: string, note?: string) {
   await clearGarageAttention(repairJobId);
 
   revalidatePath("/");
+  revalidatePath("/repairs");
   revalidatePath(`/repairs/${repairJobId}`);
   return { success: true };
 }

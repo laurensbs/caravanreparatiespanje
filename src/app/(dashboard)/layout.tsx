@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { getUnreadFeedbackReplyCount } from "@/actions/feedback";
 import { getSidebarCounts } from "@/actions/sidebar";
+import { getGarageAttentionItems } from "@/actions/garage-sync";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { GarageAdminStrip } from "@/components/layout/garage-admin-strip";
@@ -33,9 +34,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const [feedbackUnreadReplyCount, sidebarCounts] = await Promise.all([
+  const [feedbackUnreadReplyCount, sidebarCounts, garageAttention] = await Promise.all([
     session.user.id ? getUnreadFeedbackReplyCount(session.user.id) : Promise.resolve(0),
     getSidebarCounts().catch(() => null),
+    getGarageAttentionItems().catch(() => null),
   ]);
 
   return (
@@ -65,6 +67,7 @@ export default async function DashboardLayout({
             <GarageAdminStrip
               readyForCheck={sidebarCounts?.readyForCheck ?? 0}
               unreadMessages={sidebarCounts?.messages ?? 0}
+              readyItems={(garageAttention?.items ?? []).filter((item) => item.status === "ready_for_check")}
             />
             <main
               id="main-content"

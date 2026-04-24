@@ -151,7 +151,7 @@ export function TaskCard({
   // blijft altijd klikbaar (die zet zelf de timer op via onBeforeStart).
   const tickDisabled = !hasActiveTimer && (status === "pending" || status === "in_progress" || status === "done");
 
-  const actions = getActions(task.status);
+  const actions = getActions(task.status, hasActiveTimer);
 
   return (
     <div className={`bg-white/[0.03] rounded-2xl border border-white/[0.06] transition-all duration-150 ${isPending ? "opacity-60" : ""} ${isDone ? "opacity-50" : ""}`}>
@@ -218,8 +218,9 @@ export function TaskCard({
               <button
                 key={action.status}
                 onClick={() => handleStatusChange(action.status)}
-                disabled={isPending}
-                className={`flex-1 rounded-xl h-11 text-sm font-semibold transition-all active:scale-[0.97] ${action.className}`}
+                disabled={isPending || action.disabled}
+                title={action.disabled ? t("Start the timer first", "Inicia el temporizador primero", "Start eerst de timer") : undefined}
+                className={`flex-1 rounded-xl h-11 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${action.className}`}
               >
                 {t(action.labelEn, action.labelEs, action.labelNl)}
               </button>
@@ -240,21 +241,21 @@ export function TaskCard({
   );
 }
 
-function getActions(status: string) {
+function getActions(status: string, hasActiveTimer: boolean) {
   switch (status) {
     case "pending":
-      return [{ status: "in_progress" as RepairTaskStatus, labelEn: "▶ Start", labelEs: "▶ Iniciar", labelNl: "▶ Start", className: "bg-white/10 text-white hover:bg-white/15" }];
+      return [{ status: "done" as RepairTaskStatus, labelEn: "☑ Tick off", labelEs: "☑ Marcar", labelNl: "☑ Afvinken", disabled: !hasActiveTimer, className: "bg-emerald-500 text-white hover:bg-emerald-400" }];
     case "in_progress":
       return [
-        { status: "done" as RepairTaskStatus, labelEn: "✓ Done", labelEs: "✓ Listo", labelNl: "✓ Klaar", className: "bg-emerald-500 text-white" },
-        { status: "problem" as RepairTaskStatus, labelEn: "⚠ Problem", labelEs: "⚠ Problema", labelNl: "⚠ Probleem", className: "bg-red-400/10 text-red-400 border border-red-400/20" },
+        { status: "done" as RepairTaskStatus, labelEn: "✓ Done", labelEs: "✓ Listo", labelNl: "✓ Klaar", disabled: !hasActiveTimer, className: "bg-emerald-500 text-white" },
+        { status: "problem" as RepairTaskStatus, labelEn: "⚠ Problem", labelEs: "⚠ Problema", labelNl: "⚠ Probleem", disabled: false, className: "bg-red-400/10 text-red-400 border border-red-400/20" },
       ];
     case "problem":
-      return [{ status: "in_progress" as RepairTaskStatus, labelEn: "↻ Retry", labelEs: "↻ Reintentar", labelNl: "↻ Opnieuw", className: "bg-white/10 text-white hover:bg-white/15" }];
+      return [{ status: "in_progress" as RepairTaskStatus, labelEn: "↻ Retry", labelEs: "↻ Reintentar", labelNl: "↻ Opnieuw", disabled: false, className: "bg-white/10 text-white hover:bg-white/15" }];
     case "review":
       return [
-        { status: "in_progress" as RepairTaskStatus, labelEn: "▶ Rework", labelEs: "▶ Rehacer", labelNl: "▶ Herwerk", className: "bg-white/10 text-white hover:bg-white/15" },
-        { status: "done" as RepairTaskStatus, labelEn: "✓ OK", labelEs: "✓ OK", labelNl: "✓ OK", className: "bg-emerald-500 text-white" },
+        { status: "in_progress" as RepairTaskStatus, labelEn: "▶ Rework", labelEs: "▶ Rehacer", labelNl: "▶ Herwerk", disabled: false, className: "bg-white/10 text-white hover:bg-white/15" },
+        { status: "done" as RepairTaskStatus, labelEn: "✓ OK", labelEs: "✓ OK", labelNl: "✓ OK", disabled: !hasActiveTimer, className: "bg-emerald-500 text-white" },
       ];
     case "done":
       return [];

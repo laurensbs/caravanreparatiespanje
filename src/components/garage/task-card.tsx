@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { Check } from "lucide-react";
 import { useLanguage } from "@/components/garage/language-toggle";
 import { updateTaskStatus } from "@/actions/garage";
 import { startTimer } from "@/actions/time-entries";
@@ -13,14 +14,6 @@ import { hapticTap, hapticSuccess } from "@/lib/haptic";
 import type { RepairTask, RepairTaskStatus } from "@/types";
 import type { Language } from "@/components/garage/language-toggle";
 import { toast } from "sonner";
-
-const STATUS_ICONS: Record<RepairTaskStatus, string> = {
-  pending: "○",
-  in_progress: "◐",
-  done: "✓",
-  problem: "⚠",
-  review: "↻",
-};
 
 interface TaskCardProps {
   task: RepairTask;
@@ -151,7 +144,7 @@ export function TaskCard({
   // blijft altijd klikbaar (die zet zelf de timer op via onBeforeStart).
   const tickDisabled = !hasActiveTimer && (status === "pending" || status === "in_progress" || status === "done");
 
-  const actions = getActions(task.status, hasActiveTimer);
+  const actions = getActions(task.status);
 
   return (
     <div className={`bg-white/[0.03] rounded-2xl border border-white/[0.06] transition-all duration-150 ${isPending ? "opacity-60" : ""} ${isDone ? "opacity-50" : ""}`}>
@@ -167,15 +160,23 @@ export function TaskCard({
             title={tickDisabled
               ? t("Start the timer first", "Inicia el temporizador primero", "Start eerst de timer")
               : undefined}
-            className={`flex items-center justify-center h-8 w-8 rounded-lg text-sm leading-none shrink-0 mt-0.5 transition-all active:scale-90 disabled:opacity-50 ${
-              status === "done" ? "bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20" :
-              status === "in_progress" ? "bg-teal-400/10 text-teal-400 hover:bg-teal-400/20" :
-              status === "problem" ? "bg-red-400/10 text-red-400 hover:bg-red-400/20" :
-              status === "review" ? "bg-amber-400/10 text-amber-400 hover:bg-amber-400/20" :
-              "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm leading-none mt-0.5 transition-all active:scale-90 disabled:opacity-50 ${
+              status === "done"
+                ? "bg-emerald-500/85 text-white hover:bg-emerald-500"
+                : hasActiveTimer && (status === "pending" || status === "in_progress" || status === "review")
+                  ? "bg-sky-500/85 text-white hover:bg-sky-500"
+                  : status === "problem"
+                    ? "bg-red-400/10 text-red-400 hover:bg-red-400/20"
+                    : "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
             } ${tickDisabled ? "cursor-not-allowed" : ""}`}
           >
-            {STATUS_ICONS[status]}
+            {status === "problem" ? (
+              "⚠"
+            ) : status === "done" || (hasActiveTimer && (status === "pending" || status === "in_progress" || status === "review")) ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              "○"
+            )}
           </button>
 
           <div className="flex-1 min-w-0">
@@ -241,13 +242,12 @@ export function TaskCard({
   );
 }
 
-function getActions(status: string, hasActiveTimer: boolean) {
+function getActions(status: string) {
   switch (status) {
     case "pending":
-      return [{ status: "done" as RepairTaskStatus, labelEn: "☑ Tick off", labelEs: "☑ Marcar", labelNl: "☑ Afvinken", disabled: !hasActiveTimer, className: "bg-emerald-500 text-white hover:bg-emerald-400" }];
+      return [];
     case "in_progress":
       return [
-        { status: "done" as RepairTaskStatus, labelEn: "✓ Done", labelEs: "✓ Listo", labelNl: "✓ Klaar", disabled: !hasActiveTimer, className: "bg-emerald-500 text-white" },
         { status: "problem" as RepairTaskStatus, labelEn: "⚠ Problem", labelEs: "⚠ Problema", labelNl: "⚠ Probleem", disabled: false, className: "bg-red-400/10 text-red-400 border border-red-400/20" },
       ];
     case "problem":
@@ -255,7 +255,6 @@ function getActions(status: string, hasActiveTimer: boolean) {
     case "review":
       return [
         { status: "in_progress" as RepairTaskStatus, labelEn: "▶ Rework", labelEs: "▶ Rehacer", labelNl: "▶ Herwerk", disabled: false, className: "bg-white/10 text-white hover:bg-white/15" },
-        { status: "done" as RepairTaskStatus, labelEn: "✓ OK", labelEs: "✓ OK", labelNl: "✓ OK", disabled: !hasActiveTimer, className: "bg-emerald-500 text-white" },
       ];
     case "done":
       return [];

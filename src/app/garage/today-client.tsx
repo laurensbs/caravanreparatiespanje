@@ -961,18 +961,33 @@ export function GarageTodayClient({
               />
             );
 
+            // "Voor mij" eerst — klussen die expliciet zijn toegewezen
+            // aan de actieve werker krijgen voorrang, ongeacht datum
+            // of type. Andere sortering (datum voor services) werkt
+            // als tweede tiebreaker.
+            const mineFirst = (a: RepairItem, b: RepairItem) => {
+              const aMine = a.assignedUserId === activeUser?.id ? 0 : 1;
+              const bMine = b.assignedUserId === activeUser?.id ? 0 : 1;
+              return aMine - bMine;
+            };
+
             if (tab === "all") {
-              // Sorteer service-jobs op transport-datum (dichtstbijzijnde
-              // eerst). Jobs zonder dueDate landen onderaan.
+              // Services: eerst 'voor mij', dan op transport-datum.
               const serviceJobs = visibleRepairs
                 .filter((r) => r.jobType === "service")
                 .slice()
                 .sort((a, b) => {
+                  const byMine = mineFirst(a, b);
+                  if (byMine !== 0) return byMine;
                   const ta = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
                   const tb = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
                   return ta - tb;
                 });
-              const repairJobs = visibleRepairs.filter((r) => r.jobType !== "service");
+              // Repairs: eerst 'voor mij', rest behoudt originele volgorde.
+              const repairJobs = visibleRepairs
+                .filter((r) => r.jobType !== "service")
+                .slice()
+                .sort(mineFirst);
               return (
                 <div key={tab} className="flex flex-col gap-6 animate-[fadeInUp_280ms_cubic-bezier(.32,.72,0,1)_both]">
                   {serviceJobs.length > 0 && (
@@ -1013,16 +1028,18 @@ export function GarageTodayClient({
               );
             }
 
-            // Services-only tab: sorteer op transport-datum (dichtstbijzijnde
-            // eerst). Repairs-only tab: originele volgorde.
+            // Services-only tab: eerst 'voor mij', dan op transport-datum.
+            // Repairs-only tab: eerst 'voor mij', rest originele volgorde.
             const shown =
               tab === "services"
                 ? visibleRepairs.slice().sort((a, b) => {
+                    const byMine = mineFirst(a, b);
+                    if (byMine !== 0) return byMine;
                     const ta = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
                     const tb = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
                     return ta - tb;
                   })
-                : visibleRepairs;
+                : visibleRepairs.slice().sort(mineFirst);
             return (
               <div
                 key={tab}

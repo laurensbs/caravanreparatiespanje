@@ -1441,14 +1441,14 @@ function JobCard({
       {(() => {
         const hasTopRow =
           (canStartTimer && !someoneIsWorking) || nextTaskTitle || repair.nextPart;
-        const showReadyButton = [
+        const showReadyButton = repair.jobType !== "service" && [
           "new",
           "todo",
           "scheduled",
           "in_progress",
           "in_inspection",
         ].includes(repair.status);
-        const showBeingChecked = repair.status === "ready_for_check";
+        const showBeingChecked = repair.jobType !== "service" && repair.status === "ready_for_check";
         if (!hasTopRow && !showReadyButton && !showBeingChecked) return null;
         return (
           <div className="mt-auto flex flex-col gap-2 pt-1">

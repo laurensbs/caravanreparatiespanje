@@ -312,6 +312,8 @@ export async function getGarageRepairsToday() {
       id: repairJobs.id,
       publicCode: repairJobs.publicCode,
       title: repairJobs.title,
+      titleEs: repairJobs.titleEs,
+      titleNl: repairJobs.titleNl,
       status: repairJobs.status,
       priority: repairJobs.priority,
       dueDate: repairJobs.dueDate,
@@ -639,10 +641,14 @@ export async function getGarageRepairDetail(id: string) {
       id: repairJobs.id,
       publicCode: repairJobs.publicCode,
       title: repairJobs.title,
+      titleEs: repairJobs.titleEs,
+      titleNl: repairJobs.titleNl,
       status: repairJobs.status,
       priority: repairJobs.priority,
       dueDate: repairJobs.dueDate,
       descriptionRaw: repairJobs.descriptionRaw,
+      descriptionEs: repairJobs.descriptionEs,
+      descriptionNl: repairJobs.descriptionNl,
       notesRaw: repairJobs.notesRaw,
       internalComments: repairJobs.internalComments,
       customerName: customers.name,
@@ -1387,6 +1393,14 @@ export async function addRepairTask(
     });
   }
 
+  // Auto-translate de task-titel naar de andere twee garage-talen.
+  try {
+    const { translateRepairTaskBg } = await import("@/lib/auto-translate");
+    translateRepairTaskBg(task.id, { title: data.title });
+  } catch {
+    // best-effort
+  }
+
   return task;
 }
 
@@ -1621,6 +1635,14 @@ export async function addFinding(
     comment: `${data.severity} finding (${data.category}): ${data.description}`,
   });
 
+  // Auto-translate finding-description naar de andere garage-talen.
+  try {
+    const { translateFindingBg } = await import("@/lib/auto-translate");
+    translateFindingBg(finding.id, { description: data.description });
+  } catch {
+    // best-effort
+  }
+
   // Maak direct een part_request aan als de werker "onderdeel nodig"
   // aangevinkt heeft. Status = requested zodat hij in het admin
   // Part Requests paneel verschijnt. De job wordt door createPartRequest
@@ -1780,6 +1802,8 @@ export async function getRepairFindings(repairJobId: string) {
       id: repairFindings.id,
       category: repairFindings.category,
       description: repairFindings.description,
+      descriptionEs: repairFindings.descriptionEs,
+      descriptionNl: repairFindings.descriptionNl,
       severity: repairFindings.severity,
       requiresFollowUp: repairFindings.requiresFollowUp,
       requiresCustomerApproval: repairFindings.requiresCustomerApproval,

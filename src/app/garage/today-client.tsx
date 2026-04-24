@@ -63,6 +63,8 @@ type RepairItem = {
   id: string;
   publicCode: string | null;
   title: string | null;
+  titleEs?: string | null;
+  titleNl?: string | null;
   status: string;
   priority: "low" | "normal" | "high" | "urgent";
   dueDate: Date | string | null;
@@ -1219,7 +1221,7 @@ function JobCard({
       {/* ── Job title ─────────────────────────────────────────────── */}
       {repair.title ? (
         <p className="line-clamp-2 text-base font-medium text-white/85">
-          {repair.title}
+          {t(repair.title, repair.titleEs ?? null, repair.titleNl ?? null)}
         </p>
       ) : null}
 

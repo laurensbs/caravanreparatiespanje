@@ -510,6 +510,19 @@ export async function createRepairJob(data: unknown) {
 
   await createAuditLog("create", "repair_job", job.id, { publicCode });
 
+  // Auto-translate title + description in de achtergrond naar de
+  // andere twee garage-talen. Fire-and-forget: als DeepL offline is
+  // breekt dat niet de save, de velden blijven dan gewoon leeg.
+  try {
+    const { translateRepairJobBg } = await import("@/lib/auto-translate");
+    translateRepairJobBg(job.id, {
+      title: parsed.title,
+      description: parsed.descriptionRaw,
+    });
+  } catch {
+    // best-effort
+  }
+
   revalidatePath("/repairs");
   revalidatePath("/");
   return job;
@@ -618,6 +631,22 @@ export async function updateRepairJob(id: string, data: unknown): Promise<Update
 
     if (Object.keys(changes).length > 0) {
       await createAuditLog("update", "repair_job", id, changes);
+    }
+
+    // Auto-translate als title of description gewijzigd. We geven
+    // de nieuwe waarde mee; de helper vult Es/Nl kolommen in via DeepL.
+    const titleChanged = parsed.title !== undefined && parsed.title !== existing.title;
+    const descChanged = parsed.descriptionRaw !== undefined && parsed.descriptionRaw !== existing.descriptionRaw;
+    if (titleChanged || descChanged) {
+      try {
+        const { translateRepairJobBg } = await import("@/lib/auto-translate");
+        translateRepairJobBg(id, {
+          title: titleChanged ? (parsed.title as string | null | undefined) : undefined,
+          description: descChanged ? (parsed.descriptionRaw as string | null | undefined) : undefined,
+        });
+      } catch {
+        // best-effort
+      }
     }
 
     if (changes.status || changes.customerResponseStatus) {

@@ -89,10 +89,14 @@ type RepairDetail = {
   id: string;
   publicCode: string | null;
   title: string | null;
+  titleEs?: string | null;
+  titleNl?: string | null;
   status: string;
   priority: string;
   dueDate: Date | string | null;
   descriptionRaw: string | null;
+  descriptionEs?: string | null;
+  descriptionNl?: string | null;
   notesRaw: string | null;
   internalComments: string | null;
   customerName: string | null;
@@ -149,6 +153,8 @@ type RepairDetail = {
     id: string;
     category: string;
     description: string;
+    descriptionEs?: string | null;
+    descriptionNl?: string | null;
     severity: string;
     requiresFollowUp: boolean;
     requiresCustomerApproval: boolean;
@@ -842,7 +848,9 @@ export function GarageRepairDetailClient({
               </div>
 
               {repair.title ? (
-                <p className="text-base text-white/85">{repair.title}</p>
+                <p className="text-base text-white/85">
+                  {t(repair.title, repair.titleEs ?? null, repair.titleNl ?? null)}
+                </p>
               ) : null}
 
               {/* Grote transport-datum banner voor service-jobs zodat de
@@ -1448,7 +1456,11 @@ export function GarageRepairDetailClient({
                       {t("Description", "Descripción", "Beschrijving")}
                     </p>
                     <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">
-                      {repair.descriptionRaw}
+                      {t(
+                        repair.descriptionRaw,
+                        repair.descriptionEs ?? null,
+                        repair.descriptionNl ?? null,
+                      )}
                     </p>
                   </div>
                 ) : null}
@@ -1703,6 +1715,8 @@ type FindingRowData = {
   id: string;
   category: string;
   description: string;
+  descriptionEs?: string | null;
+  descriptionNl?: string | null;
   severity: string;
   requiresFollowUp: boolean;
   requiresCustomerApproval: boolean;
@@ -1718,7 +1732,7 @@ function FindingRow({
   onDeleted,
 }: {
   finding: FindingRowData;
-  t: (en: string, es: string, nl: string) => string;
+  t: (en: string, es?: string | null, nl?: string | null) => string;
   onSaved: (next: FindingRowData) => void;
   onDeleted: (id: string) => void;
 }) {
@@ -1839,7 +1853,9 @@ function FindingRow({
           </div>
         ) : (
           <>
-            <p className="mt-0.5 text-sm text-white/70">{f.description}</p>
+            <p className="mt-0.5 text-sm text-white/70">
+              {t(f.description, f.descriptionEs ?? null, f.descriptionNl ?? null)}
+            </p>
             {f.createdByName ? (
               <p className="mt-0.5 text-[11px] text-white/40">— {f.createdByName}</p>
             ) : null}

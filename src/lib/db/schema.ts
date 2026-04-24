@@ -387,7 +387,16 @@ export const repairJobs = pgTable(
     }),
 
     title: varchar("title", { length: 500 }),
+    titleEs: varchar("title_es", { length: 500 }),
+    titleNl: varchar("title_nl", { length: 500 }),
     descriptionRaw: text("description_raw"),
+    descriptionEs: text("description_es"),
+    descriptionNl: text("description_nl"),
+    /** ISO 639-1 code of source language ("en"/"es"/"nl") — wordt door
+     *  de auto-translate helper gedetecteerd zodat we herkennen welke
+     *  kolom de 'originele' is en andere daaruit vertaald zijn. */
+    titleLang: varchar("title_lang", { length: 2 }),
+    descriptionLang: varchar("description_lang", { length: 2 }),
     descriptionNormalized: text("description_normalized"),
     partsNeededRaw: text("parts_needed_raw"),
     notesRaw: text("notes_raw"),
@@ -1615,6 +1624,9 @@ export const repairFindings = pgTable(
       .references(() => repairJobs.id, { onDelete: "cascade" }),
     category: findingCategoryEnum("category").notNull().default("other"),
     description: text("description").notNull(),
+    descriptionEs: text("description_es"),
+    descriptionNl: text("description_nl"),
+    descriptionLang: varchar("description_lang", { length: 2 }),
     severity: findingSeverityEnum("severity").notNull().default("normal"),
     requiresFollowUp: boolean("requires_follow_up").notNull().default(false),
     requiresCustomerApproval: boolean("requires_customer_approval")

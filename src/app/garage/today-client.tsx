@@ -26,6 +26,7 @@ import {
   CalendarDays,
   Sparkles,
   ClipboardList,
+  User,
 } from "lucide-react";
 import { useLanguage, LanguageToggle, type Language } from "@/components/garage/language-toggle";
 import { GarageThemeToggle } from "@/components/garage/theme-provider";
@@ -75,6 +76,7 @@ type RepairItem = {
   unitStorageLocation: string | null;
   unitCurrentPosition: string | null;
   assignedUserName: string | null;
+  assignedUserId: string | null;
   finalCheckStatus: string | null;
   jobType: string;
   tasks: { total: number; done: number; problem: number };
@@ -391,16 +393,24 @@ export function GarageTodayClient({
     return m;
   }, [liveTimers]);
 
-  /* ── Tab counts ──────────────────────────────────────────────────── */
+  /* ── Tab counts — zelfde toewijzings-filter als visibleRepairs zodat
+        de badges kloppen met wat de werker daadwerkelijk ziet. */
   const counts = useMemo(() => {
     const c = { all: 0, services: 0, repairs: 0 };
     for (const r of repairs) {
       if (!isStillRelevant(r)) continue;
+      if (
+        activeUser?.id &&
+        r.assignedUserId &&
+        r.assignedUserId !== activeUser.id
+      ) {
+        continue;
+      }
       c.all++;
       c[tabFor(r)]++;
     }
     return c;
-  }, [repairs]);
+  }, [repairs, activeUser?.id]);
 
   /* ── Visible repairs ─────────────────────────────────────────────── */
   const visibleRepairs = useMemo(() => {
@@ -408,6 +418,17 @@ export function GarageTodayClient({
     return repairs.filter((r) => {
       if (!isStillRelevant(r)) return false;
       if (tab !== "all" && tabFor(r) !== tab) return false;
+      // Toewijzings-filter: als een klus is toegewezen aan iemand
+      // en het actieve iPad-profiel is niet die persoon, verbergen.
+      // Niet-toegewezen klussen zijn voor iedereen. Als er nog geen
+      // profiel is ingesteld tonen we alles (bootstrap-fase).
+      if (
+        activeUser?.id &&
+        r.assignedUserId &&
+        r.assignedUserId !== activeUser.id
+      ) {
+        return false;
+      }
       if (!q) return true;
       const hay = [
         r.publicCode,
@@ -424,7 +445,7 @@ export function GarageTodayClient({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [repairs, tab, search]);
+  }, [repairs, tab, search, activeUser?.id]);
 
   const totalActiveTimers = liveTimers.length;
   const unreadAdminMessages = repairs.filter(
@@ -1148,6 +1169,20 @@ function JobCard({
     <article
       className="tap-press group flex flex-col gap-3 overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset ring-white/[0.06] hover:bg-white/[0.05]"
     >
+      {/* ── Toewijs-banner — als deze klus expliciet is toegewezen,
+           tonen we groot en paars wie 'm moet doen. Door de server-
+           filter is dit altijd de huidige iPad-user, dus "Jij" voelt
+           meer natuurlijk dan de naam. Niet-toegewezen klussen
+           krijgen geen banner. */}
+      {repair.assignedUserName ? (
+        <div className="-mx-4 -mt-4 mb-1 flex items-center gap-2 bg-violet-500/25 px-4 py-2.5 text-base font-extrabold uppercase tracking-wide text-violet-100">
+          <User className="h-5 w-5" />
+          <span>
+            {t("For", "Para", "Voor")} {repair.assignedUserName}
+          </span>
+        </div>
+      ) : null}
+
       {/* ── Datum-banner — services labelen 'Transport' (ophaaldatum),
            repairs labelen 'Planned' (werkdatum). Kleur volgt urgentie. */}
       {dateInfo ? (
@@ -1183,11 +1218,6 @@ function JobCard({
           className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[repair.status] ?? "bg-stone-500"}`}
         />
         <div className="min-w-0 flex-1">
-          {repair.assignedUserName ? (
-            <p className="mb-0.5 truncate text-[10px] font-medium uppercase tracking-wider text-sky-300/80">
-              {t("For", "Para", "Voor")} {repair.assignedUserName}
-            </p>
-          ) : null}
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm font-bold tracking-wide text-white">
               {repair.unitRegistration ?? repair.publicCode ?? "—"}

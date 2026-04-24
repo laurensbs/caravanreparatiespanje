@@ -324,6 +324,7 @@ export async function getGarageRepairsToday() {
       unitStorageLocation: units.storageLocation,
       unitCurrentPosition: units.currentPosition,
       assignedUserName: users.name,
+      assignedUserId: repairJobs.assignedUserId,
       finalCheckStatus: repairJobs.finalCheckStatus,
       jobType: repairJobs.jobType,
       garageAdminMessage: repairJobs.garageAdminMessage,

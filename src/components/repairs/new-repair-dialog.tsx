@@ -95,6 +95,7 @@ export function NewRepairDialog({
   const [servicesCatalog, setServicesCatalog] = useState<CatalogServiceOption[]>([]);
   const [locationId, setLocationId] = useState<string>("none");
   const [title, setTitle] = useState("");
+  const [dueDate, setDueDate] = useState<string>(""); // YYYY-MM-DD or ""
   const [jobType, setJobType] = useState<JobType>("repair");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [partsExpanded, setPartsExpanded] = useState(true);
@@ -234,6 +235,7 @@ export function NewRepairDialog({
     setSelectedServiceIds([]);
     setLocationId("none");
     setTitle("");
+    setDueDate("");
     setJobType("repair");
     setShowAdvanced(false);
     setPartsExpanded(true);
@@ -257,6 +259,16 @@ export function NewRepairDialog({
 
     data.locationId = locationId === "none" ? null : locationId;
     data.title = title.trim();
+    // <input type="date"> geeft YYYY-MM-DD; validator verwacht ISO.
+    // We zetten 'm op 08:00 lokaal (begin werkdag) zodat planning hem
+    // onder "vandaag" classifeert in plaats van middernacht-UTC.
+    if (dueDate) {
+      const [y, m, d] = dueDate.split("-").map(Number);
+      const local = new Date(y, (m ?? 1) - 1, d ?? 1, 8, 0, 0);
+      data.dueDate = local.toISOString();
+    } else {
+      data.dueDate = null;
+    }
     data.customerId = customerId;
     data.unitId = unitId;
     data.jobType = jobType;
@@ -453,6 +465,67 @@ export function NewRepairDialog({
                           className="h-11 rounded-xl border-border dark:border-border bg-card dark:bg-card text-sm shadow-none"
                           contentClassName="z-[80]"
                         />
+                      </div>
+                    </div>
+
+                    {/* Planning — due date met snelkoppelingen zodat
+                        "Today" / "Tomorrow" één tap zijn. */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground/70">
+                        {jobType === "service" ? "Transport date" : "Planned date"}
+                      </Label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {(() => {
+                          const today = new Date();
+                          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                          const tomorrow = new Date(today);
+                          tomorrow.setDate(today.getDate() + 1);
+                          const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setDueDate(todayStr)}
+                                className={cn(
+                                  "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold border transition-colors",
+                                  dueDate === todayStr
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                    : "border-border text-muted-foreground hover:bg-muted/60 dark:hover:bg-foreground/[0.04]",
+                                )}
+                              >
+                                Today
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDueDate(tomorrowStr)}
+                                className={cn(
+                                  "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold border transition-colors",
+                                  dueDate === tomorrowStr
+                                    ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                    : "border-border text-muted-foreground hover:bg-muted/60 dark:hover:bg-foreground/[0.04]",
+                                )}
+                              >
+                                Tomorrow
+                              </button>
+                            </>
+                          );
+                        })()}
+                        <Input
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          className="h-9 w-auto flex-1 min-w-[11rem] rounded-lg border-border dark:border-border bg-card dark:bg-card text-sm px-3 shadow-none"
+                        />
+                        {dueDate ? (
+                          <button
+                            type="button"
+                            onClick={() => setDueDate("")}
+                            className="inline-flex h-9 items-center rounded-lg px-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 dark:hover:bg-foreground/[0.04]"
+                            title="Clear date"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </div>

@@ -1329,11 +1329,11 @@ function JobCard({
                     aria-hidden
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                       done
-                        ? "border-emerald-400/70 bg-emerald-400/40"
-                        : "border-white/25 bg-transparent"
+                        ? "border-sky-300/30 bg-sky-500 text-white"
+                        : "border-sky-300/35 bg-sky-500/12 text-sky-200"
                     }`}
                   >
-                    {done ? <Check className="h-3.5 w-3.5 text-emerald-50" /> : null}
+                    <Check className={`h-3.5 w-3.5 ${done ? "text-white" : "text-sky-200/80"}`} />
                   </span>
                   <span className={`line-clamp-1 flex-1 ${done ? "line-through opacity-70" : ""}`}>
                     {t(s.name, s.nameEs ?? null, s.nameNl ?? null)}

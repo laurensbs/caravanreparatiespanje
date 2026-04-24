@@ -163,8 +163,10 @@ export function TaskCard({
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm leading-none mt-0.5 transition-all active:scale-90 disabled:opacity-50 ${
               status === "done"
                 ? "bg-emerald-500/85 text-white hover:bg-emerald-500"
-                : hasActiveTimer && (status === "pending" || status === "in_progress" || status === "review")
-                  ? "bg-sky-500/85 text-white hover:bg-sky-500"
+                : status === "pending" || status === "in_progress" || status === "review"
+                  ? tickDisabled
+                    ? "border border-emerald-400/35 bg-emerald-500/10 text-emerald-200/70"
+                    : "border border-emerald-300/20 bg-emerald-500/75 text-white hover:bg-emerald-500"
                   : status === "problem"
                     ? "bg-red-400/10 text-red-400 hover:bg-red-400/20"
                     : "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
@@ -172,7 +174,7 @@ export function TaskCard({
           >
             {status === "problem" ? (
               "⚠"
-            ) : status === "done" || (hasActiveTimer && (status === "pending" || status === "in_progress" || status === "review")) ? (
+            ) : status === "done" || status === "pending" || status === "in_progress" || status === "review" ? (
               <Check className="h-4 w-4" />
             ) : (
               "○"

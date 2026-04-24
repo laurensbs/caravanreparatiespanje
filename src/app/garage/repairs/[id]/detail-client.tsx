@@ -1242,11 +1242,11 @@ export function GarageRepairDetailClient({
                             : t("Mark as done", "Marcar como hecho", "Afvinken")}
                           className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm leading-none transition-all active:scale-90 ${
                             done
-                              ? "bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20"
-                              : "bg-white/[0.06] text-white/30 hover:bg-white/10 hover:text-white/60"
+                              ? "bg-sky-500 text-white hover:bg-sky-400"
+                              : "border border-sky-300/35 bg-sky-500/12 text-sky-200 hover:bg-sky-500/18"
                           }`}
                         >
-                          {done ? "✓" : "○"}
+                          <Check className={`h-4 w-4 ${done ? "text-white" : "text-sky-200/85"}`} />
                         </button>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">

@@ -288,15 +288,12 @@ export async function getRepairJobs(filters: RepairFilters = {}) {
     conditions.push(eq(repairJobs.jobType, filters.jobType as any));
   }
 
-  // Service-jobs like transport cleaning may temporarily hit
-  // ready_for_check, but they do not require office approval and should
-  // not appear in the admin review queue.
-  if (filters.status) {
-    const statuses = filters.status.split(",").filter(Boolean);
-    if (statuses.length === 1 && statuses[0] === "ready_for_check") {
-      conditions.push(notInArray(repairJobs.jobType, ["service"]));
-    }
-  }
+  // Safety net for legacy rows: service-jobs (transport cleaning) do
+  // not require office review, so the state service+ready_for_check
+  // should never be visible in admin repair lists.
+  conditions.push(
+    sql`NOT (${repairJobs.jobType} = 'service' AND ${repairJobs.status} = 'ready_for_check')`,
+  );
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 

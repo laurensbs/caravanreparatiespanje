@@ -70,6 +70,7 @@ export async function getSidebarCounts() {
     openToolRequests,
     uninvoiced,
     unreadGarageMessages,
+    readyForCheckCount,
   ] = await Promise.all([
       db
         .select({ c: sql<number>`count(*)::int` })
@@ -140,6 +141,20 @@ export async function getSidebarCounts() {
             isNull(repairMessages.readAt),
           ),
         ),
+
+      // Reparaties die de garage als klaar heeft gemeld en wachten op
+      // controle door kantoor — drijft de amber attention-dot op
+      // "Work Orders" in de sidebar.
+      db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(repairJobs)
+        .where(
+          and(
+            isNull(repairJobs.archivedAt),
+            isNull(repairJobs.deletedAt),
+            eq(repairJobs.status, "ready_for_check"),
+          ),
+        ),
     ]);
 
   return {
@@ -151,6 +166,7 @@ export async function getSidebarCounts() {
     parts: (pendingParts[0]?.c ?? 0) + (openToolRequests[0]?.c ?? 0),
     invoices: uninvoiced[0]?.c ?? 0,
     messages: unreadGarageMessages[0]?.c ?? 0,
+    readyForCheck: readyForCheckCount[0]?.c ?? 0,
   };
 }
 

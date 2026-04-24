@@ -34,15 +34,18 @@ interface NavItem {
   group?: string;
   /** Key into SidebarCounts — drives the count badge on the right of the row. */
   countKey?: "workOrdersOpen" | "planning" | "contacts" | "units" | "parts" | "invoices" | "messages";
-  /** Key into SidebarCounts that, if > 0, shows a small attention dot
+  /** Key into SidebarCounts that, if > 0, shows a small red attention dot
    *  (currently only used for urgent work orders). */
   attentionKey?: "workOrdersUrgent";
+  /** Key into SidebarCounts that, if > 0, shows a small amber attention dot
+   *  (currently used for ready_for_check repairs). */
+  checkKey?: "readyForCheck";
 }
 
 const navItems: NavItem[] = [
   // OPERATIONS
   { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-[18px] w-[18px]" />, group: "Operations" },
-  { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations", countKey: "workOrdersOpen", attentionKey: "workOrdersUrgent" },
+  { label: "Work Orders", href: "/repairs", icon: <ClipboardList className="h-[18px] w-[18px]" />, group: "Operations", countKey: "workOrdersOpen", attentionKey: "workOrdersUrgent", checkKey: "readyForCheck" },
   { label: "Planning", href: "/planning", icon: <CalendarDays className="h-[18px] w-[18px]" />, group: "Operations", countKey: "planning" },
   { label: "Garage", href: "/api/garage-reset", icon: <Warehouse className="h-[18px] w-[18px]" />, group: "Operations" },
   { label: "Messages", href: "/messages", icon: <MessageSquare className="h-[18px] w-[18px]" />, group: "Operations", countKey: "messages" },
@@ -66,6 +69,7 @@ export type SidebarCounts = {
   parts: number;
   invoices: number;
   messages: number;
+  readyForCheck: number;
 };
 
 interface SidebarProps {
@@ -169,6 +173,7 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
 
     const count = item.countKey && counts ? counts[item.countKey] : undefined;
     const attention = item.attentionKey && counts ? counts[item.attentionKey] : 0;
+    const checkAttention = item.checkKey && counts ? counts[item.checkKey] : 0;
     const showCount = typeof count === "number" && count > 0;
 
     return (
@@ -211,6 +216,26 @@ export function Sidebar({ userRole, counts }: SidebarProps) {
             >
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/70" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-card dark:ring-sidebar" />
+            </span>
+          )}
+          {/* Check dot — amber signal when repairs are waiting for admin
+              review (ready_for_check), positioned bottom-right. */}
+          {checkAttention > 0 && attention <= 0 && (
+            <span
+              aria-hidden
+              className="absolute -right-0.5 -bottom-0.5 flex h-2 w-2 items-center justify-center"
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400/70" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400 ring-2 ring-card dark:ring-sidebar" />
+            </span>
+          )}
+          {checkAttention > 0 && attention > 0 && (
+            <span
+              aria-hidden
+              className="absolute -left-0.5 -bottom-0.5 flex h-2 w-2 items-center justify-center"
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400/70" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400 ring-2 ring-card dark:ring-sidebar" />
             </span>
           )}
         </span>
